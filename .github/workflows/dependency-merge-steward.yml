@@ -1,0 +1,111 @@
+name: Dependency merge steward
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+  check_suite:
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Dependabot PR number to re-evaluate. Leave blank to scan candidates.
+        required: false
+        type: string
+  schedule:
+    - cron: "17 9 * * *"
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  checks: read
+  statuses: read
+
+jobs:
+  classify:
+    name: classify
+    runs-on: ${{ vars.CI_RUNNER }}
+    timeout-minutes: 10
+    if: github.event_name == 'pull_request_target' && github.actor == 'dependabot[bot]'
+    outputs:
+      eligible: ${{ steps.classify.outputs.eligible }}
+
+    steps:
+      - name: Checkout trusted base
+        uses: actions/checkout@v7
+
+      - name: Get Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v3
+        with:
+          github-token: ${{ github.token }}
+
+      - name: Classify dependency PR
+        id: classify
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          UPDATE_TYPE: ${{ steps.metadata.outputs.update-type }}
+          DEPENDENCY_TYPE: ${{ steps.metadata.outputs.dependency-type }}
+          PACKAGE_ECOSYSTEM: ${{ steps.metadata.outputs.package-ecosystem }}
+        run: |
+          bin/dependency-merge-steward classify-pr \
+            "$PR_NUMBER" "$UPDATE_TYPE" "$DEPENDENCY_TYPE" "$PACKAGE_ECOSYSTEM"
+
+  merge_pr_event:
+    name: merge_pr_event
+    runs-on: ${{ vars.CI_RUNNER }}
+    timeout-minutes: 10
+    needs: classify
+    if: github.event_name == 'pull_request_target' && needs.classify.outputs.eligible == 'true'
+
+    steps:
+      - name: Checkout trusted base
+        uses: actions/checkout@v7
+
+      - name: Merge if checks already passed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          DEPENDENCY_STEWARD_WAIT_SECONDS: "0"
+        run: bin/dependency-merge-steward merge-pr "${{ github.event.pull_request.number }}"
+
+  merge_after_checks:
+    name: merge_after_checks
+    runs-on: ${{ vars.CI_RUNNER }}
+    timeout-minutes: 15
+    if: github.event_name == 'check_suite' && github.event.check_suite.conclusion == 'success'
+
+    steps:
+      - name: Checkout trusted base
+        uses: actions/checkout@v7
+
+      - name: Re-evaluate PRs for completed check suite
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.check_suite.head_sha }}
+        run: bin/dependency-merge-steward merge-for-sha "$HEAD_SHA"
+
+  sweep_candidates:
+    name: sweep_candidates
+    runs-on: ${{ vars.CI_RUNNER }}
+    timeout-minutes: 20
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout trusted base
+        uses: actions/checkout@v7
+
+      - name: Re-evaluate dependency candidates
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+        run: |
+          if [[ -n "$PR_NUMBER" ]]; then
+            bin/dependency-merge-steward merge-pr "$PR_NUMBER"
+          else
+            bin/dependency-merge-steward merge-candidates
+          fi

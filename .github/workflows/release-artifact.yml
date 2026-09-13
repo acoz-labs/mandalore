@@ -1,0 +1,71 @@
+name: Release artifact
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: Full accepted commit SHA
+        required: true
+        type: string
+      artifact:
+        description: Accepted immutable artifact identifier or digest
+        required: true
+        type: string
+      issues:
+        description: Comma-separated issue numbers included in the release
+        required: true
+        type: string
+      summary:
+        description: Release summary
+        required: true
+        type: string
+
+permissions:
+  checks: read
+  contents: write
+  deployments: read
+  issues: write
+  pull-requests: read
+  statuses: read
+
+jobs:
+  release:
+    name: release_artifact
+    if: >-
+      github.ref == format('refs/heads/{0}', github.event.repository.default_branch) &&
+      vars.DELIVERY_PROFILE == 'artifact'
+    runs-on: ${{ vars.CI_RUNNER }}
+
+    steps:
+      - name: Checkout accepted candidate
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.sha }}
+          fetch-depth: 0
+
+      - name: Verify exact accepted artifact
+        env:
+          ACCEPTANCE_REQUIRED_CHECKS: ${{ vars.ACCEPTANCE_REQUIRED_CHECKS }}
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ARTIFACT: ${{ inputs.artifact }}
+          RELEASE_SHA: ${{ inputs.sha }}
+          STAGING_REQUIRED: "false"
+        run: bin/release-gate --require-acceptance "$RELEASE_SHA"
+
+      - name: Verify issue-specific release authority
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ARTIFACT: ${{ inputs.artifact }}
+          RELEASE_ISSUES: ${{ inputs.issues }}
+          RELEASE_SHA: ${{ inputs.sha }}
+          RELEASE_SUMMARY: ${{ inputs.summary }}
+        run: bin/finalize-release artifact --preflight
+
+      - name: Publish artifact ledger
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ARTIFACT: ${{ inputs.artifact }}
+          RELEASE_ISSUES: ${{ inputs.issues }}
+          RELEASE_SHA: ${{ inputs.sha }}
+          RELEASE_SUMMARY: ${{ inputs.summary }}
+        run: bin/finalize-release artifact

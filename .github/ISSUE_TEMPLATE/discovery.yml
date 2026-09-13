@@ -1,0 +1,38 @@
+name: Product discovery
+description: Evidence and decide an ambiguous product opportunity.
+title: ""
+labels: ["work:discovery"]
+body:
+  - type: textarea
+    id: decision
+    attributes:
+      label: Decision sought
+      description: Name the finite product decision, not a proposed implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: audience
+    attributes:
+      label: Audience and critical tasks
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Current evidence and uncertainty
+      description: Summarize safe evidence. Use opaque evidence IDs, never private URLs or paths.
+    validations:
+      required: true
+  - type: dropdown
+    id: private_evidence
+    attributes:
+      label: Private evidence
+      options: [none, opaque-references]
+    validations:
+      required: true
+  - type: textarea
+    id: signals
+    attributes:
+      label: Success, change, pause, and stop signals
+    validations:
+      required: true

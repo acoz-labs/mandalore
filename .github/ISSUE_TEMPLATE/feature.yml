@@ -1,0 +1,57 @@
+name: Feature
+description: Shape a new behavior or workflow.
+title: ""
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or opportunity
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+    validations:
+      required: true
+  - type: textarea
+    id: user_context
+    attributes:
+      label: User and task context
+      description: Who is affected, what are they trying to accomplish, and in what context?
+    validations:
+      required: true
+  - type: textarea
+    id: design_impact
+    attributes:
+      label: Product design impact
+      description: >-
+        Note whether this changes a user flow, hierarchy, interaction, visual
+        foundation, accessibility, or localization behavior and whether product
+        design review is required.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      placeholder: |
+        -
+    validations:
+      required: true
+  - type: textarea
+    id: ui_evidence
+    attributes:
+      label: UI acceptance evidence
+      description: >-
+        Classify rendered impact and name the routes or screens, states,
+        viewports, browsers or platforms, accessibility checks, and retained
+        artifacts required by docs/operations/ui-acceptance.md. Explain when
+        there is no rendered impact.
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Tests, docs, and deploy notes

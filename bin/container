@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+image_name="${CONTAINER_IMAGE_NAME:-$(basename "$PWD" | tr '[:upper:]' '[:lower:]')-dev}"
+
+if ! command -v docker >/dev/null 2>&1; then
+  echo "Docker is required for bin/container." >&2
+  exit 1
+fi
+
+docker build -f Dockerfile.dev -t "$image_name" .
+docker run --rm -it -v "$PWD:/workspace" -w /workspace "$image_name" "$@"

@@ -1,0 +1,227 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+sha="${1:-}"
+issue_number="${2:-}"
+decision="${3:-}"
+summary="${4:-}"
+evidence="${5:-}"
+repo="${GITHUB_REPOSITORY:-}"
+actor="${GITHUB_ACTOR:-}"
+allowed_actors="${ACCEPTANCE_ACTORS:-}"
+server_url="${GITHUB_SERVER_URL:-https://github.com}"
+run_id="${GITHUB_RUN_ID:-}"
+delivery_profile="${DELIVERY_PROFILE:-service}"
+acceptance_completes_delivery="${ACCEPTANCE_COMPLETES_DELIVERY:-false}"
+release_artifact="${RELEASE_ARTIFACT:-}"
+
+if [[ -z "$repo" || -z "$actor" || -z "$release_artifact" ||
+  ! "$sha" =~ ^[0-9a-f]{40}$ || ! "$issue_number" =~ ^[0-9]+$ ]]; then
+  echo "Usage: bin/record-product-acceptance <full-sha> <issue-number> <approved|changes-required> <summary> [evidence]" >&2
+  exit 64
+fi
+if [[ "$decision" != "approved" && "$decision" != "changes-required" ]]; then
+  echo "Decision must be approved or changes-required." >&2
+  exit 64
+fi
+if [[ -z "${summary// }" ]]; then
+  echo "Acceptance summary is required." >&2
+  exit 64
+fi
+if [[ -z "${evidence// }" ]]; then
+  echo "Acceptance evidence is required." >&2
+  exit 64
+fi
+if [[ -z "$allowed_actors" ]]; then
+  echo "ACCEPTANCE_ACTORS must name the repository's authorized product acceptors." >&2
+  exit 1
+fi
+
+actor_allowed=0
+IFS=',' read -r -a actors <<< "$allowed_actors"
+for raw_allowed in "${actors[@]}"; do
+  allowed="$(printf '%s' "$raw_allowed" | xargs)"
+  allowed_normalized="$(printf '%s' "$allowed" | tr '[:upper:]' '[:lower:]')"
+  actor_normalized="$(printf '%s' "$actor" | tr '[:upper:]' '[:lower:]')"
+  if [[ "$allowed_normalized" == "$actor_normalized" ]]; then
+    actor_allowed=1
+    break
+  fi
+done
+if [[ "$actor_allowed" != "1" ]]; then
+  echo "Actor $actor is not listed in ACCEPTANCE_ACTORS." >&2
+  exit 1
+fi
+
+pulls="$(gh api "repos/$repo/commits/$sha/pulls?per_page=100")"
+if jq -e --arg actor "$actor" \
+  'any(.[]; (.merged_at != null) and ((.user.login | ascii_downcase) == ($actor | ascii_downcase)))' \
+  <<< "$pulls" >/dev/null; then
+  echo "The implementing pull-request author cannot be the sole product acceptor." >&2
+  exit 1
+fi
+
+issue_json="$(gh api "repos/$repo/issues/$issue_number")"
+implementation_prs="$(jq -r '.body // ""' <<< "$issue_json" | awk '
+  /^- (Phase 3 .*Implementation|Implementation PR):/ {
+    line = $0
+    while (match(line, /\/pull\/[0-9]+/)) {
+      print substr(line, RSTART + 6, RLENGTH - 6)
+      line = substr(line, RSTART + RLENGTH)
+    }
+  }
+' | sort -nu)"
+if [[ -z "$implementation_prs" ]]; then
+  echo "Issue #$issue_number lifecycle does not link an implementation pull request." >&2
+  exit 1
+fi
+while IFS= read -r implementation_pr; do
+  [[ -n "$implementation_pr" ]] || continue
+  implementation_json="$(gh api "repos/$repo/pulls/$implementation_pr")"
+  if [[ "$(jq -r '.merged_at // ""' <<< "$implementation_json")" == "" ]]; then
+    echo "Issue #$issue_number links unmerged implementation PR #$implementation_pr." >&2
+    exit 1
+  fi
+  implementation_merge_sha="$(jq -r '.merge_commit_sha // ""' <<< "$implementation_json")"
+  if [[ ! "$implementation_merge_sha" =~ ^[0-9a-f]{40}$ ]]; then
+    echo "Issue #$issue_number implementation PR #$implementation_pr lacks a merge commit." >&2
+    exit 1
+  fi
+  implementation_comparison="$(gh api \
+    "repos/$repo/compare/$implementation_merge_sha...$sha")"
+  implementation_status="$(jq -r '.status // ""' <<< "$implementation_comparison")"
+  if [[ "$implementation_status" != "ahead" && "$implementation_status" != "identical" ]]; then
+    echo "Candidate $sha does not contain implementation PR #$implementation_pr merge $implementation_merge_sha." >&2
+    exit 1
+  fi
+  implementation_author="$(jq -r '.user.login | ascii_downcase' <<< "$implementation_json")"
+  if [[ "$implementation_author" == "$actor_normalized" ]]; then
+    echo "An issue's implementing pull-request author cannot accept that issue." >&2
+    exit 1
+  fi
+done <<< "$implementation_prs"
+implementation_digest="$(printf '%s\n' "$implementation_prs" | git hash-object --stdin)"
+artifact_digest="$(printf '%s' "$release_artifact" | git hash-object --stdin)"
+comments_json="$(gh api --paginate --slurp \
+  "repos/$repo/issues/$issue_number/comments?per_page=100")"
+acceptance_marker="<!-- product-acceptance issue=$issue_number sha=$sha artifact=$artifact_digest implementation=$implementation_digest acceptor=$actor_normalized decision=$decision -->"
+has_retry_marker=0
+latest_acceptance="$(jq -c \
+  --arg issue "$issue_number" \
+  --arg sha "$sha" \
+  --arg artifact "$artifact_digest" \
+  --arg implementation "$implementation_digest" '
+  ([.[][] | select((.user.login // "") == "github-actions[bot]") | (.body // "") |
+    capture("<!-- product-acceptance issue=(?<issue>[0-9]+) sha=(?<sha>[0-9a-f]{40}) artifact=(?<artifact>[0-9a-f]{40}) implementation=(?<implementation>[0-9a-f]{40}) acceptor=(?<acceptor>[A-Za-z0-9-]+) decision=(?<decision>approved|changes-required) -->")? |
+    select(.issue == $issue and .sha == $sha and .artifact == $artifact and
+      .implementation == $implementation)] | last) // {}' <<< "$comments_json")"
+if [[ "$(jq -r '.decision // ""' <<< "$latest_acceptance")" == "$decision" &&
+  "$(jq -r '.acceptor // "" | ascii_downcase' <<< "$latest_acceptance")" == "$actor_normalized" ]]; then
+  has_retry_marker=1
+fi
+nomination="$(jq -r '
+  [.[][] | select((.user.login // "") == "github-actions[bot]") | (.body // "") |
+   (capture("<!-- release-candidate sha=(?<sha>[0-9a-f]{40}) artifact=(?<artifact>[0-9a-f]{40}) source=[^ ]+ source-id=[^ ]+ intent=application -->")? //
+    capture("<!-- staging-candidate sha=(?<sha>[0-9a-f]{40}) artifact=(?<artifact>[0-9a-f]{40}) deployment=[^ ]+ intent=application -->")?)] |
+  last | [.sha, .artifact] | @tsv' <<< "$comments_json")"
+IFS=$'\t' read -r nominated_sha nominated_artifact_digest <<< "$nomination"
+if [[ "$nominated_sha" != "$sha" || "$nominated_artifact_digest" != "$artifact_digest" ]]; then
+  echo "Acceptance candidate does not match the issue's latest nominated application candidate." >&2
+  exit 1
+fi
+eligible_label=0
+if jq -e 'any(.labels[]; (if type == "object" then .name else . end) == "delivery:acceptance")' \
+  <<< "$issue_json" >/dev/null; then
+  eligible_label=1
+elif [[ "$decision" == "changes-required" ]] && jq -e '
+  any(.labels[]; (if type == "object" then .name else . end) as $label |
+    $label == "delivery:accepted" or $label == "delivery:ready-for-release" or
+    $label == "delivery:ready-for-production")' <<< "$issue_json" >/dev/null; then
+  eligible_label=1
+fi
+issue_state="$(jq -r '.state | ascii_downcase' <<< "$issue_json")"
+reopen_issue=0
+closed_completion_retry=0
+if [[ "$issue_state" != "open" && "$acceptance_completes_delivery" == "true" ]]; then
+  if [[ "$decision" == "approved" && "$has_retry_marker" == "1" ]]; then
+    closed_completion_retry=1
+  elif [[ "$decision" == "changes-required" && "$eligible_label" == "1" ]]; then
+    reopen_issue=1
+  fi
+fi
+if [[ "$issue_state" != "open" && "$closed_completion_retry" != "1" && "$reopen_issue" != "1" ]] ||
+  [[ "$eligible_label" != "1" && "$has_retry_marker" != "1" ]]; then
+  echo "Issue #$issue_number is not open in an acceptance-eligible state." >&2
+  exit 1
+fi
+
+bin/release-gate "$sha"
+
+target_url="$server_url/$repo/actions/runs/$run_id"
+artifact_context="product-acceptance-artifact/$artifact_digest"
+issue_context="product-acceptance-issue/$issue_number"
+artifact_issue_context="product-acceptance-artifact/$artifact_digest/issue-$issue_number/implementation-$implementation_digest/acceptor-$actor_normalized"
+if [[ "$decision" == "approved" ]]; then
+  state="success"
+  description="Accepted by $actor"
+  if [[ "$acceptance_completes_delivery" == "true" ]]; then
+    label="delivery:accepted"
+  elif [[ "$delivery_profile" == "artifact" ]]; then
+    label="delivery:ready-for-release"
+  else
+    label="delivery:ready-for-production"
+  fi
+  label_color="1f883d"
+else
+  state="failure"
+  description="Changes required by $actor"
+  label="delivery:acceptance"
+  label_color="bf8700"
+fi
+
+gh label create "$label" --repo "$repo" --color "$label_color" --force >/dev/null
+if [[ "$reopen_issue" == "1" ]]; then
+  gh issue reopen "$issue_number" --repo "$repo" >/dev/null
+fi
+if [[ "$has_retry_marker" != "1" ]]; then
+  body="$(jq -n -r \
+    --arg decision "$decision" \
+    --arg sha "$sha" \
+    --arg artifact "$release_artifact" \
+    --arg actor "$actor" \
+    --arg summary "$summary" \
+    --arg evidence "$evidence" \
+    --arg run "$target_url" \
+    --arg marker "$acceptance_marker" \
+    '"## Product acceptance: " + $decision + "\n\n- Candidate: `" + $sha + "`\n- Artifact: `" + $artifact + "`\n- Acceptor: @" + $actor + "\n- Workflow: " + $run + "\n\n### Summary\n\n" + $summary + "\n\n### Evidence\n\n" + $evidence + "\n\n" + $marker')"
+  gh issue comment "$issue_number" --repo "$repo" --body "$body" >/dev/null
+fi
+
+if [[ "$closed_completion_retry" != "1" ]]; then
+  for old_label in delivery:acceptance delivery:accepted delivery:ready-for-release delivery:ready-for-production; do
+    if jq -e --arg wanted_label "$old_label" \
+      'any(.labels[]; (if type == "object" then .name else . end) == $wanted_label)' \
+      <<< "$issue_json" >/dev/null; then
+      gh api -X DELETE "repos/$repo/issues/$issue_number/labels/$old_label" >/dev/null
+    fi
+  done
+  gh issue edit "$issue_number" --repo "$repo" --add-label "$label" >/dev/null
+fi
+for status_context in \
+  product-acceptance \
+  "$artifact_context" \
+  "$issue_context" \
+  "$artifact_issue_context"; do
+  gh api -X POST "repos/$repo/statuses/$sha" \
+    -f state="$state" \
+    -f context="$status_context" \
+    -f description="$description" \
+    -f target_url="$target_url" >/dev/null
+done
+
+if [[ "$decision" == "approved" && "$acceptance_completes_delivery" == "true" &&
+  "$issue_state" == "open" ]]; then
+  gh issue close "$issue_number" --repo "$repo" --reason completed >/dev/null
+fi
+
+echo "Recorded $decision product acceptance for $repo@$sha on issue #$issue_number."

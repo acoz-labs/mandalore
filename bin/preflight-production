@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "${PRODUCTION_ENABLED:-false}" != "true" ]]; then
+  echo "Production is disabled; preflight is not applicable."
+  exit 0
+fi
+
+sha="${RELEASE_SHA:-}"
+artifact="${RELEASE_ARTIFACT:-}"
+rollback="${RELEASE_ROLLBACK:-}"
+activation_mode="${PRODUCTION_ACTIVATION_MODE:-}"
+required_secrets="${PRODUCTION_REQUIRED_SECRETS:-}"
+
+if [[ ! "$sha" =~ ^[0-9a-f]{40}$ || -z "$artifact" || -z "$rollback" ]]; then
+  echo "Production preflight requires RELEASE_SHA, RELEASE_ARTIFACT, and RELEASE_ROLLBACK." >&2
+  exit 1
+fi
+for executable in \
+  bin/deploy-production \
+  bin/verify-production-candidate \
+  bin/verify-production \
+  bin/record-production-deployment \
+  bin/preflight-production-project; do
+  if [[ ! -x "$executable" ]]; then
+    echo "Production preflight requires executable $executable." >&2
+    exit 1
+  fi
+done
+
+case "$activation_mode" in
+  deploy-command) ;;
+  separate-command)
+    if [[ ! -x bin/activate-production ]]; then
+      echo "PRODUCTION_ACTIVATION_MODE=separate-command requires bin/activate-production." >&2
+      exit 1
+    fi
+    ;;
+  *)
+    echo "PRODUCTION_ACTIVATION_MODE must be deploy-command or separate-command." >&2
+    exit 1
+    ;;
+esac
+
+if [[ -z "$required_secrets" ]]; then
+  echo "PRODUCTION_REQUIRED_SECRETS must list injected environment names or be the explicit value none." >&2
+  exit 1
+fi
+if [[ "$required_secrets" != "none" ]]; then
+  IFS=',' read -r -a secret_names <<< "$required_secrets"
+  for raw_name in "${secret_names[@]}"; do
+    name="$(printf '%s' "$raw_name" | xargs)"
+    if [[ ! "$name" =~ ^[A-Z_][A-Z0-9_]*$ ]]; then
+      echo "Invalid required secret environment name: $name" >&2
+      exit 1
+    fi
+    if [[ -z "${!name:-}" ]]; then
+      echo "Required production secret slot is not injected: $name" >&2
+      exit 1
+    fi
+  done
+fi
+
+bin/preflight-production-project "$artifact" "$sha" "$rollback"
+echo "Production readiness preflight passed for $sha."

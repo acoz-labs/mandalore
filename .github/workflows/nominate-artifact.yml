@@ -1,0 +1,53 @@
+name: Nominate artifact candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: Full successful main commit SHA
+        required: true
+        type: string
+      artifact:
+        description: Immutable artifact identifier or digest produced from that commit
+        required: true
+        type: string
+
+permissions:
+  checks: read
+  contents: read
+  issues: write
+  pull-requests: read
+  statuses: read
+
+jobs:
+  nominate:
+    name: nominate_artifact
+    if: >-
+      github.ref == format('refs/heads/{0}', github.event.repository.default_branch) &&
+      vars.DELIVERY_PROFILE == 'artifact'
+    runs-on: ${{ vars.CI_RUNNER }}
+
+    steps:
+      - name: Checkout immutable candidate
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.sha }}
+          fetch-depth: 0
+
+      - name: Verify and nominate artifact
+        env:
+          ACCEPTANCE_REQUIRED_CHECKS: ${{ vars.ACCEPTANCE_REQUIRED_CHECKS }}
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ARTIFACT: ${{ inputs.artifact }}
+          RELEASE_SHA: ${{ inputs.sha }}
+          STAGING_REQUIRED: "false"
+        run: |
+          set -euo pipefail
+          bin/release-gate "$RELEASE_SHA"
+          bin/nominate-release-candidate \
+            "$RELEASE_SHA" \
+            "$RELEASE_ARTIFACT" \
+            artifact \
+            "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            "${{ github.run_id }}" \
+            application

@@ -1,0 +1,73 @@
+name: Product acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: Full commit SHA of the immutable candidate
+        required: true
+        type: string
+      artifact:
+        description: Immutable artifact identifier or digest reviewed during acceptance
+        required: true
+        type: string
+      issue_number:
+        description: Canonical issue receiving the acceptance record
+        required: true
+        type: string
+      decision:
+        description: Product acceptance result
+        required: true
+        type: choice
+        options:
+          - approved
+          - changes-required
+      summary:
+        description: Criteria and scenarios exercised
+        required: true
+        type: string
+      evidence:
+        description: Durable links to exact-candidate screenshots, logs, traces, or other evidence
+        required: true
+        type: string
+
+permissions:
+  checks: read
+  contents: read
+  deployments: read
+  issues: write
+  pull-requests: read
+  statuses: write
+
+jobs:
+  record:
+    name: product_acceptance
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ${{ vars.CI_RUNNER }}
+
+    steps:
+      - name: Checkout trusted default branch
+        uses: actions/checkout@v7
+
+      - name: Record product acceptance
+        env:
+          ACCEPTANCE_COMPLETES_DELIVERY: ${{ vars.ACCEPTANCE_COMPLETES_DELIVERY }}
+          ACCEPTANCE_ACTORS: ${{ vars.ACCEPTANCE_ACTORS }}
+          ACCEPTANCE_REQUIRED_CHECKS: ${{ vars.ACCEPTANCE_REQUIRED_CHECKS }}
+          DELIVERY_PROFILE: ${{ vars.DELIVERY_PROFILE }}
+          GH_TOKEN: ${{ github.token }}
+          INPUT_DECISION: ${{ inputs.decision }}
+          INPUT_EVIDENCE: ${{ inputs.evidence }}
+          INPUT_ISSUE_NUMBER: ${{ inputs.issue_number }}
+          INPUT_SHA: ${{ inputs.sha }}
+          INPUT_SUMMARY: ${{ inputs.summary }}
+          RELEASE_ARTIFACT: ${{ inputs.artifact }}
+          STAGING_ENVIRONMENT: ${{ vars.STAGING_ENVIRONMENT }}
+          STAGING_REQUIRED: ${{ vars.STAGING_REQUIRED }}
+        run: |
+          bin/record-product-acceptance \
+            "$INPUT_SHA" \
+            "$INPUT_ISSUE_NUMBER" \
+            "$INPUT_DECISION" \
+            "$INPUT_SUMMARY" \
+            "$INPUT_EVIDENCE"

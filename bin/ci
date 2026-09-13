@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+bin/validate-solution-plans
+
+for script in bin/*; do
+  [[ -f "$script" ]] || continue
+  if head -n 1 "$script" | grep -q 'bash'; then
+    bash -n "$script"
+  fi
+done
+
+for document in README.md AGENTS.md LICENSE SECURITY.md CONTRIBUTING.md \
+  docs/product.md docs/architecture.md docs/migration.md docs/roadmap.md \
+  docs/development.md docs/deployment.md docs/runbook.md; do
+  [[ -s "$document" ]] || { echo "Missing required document: $document" >&2; exit 1; }
+done
+
+git diff --check
+git diff --cached --check
+
+# Heuristic safeguard only: review remains necessary before public publication.
+if git grep -I -l -E 'BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|github_pat_[A-Za-z0-9_]{20,}|gh[pousr]_[A-Za-z0-9]{30,}|/(Users|home)/[[:alnum:]][[:alnum:]_.-]*/' -- . ':!bin/ci'; then
+  echo "Potential private credential or workstation path; inspect listed files before publishing." >&2
+  exit 1
+else
+  scan_status=$?
+  [[ "$scan_status" == "1" ]] || { echo "Public-content scan failed." >&2; exit "$scan_status"; }
+fi
+
+for workflow in .github/workflows/*.yml; do
+  if grep 'runs-on:' "$workflow" | grep -v -F 'vars.CI_RUNNER'; then
+    echo "Workflow must use the explicit CI_RUNNER variable: $workflow" >&2
+    exit 1
+  fi
+done
+
+echo "Foundation checks passed; no Mandalore runtime acceptance is implied."

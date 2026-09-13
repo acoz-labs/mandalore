@@ -1,0 +1,219 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+command_name="${1:-}"
+shift || true
+
+repo="${GITHUB_REPOSITORY:-}"
+environment="${PRODUCTION_ENVIRONMENT:-production}"
+server_url="${GITHUB_SERVER_URL:-https://github.com}"
+workflow_url="${server_url}/${repo}/actions/runs/${GITHUB_RUN_ID:-}"
+control_sha="${RELEASE_CONTROL_SHA:-${GITHUB_SHA:-}}"
+
+if [[ -z "$repo" || ! "$repo" =~ ^[^/]+/[^/]+$ ]]; then
+  echo "GITHUB_REPOSITORY=OWNER/REPO is required." >&2
+  exit 64
+fi
+for required_command in gh jq; do
+  command -v "$required_command" >/dev/null 2>&1 || {
+    echo "Missing required command: $required_command" >&2
+    exit 2
+  }
+done
+
+normalize_issue_set() {
+  local raw="$1" issue
+  local -a normalized=()
+  IFS=',' read -r -a raw_issues <<< "$raw"
+  for issue in "${raw_issues[@]}"; do
+    issue="$(printf '%s' "$issue" | xargs)"
+    if [[ ! "$issue" =~ ^[0-9]+$ ]]; then
+      echo "Invalid production receipt issue number: ${issue:-<empty>}" >&2
+      return 1
+    fi
+    normalized+=("$issue")
+  done
+  (( ${#normalized[@]} > 0 )) || return 1
+  printf '%s\n' "${normalized[@]}" | sort -nu | paste -sd, -
+}
+
+matching_receipt() {
+  local sha="$1" artifact="$2" criterion="$3" wanted_id="${4:-}"
+  local wanted_issues="${5:-}" wanted_rollback="${6:-}"
+  local deployments deployment_id payload payload_issues statuses candidate rank
+  local best="" best_rank=0
+  deployments="$(gh api "repos/$repo/deployments?sha=$sha&environment=$environment&per_page=100")"
+  while IFS= read -r deployment_id; do
+    [[ -n "$deployment_id" ]] || continue
+    [[ -z "$wanted_id" || "$deployment_id" == "$wanted_id" ]] || continue
+    payload="$(jq -c --argjson wanted_id "$deployment_id" \
+      '.[] | select(.id == $wanted_id) | .payload' <<< "$deployments")"
+    if [[ "$(jq -r 'type' <<< "$payload")" == "string" ]]; then
+      payload="$(jq -r '.' <<< "$payload")"
+    fi
+    if ! jq -e --arg sha "$sha" --arg artifact "$artifact" \
+      '.application_sha == $sha and .artifact == $artifact' \
+      <<< "$payload" >/dev/null 2>&1; then
+      continue
+    fi
+    if [[ -n "$wanted_issues" ]]; then
+      if ! payload_issues="$(normalize_issue_set "$(jq -r '.issues // ""' <<< "$payload")")" ||
+        [[ "$payload_issues" != "$wanted_issues" ]]; then
+        continue
+      fi
+    fi
+    if [[ -n "$wanted_rollback" ]] &&
+      ! jq -e --arg rollback "$wanted_rollback" '.rollback == $rollback' <<< "$payload" >/dev/null; then
+      continue
+    fi
+    statuses="$(gh api "repos/$repo/deployments/$deployment_id/statuses?per_page=100")"
+    has_success="$(jq 'any(.[]; .state == "success")' <<< "$statuses")"
+    has_promoted="$(jq 'any(.[]; .state == "in_progress" and .description == "Immutable candidate promoted; verification pending")' <<< "$statuses")"
+    if [[ "$criterion" == "success" && "$has_success" != "true" ]]; then
+      continue
+    fi
+    if [[ "$criterion" == "resumable" && "$has_success" != "true" &&
+      "$has_promoted" != "true" ]]; then
+      continue
+    fi
+    candidate="$(jq -n \
+      --argjson deployment_id "$deployment_id" \
+      --argjson payload "$payload" \
+      --argjson already_successful "$has_success" \
+      --argjson already_promoted "$([[ "$has_success" == "true" || "$has_promoted" == "true" ]] && echo true || echo false)" \
+      '{deployment_id: $deployment_id, already_successful: $already_successful,
+        already_promoted: $already_promoted, receipt: $payload}'
+    )"
+    if [[ "$has_success" == "true" ]]; then
+      rank=3
+    elif [[ "$has_promoted" == "true" ]]; then
+      rank=2
+    else
+      rank=1
+    fi
+    if (( rank > best_rank )); then
+      best="$candidate"
+      best_rank="$rank"
+    fi
+  done < <(jq -r '.[].id' <<< "$deployments")
+  [[ -n "$best" ]] || return 1
+  printf '%s\n' "$best"
+}
+
+case "$command_name" in
+  start)
+    sha="${1:-}"
+    artifact="${2:-}"
+    if ! issues="$(normalize_issue_set "${3:-}")"; then
+      echo "Usage: bin/record-production-deployment start <full-sha> <artifact> <issues> <rollback>" >&2
+      exit 64
+    fi
+    rollback="${4:-}"
+    force="${5:-}"
+    if [[ ! "$sha" =~ ^[0-9a-f]{40}$ || -z "$artifact" || -z "$issues" ||
+      -z "$rollback" || ! "$control_sha" =~ ^[0-9a-f]{40}$ ]]; then
+      echo "Usage: bin/record-production-deployment start <full-sha> <artifact> <issues> <rollback>" >&2
+      echo "GITHUB_SHA or RELEASE_CONTROL_SHA must identify the full control/workflow SHA." >&2
+      exit 64
+    fi
+    if [[ "$force" != "--force" ]] && existing="$(matching_receipt \
+      "$sha" "$artifact" any "" "$issues" "$rollback")"; then
+      printf '%s\n' "$existing"
+      exit 0
+    fi
+    request="$(jq -n \
+      --arg ref "$sha" \
+      --arg environment "$environment" \
+      --arg application_sha "$sha" \
+      --arg artifact "$artifact" \
+      --arg control_sha "$control_sha" \
+      --arg issues "$issues" \
+      --arg rollback "$rollback" \
+      --arg workflow_url "$workflow_url" \
+      '{ref: $ref, environment: $environment, auto_merge: false,
+        required_contexts: [], description: "Exact production candidate",
+        payload: {application_sha: $application_sha, artifact: $artifact,
+          control_sha: $control_sha, issues: $issues, rollback: $rollback,
+          workflow_url: $workflow_url}}')"
+    created="$(gh api -X POST "repos/$repo/deployments" --input - <<< "$request")"
+    deployment_id="$(jq -r '.id' <<< "$created")"
+    gh api -X POST "repos/$repo/deployments/$deployment_id/statuses" \
+      -f state="in_progress" -f description="Promotion not yet confirmed" \
+      -f log_url="$workflow_url" >/dev/null
+    jq -n --argjson deployment_id "$deployment_id" \
+      --argjson payload "$(jq '.payload' <<< "$request")" \
+      '{deployment_id: $deployment_id, already_successful: false,
+        already_promoted: false, receipt: $payload}'
+    ;;
+  finish)
+    deployment_id="${1:-}"
+    state="${2:-}"
+    environment_url="${3:-}"
+    description="${4:-Production deployment $state}"
+    if [[ ! "$deployment_id" =~ ^[0-9]+$ ||
+      ("$state" != "success" && "$state" != "failure" && "$state" != "promoted") ]]; then
+      echo "Usage: bin/record-production-deployment finish <deployment-id> <success|failure|promoted> [environment-url] [description]" >&2
+      exit 64
+    fi
+    api_state="$state"
+    if [[ "$state" == "promoted" ]]; then
+      api_state="in_progress"
+      description="Immutable candidate promoted; verification pending"
+    fi
+    args=(-X POST "repos/$repo/deployments/$deployment_id/statuses"
+      -f state="$api_state" -f description="$description" -f log_url="$workflow_url")
+    [[ -z "$environment_url" ]] || args+=(-f environment_url="$environment_url")
+    gh api "${args[@]}" >/dev/null
+    jq -n --argjson deployment_id "$deployment_id" --arg state "$state" \
+      '{deployment_id: $deployment_id, state: $state}'
+    ;;
+  verify)
+    sha="${1:-}"
+    artifact="${2:-}"
+    wanted_id="${3:-}"
+    wanted_issues=""
+    if [[ -n "${4:-}" ]] && ! wanted_issues="$(normalize_issue_set "$4")"; then
+      echo "Invalid production receipt issue set." >&2
+      exit 64
+    fi
+    wanted_rollback="${5:-}"
+    if [[ ! "$sha" =~ ^[0-9a-f]{40}$ || -z "$artifact" ]]; then
+      echo "Usage: bin/record-production-deployment verify <full-sha> <artifact>" >&2
+      exit 64
+    fi
+    if [[ -n "$wanted_id" && ! "$wanted_id" =~ ^[0-9]+$ ]]; then
+      echo "Production deployment id must be numeric." >&2
+      exit 64
+    fi
+    if ! matching_receipt "$sha" "$artifact" success "$wanted_id" \
+      "$wanted_issues" "$wanted_rollback"; then
+      echo "No successful exact-candidate production receipt for $sha and $artifact." >&2
+      exit 1
+    fi
+    ;;
+  resume)
+    sha="${1:-}"
+    artifact="${2:-}"
+    if ! issues="$(normalize_issue_set "${3:-}")"; then
+      echo "Usage: bin/record-production-deployment resume <full-sha> <artifact> <issues> <rollback>" >&2
+      exit 64
+    fi
+    rollback="${4:-}"
+    if [[ ! "$sha" =~ ^[0-9a-f]{40}$ || -z "$artifact" ]]; then
+      echo "Usage: bin/record-production-deployment resume <full-sha> <artifact>" >&2
+      exit 64
+    fi
+    if [[ -z "$issues" || -z "$rollback" ]]; then
+      echo "Usage: bin/record-production-deployment resume <full-sha> <artifact> <issues> <rollback>" >&2
+      exit 64
+    fi
+    if ! matching_receipt "$sha" "$artifact" any "" "$issues" "$rollback"; then
+      echo "No matching exact-candidate production receipt for $sha and $artifact." >&2
+      exit 1
+    fi
+    ;;
+  *)
+    echo "Usage: bin/record-production-deployment <start|finish|verify|resume> ..." >&2
+    exit 64
+    ;;
+esac

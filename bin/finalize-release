@@ -1,0 +1,414 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+mode="${1:-}"
+preflight_only=0
+if [[ "${2:-}" == "--preflight" ]]; then
+  preflight_only=1
+elif [[ -n "${2:-}" ]]; then
+  echo "Usage: bin/finalize-release <production|artifact> [--preflight]" >&2
+  exit 64
+fi
+case "$mode" in
+  production)
+    ready_label="delivery:ready-for-production"
+    candidate_name="Production"
+    tag_prefix="prod"
+    title_prefix="Production release"
+    ;;
+  artifact)
+    ready_label="delivery:ready-for-release"
+    candidate_name="Artifact"
+    tag_prefix="artifact"
+    title_prefix="Accepted artifact"
+    ;;
+  *)
+    echo "Usage: bin/finalize-release <production|artifact> [--preflight]" >&2
+    exit 64
+    ;;
+esac
+
+repo="${GITHUB_REPOSITORY:-}"
+server_url="${GITHUB_SERVER_URL:-https://github.com}"
+run_id="${GITHUB_RUN_ID:-}"
+sha="${RELEASE_SHA:-}"
+artifact="${RELEASE_ARTIFACT:-}"
+requested_issues="${RELEASE_ISSUES:-}"
+summary="${RELEASE_SUMMARY:-}"
+rollback="${RELEASE_ROLLBACK:-}"
+smoke_summary="${SMOKE_SUMMARY:-}"
+production_deployment_id="${PRODUCTION_DEPLOYMENT_ID:-}"
+control_sha="${RELEASE_CONTROL_SHA:-}"
+
+if [[ -z "$repo" || ! "$repo" =~ ^[^/]+/[^/]+$ || ! "$sha" =~ ^[0-9a-f]{40}$ ||
+  -z "$artifact" || -z "${requested_issues// }" || -z "${summary// }" ]]; then
+  echo "GITHUB_REPOSITORY, RELEASE_SHA, RELEASE_ARTIFACT, RELEASE_ISSUES, and RELEASE_SUMMARY are required." >&2
+  exit 64
+fi
+if grep -Eq '^- Artifact:' <<< "$summary"; then
+  echo "RELEASE_SUMMARY must not contain Release artifact-ledger lines." >&2
+  exit 64
+fi
+if [[ "$preflight_only" == "0" && "$mode" == "production" &&
+  (-z "${rollback// }" || -z "${smoke_summary// }") ]]; then
+  echo "Production finalization requires RELEASE_ROLLBACK and SMOKE_SUMMARY." >&2
+  exit 64
+fi
+if [[ "$preflight_only" == "0" && "$mode" == "production" &&
+  (! "$production_deployment_id" =~ ^[0-9]+$ || ! "$control_sha" =~ ^[0-9a-f]{40}$) ]]; then
+  echo "Production finalization requires PRODUCTION_DEPLOYMENT_ID and a full RELEASE_CONTROL_SHA." >&2
+  exit 64
+fi
+if [[ "$preflight_only" == "0" && "$mode" == "production" ]]; then
+  receipt_json="$(bin/record-production-deployment verify \
+    "$sha" "$artifact" "$production_deployment_id" "$requested_issues" "$rollback")"
+  receipt_id="$(jq -r '.deployment_id' <<< "$receipt_json")"
+  receipt_control_sha="$(jq -r '.receipt.control_sha' <<< "$receipt_json")"
+  if [[ "$receipt_id" != "$production_deployment_id" ||
+    "$receipt_control_sha" != "$control_sha" ]]; then
+    echo "Production receipt does not match PRODUCTION_DEPLOYMENT_ID and RELEASE_CONTROL_SHA." >&2
+    exit 1
+  fi
+fi
+if ! git cat-file -e "$sha^{commit}" 2>/dev/null; then
+  echo "Release commit is not present in the checkout: $sha" >&2
+  exit 1
+fi
+
+short_sha="${sha:0:7}"
+artifact_digest="$(printf '%s' "$artifact" | git hash-object --stdin)"
+release_tag=""
+while IFS= read -r tag; do
+  [[ -n "$tag" ]] || continue
+  tag_sha="$(git rev-list -n 1 "$tag")"
+  if [[ "$tag_sha" != "$sha" ]]; then
+    echo "Existing tag $tag targets $tag_sha instead of accepted commit $sha." >&2
+    exit 1
+  fi
+  if [[ -n "$release_tag" && "$release_tag" != "$tag" ]]; then
+    echo "Multiple $tag_prefix release tags already target accepted commit $sha." >&2
+    exit 1
+  fi
+  release_tag="$tag"
+done < <(git tag --list "${tag_prefix}-????.??.??-${short_sha}" | sort)
+
+if [[ -z "$release_tag" ]]; then
+  release_date="$(date -u +%Y.%m.%d)"
+  release_tag="${tag_prefix}-${release_date}-${short_sha}"
+else
+  release_date="${release_tag#"${tag_prefix}-"}"
+  release_date="${release_date%-"${short_sha}"}"
+fi
+if git rev-parse -q --verify "refs/tags/$release_tag" >/dev/null; then
+  tag_sha="$(git rev-list -n 1 "$release_tag")"
+  if [[ "$tag_sha" != "$sha" ]]; then
+    echo "Existing tag $release_tag targets $tag_sha instead of accepted commit $sha." >&2
+    exit 1
+  fi
+fi
+
+release_ledger_matches_artifact() {
+  local release_json="$1"
+  jq -e --arg tag "$release_tag" --arg artifact_line "- Artifact: \`$artifact\`" '
+    ((.body // "") | split("\n") | map(select(startswith("- Artifact:")))) as $artifact_lines |
+    .tagName == $tag and $artifact_lines == [$artifact_line]
+  ' <<< "$release_json" >/dev/null
+}
+
+release_url="${server_url}/${repo}/releases/tag/${release_tag}"
+release_comment="Released in [${release_tag}](${release_url}) from \`${sha}\`."
+if [[ "$mode" == "production" ]]; then
+  release_comment+=" Production deployment \`${production_deployment_id}\` recorded by control revision \`${control_sha}\`."
+fi
+
+issue_numbers=()
+issue_lines=""
+IFS=',' read -r -a raw_issue_numbers <<< "$requested_issues"
+for raw_issue in "${raw_issue_numbers[@]}"; do
+  issue_number="$(printf '%s' "$raw_issue" | xargs)"
+  if [[ ! "$issue_number" =~ ^[0-9]+$ ]]; then
+    echo "Invalid issue number: $issue_number" >&2
+    exit 64
+  fi
+  if grep -Fxq "$issue_number" <<< "$issue_lines"; then
+    echo "Duplicate issue number: $issue_number" >&2
+    exit 64
+  fi
+  issue_numbers+=("$issue_number")
+  issue_lines+="${issue_number}"$'\n'
+done
+
+if ! ready_issue_lines="$(
+  gh issue list \
+    --repo "$repo" \
+    --state open \
+    --label "$ready_label" \
+    --limit 1000 \
+    --json number \
+    --jq '.[].number'
+)"; then
+  echo "Unable to list open issues with $ready_label; refusing to finalize the release." >&2
+  exit 1
+fi
+
+missing_issue_lines=""
+while IFS= read -r ready_issue; do
+  [[ -n "$ready_issue" ]] || continue
+  if ! grep -Fxq "$ready_issue" <<< "$issue_lines"; then
+    missing_issue_lines+="${ready_issue}"$'\n'
+  fi
+done <<< "$ready_issue_lines"
+if [[ -n "$missing_issue_lines" ]]; then
+  printf 'Release issue set omits %s issue(s) with %s: %s\n' \
+    "$mode" "$ready_label" "$(paste -sd, <<< "$missing_issue_lines")" >&2
+  exit 1
+fi
+pending_acceptance="$(gh issue list --repo "$repo" --state open \
+  --label "delivery:acceptance" --limit 1000 --json number --jq '.[].number')"
+if [[ -n "$pending_acceptance" ]]; then
+  printf '%s candidate still has issue(s) awaiting acceptance: %s\n' \
+    "$candidate_name" "$(paste -sd, <<< "$pending_acceptance")" >&2
+  exit 1
+fi
+acceptance_statuses="$(gh api --paginate --slurp \
+  "repos/$repo/commits/$sha/statuses?per_page=100")"
+
+issue_states=()
+for issue_number in "${issue_numbers[@]}"; do
+  issue_json="$(gh issue view "$issue_number" --repo "$repo" --json state,labels,body)"
+  issue_state="$(jq -r '.state' <<< "$issue_json")"
+  issue_states+=("$issue_state")
+
+  comments_json="$(
+    gh api --paginate --slurp \
+      "repos/$repo/issues/$issue_number/comments?per_page=100"
+  )"
+  if jq -e --arg wanted_label "$ready_label" \
+    'any(.labels[]; .name == $wanted_label)' <<< "$issue_json" >/dev/null; then
+    nomination="$(jq -r '
+      [.[][] | select((.user.login // "") == "github-actions[bot]") | (.body // "") |
+       (capture("<!-- release-candidate sha=(?<sha>[0-9a-f]{40}) artifact=(?<artifact>[0-9a-f]{40}) source=[^ ]+ source-id=[^ ]+ intent=application -->")? //
+        capture("<!-- staging-candidate sha=(?<sha>[0-9a-f]{40}) artifact=(?<artifact>[0-9a-f]{40}) deployment=[^ ]+ intent=application -->")?)] |
+      last | [.sha, .artifact] | @tsv' <<< "$comments_json")"
+    IFS=$'\t' read -r nominated_sha nominated_artifact_digest <<< "$nomination"
+    if [[ "$nominated_sha" != "$sha" || "$nominated_artifact_digest" != "$artifact_digest" ]]; then
+      echo "Issue #$issue_number acceptance does not match its latest nominated application candidate." >&2
+      exit 1
+    fi
+    implementation_prs="$(jq -r '.body // ""' <<< "$issue_json" | awk '
+      /^- (Phase 3 .*Implementation|Implementation PR):/ {
+        line = $0
+        while (match(line, /\/pull\/[0-9]+/)) {
+          print substr(line, RSTART + 6, RLENGTH - 6)
+          line = substr(line, RSTART + RLENGTH)
+        }
+      }
+    ' | sort -nu)"
+    if [[ -z "$implementation_prs" ]]; then
+      echo "Issue #$issue_number lifecycle does not link an implementation pull request." >&2
+      exit 1
+    fi
+    implementation_digest="$(printf '%s\n' "$implementation_prs" | git hash-object --stdin)"
+    issue_context="product-acceptance-issue/$issue_number"
+    latest_acceptance="$(jq -c \
+      --arg issue "$issue_number" \
+      --arg sha "$sha" \
+      --arg artifact "$artifact_digest" \
+      --arg implementation "$implementation_digest" '
+      ([.[][] | select((.user.login // "") == "github-actions[bot]") | (.body // "") |
+        capture("<!-- product-acceptance issue=(?<issue>[0-9]+) sha=(?<sha>[0-9a-f]{40}) artifact=(?<artifact>[0-9a-f]{40}) implementation=(?<implementation>[0-9a-f]{40}) acceptor=(?<acceptor>[A-Za-z0-9-]+) decision=(?<decision>approved|changes-required) -->")? |
+        select(.issue == $issue and .sha == $sha and .artifact == $artifact and
+          .implementation == $implementation)] | last) // {}' <<< "$comments_json")"
+    latest_decision="$(jq -r '.decision // ""' <<< "$latest_acceptance")"
+    acceptor="$(jq -r '.acceptor // "" | ascii_downcase' <<< "$latest_acceptance")"
+    if [[ "$latest_decision" != "approved" || -z "$acceptor" ]]; then
+      echo "Issue #$issue_number lacks latest approved acceptance for $sha and $artifact." >&2
+      exit 1
+    fi
+    artifact_issue_context="product-acceptance-artifact/$artifact_digest/issue-$issue_number/implementation-$implementation_digest/acceptor-$acceptor"
+    for wanted_context in "$issue_context" "$artifact_issue_context"; do
+      acceptance_state="$(jq -r \
+        --arg wanted_context "$wanted_context" \
+        --arg wanted_description "Accepted by $acceptor" \
+        --arg target_prefix "$server_url/$repo/actions/runs/" '
+        [.[][] | select(.context == $wanted_context)][0] as $status |
+        if (($status.creator.login // "") == "github-actions[bot]" and
+          ($status.description // "" | ascii_downcase) == ($wanted_description | ascii_downcase) and
+          ($status.target_url // "" | startswith($target_prefix)))
+        then ($status.state // "") else "" end' <<< "$acceptance_statuses")"
+      if [[ "$acceptance_state" != "success" ]]; then
+        echo "Issue #$issue_number lacks workflow-authored acceptance status $wanted_context." >&2
+        exit 1
+      fi
+    done
+    continue
+  fi
+
+  if [[ "$preflight_only" == "1" && "$issue_state" == "CLOSED" ]] &&
+    jq -e 'any(.labels[]; .name == "delivery:released")' <<< "$issue_json" >/dev/null; then
+    if ! git rev-parse -q --verify "refs/tags/$release_tag" >/dev/null ||
+      [[ "$(git rev-list -n 1 "$release_tag")" != "$sha" ]]; then
+      echo "Issue #$issue_number claims release without an exact local release tag." >&2
+      exit 1
+    fi
+    if ! prior_release_json="$(gh release view "$release_tag" --repo "$repo" --json tagName,url,body 2>/dev/null)"; then
+      echo "Issue #$issue_number claims release without an authoritative GitHub Release." >&2
+      exit 1
+    fi
+    if ! release_ledger_matches_artifact "$prior_release_json"; then
+      echo "Issue #$issue_number release evidence does not match artifact $artifact." >&2
+      exit 1
+    fi
+    prior_release_url="$(jq -r '.url' <<< "$prior_release_json")"
+    release_prefix="Released in [${release_tag}](${prior_release_url}) from \`${sha}\`."
+    if jq -e --arg prefix "$release_prefix" \
+      'any(.[][]; (.user.login // "") == "github-actions[bot]" and
+        ((.body // "") | startswith($prefix)))' <<< "$comments_json" >/dev/null; then
+      continue
+    fi
+  elif jq -e --arg body "$release_comment" \
+    'any(.[][]; (.user.login // "") == "github-actions[bot]" and .body == $body)' \
+    <<< "$comments_json" >/dev/null; then
+    if ! prior_release_json="$(gh release view "$release_tag" --repo "$repo" --json tagName,url,body 2>/dev/null)"; then
+      echo "Issue #$issue_number has release-comment text without an authoritative GitHub Release." >&2
+      exit 1
+    fi
+    if ! release_ledger_matches_artifact "$prior_release_json"; then
+      echo "Issue #$issue_number release comment points to a different artifact." >&2
+      exit 1
+    fi
+    continue
+  fi
+
+  echo "Issue #$issue_number lacks $ready_label or matching $release_tag evidence." >&2
+  exit 1
+done
+
+if [[ "$preflight_only" == "1" ]]; then
+  echo "Verified $mode release issue authority for $repo@$sha."
+  exit 0
+fi
+
+workflow_url="${server_url}/${repo}/actions/runs/${run_id}"
+notes="$(printf '%s\n\n%s\n%s\n%s\n%s\n' \
+  "$summary" \
+  "- Commit: \`$sha\`" \
+  "- Artifact: \`$artifact\`" \
+  "- Issues: $requested_issues" \
+  "- Workflow: $workflow_url")"
+if [[ "$mode" == "production" ]]; then
+  # shellcheck disable=SC2016 # backticks are literal Markdown in the printf template
+  notes+="$(printf '\n- Rollback: %s\n\n## Production smoke\n\n```text\n%s\n```\n' \
+    "$rollback" "$smoke_summary")"
+  # shellcheck disable=SC2016 # backticks are literal Markdown in the printf template
+  notes+="$(printf '\n- Production deployment: `%s`\n- Control revision: `%s`\n' \
+    "$production_deployment_id" "$control_sha")"
+fi
+
+if release_json="$(gh release view "$release_tag" --repo "$repo" --json tagName,url,body 2>/dev/null)"; then
+  release_url="$(jq -r '.url' <<< "$release_json")"
+  if ! release_ledger_matches_artifact "$release_json"; then
+    echo "Existing GitHub Release $release_tag does not match artifact $artifact." >&2
+    exit 1
+  fi
+  release_comment="Released in [${release_tag}](${release_url}) from \`${sha}\`."
+  if [[ "$mode" == "production" ]]; then
+    release_comment+=" Production deployment \`${production_deployment_id}\` recorded by control revision \`${control_sha}\`."
+  fi
+else
+  create_args=(
+    release create "$release_tag"
+    --repo "$repo"
+    --title "$title_prefix $release_date $short_sha"
+    --notes "$notes"
+    --generate-notes
+  )
+  if git rev-parse -q --verify "refs/tags/$release_tag" >/dev/null; then
+    create_args+=(--verify-tag)
+  else
+    create_args+=(--target "$sha")
+  fi
+  gh "${create_args[@]}" >/dev/null
+  release_json="$(gh release view "$release_tag" --repo "$repo" --json tagName,url,body)"
+  if ! release_ledger_matches_artifact "$release_json"; then
+    echo "New GitHub Release $release_tag does not contain one exact artifact ledger entry." >&2
+    exit 1
+  fi
+  release_url="$(jq -r '.url' <<< "$release_json")"
+fi
+release_comment="Released in [${release_tag}](${release_url}) from \`${sha}\`."
+if [[ "$mode" == "production" ]]; then
+  release_comment+=" Production deployment \`${production_deployment_id}\` recorded by control revision \`${control_sha}\`."
+fi
+
+gh label create "delivery:released" --repo "$repo" --color "8250df" --force >/dev/null
+transient_labels=(
+  delivery:acceptance
+  delivery:accepted
+  delivery:ready-for-release
+  delivery:ready-for-production
+)
+
+for index in "${!issue_numbers[@]}"; do
+  issue_number="${issue_numbers[$index]}"
+  issue_json="$(gh issue view "$issue_number" --repo "$repo" --json state,labels,body)"
+  comments_json="$(
+    gh api --paginate --slurp \
+      "repos/$repo/issues/$issue_number/comments?per_page=100"
+  )"
+  if ! jq -e --arg body "$release_comment" \
+    'any(.[][]; (.user.login // "") == "github-actions[bot]" and .body == $body)' \
+    <<< "$comments_json" >/dev/null; then
+    gh issue comment "$issue_number" --repo "$repo" --body "$release_comment" >/dev/null
+  fi
+
+  for old_label in "${transient_labels[@]}"; do
+    if jq -e --arg wanted_label "$old_label" \
+      'any(.labels[]; .name == $wanted_label)' <<< "$issue_json" >/dev/null; then
+      gh api -X DELETE \
+        "repos/$repo/issues/$issue_number/labels/$old_label" >/dev/null
+    fi
+  done
+  gh issue edit "$issue_number" --repo "$repo" --add-label "delivery:released" >/dev/null
+
+  lifecycle_body="$(jq -r '.body // ""' <<< "$issue_json")"
+  release_value="[${release_tag}](${release_url})"
+  acceptance_value="approved for \`${sha}\` / \`${artifact}\`"
+  lifecycle_file="$(mktemp)"
+  if grep -Fq '<!-- software-lifecycle:start -->' <<< "$lifecycle_body"; then
+    awk -v acceptance_line="- Acceptance: $acceptance_value" \
+      -v release_line="- Release: $release_value" '
+      BEGIN { inside = 0; acceptance_replaced = 0; release_replaced = 0 }
+      $0 == "<!-- software-lifecycle:start -->" { inside = 1 }
+      inside && $0 ~ /^- Acceptance:/ {
+        print acceptance_line; acceptance_replaced = 1; next
+      }
+      inside && $0 ~ /^- Release:/ { print release_line; release_replaced = 1; next }
+      inside && $0 == "<!-- software-lifecycle:end -->" {
+        if (!acceptance_replaced) print acceptance_line
+        if (!release_replaced) print release_line
+      }
+      { print }
+      $0 == "<!-- software-lifecycle:end -->" { inside = 0 }
+    ' <<< "$lifecycle_body" > "$lifecycle_file"
+  else
+    printf '%s\n\n%s\n%s\n\n%s\n%s\n%s\n%s\n%s\n%s\n' \
+      "$lifecycle_body" \
+      '<!-- software-lifecycle:start -->' '## Lifecycle' \
+      '- Phase 1 — Product brief: approved in this issue' \
+      '- Phase 2 — Solution design: pending or not required' \
+      '- Phase 3 — Implementation: pending or not required' \
+      "- Acceptance: $acceptance_value" \
+      "- Release: $release_value" \
+      '<!-- software-lifecycle:end -->' > "$lifecycle_file"
+  fi
+  gh issue edit "$issue_number" --repo "$repo" --body-file "$lifecycle_file" >/dev/null
+  rm -f "$lifecycle_file"
+
+  if [[ "${issue_states[$index]}" != "CLOSED" ]]; then
+    gh issue close "$issue_number" --repo "$repo" --reason completed >/dev/null
+  fi
+done
+
+echo "Finalized $mode release $release_tag for $repo@$sha."
+echo "$release_url"

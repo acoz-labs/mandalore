@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+sha="${1:-}"
+staging_url="${2:-}"
+artifact="${3:-$sha}"
+intent="${4:-application}"
+repo="${GITHUB_REPOSITORY:-}"
+deployment_id="${STAGING_DEPLOYMENT_ID:-unknown}"
+
+if [[ -z "$repo" || ! "$sha" =~ ^[0-9a-f]{40}$ || -z "$staging_url" || -z "$artifact" ||
+  ("$intent" != "application" && "$intent" != "evidence-only") ]]; then
+  echo "Usage: GITHUB_REPOSITORY=OWNER/REPO bin/mark-staging-candidate <full-sha> <staging-url> <artifact> [application|evidence-only]" >&2
+  exit 64
+fi
+
+exec "$(dirname "$0")/nominate-release-candidate" \
+  "$sha" "$artifact" staging "$staging_url" "$deployment_id" "$intent"

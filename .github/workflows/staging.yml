@@ -1,0 +1,76 @@
+name: Deploy staging
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+  deployments: write
+  issues: write
+  pull-requests: read
+
+concurrency:
+  group: staging
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: deploy_staging
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == github.event.repository.default_branch &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      vars.STAGING_ENABLED == 'true'
+    runs-on: ${{ vars.CI_RUNNER }}
+
+    steps:
+      - name: Checkout immutable candidate
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Deploy and verify staging
+        env:
+          CANDIDATE_SHA: ${{ github.event.workflow_run.head_sha }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          STAGING_URL: ${{ vars.STAGING_URL }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$STAGING_URL" ]]; then
+            echo "STAGING_URL is required when STAGING_ENABLED=true." >&2
+            exit 1
+          fi
+
+          artifact="$CANDIDATE_SHA"
+          deployment_id="$(jq -n \
+            --arg ref "$CANDIDATE_SHA" \
+            --arg artifact "$artifact" \
+            '{ref: $ref, environment: "staging", auto_merge: false,
+              required_contexts: [],
+              description: "Automatic staging candidate",
+              payload: {artifact: $artifact}}' | \
+            gh api -X POST "repos/$REPO/deployments" --input - --jq .id)"
+
+          gh api -X POST "repos/$REPO/deployments/$deployment_id/statuses" \
+            -f state="in_progress" \
+            -f environment_url="$STAGING_URL" >/dev/null
+
+          if bin/deploy-staging "$CANDIDATE_SHA" && bin/verify-staging; then
+            gh api -X POST "repos/$REPO/deployments/$deployment_id/statuses" \
+              -f state="success" \
+              -f environment_url="$STAGING_URL" >/dev/null
+          else
+            gh api -X POST "repos/$REPO/deployments/$deployment_id/statuses" \
+              -f state="failure" \
+              -f environment_url="$STAGING_URL" >/dev/null
+            exit 1
+          fi
+
+          STAGING_DEPLOYMENT_ID="$deployment_id" \
+            bin/mark-staging-candidate "$CANDIDATE_SHA" "$STAGING_URL" "$artifact" application

@@ -1,0 +1,138 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+sha="${1:-}"
+artifact="${2:-}"
+source="${3:-}"
+evidence_url="${4:-}"
+source_id="${5:-}"
+intent="${6:-application}"
+repo="${GITHUB_REPOSITORY:-}"
+workflow_url="${GITHUB_SERVER_URL:-https://github.com}/$repo/actions/runs/${GITHUB_RUN_ID:-}"
+
+if [[ -z "$repo" || ! "$sha" =~ ^[0-9a-f]{40}$ || -z "$artifact" ||
+  ("$source" != "staging" && "$source" != "artifact") || -z "$evidence_url" ||
+  -z "$source_id" || ! "$source_id" =~ ^[^[:space:]]+$ ||
+  ("$intent" != "application" && "$intent" != "evidence-only") ]]; then
+  echo "Usage: GITHUB_REPOSITORY=OWNER/REPO bin/nominate-release-candidate <full-sha> <artifact> <staging|artifact> <evidence-url> <source-id> [application|evidence-only]" >&2
+  exit 64
+fi
+
+pulls="$(gh api "repos/$repo/commits/$sha/pulls?per_page=100")"
+issue_numbers="$(jq -r '.[] | select(.merged_at != null) | .body // empty' <<< "$pulls" | \
+  grep -Ei '^(refs?|closes?|fixes?|resolves?):?[[:space:]]*#[0-9]+' | \
+  grep -Eo '#[0-9]+' | tr -d '#' | sort -nu || true)"
+
+gh label create "delivery:acceptance" --repo "$repo" --color "bf8700" --force >/dev/null
+gh label create "delivery:ready-for-production" --repo "$repo" --color "1f883d" --force >/dev/null
+gh label create "delivery:ready-for-release" --repo "$repo" --color "1f883d" --force >/dev/null
+
+for outstanding_label in delivery:acceptance delivery:accepted delivery:ready-for-release delivery:ready-for-production; do
+  outstanding="$(gh issue list --repo "$repo" --state open --label "$outstanding_label" \
+    --limit 1000 --json number --jq '.[].number')"
+  issue_numbers="$(printf '%s\n%s\n' "$issue_numbers" "$outstanding" | sed '/^$/d' | sort -nu)"
+done
+
+if [[ -z "$issue_numbers" ]]; then
+  echo "::warning::No linked or outstanding release issue found for $source candidate $sha."
+  exit 0
+fi
+
+artifact_digest="$(printf '%s' "$artifact" | git hash-object --stdin)"
+nominated_count=0
+while IFS= read -r issue_number; do
+  [[ -n "$issue_number" ]] || continue
+  issue_json="$(gh issue view "$issue_number" --repo "$repo" --json state,labels,body)"
+  issue_body="$(jq -r '.body // ""' <<< "$issue_json")"
+  if [[ "$(jq -r '.state' <<< "$issue_json")" != "OPEN" ]]; then
+    continue
+  fi
+  if grep -Fq '<!-- managed-standard-adoption ' <<< "$issue_body" ||
+    grep -Eq '^- Release:[[:space:]]+not applicable([[:space:]]|$)' <<< "$issue_body"; then
+    for old_label in delivery:acceptance delivery:accepted delivery:ready-for-release delivery:ready-for-production; do
+      if jq -e --arg label "$old_label" 'any(.labels[]; .name == $label)' \
+        <<< "$issue_json" >/dev/null; then
+        gh api -X DELETE "repos/$repo/issues/$issue_number/labels/$old_label" >/dev/null
+      fi
+    done
+    continue
+  fi
+  comments_json="$(gh api --paginate --slurp \
+    "repos/$repo/issues/$issue_number/comments?per_page=100")"
+  implementation_prs="$(printf '%s\n' "$issue_body" | awk '
+    /^- (Phase 3 .*Implementation|Implementation PR):/ {
+      line = $0
+      while (match(line, /\/pull\/[0-9]+/)) {
+        print substr(line, RSTART + 6, RLENGTH - 6)
+        line = substr(line, RSTART + RLENGTH)
+      }
+    }
+  ' | sort -nu)"
+  implementation_digest=""
+  if [[ -n "$implementation_prs" ]]; then
+    implementation_digest="$(printf '%s\n' "$implementation_prs" | git hash-object --stdin)"
+  fi
+  exact_candidate_accepted=0
+  latest_acceptance="$(jq -r \
+    --arg issue "$issue_number" \
+    --arg sha "$sha" \
+    --arg artifact "$artifact_digest" \
+    --arg implementation "$implementation_digest" '
+    ([.[][] | select((.user.login // "") == "github-actions[bot]") | (.body // "") |
+      capture("<!-- product-acceptance issue=(?<issue>[0-9]+) sha=(?<sha>[0-9a-f]{40}) artifact=(?<artifact>[0-9a-f]{40}) implementation=(?<implementation>[0-9a-f]{40}) acceptor=(?<acceptor>[A-Za-z0-9-]+) decision=(?<decision>approved|changes-required) -->")? |
+      select(.issue == $issue and .sha == $sha and .artifact == $artifact and
+        .implementation == $implementation)] | last | .decision) // ""' \
+    <<< "$comments_json")"
+  if [[ "$latest_acceptance" == "approved" ]]; then
+    exact_candidate_accepted=1
+  fi
+  effective_intent="$intent"
+  if [[ "$intent" == "evidence-only" && "$exact_candidate_accepted" != "1" ]]; then
+    echo "Issue #$issue_number cannot receive evidence-only nomination for an unaccepted candidate." >&2
+    exit 1
+  fi
+  if [[ "$intent" == "application" && "$exact_candidate_accepted" == "1" ]]; then
+    effective_intent="evidence-only"
+  fi
+  preserve_delivery_state=0
+  if jq -e 'any(.labels[]; .name == "delivery:released")' <<< "$issue_json" >/dev/null ||
+    [[ "$effective_intent" == "evidence-only" ]]; then
+    preserve_delivery_state=1
+  fi
+  if [[ "$preserve_delivery_state" == "0" ]]; then
+    for old_label in delivery:accepted delivery:ready-for-release delivery:ready-for-production; do
+      if jq -e --arg label "$old_label" 'any(.labels[]; .name == $label)' \
+        <<< "$issue_json" >/dev/null; then
+        gh api -X DELETE "repos/$repo/issues/$issue_number/labels/$old_label" >/dev/null
+      fi
+    done
+    gh issue edit "$issue_number" --repo "$repo" --add-label "delivery:acceptance" >/dev/null
+  fi
+
+  if [[ "$source" == "staging" ]]; then
+    headline="Candidate \`$sha\` passed staging smoke checks."
+    source_line="- Staging: $evidence_url"
+    source_id_line="- Deployment: \`$source_id\`"
+  else
+    headline="Artifact candidate \`$sha\` passed release checks."
+    source_line="- Artifact validation: $evidence_url"
+    source_id_line="- Validation run: \`$source_id\`"
+  fi
+  state_note="Candidate is ready for product acceptance."
+  if [[ "$preserve_delivery_state" == "1" ]]; then
+    state_note="Candidate evidence was recorded. The issue's accepted or released delivery state was preserved."
+  fi
+  marker="<!-- release-candidate sha=$sha artifact=$artifact_digest source=$source source-id=$source_id intent=$effective_intent -->"
+  # shellcheck disable=SC2016 # backticks are literal Markdown in the printf template
+  body="$(printf '%s\n\n%s\n\n%s\n- Artifact: `%s`\n%s\n- Workflow: %s\n\n%s' \
+    "$headline" "$state_note" "$source_line" "$artifact" "$source_id_line" "$workflow_url" "$marker")"
+  gh issue comment "$issue_number" --repo "$repo" --body "$body" >/dev/null
+  nominated_count=$((nominated_count + 1))
+done <<< "$issue_numbers"
+
+if (( nominated_count == 0 )); then
+  echo "::warning::No applicable release issue found for $source candidate $sha."
+  exit 0
+fi
+
+echo "Nominated $source candidate for linked issues at $repo@$sha."

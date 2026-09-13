@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+shopt -s nullglob
+plans=(docs/plans/[0-9]*)
+required=(README.md 01-context.md 02-decision.md 03-design.md 04-verification.md 05-handoff.md)
+
+if ((${#plans[@]} == 0)); then
+  echo "solution plans valid"
+  exit 0
+fi
+
+for plan in "${plans[@]}"; do
+  [[ -d "$plan" ]] || continue
+  issue="$(basename "$plan")"
+  issue="${issue%%-*}"
+  [[ "$issue" =~ ^[0-9]+$ ]] || {
+    echo "solution plan directory must begin with an issue number: $plan" >&2
+    exit 1
+  }
+  for name in "${required[@]}"; do
+    [[ -s "$plan/$name" ]] || {
+      echo "solution plan is missing a non-empty $name: $plan" >&2
+      exit 1
+    }
+  done
+
+  readme="$plan/README.md"
+  grep -Fqx -- "- **Issue:** #$issue" "$readme" || {
+    echo "solution plan README issue does not match directory: $plan" >&2
+    exit 1
+  }
+  status="$(sed -n 's/^- \*\*Status:\*\* //p' "$readme")"
+  [[ "$status" == "Draft" || "$status" == "Final" ]] || {
+    echo "solution plan status must be Draft or Final: $plan" >&2
+    exit 1
+  }
+  grep -Eq '^- \*\*Repository basis:\*\* [0-9a-f]{40}$' "$readme" || {
+    echo "solution plan requires a full repository-basis SHA: $plan" >&2
+    exit 1
+  }
+
+  if [[ "$status" == "Final" ]]; then
+    grep -Eq '^- \*\*Planning PR:\*\* #[0-9]+$' "$readme" || {
+      echo "final solution plan requires its planning PR number: $plan" >&2
+      exit 1
+    }
+    grep -Eq '^- \*\*Execution envelope:\*\* (implementation|through-staging|through-production)$' "$readme" || {
+      echo "final solution plan requires an explicit execution envelope: $plan" >&2
+      exit 1
+    }
+    if grep -REn '\{\{[^}]+\}\}|(^|[^[:alnum:]_])(TBD|TODO)($|[^[:alnum:]_])' "$plan" >/dev/null; then
+      echo "final solution plan contains unresolved placeholders: $plan" >&2
+      exit 1
+    fi
+    spotlight="$(awk '
+      /^## Decision Spotlight$/ { inside=1; next }
+      inside && /^## / { exit }
+      inside { print }
+    ' "$readme" | sed '/^[[:space:]]*$/d')"
+    [[ -n "$spotlight" ]] || {
+      echo "final solution plan requires a non-empty Decision Spotlight: $plan" >&2
+      exit 1
+    }
+    preflight="$(awk '
+      /^## Production Readiness Preflight$/ { inside=1; next }
+      inside && /^## / { exit }
+      inside { print }
+    ' "$plan/04-verification.md" | sed '/^[[:space:]]*$/d')"
+    [[ -n "$preflight" ]] || {
+      echo "final solution plan requires a production-readiness preflight: $plan" >&2
+      exit 1
+    }
+    if grep -Fq 'For release-bearing work, verify the complete path before the final plan gate' \
+      "$plan/04-verification.md"; then
+      echo "production-readiness preflight still contains template instructions: $plan" >&2
+      exit 1
+    fi
+    if [[ "$(sed -n 's/^- \*\*Execution envelope:\*\* //p' "$readme")" == "through-production" ]]; then
+      if grep -Eiq 'not[[:space:]-]+applicable' <<< "$preflight"; then
+        echo "through-production plan cannot mark production readiness not applicable: $plan" >&2
+        exit 1
+      fi
+      for term in secret deploy activat verif rollback receipt; do
+        grep -Eiq "$term" <<< "$preflight" || {
+          echo "through-production preflight is missing $term: $plan" >&2
+          exit 1
+        }
+      done
+    fi
+  fi
+done
+
+echo "solution plans valid"

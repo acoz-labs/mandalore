@@ -1,0 +1,13 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+tmp/
+log/
+node_modules/
+coverage/
+.coverage
+__pycache__/
+.pytest_cache/
+.ruby-lsp/
+vendor/bundle/

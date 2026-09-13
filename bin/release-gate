@@ -1,0 +1,138 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+require_acceptance=0
+if [[ "${1:-}" == "--require-acceptance" ]]; then
+  require_acceptance=1
+  shift
+fi
+
+sha="${1:-}"
+repo="${GITHUB_REPOSITORY:-}"
+required_checks="${ACCEPTANCE_REQUIRED_CHECKS:-ci}"
+staging_required="${STAGING_REQUIRED:-true}"
+staging_environment="${STAGING_ENVIRONMENT:-staging}"
+release_artifact="${RELEASE_ARTIFACT:-}"
+
+if [[ -z "$repo" || ! "$sha" =~ ^[0-9a-f]{40}$ ]]; then
+  echo "Usage: GITHUB_REPOSITORY=OWNER/REPO bin/release-gate [--require-acceptance] <full-sha>" >&2
+  exit 64
+fi
+
+for command in gh jq; do
+  command -v "$command" >/dev/null 2>&1 || {
+    echo "Missing required command: $command" >&2
+    exit 2
+  }
+done
+
+default_branch="$(gh api "repos/$repo" --jq .default_branch)"
+resolved_sha="$(gh api "repos/$repo/commits/$sha" --jq .sha)"
+if [[ "$resolved_sha" != "$sha" ]]; then
+  echo "Candidate did not resolve to the requested full SHA: $sha" >&2
+  exit 1
+fi
+
+comparison="$(gh api "repos/$repo/compare/$sha...$default_branch" --jq .status)"
+if [[ "$comparison" != "ahead" && "$comparison" != "identical" ]]; then
+  echo "Candidate $sha is not an ancestor of $default_branch (comparison=$comparison)." >&2
+  exit 1
+fi
+
+check_runs="$(gh api "repos/$repo/commits/$sha/check-runs?per_page=100")"
+if jq -e --arg name "$required_checks" \
+  'any(.check_runs[]; .name == $name)' \
+  <<< "$check_runs" >/dev/null; then
+  check_names=("$required_checks")
+else
+  IFS=',' read -r -a check_names <<< "$required_checks"
+fi
+for raw_name in "${check_names[@]}"; do
+  check_name="$(printf '%s' "$raw_name" | xargs)"
+  [[ -n "$check_name" ]] || continue
+  if ! jq -e --arg name "$check_name" \
+    'any(.check_runs[]; .name == $name and .conclusion == "success")' \
+    <<< "$check_runs" >/dev/null; then
+    echo "Candidate $sha is missing successful required check: $check_name" >&2
+    exit 1
+  fi
+done
+
+merged_pr_count="$(gh api "repos/$repo/commits/$sha/pulls?per_page=100" \
+  --jq '[.[] | select(.merged_at != null)] | length')"
+if [[ "$merged_pr_count" == "0" ]]; then
+  echo "Candidate $sha is not associated with a merged pull request." >&2
+  exit 1
+fi
+
+if [[ "$staging_required" == "true" ]]; then
+  if [[ -z "$release_artifact" ]]; then
+    echo "RELEASE_ARTIFACT must identify the accepted staged candidate." >&2
+    exit 1
+  fi
+  staging_success=0
+  if [[ "$require_acceptance" == "0" ]]; then
+    deployments="$(gh api "repos/$repo/deployments?environment=$staging_environment&per_page=100")"
+    current_deployment="$(jq -c '.[0] // empty' <<< "$deployments")"
+    current_id="$(jq -r '.id // empty' <<< "$current_deployment")"
+    current_sha="$(jq -r '.sha // empty' <<< "$current_deployment")"
+    current_artifact="$(jq -r '.payload as $payload |
+      if ($payload | type) == "object" then ($payload.artifact // "")
+      elif ($payload | type) == "string" then
+        (try ($payload | fromjson | .artifact) catch $payload)
+      else "" end' <<< "$current_deployment")"
+    if [[ "$current_sha" == "$sha" && "$current_artifact" == "$release_artifact" &&
+      -n "$current_id" ]]; then
+      current_state="$(gh api "repos/$repo/deployments/$current_id/statuses?per_page=100" \
+        --jq '.[0].state // empty')"
+      [[ "$current_state" == "success" ]] && staging_success=1
+    fi
+  else
+    deployments="$(gh api "repos/$repo/deployments?sha=$sha&environment=$staging_environment&per_page=100")"
+    while IFS=$'\t' read -r deployment_id deployment_artifact; do
+      [[ -n "$deployment_id" ]] || continue
+      [[ "$deployment_artifact" == "$release_artifact" ]] || continue
+      historical_success="$(gh api "repos/$repo/deployments/$deployment_id/statuses?per_page=100" \
+        --jq 'any(.[]; .state == "success")')"
+      if [[ "$historical_success" == "true" ]]; then
+        staging_success=1
+        break
+      fi
+    done < <(jq -r '.[] | .payload as $payload |
+      [.id, (if ($payload | type) == "object" then ($payload.artifact // "")
+             elif ($payload | type) == "string" then
+               (try ($payload | fromjson | .artifact) catch $payload)
+             else "" end)] | @tsv' <<< "$deployments")
+  fi
+
+  if [[ "$staging_success" != "1" ]]; then
+    echo "Candidate $sha is not the required successful $staging_environment deployment for $release_artifact." >&2
+    exit 1
+  fi
+fi
+
+if [[ "$require_acceptance" == "1" ]]; then
+  if [[ -z "$release_artifact" ]]; then
+    echo "RELEASE_ARTIFACT must identify the accepted artifact." >&2
+    exit 1
+  fi
+  artifact_digest="$(printf '%s' "$release_artifact" | git hash-object --stdin)"
+  artifact_context="product-acceptance-artifact/$artifact_digest"
+  acceptance_statuses="$(gh api "repos/$repo/commits/$sha/status")"
+  acceptance_state="$(jq -r \
+    '[.statuses[] | select(.context == "product-acceptance")][0].state // empty' \
+    <<< "$acceptance_statuses")"
+  if [[ "$acceptance_state" != "success" ]]; then
+    echo "Candidate $sha does not have successful product acceptance." >&2
+    exit 1
+  fi
+  artifact_acceptance_state="$(jq -r --arg wanted_context "$artifact_context" \
+    '[.statuses[] | select(.context == $wanted_context)][0].state // empty' \
+    <<< "$acceptance_statuses")"
+  if [[ "$artifact_acceptance_state" != "success" ]]; then
+    echo "Candidate $sha does not have successful acceptance for artifact $release_artifact." >&2
+    exit 1
+  fi
+fi
+
+echo "Verified release candidate $sha on $default_branch."
