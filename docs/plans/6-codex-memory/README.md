@@ -1,8 +1,8 @@
 # Solution Design: native Codex memory
 
-- **Status:** Draft
+- **Status:** Final
 - **Issue:** #6
-- **Planning PR:** Pending
+- **Planning PR:** #25
 - **Repository basis:** a0f53601abebb2dd46fab2b15f1ca426d14a391f
 - **Execution envelope:** implementation
 
