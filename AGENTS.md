@@ -19,6 +19,25 @@ The initial template-derived bootstrap is authorized repository setup, not
 runtime acceptance. Substantive porting follows the design/review workflow below.
 Do not manufacture independent approval or acceptance.
 
+## Current MVP review authorization
+
+For the current issues #1–#10 delivery effort, the product owner has authorized
+contributor self-review and delegated ordinary design decisions. Record decisions,
+review findings, tests and the reviewed commit honestly; do not label self-review
+as independent approval or impersonate another reviewer. Surface consequential
+choices, deviations and unresolved risks at handoff so the owner can redirect.
+
+A recorded self-review of the planning head is sufficient to begin implementation;
+work may be stacked on that head while the planning PR awaits CI/merge. Do not
+stop for separate product sign-off on ordinary in-scope decisions. This supersedes
+the separate reviewer/approval and plan-merge prerequisites below for this effort.
+Passing required checks, actual runtime verification, privacy boundaries and
+explicit live migration/public release authority are not waived. Missing hosted
+checks are not success. Independent product acceptance required by release
+automation remains separate from engineering self-review.
+
+Keep the durable rationale in `docs/decisions/0001-mvp-self-review.md`.
+
 ## Roles
 
 - Product owners set intent, priority, and product judgment.

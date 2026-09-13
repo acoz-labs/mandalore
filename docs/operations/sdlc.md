@@ -2,6 +2,10 @@
 
 This repository follows a role-based, tool-agnostic SDLC.
 
+For the current MVP effort, the [self-review authorization](../decisions/0001-mvp-self-review.md)
+supersedes separate engineering reviewer/product sign-off and planning-merge
+prerequisites in this standard. It does not waive checks or release acceptance.
+
 ## Standard Flow
 
 1. Capture an ambiguous opportunity as a discovery issue and move it to

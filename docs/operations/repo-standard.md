@@ -79,6 +79,10 @@ standard.
 
 Record intentional deviations here with rationale.
 
+- Current MVP engineering work uses owner-authorized self-review and delegated
+  ordinary design decisions. See [the decision](../decisions/0001-mvp-self-review.md).
+  This does not manufacture independent acceptance or change release automation.
+
 - Bootstrap basis: template `feeb93836b967d6c100e58b4384fc067e73a0ac9`.
   Generic files were privacy-reviewed before seeding fresh history. The first
   commit initializes the repository; subsequent changes use reviewed PRs.
