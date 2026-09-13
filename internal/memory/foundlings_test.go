@@ -118,3 +118,54 @@ func TestFoundlingConcurrentRegistrationsAreExplicit(t *testing.T) {
 		t.Fatal(p, err)
 	}
 }
+
+func TestFoundlingRegistrationGraphAndSchemaFailures(t *testing.T) {
+	for name, mutate := range map[string]func(*FoundlingRegistration){
+		"version":               func(r *FoundlingRegistration) { r.Version = 99 },
+		"missing predecessor":   func(r *FoundlingRegistration) { r.Supersedes = []string{"registration-missing"} },
+		"duplicate predecessor": func(r *FoundlingRegistration) { r.Supersedes = []string{"registration-root", "registration-root"} },
+		"unknown device":        func(r *FoundlingRegistration) { r.Authorship.DeviceID = "device-unknown" },
+		"invalid time":          func(r *FoundlingRegistration) { r.RecordedAt = "yesterday" },
+		"invalid state":         func(r *FoundlingRegistration) { r.State = "current-guidance" },
+		"missing actor":         func(r *FoundlingRegistration) { r.Authorship.Actor = "" },
+		"missing harness":       func(r *FoundlingRegistration) { r.Authorship.Harness = "" },
+		"oversize name":         func(r *FoundlingRegistration) { r.Name = strings.Repeat("a", 257) },
+	} {
+		t.Run(name, func(t *testing.T) {
+			s := fixture(t)
+			root := registration(s.store)
+			if err := s.store.PutFoundlingRegistration(root); err != nil {
+				t.Fatal(err)
+			}
+			r := root
+			r.ID = "registration-next"
+			r.Supersedes = []string{root.ID}
+			mutate(&r)
+			if err := s.store.PutFoundlingRegistration(r); err == nil {
+				t.Fatal("accepted invalid registration")
+			}
+			items, err := s.store.FoundlingRegistrations()
+			if err != nil || len(items) != 1 {
+				t.Fatal("invalid write changed registrations", err)
+			}
+		})
+	}
+	s := fixture(t)
+	root := registration(s.store)
+	a, b := root, root
+	a.ID = "registration-cycle-a"
+	b.ID = "registration-cycle-b"
+	a.Supersedes = []string{b.ID}
+	b.Supersedes = []string{a.ID}
+	if err := s.store.validateRegistrations([]FoundlingRegistration{root, a, b}); err == nil {
+		t.Fatal("cycle accepted")
+	}
+	if err := s.store.validateRegistrations([]FoundlingRegistration{root, root}); err == nil {
+		t.Fatal("duplicate revision accepted")
+	}
+	root.Source = FoundlingSource{Kind: "local", Locator: "source-archive"}
+	root.Pin = SourcePin{Algorithm: "sha256", Value: strings.Repeat("d", 64)}
+	if err := s.store.PutFoundlingRegistration(root); err != nil {
+		t.Fatal(err)
+	}
+}

@@ -26,6 +26,14 @@ func (s *Store) PutSourced(r Revision, source Source) error {
 		if err := s.validateGraphWithSources(append(records, r), map[string]Source{source.ID: source}); err != nil {
 			return err
 		}
+		// Size/encoding failures are invalid input, not ambiguous partial I/O.
+		// Check both documents before publishing either one.
+		if _, err := encodeJSON(r); err != nil {
+			return err
+		}
+		if _, err := encodeJSON(source); err != nil {
+			return err
+		}
 		dir := filepath.Join(s.Root, "memory/records", r.RecordID)
 		if err := os.MkdirAll(dir, 0700); err != nil {
 			return err

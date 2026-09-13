@@ -9,8 +9,9 @@ engine, CLI, MCP server and thin native harness plugins.
 ## Status
 
 This is the memory-only successor to [My Friday](https://github.com/acoz-labs/my-friday).
-The repository currently contains project foundations and migration contracts,
-not an installable Mandalore runtime. No Mandalore release has been published.
+The repository contains the memory engine, synthetic regression tests, project
+foundations and migration contracts, not an installable Mandalore runtime.
+No Mandalore release has been published.
 
 Codex is the first integration. Pi follows accepted Codex support, then Claude
 Code follows Pi. Prior prototype evidence informs the port; it does not certify
@@ -23,6 +24,7 @@ newly extracted code or renamed artifacts.
   name, not a required name or a public repository.
 - **This is the way**: the memory skill (`this-is-the-way`) and an optional explicit
   cue to remember confirmed knowledge from the current conversation.
+- **Foundlings**: linked historical references, kept separate from current memory.
 
 Learning should work without the cue. Memory is revisable evidence, not rules
 that override current user direction. Journals are semantic summaries, not a
@@ -42,14 +44,17 @@ portability is not included.
 
 - [Product contract](docs/product.md)
 - [Architecture and implementation status](docs/architecture.md)
+- [Signet data format](docs/signet-format.md) and [source extraction](docs/memory-extraction.md)
 - [Migration and predecessor disposition](docs/migration.md)
 - [Roadmap](docs/roadmap.md) and [issues](https://github.com/acoz-labs/mandalore/issues)
 - [Development](docs/development.md), [releases](docs/deployment.md), [runbook](docs/runbook.md)
 - [Contributing](CONTRIBUTING.md) and [security/privacy](SECURITY.md)
 
-Run `bin/ci` for foundation checks, or `bin/container bin/ci` with Docker.
-The managed workflow uses issues, design/implementation PRs, independent review,
-exact-candidate acceptance and GitHub Releases. See [SDLC](docs/operations/sdlc.md).
+Run `mise exec go@1.26.4 -- bin/ci`, or `bin/container bin/ci` with Docker.
+The managed workflow uses issues, design/implementation PRs, recorded engineering
+review, exact-candidate acceptance and GitHub Releases. The current MVP permits
+[engineering self-review](docs/decisions/0001-mvp-self-review.md), not fabricated
+independent acceptance. See [SDLC](docs/operations/sdlc.md).
 
 Independent community project; not affiliated with or endorsed by Lucasfilm or
 Disney. The theme is naming and prose; no official artwork is bundled.

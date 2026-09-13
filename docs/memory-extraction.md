@@ -32,6 +32,9 @@ not copied. `go mod tidy` generates the dependency closure and checksums.
 - Signet-wide records must identify the selected signet.
 - Data-only foundling registration and original/incorporation provenance contract.
 - Writes larger than the reader's 4 MiB limit are refused before publication.
+- Both sourced documents are encoded/size-checked before either is published;
+  invalid input leaves no evidence, unlike a genuine partial I/O failure.
+- Journal order compares actual instants, including timezone offsets, not strings.
 
 ## Evidence and outstanding work
 
@@ -41,9 +44,20 @@ and canonical-path failures. Fixes preserve the original graph/ranking tests.
 Current native checks use synthetic data and the designated testing terminal.
 Race tests, vet and four OS/architecture library builds are automated in `bin/ci`.
 
-This is not end-to-end completion of #2/#3: finish self-review, deeper schema/I/O
-failure coverage and implementation reconciliation before PR readiness. Bindings,
+The engine regression suite also exercises bounded/continued pages, invalid
+registration graphs and versions, immutable publication failures, and a real
+permission-denied second-file write. The latter test runs unprivileged and
+explicitly skips under root; no skipped test is native permission-failure evidence.
+The partial-write test verifies valid orphan evidence, unchanged prior memory,
+and no dangling revision. These checks do not simulate every filesystem failure
+or a power loss.
+
+This is the library outcome planned in #17, not end-to-end completion of #2/#3.
+Engineering self-review/reconciliation and exact-head CI evidence live in #20.
+Bindings,
 Git synchronization, CLI/MCP, reference retrieval/promotion, native integrations,
 real two-machine tests and immutable candidate acceptance belong to later slices.
-Hosted Actions execution remains separately tracked in #19. No public release or
-production migration has occurred.
+Native engine checks now run on local macOS/arm64 and hosted Linux/amd64.
+Missing Actions runs recovered after fresh/reopened PR events; historical cause
+remains separately tracked in #19. No public release or production migration has
+occurred.

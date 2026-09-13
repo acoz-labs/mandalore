@@ -71,11 +71,14 @@ explicit history access. Measure relevance, corpus growth, repeated reads and
 latency before adopting indexing, semantic search or qmd. Derived indexes must
 be rebuildable; lexical misses are not proof of absence.
 
-Existing memory/documents can inform a later explicit import as reference
-material, not live instructions or a 1:1 migration. Preserve source mapping and
-important experiences while separating confirmed current knowledge, superseded
-decisions and unresolved proposals. Capability code and credentials are not
-memory-import targets.
+Existing memory/documents can be linked as **foundlings**: historical reference
+evidence, not live instructions or a 1:1 migration. The MVP includes a minimal
+reference workflow before real-memory adoption (#12). Versioned registrations
+and citations belong to the signet; machine-local checkout paths remain local.
+Selective promotion preserves original source identity/pin/attribution separately
+from the device/time/harness that incorporated the adapted knowledge. Keep
+confirmed current knowledge, superseded decisions and unevaluated references
+distinct. Capability code and credentials are not memory-import targets.
 
 ## Sequence and non-goals
 

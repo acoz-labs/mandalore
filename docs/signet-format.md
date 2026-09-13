@@ -59,6 +59,9 @@ writing evidence or revisions. An I/O failure between publication of the two
 files may leave orphan evidence; inspect before retrying. No exactly-once claim
 is made. Full validation checks unreferenced evidence too.
 
+Both documents must fit the serialized file limit before either is published;
+an oversized revision is invalid input, not an allowable orphan-evidence case.
+
 Service writes require summary 1–256 bytes, body 1–8192 bytes, reason 1–1024
 bytes and at most 32 predecessors. Default sensitivity is private, volatility
 drift-prone and confidence medium; basis is explicitly supplied. The low-level
@@ -70,6 +73,8 @@ Journals contain version, ID, kind, summary, UTC recorded time and authorship.
 They are semantic summaries, not native transcripts or authoritative current
 facts. Service journal kinds are 1–64 bytes, summaries 1–4096 bytes. Journal
 queries return newest-first matches with explicit truncation, not a stable cursor.
+Ordering uses actual timestamps, so different timezone offsets do not reorder
+events incorrectly.
 
 Scoped lexical recall selects effective unsuperseded heads before ranking, so
 an obsolete keyword match does not resurrect superseded guidance. Exact token
@@ -120,4 +125,5 @@ formats. Do not rename those files to bypass migration checks. Preserve the
 original store and writer until explicit conversion with backups/ID preservation
 and rollback is supported. Normal recovery inspects rejected/corrupt files and
 history; it never silently drops evidence or picks a conflicting head. Native
-Linux behavior, cross-machine bindings and sync require separate acceptance.
+Linux CLI/plugin behavior, cross-machine bindings and sync require separate
+acceptance; library tests run natively on macOS/arm64 and Linux/amd64.

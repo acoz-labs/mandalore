@@ -175,14 +175,22 @@ func readJSON(path string, out any) error {
 	return nil
 }
 
-func writeNewJSON(path string, value any) error {
+func encodeJSON(value any) ([]byte, error) {
 	b, err := json.MarshalIndent(value, "", "  ")
 	if err != nil {
-		return err
+		return nil, err
 	}
 	b = append(b, '\n')
 	if len(b) > 4<<20 {
-		return errors.New("record exceeds 4 MiB")
+		return nil, errors.New("record exceeds 4 MiB")
+	}
+	return b, nil
+}
+
+func writeNewJSON(path string, value any) error {
+	b, err := encodeJSON(value)
+	if err != nil {
+		return err
 	}
 	f, err := os.CreateTemp(filepath.Dir(path), ".write-")
 	if err != nil {

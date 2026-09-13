@@ -145,3 +145,27 @@ func TestStoreHandleDetectsReplacement(t *testing.T) {
 		t.Fatal("stale store handle wrote")
 	}
 }
+
+func TestJournalOrdersInstantsNotTimestampStrings(t *testing.T) {
+	s := fixture(t)
+	for _, entry := range []JournalEntry{
+		{Version: 1, ID: "event-older", Kind: "test", Summary: "Older instant", RecordedAt: "2026-09-01T00:00:00Z", Authorship: s.author},
+		{Version: 1, ID: "event-newer", Kind: "test", Summary: "Newer instant", RecordedAt: "2026-08-31T23:30:00-02:00", Authorship: s.author},
+	} {
+		at, err := time.Parse(time.RFC3339Nano, entry.RecordedAt)
+		if err != nil {
+			t.Fatal(err)
+		}
+		dir := filepath.Join(s.Root(), "memory/events", at.UTC().Format("2006/01"))
+		if err := os.MkdirAll(dir, 0700); err != nil {
+			t.Fatal(err)
+		}
+		if err := writeNewJSON(filepath.Join(dir, entry.ID+".json"), entry); err != nil {
+			t.Fatal(err)
+		}
+	}
+	items, err := s.Journal("", 5)
+	if err != nil || len(items) != 2 || items[0].ID != "event-newer" {
+		t.Fatal("wrong instant ordering", items, err)
+	}
+}

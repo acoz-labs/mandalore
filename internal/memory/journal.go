@@ -86,10 +86,12 @@ func (s *Store) Journal(query string, limit int) ([]JournalEntry, error) {
 		return nil, err
 	}
 	sort.Slice(entries, func(i, j int) bool {
-		if entries[i].RecordedAt == entries[j].RecordedAt {
+		a, _ := time.Parse(time.RFC3339Nano, entries[i].RecordedAt)
+		b, _ := time.Parse(time.RFC3339Nano, entries[j].RecordedAt)
+		if a.Equal(b) {
 			return entries[i].ID < entries[j].ID
 		}
-		return entries[i].RecordedAt > entries[j].RecordedAt
+		return a.After(b)
 	})
 	if len(entries) > limit {
 		entries = entries[:limit]
