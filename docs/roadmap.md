@@ -30,11 +30,14 @@ sequence and scope; issue creation is not implementation or acceptance.
 
 ## Current handoff
 
-Repository foundation is being established. The shared-engine/schema solution
-plan precedes implementation. Codex acceptance precedes Pi; Pi acceptance
+Repository foundation is published. The shared-engine/schema solution plan in
+[PR #17](https://github.com/acoz-labs/mandalore/pull/17) precedes implementation.
+Codex acceptance precedes Pi; Pi acceptance
 precedes Claude Code. Release-bearing issues stay open through independent
 acceptance and verified GitHub Release publication.
 
-Project-board creation is pending separately authorized Projects access. Issues
-and milestone grouping exist; this does not imply template fields/views or board
-attachment have been verified. See #1 for the live bootstrap receipt.
+The public [Mandalore board](https://github.com/orgs/acoz-labs/projects/35) contains
+all 16 successor issues. Template fields/views and item status were verified;
+see the [project receipt](operations/project.md) and issue #1 for live follow-up.
+My Friday is archived and its planning board is closed; historical work is
+preserved rather than marked successfully implemented.
