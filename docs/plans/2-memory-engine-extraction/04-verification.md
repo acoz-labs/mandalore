@@ -14,6 +14,11 @@ format and rejected legacy inputs. Test at the lowest useful layer:
   symlink/path redirection, lock contention and atomic directory publication.
 - A dependency boundary check forbidding native/assistant/provider imports.
 - Legacy bank/agent formats rejected unchanged, including mismatched local locks.
+- Foundling registration/citation schema validation, rejected private paths and
+  credential-bearing locators, invalid pins/traversal, unknown original authors,
+  separate original/incorporation provenance and preserved disconnected citations.
+- Registration metadata does not appear as ordinary recalled knowledge. Data
+  validation performs no source access, network requests or executable dispatch.
 
 ## Red/green sequence
 

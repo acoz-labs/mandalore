@@ -36,3 +36,16 @@ Preserve current-revision/conflict semantics, bounded lexical recall, structured
 sources and semantic journals. No derived index or transcript archive. Device
 labels are explicit, not auto-populated with private hostnames. Keep the storage
 API independent of native harness integration and external credentials.
+
+## Foundling data decision
+
+Foundling registrations are versioned reference metadata, not memory records.
+Keep immutable registration revisions so source pins and labels can evolve or
+be disconnected without erasing the meaning of citations already promoted.
+Unevaluated material is neither current guidance nor automatically superseded.
+
+Promotion creates an ordinary signet revision with the importing device/harness
+as its incorporation authorship. Its source evidence separately identifies the
+foundling, registration revision, original content location/fingerprint and
+original time/author when known. Unknown original attribution stays unknown.
+No source text becomes an instruction merely because it is registered locally.

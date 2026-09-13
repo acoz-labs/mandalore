@@ -11,7 +11,8 @@ not complete all of #3's cross-component migration/binding acceptance.
 1. Pin Go/tooling; add failing clean-package/manifest/legacy-refusal tests.
 2. Extract atomic files, directory publication, locks and device/source handling.
 3. Extract graph/scope/history semantics and signet schema; run corruption and
-   supersession regressions before modifying service consumers.
+   supersession regressions before modifying service consumers. Include data-only
+   foundling registration/citation validation, not external source retrieval.
 4. Extract journals, service validation, lexical recall, budgets and pagination.
 5. Audit dependency closure, attribution and every copied fixture; run race/vet,
    platform builds and native filesystem tests where available.
@@ -32,6 +33,8 @@ Update `docs/architecture.md` from target to actual package boundaries; add a
 focused `docs/signet-format.md` for the data contract; update development commands,
 migration refusal behavior, security boundaries and runbook recovery. Preserve
 source attribution in a neutral notice, without copying predecessor narratives.
+The format documentation includes foundling citation/registration fields and
+clearly distinguishes this data contract from the later #12 management workflow.
 
 ## Non-goals and reopening conditions
 

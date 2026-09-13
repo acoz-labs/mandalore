@@ -44,3 +44,11 @@ gate is needed; review the schema/data/privacy decisions explicitly.
 Prior native evidence is informative only; the renamed product needs fresh
 acceptance in #10. Sync transport, CLI/MCP, bindings, plugins and distribution
 remain separate delivery slices, not hidden additions to this library port.
+
+## Foundlings dependency
+
+The approved product direction now includes a minimal foundling workflow before
+real-memory adoption (#12 and #10). Historical references stay separate from
+current memory; selective promotion preserves source identity and attribution.
+Define registration/citation data in #3 now, without adding external retrieval
+or a capability/reference execution framework to the core extraction.

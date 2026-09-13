@@ -26,6 +26,9 @@ Do not mark this plan Final or issues Ready until the actual gate is satisfied.
 - Memory format branding must be explicit, not an uncontrolled text replacement.
   New signets use the proposed contract below; existing banks need #8 import.
 - Immutable evidence, explicit supersession and visible conflicts remain core.
+- Define foundling registration and external-origin citation data now (#12),
+  preserving original provenance separately from incorporation. This slice does
+  not fetch historical sources or implement the foundling management workflow.
 - No legacy capability, account, hook-script or assistant execution framework.
 - No live migration, native configuration change or release in this envelope.
 - No new vector/index service: preserve scoped lexical behavior first.

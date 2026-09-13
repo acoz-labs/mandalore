@@ -25,12 +25,48 @@ further only where tests or dependency direction require it.
 - `memory/sources/<source-id>.json`: evidence records.
 - `memory/events/<year>/<month>/<event-id>.json`: semantic journals.
 - `provenance/devices/<device-id>.json`: explicit device labels/identities.
+- `foundlings/registrations/<foundling-id>/<revision-id>.json`: immutable
+  reference registration metadata, excluded from ordinary memory recall.
 - `.mandalore/`: local lock/state namespace, not credentials or native sessions.
 
 Document required/optional fields, limits, extension policy, canonical paths and
 unknown-version rejection. Preserve input bounds and validate the full proposed
 graph before mutation. A disk failure can leave unreferenced source evidence;
 never claim a two-file write is transactionally atomic if it is not.
+
+## Foundling registration and citation contract
+
+Define data-only validation in this slice; external source access and the
+register/retrieve/promote workflow remain #12 after the shared interface exists.
+
+Registration fields: `schema_version`, `id`, `foundling_id`, `name`, `description`,
+`source` (kind and portable locator), `pin` (algorithm and immutable revision or
+digest), `state` (active/disconnected), `recorded_at`, `authorship`, `supersedes`
+and `change_reason`. File IDs must agree with their canonical path. Changes are
+append-only and concurrent heads are visible conflicts, not arbitrary selection.
+
+Portable locators are credential-free HTTPS/SSH Git identities or opaque local
+source IDs. Absolute filesystem paths, URL user/password credentials, query
+credentials and environment-variable secret values are rejected. Actual paths
+and observations such as available/missing/changed belong to machine-local
+bindings. The first implementation only validates these values; it does not
+fetch, resolve DNS, run Git or execute a registered source.
+
+Source evidence may include an optional `external_origin` object containing
+`foundling_id`, `registration_revision_id`, `source_identity`, `source_pin`,
+`relative_locator`, `content_sha256`, and optional `original_recorded_at` and
+`original_author`. Reject traversal/absolute locators and malformed fingerprints.
+Original author is historical source metadata, not a fabricated local enrollment.
+Retain the source identity and pin inside the citation so it remains intelligible
+after disconnection. The source's existing recorded time/device and the promoted
+revision's authorship describe incorporation, not original authorship.
+
+The final data schema must document size limits and optional-field treatment.
+Validate supplied citations before source/revision writes. A citation must name
+an existing matching registration revision, but disconnection must not invalidate
+historical evidence already recorded. No current-memory query includes raw
+registration content as guidance. Full source-hash verification is the later
+retrieval/promotion operation's responsibility, not an inferred engine guarantee.
 
 ## State and validation
 
