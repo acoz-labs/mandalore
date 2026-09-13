@@ -56,10 +56,21 @@ func TestCLICreateBindRememberRecallAndDiscovery(t *testing.T) {
 }
 
 func TestCLIUsageDoesNotFallThrough(t *testing.T) {
-	for _, args := range [][]string{{"unknown"}, {"memory", "recall", "extra"}, {"memory", "recall", "--scope-id", "alone"}, {"call", "memory_recall", "--unknown"}} {
+	for _, args := range [][]string{{"unknown"}, {"call", "mcp"}, {"memory", "recall", "extra"}, {"memory", "recall", "--scope-id", "alone"}, {"call", "memory_recall", "--unknown"}} {
 		out, code := cli(t, args, `{}`)
 		if code != 2 || out.OK {
 			t.Fatal(args, out, code)
+		}
+	}
+}
+
+func TestMCPStartupErrorsStayOffProtocolStdout(t *testing.T) {
+	for _, args := range [][]string{{"mcp", "--unknown"}, {"mcp", "extra"}, {"mcp", "--binding", filepath.Join(t.TempDir(), "missing.json")}} {
+		var out, errout bytes.Buffer
+		code := run(context.Background(), args, strings.NewReader(""), &out, &errout)
+		var failure api.Envelope
+		if code == 0 || out.Len() != 0 || json.Unmarshal(errout.Bytes(), &failure) != nil || failure.Error == nil {
+			t.Fatalf("startup corrupted stdout: %d %s / %s", code, out.String(), errout.String())
 		}
 	}
 }

@@ -111,8 +111,12 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 			break
 		}
 	}
-	if selected == nil && name != "mcp" {
+	if selected == nil && args[0] != "mcp" {
 		return emit(out, api.Failure("operation.unknown", "Unknown operation; inspect the operation catalog.", false))
+	}
+	failureOut := out
+	if name == "mcp" {
+		failureOut = errout
 	}
 	f := flag.NewFlagSet(name, flag.ContinueOnError)
 	f.SetOutput(io.Discard)
@@ -160,16 +164,16 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 			}
 			return 0
 		}
-		return bad(out, "Invalid flags or missing values; use --help.")
+		return bad(failureOut, "Invalid flags or missing values; use --help.")
 	}
 	if f.NArg() != 0 {
-		return bad(out, "Unexpected positional arguments.")
+		return bad(failureOut, "Unexpected positional arguments.")
 	}
 	if (kind == "") != (scopeID == "") {
-		return bad(out, "scope-kind and scope-id must be supplied together.")
+		return bad(failureOut, "scope-kind and scope-id must be supplied together.")
 	}
 	if ctx.Err() != nil {
-		return emit(out, api.Failure("operation.cancelled", "Operation cancelled before execution.", false))
+		return emit(failureOut, api.Failure("operation.cancelled", "Operation cancelled before execution.", false))
 	}
 	if selected != nil && *readOnly && !selected.ReadOnly {
 		return emit(out, api.Failure("operation.read_only", "Mutations are disabled for this connection.", false))
@@ -184,11 +188,7 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 			service, err = binding.Open(*path, *harness)
 		}
 		if err != nil {
-			destination := out
-			if name == "mcp" {
-				destination = errout
-			}
-			return emit(destination, api.Failure("binding.invalid", "Cannot open the selected binding/signet; inspect the path, version, enrolled device and pinned identity.", false))
+			return emit(failureOut, api.Failure("binding.invalid", "Cannot open the selected binding/signet; inspect the path, version, enrolled device and pinned identity.", false))
 		}
 	}
 	a := api.New(service, *readOnly)
