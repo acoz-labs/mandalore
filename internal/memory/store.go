@@ -224,6 +224,13 @@ func writeNewJSON(path string, value any) error {
 }
 
 func (s *Store) withLock(fn func() error) error {
+	return s.WithExclusiveLock(fn)
+}
+
+// WithExclusiveLock coordinates external storage adapters with memory writers.
+// The callback must not invoke another locking memory mutation. It does not
+// authorize changing the signet identity or bypassing data validation.
+func (s *Store) WithExclusiveLock(fn func() error) error {
 	if err := s.checkDirectories(); err != nil {
 		return err
 	}
