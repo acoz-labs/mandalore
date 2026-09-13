@@ -1,6 +1,6 @@
 # Solution Design: memory-only engine extraction
 
-- **Status:** Draft
+- **Status:** Final
 - **Issue:** #2
 - **Planning PR:** #17
 - **Repository basis:** 0c904334b55534a3255af613c32de3759dabdc98
@@ -15,10 +15,10 @@ it does not install a native plugin, migrate a user's memory or publish a releas
 
 ## Needs Attention
 
-Independent maintainer review and product approval on the final exact planning
-head are pending. The foundation and planning branch are published, and the
-template-derived public project board is configured with all successor issues.
-Do not mark this plan Final or issues Ready until the actual gate is satisfied.
+Engineering self-review is authorized by the product owner for the MVP effort.
+Record the exact reviewed head and findings in #17. Hosted CI remains unresolved
+under #19; local checks are not hosted evidence. Implementation can be stacked
+on the self-reviewed plan while CI/merge remains pending.
 
 ## Decision Spotlight
 
@@ -43,6 +43,7 @@ Do not mark this plan Final or issues Ready until the actual gate is satisfied.
 
 ## Final Gate
 
-This is a contributor-authored draft, not an independently approved plan.
-Record the planning PR and final full head after review, resolve findings,
-obtain product authority and merge the plan before beginning implementation.
+This is a contributor-authored, self-reviewed plan under the repository's
+[MVP review authorization](../../decisions/0001-mvp-self-review.md), not independent
+approval. Resolve findings and record the final full reviewed head in #17 before
+implementation. CI and eventual merge remain separately tracked evidence.

@@ -21,9 +21,10 @@ not complete all of #3's cross-component migration/binding acceptance.
 
 ## Review contract
 
-After this plan is independently reviewed, approved on its final head and merged,
-branch implementation from main as `feature/memory-engine`. Link #2/#3 and the
-approved planning PR. Keep the implementation PR draft until reconciled to its
+After self-review is recorded on the final planning head under the MVP review
+authorization, branch as `feature/memory-engine`. If the plan is not yet merged,
+stack on the reviewed planning branch and retarget after merge. Link #2/#3 and
+the planning PR. Keep the implementation PR draft until reconciled to its
 exact head, evidence is attached and plan-removal/doc promotion are complete.
 Use `Refs #2` and `Refs #3`; do not close release-bearing outcomes at code merge.
 
