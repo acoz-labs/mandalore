@@ -17,6 +17,8 @@ format and rejected legacy inputs. Test at the lowest useful layer:
 - Foundling registration/citation schema validation, rejected private paths and
   credential-bearing locators, invalid pins/traversal, unknown original authors,
   separate original/incorporation provenance and preserved disconnected citations.
+- Accept SSH URL and SCP-style Git locators with transport usernames; reject
+  HTTPS userinfo, SSH passwords, query strings and fragments without fetching.
 - Registration metadata does not appear as ordinary recalled knowledge. Data
   validation performs no source access, network requests or executable dispatch.
 

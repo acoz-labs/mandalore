@@ -46,8 +46,11 @@ and `change_reason`. File IDs must agree with their canonical path. Changes are
 append-only and concurrent heads are visible conflicts, not arbitrary selection.
 
 Portable locators are credential-free HTTPS/SSH Git identities or opaque local
-source IDs. Absolute filesystem paths, URL user/password credentials, query
-credentials and environment-variable secret values are rejected. Actual paths
+source IDs. An SSH transport username (for example, `git` in
+`ssh://git@example.invalid/team/history.git` or
+`git@example.invalid:team/history.git`) is allowed; it is not an authentication
+secret. Reject HTTPS userinfo, SSH passwords, all query strings and fragments,
+absolute filesystem paths and environment-variable secret values. Actual paths
 and observations such as available/missing/changed belong to machine-local
 bindings. The first implementation only validates these values; it does not
 fetch, resolve DNS, run Git or execute a registered source.
