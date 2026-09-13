@@ -7,8 +7,9 @@ sources/devices, journals, supersession, scoped lexical recall, bounded service
 responses, and data-only foundling registration/citation validation. See the
 [format contract](signet-format.md) and [extraction inventory](memory-extraction.md).
 `internal/api`, `internal/binding`, `internal/mcp` and `cmd/mandalore` now provide
-the [shared local interface](interface.md). Sync, menus, native installation and
-plugins below remain integration targets. No release is implied by these tests.
+the [shared local interface](interface.md). `internal/sync` now supplies explicit
+[Git checkpoints and reconciliation](synchronization.md). Menus, native installation
+and plugins below remain integration targets. No release is implied by these tests.
 
 | Location | Responsibility |
 | --- | --- |

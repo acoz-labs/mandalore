@@ -54,6 +54,24 @@ func TestCompiledCLIAndStdio(t *testing.T) {
 	}
 	invoke("", 0, "signet", "create", "--repository", root, "--name", "Example", "--device-label", "Test")
 	invoke("", 0, "signet", "bind", "--repository", root, "--binding", binding, "--device-label", "Bound test", "--actor", "Example")
+	for _, name := range []string{"git-init", "checkpoint", "sync", "sync-status"} {
+		if out := invoke("", 0, "memory", name, "--binding", binding); !out.OK {
+			t.Fatal(name, out.Error)
+		}
+	}
+	remote := filepath.Join(base, "remote.git")
+	for _, args := range [][]string{{"init", "--bare", "--initial-branch=main", remote}, {"-C", root, "remote", "add", "origin", remote}} {
+		command := exec.CommandContext(ctx, "git", args...)
+		for _, entry := range os.Environ() {
+			if !strings.HasPrefix(entry, "GIT_") {
+				command.Env = append(command.Env, entry)
+			}
+		}
+		command.Env = append(command.Env, "GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_NOSYSTEM=1", "GIT_TERMINAL_PROMPT=0")
+		if output, err := command.CombinedOutput(); err != nil {
+			t.Fatal(string(output), err)
+		}
+	}
 	first := invoke(`{"kind":"fact","summary":"Project name","body":"Copper Finch","basis":"user-direction","reason":"Confirmed"}`, 0, "memory", "remember", "--binding", binding)
 	data, _ := json.Marshal(first.Result)
 	var receipt api.Receipt
@@ -62,6 +80,10 @@ func TestCompiledCLIAndStdio(t *testing.T) {
 	}
 	correction, _ := json.Marshal(map[string]any{"kind": "fact", "summary": "Project name", "body": "Silver Heron", "basis": "user-direction", "reason": "Renamed", "record_id": receipt.RecordID, "supersedes": []string{receipt.ID}})
 	invoke(string(correction), 0, "call", "memory_remember", "--binding", binding)
+	delivery := invoke("", 0, "memory", "sync", "--binding", binding)
+	if !delivery.OK || delivery.Result.(map[string]any)["delivered"] != true {
+		t.Fatal("compiled sync did not deliver", delivery)
+	}
 	before := treeDigest(t, root)
 	recall := invoke("", 0, "memory", "recall", "--binding", binding)
 	data, _ = json.Marshal(recall.Result)

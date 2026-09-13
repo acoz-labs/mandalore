@@ -2,9 +2,9 @@
 
 The development CLI and stdio server use one typed operation dispatcher. They
 do not supply a model, replace native agent identity, install a plugin, discover
-memory from the working directory, or synchronize implicitly. This is the local
-interface slice of #4; real Git synchronization remains #5 and is not advertised
-as an implemented tool. No public release or live migration is implied.
+memory from the working directory, or synchronize implicitly. Real explicit Git
+operations are described in [synchronization](synchronization.md); native lifecycle
+and release acceptance remain outstanding. No live migration is implied.
 
 ## Try a synthetic signet
 
@@ -53,6 +53,7 @@ uses the same decoder and methods as the human commands and MCP tools.
 | `memory_recall`, `memory_scopes`, `memory_history` | `memory recall`, `scopes`, `history` | Bound signet only |
 | `memory_journal`, `memory_inspect` | `memory journal`, `inspect` | Bound signet only |
 | `memory_remember`, `memory_journal_append` | `memory remember`, `journal-append` | Bound signet only |
+| `memory_git_init`, `memory_checkpoint`, `memory_sync`, `memory_sync_status` | `memory git-init`, `checkpoint`, `sync`, `sync-status` | Bound signet only |
 
 Every operation returns `{protocol_version, ok, result}` or
 `{protocol_version, ok, error}`. The current protocol is 1. The catalog describes
@@ -106,8 +107,11 @@ signet does **not** initialize Git in this slice; its receipt says so explicitly
 | `operation.cancelled` | 130 | Cancelled before execution, or an interrupted read/server |
 | `binding.invalid`, `store.invalid` | 1 | Inspect selected configuration/data; no automatic repair |
 | `operation.io`, `output.invalid` | 1 | Inspect I/O/output failure and any possible partial write |
+| `sync.failed` | 1 | Inspect the returned sync phase/head and local/remote history before retrying |
 
 Errors include `retryable`, `write_may_have_occurred` and `inspect_before_retry`.
+Stopped synchronization may also include `sync_status`; its wrapped cancellation
+does not erase evidence of an earlier checkpoint or possible delivery.
 Sensitive input values and raw filesystem errors are not reflected into error
 messages. Conservative write ambiguity is intentional: publication followed by
 an I/O or response failure is not a proven rollback. A lost process/transport

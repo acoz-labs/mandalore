@@ -19,6 +19,7 @@ type Status struct {
 	Phase             string `json:"phase"`
 	Head              string `json:"head,omitempty"`
 	RemoteHead        string `json:"remote_head,omitempty"`
+	RemoteID          string `json:"remote_id,omitempty"`
 	CheckedAt         string `json:"checked_at"`
 	Checkpointed      bool   `json:"checkpointed"`
 	Delivered         bool   `json:"delivered"`
@@ -75,7 +76,7 @@ func (s *Synchronizer) checkpointOperation(parent context.Context, initialize bo
 		}
 		return s.checkpoint(ctx, &out)
 	})
-	return out, err
+	return out, failed(out, err)
 }
 
 func (s *Synchronizer) boundary(ctx context.Context) error {
@@ -84,10 +85,13 @@ func (s *Synchronizer) boundary(ctx context.Context) error {
 	if err != nil || !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
 		return ErrBoundary
 	}
-	for _, state := range []string{"commondir", "gitdir", "MERGE_HEAD", "CHERRY_PICK_HEAD", "REVERT_HEAD", "rebase-merge", "rebase-apply", "BISECT_START", "info/attributes", "objects/info/alternates"} {
+	for _, state := range []string{"commondir", "gitdir", "shallow", "MERGE_HEAD", "CHERRY_PICK_HEAD", "REVERT_HEAD", "rebase-merge", "rebase-apply", "BISECT_START", "info/attributes", "info/grafts", "info/sparse-checkout", "objects/info/alternates"} {
 		if _, err := os.Lstat(filepath.Join(root, state)); !os.IsNotExist(err) {
 			return ErrBoundary
 		}
+	}
+	if partial, err := filepath.Glob(filepath.Join(root, "objects", "pack", "*.promisor")); err != nil || len(partial) > 0 {
+		return ErrBoundary
 	}
 	for _, dir := range []string{"objects", "refs"} {
 		info, err := os.Lstat(filepath.Join(root, dir))
@@ -100,7 +104,11 @@ func (s *Synchronizer) boundary(ctx context.Context) error {
 		return err
 	}
 	top, err = filepath.EvalSymlinks(top)
-	if err != nil || top != s.store.Root {
+	if err != nil {
+		return ErrBoundary
+	}
+	expectedRoot, err := filepath.EvalSymlinks(s.store.Root)
+	if err != nil || top != expectedRoot {
 		return ErrBoundary
 	}
 	branch, err := s.git(ctx, "symbolic-ref", "--short", "HEAD")
@@ -250,7 +258,27 @@ func (s *Synchronizer) checkpoint(ctx context.Context, out *Status) error {
 	if err != nil && !isExit(err, 1) {
 		return err
 	}
-	if _, err := s.git(ctx, "commit", "-m", "Checkpoint signet memory"); err != nil {
+	tree, err := s.git(ctx, "write-tree")
+	if err != nil {
+		return err
+	}
+	if err := s.validateCandidate(ctx, tree, head); err != nil {
+		return err
+	}
+	args := []string{"commit-tree", tree, "-m", "Checkpoint signet memory"}
+	if head != "" {
+		args = append(args, "-p", head)
+	}
+	commit, err := s.git(ctx, args...)
+	if err != nil {
+		return err
+	}
+	if err := s.boundary(ctx); err != nil {
+		return err
+	}
+	// Compare-and-swap the exact branch; never commit a racing index snapshot
+	// or overwrite a concurrently advanced ref. Staged user work is preserved.
+	if _, err := s.git(ctx, "update-ref", "refs/heads/main", commit, head); err != nil {
 		return err
 	}
 	out.Head, err = s.head(ctx)

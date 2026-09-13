@@ -40,7 +40,7 @@ func cleanEnvironment() []string {
 		}
 		env = append(env, entry)
 	}
-	return append(env, "GIT_TERMINAL_PROMPT=0", "GIT_OPTIONAL_LOCKS=0", "GIT_ATTR_NOSYSTEM=1", "GIT_SSH_COMMAND=ssh -o BatchMode=yes -o StrictHostKeyChecking=yes")
+	return append(env, "GIT_TERMINAL_PROMPT=0", "GIT_OPTIONAL_LOCKS=0", "GIT_ATTR_NOSYSTEM=1", "GIT_NO_LAZY_FETCH=1", "GIT_NO_REPLACE_OBJECTS=1", "GIT_ALLOW_PROTOCOL=file:ssh:https", "GIT_SSH_COMMAND=ssh -o BatchMode=yes -o StrictHostKeyChecking=yes")
 }
 
 type limitedOutput struct {
@@ -60,6 +60,11 @@ func (b *limitedOutput) Write(p []byte) (int, error) {
 func (b *limitedOutput) String() string { return b.buffer.String() }
 
 func (s *Synchronizer) git(parent context.Context, args ...string) (string, error) {
+	out, err := s.gitOutput(parent, commandOutputLimit, args...)
+	return strings.TrimSpace(out), err
+}
+
+func (s *Synchronizer) gitOutput(parent context.Context, limit int, args ...string) (string, error) {
 	ctx, cancel := context.WithCancel(parent)
 	defer cancel()
 	base := []string{"-C", s.store.Root, "--git-dir=" + s.store.Root + "/.git", "--work-tree=" + s.store.Root,
@@ -67,6 +72,25 @@ func (s *Synchronizer) git(parent context.Context, args ...string) (string, erro
 		"-c", "core.attributesFile=/dev/null", "-c", "core.askPass=", "-c", "credential.interactive=false",
 		"-c", "commit.gpgsign=false", "-c", "tag.gpgsign=false", "-c", "protocol.ext.allow=never",
 		"-c", "user.name=Mandalore", "-c", "user.email=mandalore@localhost"}
+	if args[0] == "commit-tree" {
+		name, nameErr := s.git(ctx, "config", "--local", "--get", "user.name")
+		email, emailErr := s.git(ctx, "config", "--local", "--get", "user.email")
+		if nameErr != nil && !isExit(nameErr, 1) {
+			return "", nameErr
+		}
+		if emailErr != nil && !isExit(emailErr, 1) {
+			return "", emailErr
+		}
+		if (nameErr == nil) != (emailErr == nil) {
+			return "", ErrBoundary
+		}
+		if nameErr == nil {
+			if name == "" || email == "" || len(name) > 256 || len(email) > 256 || strings.ContainsAny(name+email, "\x00\r\n") {
+				return "", ErrBoundary
+			}
+			base = append(base, "-c", "user.name="+name, "-c", "user.email="+email)
+		}
+	}
 	cmd := exec.CommandContext(ctx, "git", append(base, args...)...)
 	cmd.Env = cleanEnvironment()
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
@@ -81,7 +105,7 @@ func (s *Synchronizer) git(parent context.Context, args ...string) (string, erro
 		return err
 	}
 	cmd.WaitDelay = time.Second
-	stdout := &limitedOutput{limit: commandOutputLimit, cancel: cancel}
+	stdout := &limitedOutput{limit: limit, cancel: cancel}
 	stderr := &limitedOutput{limit: 65536, cancel: cancel}
 	cmd.Stdout, cmd.Stderr = stdout, stderr
 	err := cmd.Run()
@@ -96,7 +120,7 @@ func (s *Synchronizer) git(parent context.Context, args ...string) (string, erro
 		}
 		return "", &commandError{operation: args[0], exitCode: code, cause: cause}
 	}
-	return strings.TrimSpace(stdout.String()), nil
+	return stdout.String(), nil
 }
 
 func isExit(err error, code int) bool {

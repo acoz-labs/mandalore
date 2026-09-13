@@ -29,3 +29,9 @@ Build the development executable with `go build -o ./mandalore ./cmd/mandalore`
 under the pinned toolchain. See [interface](interface.md) for synthetic examples.
 The compiled-process regression builds its own temporary executable and exercises
 actual stdio without a model, authentication, native settings or global install.
+
+Synchronization tests additionally require native Git with merge-tree --write-tree,
+commit-tree and standalone repository support. CI logs the actual Git version;
+unsupported features fail the real two-clone tests rather than being silently
+replaced with an in-place merge. The fixtures use local bare remotes and controlled
+failure wrappers, not external provider authentication. See [synchronization](synchronization.md).

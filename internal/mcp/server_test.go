@@ -36,7 +36,7 @@ func TestMCPUsesSharedContractAndRejectsDuplicates(t *testing.T) {
 	}
 	defer client.Close()
 	list, err := client.ListTools(ctx, nil)
-	if err != nil || len(list.Tools) != 7 {
+	if err != nil || len(list.Tools) != 11 {
 		t.Fatal(list, err)
 	}
 	for _, tool := range list.Tools {
@@ -45,6 +45,9 @@ func TestMCPUsesSharedContractAndRejectsDuplicates(t *testing.T) {
 		}
 		if tool.Name == "signet_create" {
 			t.Fatal("cross-bank admin exposed")
+		}
+		if tool.Annotations == nil || tool.Annotations.OpenWorldHint == nil || *tool.Annotations.OpenWorldHint != (tool.Name == "memory_sync") {
+			t.Fatal("incorrect network annotation", tool.Name)
 		}
 		data, err := json.Marshal(tool.OutputSchema)
 		if err != nil {
