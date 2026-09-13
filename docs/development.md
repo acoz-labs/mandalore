@@ -1,13 +1,16 @@
 # Development
 
-Run `bin/ci` from the repository root. At bootstrap this checks the managed
-solution-plan contract, shell syntax, required documentation, public fixture
-hygiene and workflow runner configuration. It does not test an unported runtime.
+Run `mise exec go@1.26.4 -- bin/ci` from the repository root. It checks the managed
+solution-plan contract, shell syntax, documentation, public fixture hygiene,
+workflow runner configuration, formatting, module integrity, race-enabled tests,
+vet, and library builds for macOS/Linux on amd64/arm64. Native execution is only
+established on the host running tests; a cross-build is not runtime acceptance.
 
 `bin/container bin/ci` is the container entrypoint. If Docker is unavailable,
 use the supported host fallback `bin/ci` and report the route actually verified.
-The runtime port must pin Go and test tools before enabling language builds;
-do not install an unrecorded latest runtime.
+Go is pinned to 1.26.4 in mise, the module toolchain, CI and the development
+container. The module language baseline is Go 1.26.0. CI rejects a different
+active toolchain; do not install or use an unrecorded latest runtime.
 
 Use synthetic banks and disposable native profiles. Never copy ambient native
 authentication, private transcripts or real memory into acceptance fixtures.

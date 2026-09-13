@@ -12,7 +12,9 @@ Those remain tracked work; workflow YAML alone does not establish distribution.
 
 ## Release contract
 
-1. Merge independently reviewed and validated release-bearing work.
+1. Merge reviewed and validated release-bearing work. Engineering self-review
+   for the current MVP follows [the owner-authorized deviation](decisions/0001-mvp-self-review.md);
+   it does not substitute for independent product acceptance below.
 2. Build and retain one immutable candidate from the exact nominated source.
 3. Record OS/architecture, runtime/plugin versions, digests, checks, known limits,
    supported schema/protocol versions and linked issues.

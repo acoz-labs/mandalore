@@ -47,6 +47,13 @@ successfully completed.
 
 ## Compatibility and safety
 
+The extracted writer creates only `signet.json` format 1 and refuses any root
+containing `bank.json` or `agent.json`, including mixed-format roots. The bank-wide
+scope is `signet`; local locks use `.mandalore`. Replacing a bound manifest's ID
+invalidates the open store handle. Existing record/revision/source/device IDs
+remain opaque. No conversion or dual-writer compatibility is implemented yet;
+#8 must provide explicit migration with preservation and rollback evidence.
+
 Existing My Friday installations and private agents remain untouched. Mandalore
 uses a separate namespace and explicit signet binding. No launcher replacement,
 native-profile mutation, real-memory migration, credential copying or old-cache
