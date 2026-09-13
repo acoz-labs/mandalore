@@ -2,6 +2,12 @@
 
 ## Strategy and sources
 
+Transition completed: the predecessor repository is archived and its planning
+board is closed. A [pinned transition notice](https://github.com/acoz-labs/my-friday/issues/119)
+links to Mandalore. The preserved feature-branch checkpoint remains
+`b67b169cd6e2de1681f48470400d7b44f73fecc1`; no branch or release was removed.
+This completes source/project retirement, not a runtime or memory migration.
+
 Create a new public repository with fresh, privacy-reviewed history. Preserve
 the predecessor repository, all branches, issues, PRs and releases as a read-only
 archive after successor links exist. Do not rename the old repo, erase history,

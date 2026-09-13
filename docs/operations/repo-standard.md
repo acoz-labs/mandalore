@@ -88,6 +88,9 @@ Record intentional deviations here with rationale.
   commit initializes the repository; subsequent changes use reviewed PRs.
 - Public CI explicitly uses `CI_RUNNER=ubuntu-latest`. No self-hosted runner or
   automatic fallback is used for public code.
+- Project #35 was copied from the organization's Repo Project Template with
+  matching fields/views. The new public copy replaces personal Owner options
+  with generic roles; the private template remains unchanged. See `project.md`.
 - Artifact profile, no staging service. Product-specific distribution is tracked,
   not operational merely because template workflows exist.
 - Host `bin/ci` is supported when Docker is unavailable; exact runtime pins are
