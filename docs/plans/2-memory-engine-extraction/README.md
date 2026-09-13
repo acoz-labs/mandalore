@@ -2,7 +2,7 @@
 
 - **Status:** Draft
 - **Issue:** #2
-- **Planning PR:** Pending
+- **Planning PR:** #17
 - **Repository basis:** 0c904334b55534a3255af613c32de3759dabdc98
 - **Execution envelope:** implementation
 
@@ -16,8 +16,8 @@ it does not install a native plugin, migrate a user's memory or publish a releas
 ## Needs Attention
 
 Independent maintainer review and product approval on the final exact planning
-head are pending. GitHub currently rejects workflow publication without the
-required authorization; project-board setup separately needs Projects access.
+head are pending. The foundation and planning branch are published, and the
+template-derived public project board is configured with all successor issues.
 Do not mark this plan Final or issues Ready until the actual gate is satisfied.
 
 ## Decision Spotlight
