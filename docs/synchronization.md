@@ -114,6 +114,11 @@ cooperatively bounded, not instantaneously interruptible or transactional.
 The signet lock coordinates Mandalore writers. Ordinary concurrent Git edits are
 checked and preserved, but this is not a sandbox against a hostile filesystem
 owner racing paths or configurations. Power-loss recovery is not fully simulated.
+Cancellation fixtures suspend at Git command phase boundaries, not at every
+internal filesystem instruction. An interruption inside Git itself can leave an
+index lock or incomplete checkout requiring inspection; committed heads remain
+recovery evidence. Do not infer atomic multi-file checkout or remove a lock while
+its owner is alive. Installation recovery guidance belongs to #7.
 
 ## Passive integration and verification
 
