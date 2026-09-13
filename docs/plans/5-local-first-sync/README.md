@@ -1,8 +1,8 @@
 # Solution Design: local-first synchronization
 
-- **Status:** Draft
+- **Status:** Final
 - **Issue:** #5
-- **Planning PR:** Pending
+- **Planning PR:** #23
 - **Repository basis:** d1f78b2b4139b394d5c12536bc5e74a6fda4042b
 - **Execution envelope:** implementation
 

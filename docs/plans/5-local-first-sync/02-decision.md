@@ -35,3 +35,10 @@ The ordinary operation timeout is bounded and configurable downward for native
 automation. Cancellation reports the known phase/commit, never a fictional rollback.
 Automatic retry is not promised for ambiguous outcomes; status/history inspection
 and a new explicit synchronization attempt are safe recovery entry points.
+
+Native feature inspection found Git 2.50.1 (Apple Git-155) with merge-tree
+--write-tree available. This is actual local evidence, not a minimum-version or
+other-platform acceptance claim. Runtime checks/tests must fail clearly when
+required Git capabilities are unavailable. The pinned predecessor did not supply
+a separate memorybank sync file; its implementation lived in portable/sync.go
+and depended on assistant identity/configuration, which this port excludes.
