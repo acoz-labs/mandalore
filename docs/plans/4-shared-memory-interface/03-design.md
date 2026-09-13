@@ -45,6 +45,14 @@ same across CLI/MCP; document transport framing/schema overhead separately.
 Inspect actual SDK validation behavior instead of assuming Go structs make every
 input strict. Server startup does not install a native plugin.
 
+Inspection of the pinned Go SDK v1.7.0 confirms that Server.AddTool preserves
+raw CallToolParamsRaw.Arguments and delegates schema/input validation to the
+handler. Use that API with a shared strict decoder (including duplicate-field
+rejection), inferred/validated schemas and the same dispatcher as CLI calls.
+The generic AddTool helper alone is not the duplicate-key enforcement boundary.
+Bound newline-delimited stdio frames separately from the 32 KiB argument limit;
+close the transport on cancellation rather than leave an input reader running.
+
 Signal cancellation and MCP cancellation are propagated to the shared boundary.
 Check cancellation before mutation; do not claim an already published file was
 undone. Context-aware traversal/transport bounds need explicit tests where added.
