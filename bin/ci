@@ -41,6 +41,7 @@ done
 }
 [[ -z "$(gofmt -l internal cmd)" ]] || { echo "Run gofmt on internal/ and cmd/." >&2; exit 1; }
 go mod verify
+git --version
 go test -race ./...
 go vet ./...
 for target_os in darwin linux; do

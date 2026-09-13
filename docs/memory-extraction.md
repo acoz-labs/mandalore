@@ -57,7 +57,8 @@ or a power loss.
 This is the library outcome planned in #17, not end-to-end completion of #2/#3.
 Engineering self-review/reconciliation and exact-head CI evidence live in #20.
 Bindings and the shared CLI/MCP are implemented in the subsequent #4 slice;
-see [interface](interface.md). Git synchronization, reference retrieval/promotion, native integrations,
+see [interface](interface.md). The #5 backend adds [explicit Git synchronization](synchronization.md).
+Reference retrieval/promotion, native integrations,
 real two-machine tests and immutable candidate acceptance belong to later slices.
 Native engine checks now run on local macOS/arm64 and hosted Linux/amd64.
 Missing Actions runs recovered after fresh/reopened PR events; historical cause
@@ -74,3 +75,10 @@ The CLI/router and shared operation catalog are memory-only implementations, not
 copies of the assistant-aware predecessor CLI. The SDK adapter retains only the
 local stdio/shared-service concept; low-level raw argument handling uses the same
 strict decoder as the CLI. Native plugin/install and provider code are excluded.
+
+The synchronization backend reuses checkpoint/append-only/merge-tree concepts from
+portable/sync.go and SSH endpoint validation concepts from sync_transport.go, but
+not the assistant identity, source-change observer, custom hosting-account adapter
+or portable credential-helper machinery. Candidate validation now uses a bounded,
+blob-verified data archive instead of an unvalidated Git worktree. A narrow engine
+lock boundary coordinates writers without adding a process dependency to memory.

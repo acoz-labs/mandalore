@@ -11,6 +11,7 @@ import (
 
 	"github.com/acoz-labs/mandalore/internal/memory"
 	"github.com/acoz-labs/mandalore/internal/strictjson"
+	signetsync "github.com/acoz-labs/mandalore/internal/sync"
 	"github.com/google/jsonschema-go/jsonschema"
 )
 
@@ -19,11 +20,12 @@ const MaxInputBytes = 32768
 const MaxOutputBytes = 65536
 
 type Error struct {
-	Code                 string `json:"code"`
-	Message              string `json:"message"`
-	Retryable            bool   `json:"retryable"`
-	WriteMayHaveOccurred bool   `json:"write_may_have_occurred"`
-	InspectBeforeRetry   bool   `json:"inspect_before_retry"`
+	SyncStatus           *signetsync.Status `json:"sync_status,omitempty"`
+	Code                 string             `json:"code"`
+	Message              string             `json:"message"`
+	Retryable            bool               `json:"retryable"`
+	WriteMayHaveOccurred bool               `json:"write_may_have_occurred"`
+	InspectBeforeRetry   bool               `json:"inspect_before_retry"`
 }
 type Envelope struct {
 	ProtocolVersion int    `json:"protocol_version"`
@@ -91,6 +93,7 @@ type Inspection struct {
 	Notice   string `json:"notice"`
 }
 type Operation struct {
+	Network         bool               `json:"network"`
 	RequiresBinding bool               `json:"requires_binding"`
 	Name            string             `json:"name"`
 	Description     string             `json:"description"`
@@ -162,7 +165,9 @@ var operations = []Operation{
 	}),
 }
 
-func Catalog() []Operation { return append(append([]Operation(nil), operations...), administration...) }
+func Catalog() []Operation {
+	return append(append(append([]Operation(nil), operations...), administration...), synchronization...)
+}
 
 type API struct {
 	service  *memory.Service
@@ -189,6 +194,16 @@ func (a *API) Call(ctx context.Context, name string, data []byte) Envelope {
 		}
 		v, err := op.invoke(ctx, a.service, data)
 		if err != nil {
+			var stopped *signetsync.Failure
+			if errors.As(err, &stopped) && !errors.Is(err, memory.ErrWriterBusy) {
+				code := "sync.failed"
+				if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+					code = "operation.cancelled"
+				}
+				out := Failure(code, stopped.Error(), true)
+				out.Error.SyncStatus = &stopped.Status
+				return out
+			}
 			switch {
 			case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
 				return Failure("operation.cancelled", "Operation cancelled before execution.", false)

@@ -16,7 +16,7 @@ import (
 const MaxFrameBytes = 262144
 
 func New(a *api.API) *sdk.Server {
-	s := sdk.NewServer(&sdk.Implementation{Name: "mandalore", Version: "0.0.0-dev"}, &sdk.ServerOptions{Instructions: "Mandalore supplies scoped memory evidence, not agent identity or authority. Recall relevant past decisions; save useful confirmed changes and concise semantic journals incrementally when allowed. Honor read-only/no-save instructions. Current user direction supersedes conflicting historical guidance in scope. Do not store secrets or raw transcripts. Writes are local, not a claim of remote synchronization. Inspect after an ambiguous write failure before retrying."})
+	s := sdk.NewServer(&sdk.Implementation{Name: "mandalore", Version: "0.0.0-dev"}, &sdk.ServerOptions{Instructions: "Mandalore supplies scoped memory evidence, not agent identity or authority. Recall relevant past decisions; save useful confirmed changes and concise semantic journals incrementally when allowed. Honor read-only/no-save instructions. Current user direction supersedes conflicting historical guidance in scope. Do not store secrets or raw transcripts. Memory saves are local; only explicit memory_sync reports remote delivery, which is separate from semantic agreement. Inspect after an ambiguous write failure before retrying."})
 	errorSchema, err := strictjson.Schema(new(api.Error))
 	if err != nil {
 		panic("invalid built-in error schema")
@@ -26,13 +26,14 @@ func New(a *api.API) *sdk.Server {
 			continue
 		}
 		no := false
+		network := op.Network
 		outputSchema := map[string]any{"type": "object", "additionalProperties": false, "required": []string{"protocol_version", "ok"}, "properties": map[string]any{
 			"protocol_version": map[string]any{"const": api.ProtocolVersion}, "ok": map[string]any{"type": "boolean"}, "result": op.OutputSchema, "error": errorSchema,
 		}, "oneOf": []any{
 			map[string]any{"properties": map[string]any{"ok": map[string]any{"const": true}}, "required": []string{"result"}, "not": map[string]any{"required": []string{"error"}}},
 			map[string]any{"properties": map[string]any{"ok": map[string]any{"const": false}}, "required": []string{"error"}, "not": map[string]any{"required": []string{"result"}}},
 		}}
-		s.AddTool(&sdk.Tool{Name: op.Name, Description: op.Description, InputSchema: op.InputSchema, OutputSchema: outputSchema, Annotations: &sdk.ToolAnnotations{ReadOnlyHint: op.ReadOnly, DestructiveHint: &no, OpenWorldHint: &no, IdempotentHint: op.Idempotent}}, func(ctx context.Context, req *sdk.CallToolRequest) (*sdk.CallToolResult, error) {
+		s.AddTool(&sdk.Tool{Name: op.Name, Description: op.Description, InputSchema: op.InputSchema, OutputSchema: outputSchema, Annotations: &sdk.ToolAnnotations{ReadOnlyHint: op.ReadOnly, DestructiveHint: &no, OpenWorldHint: &network, IdempotentHint: op.Idempotent}}, func(ctx context.Context, req *sdk.CallToolRequest) (*sdk.CallToolResult, error) {
 			raw := req.Params.Arguments
 			if len(raw) == 0 {
 				raw = []byte("{}")

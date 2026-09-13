@@ -43,7 +43,7 @@ func TestCorruptStoreIsNotAnInputError(t *testing.T) {
 func TestCatalogAndSharedCalls(t *testing.T) {
 	a := fixture(t)
 	catalog := Catalog()
-	if len(catalog) != 9 {
+	if len(catalog) != 13 {
 		t.Fatal(catalog)
 	}
 	for _, op := range catalog {

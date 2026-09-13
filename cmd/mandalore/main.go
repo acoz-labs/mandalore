@@ -28,6 +28,8 @@ const help = `Mandalore — durable memory across tools
   mandalore memory recall --binding FILE [--query TEXT] [--scope-kind KIND --scope-id ID]
   mandalore memory scopes|history|journal|inspect --binding FILE [options]
   mandalore memory remember|journal-append --binding FILE < input.json
+  mandalore memory git-init|checkpoint|sync-status --binding FILE
+  mandalore memory sync --binding FILE [--timeout-seconds 10]
   mandalore call OPERATION --binding FILE < input.json
   mandalore mcp --binding FILE [--harness NAME] [--read-only]
 
@@ -35,8 +37,8 @@ Memory options: --limit N, --offset N (scopes/history), --record-id ID (history)
 --budget-bytes N (recall), --query TEXT (recall/journal).
 Common options: --binding FILE, --harness NAME, --read-only, --help.
 Binding selection: explicit file, then MANDALORE_BINDING, then platform config.
-No cwd-based bank discovery. Writes produce local receipts, not remote delivery.
-This development build has no sync, native installation or interactive menu yet.
+No cwd-based bank discovery. Memory saves are local; explicit sync reports delivery.
+This development build has no native installation or interactive menu yet.
 `
 
 func main() {
@@ -128,7 +130,7 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 	harness := f.String("harness", harnessDefault, "Attribution harness label")
 	readOnly := f.Bool("read-only", false, "Reject mutations")
 	var repository, label, actor, displayName, query, kind, scopeID, recordID string
-	var limit, offset, budget int
+	var limit, offset, budget, timeout int
 	if human {
 		switch name {
 		case "signet_create", "signet_bind":
@@ -154,6 +156,8 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 		case "memory_journal":
 			f.StringVar(&query, "query", "", "Query")
 			f.IntVar(&limit, "limit", 5, "Result limit")
+		case "memory_sync":
+			f.IntVar(&timeout, "timeout-seconds", 10, "Sync budget, 1–30 seconds")
 		}
 	}
 	if err := f.Parse(rest); err != nil {
@@ -226,7 +230,9 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 			value = api.HistoryInput{RecordID: recordID, Offset: offset, Limit: &limit}
 		case "memory_journal":
 			value = api.JournalInput{Query: query, Limit: &limit}
-		case "memory_inspect":
+		case "memory_sync":
+			value = api.SyncInput{TimeoutSeconds: &timeout}
+		case "memory_inspect", "memory_git_init", "memory_checkpoint", "memory_sync_status":
 			value = struct{}{}
 		}
 	}

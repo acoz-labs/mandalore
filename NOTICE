@@ -1,6 +1,6 @@
 Mandalore selectively adapts memory storage, revision graph, lexical retrieval,
 journal, response-budget, machine-binding and filesystem primitives and synthetic
-tests, plus shared local MCP adapter concepts, from:
+tests, plus shared local MCP adapter, Git checkpoint and reconciliation concepts, from:
 
 My Friday — https://github.com/acoz-labs/my-friday
 Source commit: f3d337bca419fdaf82bd9a6ce31ebde7f3748eb8
