@@ -9,8 +9,9 @@ engine, CLI, MCP server and thin native harness plugins.
 ## Status
 
 This is the memory-only successor to [My Friday](https://github.com/acoz-labs/my-friday).
-The repository contains the memory engine, synthetic regression tests, project
-foundations and migration contracts, not an installable Mandalore runtime.
+The repository contains the memory engine, a development CLI/local MCP server,
+synthetic regression tests, project foundations and migration contracts. Native
+installation and synchronization are still being implemented.
 No Mandalore release has been published.
 
 Codex is the first integration. Pi follows accepted Codex support, then Claude
@@ -45,6 +46,7 @@ portability is not included.
 - [Product contract](docs/product.md)
 - [Architecture and implementation status](docs/architecture.md)
 - [Signet data format](docs/signet-format.md) and [source extraction](docs/memory-extraction.md)
+- [Development CLI, local MCP and machine bindings](docs/interface.md)
 - [Migration and predecessor disposition](docs/migration.md)
 - [Roadmap](docs/roadmap.md) and [issues](https://github.com/acoz-labs/mandalore/issues)
 - [Development](docs/development.md), [releases](docs/deployment.md), [runbook](docs/runbook.md)

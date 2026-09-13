@@ -23,6 +23,9 @@ import (
 
 const FormatVersion = 1
 
+var ErrWriterBusy = errors.New("signet writer busy; retry the operation")
+var ErrIdentityChanged = errors.New("store identity changed; reopen the intended signet")
+
 //go:embed schemas/*.json
 var schemas embed.FS
 var identifier = regexp.MustCompile(`^[a-z][a-z0-9-]{2,127}$`)
@@ -238,7 +241,7 @@ func (s *Store) withLock(fn func() error) error {
 	}
 	defer syscall.Close(fd)
 	if err := syscall.Flock(fd, syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
-		return errors.New("signet writer busy; retry the operation")
+		return ErrWriterBusy
 	}
 	defer syscall.Flock(fd, syscall.LOCK_UN)
 	if err := s.checkDirectories(); err != nil {
@@ -252,7 +255,7 @@ func (s *Store) checkDirectories() error {
 		return err
 	}
 	if current.Signet.ID != s.Signet.ID {
-		return errors.New("store identity changed; reopen the intended signet")
+		return ErrIdentityChanged
 	}
 	for _, dir := range directories {
 		info, err := os.Lstat(filepath.Join(s.Root, dir))

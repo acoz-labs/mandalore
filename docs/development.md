@@ -3,7 +3,7 @@
 Run `mise exec go@1.26.4 -- bin/ci` from the repository root. It checks the managed
 solution-plan contract, shell syntax, documentation, public fixture hygiene,
 workflow runner configuration, formatting, module integrity, race-enabled tests,
-vet, and library builds for macOS/Linux on amd64/arm64. Native execution is only
+vet, and engine/CLI builds for macOS/Linux on amd64/arm64. Native execution is only
 established on the host running tests; a cross-build is not runtime acceptance.
 
 `bin/container bin/ci` is the container entrypoint. If Docker is unavailable,
@@ -24,3 +24,8 @@ Release/acceptance workflows retain their separate permissions and checks.
 
 Local validation is not independent product acceptance. Record exact source and
 artifact identities, actual native results and pending checks in the issue/PR.
+
+Build the development executable with `go build -o ./mandalore ./cmd/mandalore`
+under the pinned toolchain. See [interface](interface.md) for synthetic examples.
+The compiled-process regression builds its own temporary executable and exercises
+actual stdio without a model, authentication, native settings or global install.
