@@ -29,14 +29,17 @@ The template-visible fields are Title, Assignees, Status, Linked pull requests
 and Sub-issues progress. GraphQL field/view/filter/grouping inspection verified
 the copy; this is not a claim of a separate browser usability test.
 
-All 16 successor issues are attached with Status, Area, Priority, Owner role,
+All 16 successor product issues are attached with Status, Area, Priority, Owner role,
 Execution Lane, Target and Next Action. Three milestones distinguish Memory MVP,
 Cross-harness continuity and Later improvements. Exact live state remains in
 GitHub, not this receipt.
 
+One additional bootstrap diagnostic, #19, tracks missing hosted Actions runs.
+It is attached with its own status and next action; the board now has 17 issues.
+
 ## Initial status decisions
 
-- #1: repository/project transition work; keep open through verification.
+- #1: Review; archive complete, bootstrap receipt and hosted CI evidence pending.
 - #2/#3: Solution Design; PR #17 needs independent review and final approval.
 - #4–#11: Shaping, not implementation-ready merely because an issue exists.
 - #13: Waiting for Codex acceptance; #14: Waiting for Pi acceptance.

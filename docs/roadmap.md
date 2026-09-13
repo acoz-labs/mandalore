@@ -30,6 +30,9 @@ sequence and scope; issue creation is not implementation or acceptance.
 
 ## Current handoff
 
+Bootstrap follow-up: [#19](https://github.com/acoz-labs/mandalore/issues/19)
+tracks missing hosted Actions runs. Local validation is not hosted CI evidence.
+
 Repository foundation is published. The shared-engine/schema solution plan in
 [PR #17](https://github.com/acoz-labs/mandalore/pull/17) precedes implementation.
 Codex acceptance precedes Pi; Pi acceptance
