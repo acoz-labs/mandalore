@@ -2,9 +2,12 @@
 
 ## Current state
 
-Only the managed project foundation, product contract and migration backlog are
-present. Runtime porting has not landed. These are agreed target boundaries,
-not claims of shipped behavior; the solution design resolves final packages.
+`internal/memory` implements the signet engine as a library: immutable records,
+sources/devices, journals, supersession, scoped lexical recall, bounded service
+responses, and data-only foundling registration/citation validation. See the
+[format contract](signet-format.md) and [extraction inventory](memory-extraction.md).
+The remaining locations below are integration targets, not implemented adapters.
+No installable CLI, native plugin or release is implied by library tests.
 
 | Location | Responsibility |
 | --- | --- |
@@ -29,6 +32,12 @@ avoid extracting memory primitives.
 The host agent supplies semantic interpretation. No separate inference service
 or embedding subscription is required. Memory is evidence, not executable
 permission. Explicit no-write boundaries apply to hooks, CLI and MCP alike.
+
+The engine has no assistant identity, capability registry, provider adapter,
+subprocess execution, networking or synchronization dependency. `net/url` is used
+only to parse portable reference identities. A regression check rejects direct
+process/network or other product-package imports. Machine-local state is ignored
+by Git and not necessary for reads; a writer creates its local lock directory.
 
 Corrections preserve history through supersession edges. Concurrent heads remain
 conflicts; a successful Git merge does not prove semantic agreement. Reads must

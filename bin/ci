@@ -35,4 +35,18 @@ for workflow in .github/workflows/*.yml; do
   fi
 done
 
-echo "Foundation checks passed; no Mandalore runtime acceptance is implied."
+[[ "$(go env GOVERSION)" == "go1.26.4" ]] || {
+  echo "Go 1.26.4 is required; use mise exec go@1.26.4 -- bin/ci." >&2
+  exit 1
+}
+[[ -z "$(gofmt -l internal)" ]] || { echo "Run gofmt on internal/." >&2; exit 1; }
+go mod verify
+go test -race ./...
+go vet ./...
+for target_os in darwin linux; do
+  for target_arch in amd64 arm64; do
+    GOOS="$target_os" GOARCH="$target_arch" CGO_ENABLED=0 go build ./...
+  done
+done
+
+echo "Engine checks and target builds passed; cross-builds are not native acceptance."

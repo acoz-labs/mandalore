@@ -15,7 +15,27 @@ neither migrates nor removes existing pinned installations.
 - Public reports use synthetic fixtures, never private memory, machine names,
   workstation paths, credentials or raw session transcripts.
 
-## Recovery behavior to verify during the port
+## Storage recovery and remaining integration work
+
+### Implemented library behavior
+
+- A busy writer fails without taking over another process's lock. Retry after
+  the owner finishes; never remove the lock path while another writer is active.
+- Invalid source/revision graphs and serialized size limits are checked before
+  sourced publication. Rejected input is not a successful save.
+- A genuine disk error after source publication can leave valid orphan evidence
+  but no new revision. Inspect source and history before retrying; retries are
+  not promised exactly-once. Do not delete orphan evidence automatically.
+- Unknown/mixed formats, changed signet identity, noncanonical record paths and
+  symlinks fail closed. Preserve data and use an explicit repair/migration path;
+  do not rename legacy manifests to bypass validation.
+- A fresh Git clone can be read without ignored machine-local state. The first
+  write creates its local lock directory; reads do not repair or journal.
+
+These library checks do not implement a doctor/repair CLI yet. See the
+[format contract](signet-format.md) for actual data and compatibility boundaries.
+
+### Remaining integration behavior
 
 Doctor separates structural checks from login, MCP startup, hook trust, remote
 freshness and active-session context. Repair touches only known managed state
