@@ -127,6 +127,13 @@ closes the server normally.
 
 ## Verification boundary
 
+`mandalore codex-memory-hook [--binding FILE]` is a separate, read-only native
+adapter, not a shared memory operation. It consumes native event JSON and emits
+Codex hook context/warnings rather than the CLI envelope. Invalid configuration
+or unavailable memory produces a nonblocking warning. See the
+[Codex integration](../plugins/codex/README.md) for budgets, installation and
+native verification boundaries. It does not belong in the MCP tool catalog.
+
 Tests cover strict schemas, binding isolation/replacement, CLI/MCP equivalence,
 compiled executable create/correction/history, unrelated cwd, explicit binding
 precedence, no-write hashes, real stdio, EOF and interruption. Full race tests,

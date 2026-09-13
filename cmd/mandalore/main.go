@@ -13,6 +13,7 @@ import (
 
 	"github.com/acoz-labs/mandalore/internal/api"
 	"github.com/acoz-labs/mandalore/internal/binding"
+	"github.com/acoz-labs/mandalore/internal/codex"
 	memorymcp "github.com/acoz-labs/mandalore/internal/mcp"
 	"github.com/acoz-labs/mandalore/internal/memory"
 )
@@ -32,6 +33,7 @@ const help = `Mandalore — durable memory across tools
   mandalore memory sync --binding FILE [--timeout-seconds 10]
   mandalore call OPERATION --binding FILE < input.json
   mandalore mcp --binding FILE [--harness NAME] [--read-only]
+  mandalore codex-memory-hook [--binding FILE]   Read-only native lifecycle JSON
 
 Memory options: --limit N, --offset N (scopes/history), --record-id ID (history),
 --budget-bytes N (recall), --query TEXT (recall/journal).
@@ -60,6 +62,22 @@ func bad(out io.Writer, message string) int {
 }
 
 func run(ctx context.Context, args []string, input io.Reader, out, errout io.Writer) int {
+	if len(args) > 0 && args[0] == "codex-memory-hook" {
+		f := flag.NewFlagSet("codex-memory-hook", flag.ContinueOnError)
+		f.SetOutput(io.Discard)
+		path := f.String("binding", "", "Machine-local binding file")
+		if err := f.Parse(args[1:]); err != nil || f.NArg() != 0 {
+			_, err := io.WriteString(out, "{\"systemMessage\":\"Mandalore hook configuration is invalid; no memory was changed.\"}\n")
+			if err != nil {
+				return 1
+			}
+			return 0
+		}
+		if err := codex.Run(*path, input, out); err != nil {
+			return 1
+		}
+		return 0
+	}
 	if len(args) == 0 || args[0] == "help" || args[0] == "--help" || args[0] == "-h" {
 		_, err := io.WriteString(out, help)
 		if err != nil {
