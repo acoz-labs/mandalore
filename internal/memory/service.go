@@ -24,8 +24,9 @@ func OpenService(root string, author Authorship) (*Service, error) {
 	return &Service{store: s, author: author}, nil
 }
 
-func (s *Service) ID() string   { return s.store.Signet.ID }
-func (s *Service) Root() string { return s.store.Root }
+func (s *Service) ID() string      { return s.store.Signet.ID }
+func (s *Service) Root() string    { return s.store.Root }
+func (s *Service) Validate() error { return s.store.Validate() }
 
 type Write struct {
 	ExternalOrigin *ExternalOrigin `json:"external_origin,omitempty"`

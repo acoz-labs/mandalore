@@ -16,10 +16,12 @@ private-agent configuration was imported.
 | `memorybank/service.go`, `pages.go` | Validated writes, compact recall, page/byte budgets | Sync method and portable-package dependency |
 | Selected memory/retrieval/service tests | Graph/history/scopes/budgets/correction fixtures | Git-sync/native installation fixtures belonging to later issues |
 
-The module has two direct dependencies: JSON Schema validation and `x/sys` for
-exclusive native rename. `x/text` remains an indirect schema dependency at the
-pinned source version. TUI, MCP, OAuth, provider and assistant dependencies were
-not copied. `go mod tidy` generates the dependency closure and checksums.
+The engine directly uses JSON Schema validation and `x/sys` for exclusive native
+rename. The subsequent interface slice adds the pinned official Go MCP SDK and
+schema inference/validation package; their transitive dependencies include OAuth
+types, but no provider integration or credential enrollment is implemented.
+`go mod tidy` generates the dependency closure and checksums. The engine itself
+remains independent of adapters and subprocess/network execution.
 
 ## Deliberate changes from the characterized source
 
@@ -54,10 +56,21 @@ or a power loss.
 
 This is the library outcome planned in #17, not end-to-end completion of #2/#3.
 Engineering self-review/reconciliation and exact-head CI evidence live in #20.
-Bindings,
-Git synchronization, CLI/MCP, reference retrieval/promotion, native integrations,
+Bindings and the shared CLI/MCP are implemented in the subsequent #4 slice;
+see [interface](interface.md). Git synchronization, reference retrieval/promotion, native integrations,
 real two-machine tests and immutable candidate acceptance belong to later slices.
 Native engine checks now run on local macOS/arm64 and hosted Linux/amd64.
 Missing Actions runs recovered after fresh/reopened PR events; historical cause
 remains separately tracked in #19. No public release or production migration has
 occurred.
+
+## Shared interface extraction
+
+The interface selectively adapts `memorybank/binding.go` from the same pinned
+source, without its portable/assistant dependency. No-overwrite publication and
+outside-signet path validation are retained; strict JSON/size validation,
+directory durability, read-time location checks and identity pinning are explicit.
+The CLI/router and shared operation catalog are memory-only implementations, not
+copies of the assistant-aware predecessor CLI. The SDK adapter retains only the
+local stdio/shared-service concept; low-level raw argument handling uses the same
+strict decoder as the CLI. Native plugin/install and provider code are excluded.

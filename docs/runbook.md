@@ -35,6 +35,11 @@ neither migrates nor removes existing pinned installations.
 These library checks do not implement a doctor/repair CLI yet. See the
 [format contract](signet-format.md) for actual data and compatibility boundaries.
 
+The development `memory inspect --binding FILE` command validates structure
+read-only; it is not a full installation doctor. The [interface contract](interface.md)
+describes binding selection, stable errors, retry ambiguity and local receipts.
+It has no automatic repair, remote sync or implicit native installation.
+
 ### Remaining integration behavior
 
 Doctor separates structural checks from login, MCP startup, hook trust, remote

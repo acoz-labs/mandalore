@@ -1,0 +1,134 @@
+package memorymcp
+
+import (
+	"context"
+	"encoding/json"
+	"github.com/acoz-labs/mandalore/internal/api"
+	"github.com/acoz-labs/mandalore/internal/memory"
+	"github.com/google/jsonschema-go/jsonschema"
+	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
+	"path/filepath"
+	"testing"
+	"time"
+)
+
+func TestMCPUsesSharedContractAndRejectsDuplicates(t *testing.T) {
+	s, err := memory.Create(filepath.Join(t.TempDir(), "signet"), "Example", "device-test", "Test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	service, err := memory.OpenService(s.Root, memory.Authorship{DeviceID: "device-test", Actor: "Example", Harness: "test"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	a := api.New(service, false)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	serverTransport, clientTransport := sdk.NewInMemoryTransports()
+	server, err := New(a).Connect(ctx, serverTransport, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer server.Close()
+	client, err := sdk.NewClient(&sdk.Implementation{Name: "test", Version: "1"}, nil).Connect(ctx, clientTransport, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+	list, err := client.ListTools(ctx, nil)
+	if err != nil || len(list.Tools) != 7 {
+		t.Fatal(list, err)
+	}
+	for _, tool := range list.Tools {
+		if tool.InputSchema == nil || tool.OutputSchema == nil {
+			t.Fatal("missing schema")
+		}
+		if tool.Name == "signet_create" {
+			t.Fatal("cross-bank admin exposed")
+		}
+		data, err := json.Marshal(tool.OutputSchema)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var schema jsonschema.Schema
+		if err := json.Unmarshal(data, &schema); err != nil {
+			t.Fatal(err)
+		}
+		resolved, err := schema.Resolve(nil)
+		if err != nil {
+			t.Fatalf("unresolvable %s output schema: %v", tool.Name, err)
+		}
+		input := []byte(`{}`)
+		if tool.Name == "memory_remember" {
+			input = []byte(`{"kind":"fact","summary":"Schema fixture","body":"Example","basis":"user-direction","reason":"Confirmed"}`)
+		}
+		if tool.Name == "memory_journal_append" {
+			input = []byte(`{"kind":"session","summary":"Schema fixture"}`)
+		}
+		out := a.Call(ctx, tool.Name, input)
+		data, _ = json.Marshal(out)
+		var generic any
+		if err := json.Unmarshal(data, &generic); err != nil {
+			t.Fatal(err)
+		}
+		if err := resolved.Validate(generic); err != nil {
+			t.Fatalf("%s result violates schema: %v", tool.Name, err)
+		}
+	}
+	for _, raw := range []string{`{"query":"one","query":"two"}`, `{"unknown":"PRIVATE-CANARY"}`, `{"limit":-1}`, `{}`} {
+		result, err := client.CallTool(ctx, &sdk.CallToolParams{Name: "memory_recall", Arguments: json.RawMessage(raw)})
+		if err != nil {
+			t.Fatal(err)
+		}
+		direct := a.Call(ctx, "memory_recall", []byte(raw))
+		data, err := json.Marshal(result.StructuredContent)
+		if err != nil {
+			t.Fatal(err)
+		}
+		expected, err := json.Marshal(direct)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var lhs, rhs any
+		json.Unmarshal(data, &lhs)
+		json.Unmarshal(expected, &rhs)
+		canonicalL, _ := json.Marshal(lhs)
+		canonicalR, _ := json.Marshal(rhs)
+		if string(canonicalL) != string(canonicalR) || result.IsError == direct.OK {
+			t.Fatalf("different MCP/CLI contract: %s / %s", canonicalL, canonicalR)
+		}
+	}
+	write := json.RawMessage(`{"kind":"fact","summary":"Project","body":"Copper Finch","basis":"user-direction","reason":"Confirmed"}`)
+	result, err := client.CallTool(ctx, &sdk.CallToolParams{Name: "memory_remember", Arguments: write})
+	if err != nil || result.IsError {
+		t.Fatal(result, err)
+	}
+	data, err := json.Marshal(result.StructuredContent)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var receipt struct {
+		OK     bool        `json:"ok"`
+		Result api.Receipt `json:"result"`
+	}
+	if err := json.Unmarshal(data, &receipt); err != nil || !receipt.OK || !receipt.Result.DurableLocally || receipt.Result.Synchronization != "not-requested" {
+		t.Fatal(receipt, err)
+	}
+	result, err = client.CallTool(ctx, &sdk.CallToolParams{Name: "memory_history", Arguments: map[string]any{"record_id": receipt.Result.RecordID}})
+	if err != nil || result.IsError {
+		t.Fatal(result, err)
+	}
+	a.ReadOnly = true
+	result, err = client.CallTool(ctx, &sdk.CallToolParams{Name: "memory_remember", Arguments: write})
+	if err != nil || !result.IsError {
+		t.Fatal("read-only mutation accepted", result, err)
+	}
+	data, err = json.Marshal(result.StructuredContent)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var refused api.Envelope
+	if err := json.Unmarshal(data, &refused); err != nil || refused.Error == nil || refused.Error.Code != "operation.read_only" {
+		t.Fatal(refused, err)
+	}
+}

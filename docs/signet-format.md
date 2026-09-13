@@ -25,6 +25,11 @@ without replacing an existing destination, then its parent directory is synced.
 This is not a multi-file transaction or protection from an actively hostile
 local filesystem owner. Symlink checks do not turn the library into a sandbox.
 
+Machine bindings are versioned local files outside this tree; they pin signet
+identity, canonical path, enrolled device and actor. They never travel with Git.
+See [the interface contract](interface.md#binding-and-provenance) for selection,
+new-device enrollment, validation and no-overwrite publication.
+
 Writes share a nonblocking local file lock. A busy writer reports a retryable
 error; it does not overwrite the other writer. Reads do not create locks, local
 directories, journals or indexes. A replaced signet ID invalidates existing store

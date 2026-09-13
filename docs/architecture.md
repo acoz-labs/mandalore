@@ -6,13 +6,15 @@
 sources/devices, journals, supersession, scoped lexical recall, bounded service
 responses, and data-only foundling registration/citation validation. See the
 [format contract](signet-format.md) and [extraction inventory](memory-extraction.md).
-The remaining locations below are integration targets, not implemented adapters.
-No installable CLI, native plugin or release is implied by library tests.
+`internal/api`, `internal/binding`, `internal/mcp` and `cmd/mandalore` now provide
+the [shared local interface](interface.md). Sync, menus, native installation and
+plugins below remain integration targets. No release is implied by these tests.
 
 | Location | Responsibility |
 | --- | --- |
 | `cmd/mandalore` | Human CLI/menu and machine-readable commands |
 | `internal/memory` | Records, journals, scoped retrieval, provenance, supersession |
+| `internal/api`, `internal/strictjson` | Shared operations, bounded strict schemas, receipts and errors |
 | `internal/sync` | Local checkpoints and recoverable Git synchronization |
 | `internal/binding` | Local signet selection and originating-device identity |
 | `internal/mcp` | Typed stdio MCP access over the same memory engine |
