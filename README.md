@@ -11,7 +11,7 @@ engine, CLI, MCP server and thin native harness plugins.
 This is the memory-only successor to [My Friday](https://github.com/acoz-labs/my-friday).
 The repository contains the memory engine, a development CLI/local MCP server,
 explicit Git synchronization, a development Codex plugin with read-only lifecycle
-hooks and a memory skill, guided setup/local-artifact update/doctor/repair, explicit
+hooks and memory/administration skills, guided setup/local-artifact update/inspection/repair, explicit
 memory-only migration, foundling consultation/selective promotion, retrieval
 evaluation and synthetic regression tests. Versioned candidate builds, guided
 CLI installation/update and guarded same-byte release tooling are implemented.
@@ -30,6 +30,8 @@ newly extracted code or renamed artifacts.
 - **This is the way**: the memory skill (`this-is-the-way`) and an optional explicit
   cue to remember confirmed knowledge from the current conversation.
 - **Foundlings**: linked historical references, kept separate from current memory.
+- **The Armorer**: the on-demand setup and maintenance skill (`the-armorer`),
+  including read-only connection inspection (`connection armorer`).
 
 Learning should work without the cue. Memory is revisable evidence, not rules
 that override current user direction. Journals are semantic summaries, not a

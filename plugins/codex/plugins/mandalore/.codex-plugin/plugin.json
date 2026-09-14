@@ -11,7 +11,7 @@
   "interface": {
     "displayName": "Mandalore",
     "shortDescription": "Your lore, across time and space.",
-    "longDescription": "Recall relevant decisions and learn confirmed changes with a private, Git-backed signet. This is the way.",
+    "longDescription": "Recall relevant decisions and learn confirmed changes with a private, Git-backed signet. This Is the Way handles memory; The Armorer helps with setup and maintenance.",
     "developerName": "Acoz Labs",
     "category": "Productivity",
     "capabilities": ["Read", "Write"],

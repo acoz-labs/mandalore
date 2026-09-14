@@ -103,6 +103,20 @@ func bundle(p Plan) (map[string][]byte, Receipt, error) {
 		return nil, Receipt{}, err
 	}
 	prefix := "plugins/mandalore/"
+	// Administrative context is local projection, never part of the public
+	// package or signet. JSON encoding preserves paths without shell expansion.
+	files[prefix+"skills/the-armorer/references/connection.json"], err = json.MarshalIndent(map[string]any{
+		"schema_version":  1,
+		"runtime":         p.Runtime,
+		"binding":         p.Binding,
+		"state_dir":       p.StateDir,
+		"native_home":     p.NativeHome,
+		"native_binary":   p.NativeBinary,
+		"connection_root": p.Root,
+	}, "", "  ")
+	if err != nil {
+		return nil, Receipt{}, err
+	}
 	files[prefix+"scripts/connection.sh"] = []byte("#!/bin/sh\n" +
 		"if [ -z \"${MANDALORE_BIN:-}\" ]; then MANDALORE_BIN=" + quote(p.Runtime) + "; fi\n" +
 		"if [ -z \"${MANDALORE_BINDING:-}\" ]; then MANDALORE_BINDING=" + quote(p.Binding) + "; fi\n" +

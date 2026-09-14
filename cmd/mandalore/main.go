@@ -45,13 +45,14 @@ const help = `Mandalore — durable memory across tools
   mandalore codex-memory-hook [--binding FILE]   Read-only native lifecycle JSON
   mandalore connection plan [--binary FILE] [--binding FILE] [profile options]
   mandalore connection apply < approved-plan.json
-  mandalore connection doctor [profile options]
+  mandalore connection armorer [profile options]  The Armorer: read-only inspection
+  mandalore connection doctor [profile options]   Compatibility alias
   mandalore connection repair --connection-root DIR [--apply]
   mandalore migration preflight --source DIR --output NEW-DIR --device-label LABEL --actor NAME
   mandalore migration apply --writers-stopped < reviewed-preflight.json
 
 Profile options: --state-dir DIR, --native-home DIR, --native-binary FILE.
-Connection plan/doctor/repair preview do not activate a connection.
+Connection plan/armorer/doctor/repair preview do not activate a connection.
 Migration preflight accepts optional --legacy-binding FILE and explicit
 --native-home DIR --native-binary FILE for native inventory. No implicit defaults.
 Migration does not activate a writer or copy Git history/configuration.

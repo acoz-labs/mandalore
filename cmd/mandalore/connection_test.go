@@ -12,6 +12,28 @@ import (
 	"github.com/acoz-labs/mandalore/internal/install"
 )
 
+func TestArmorerAliasSharesDoctorContractWithoutWrites(t *testing.T) {
+	dir := t.TempDir()
+	native := filepath.Join(dir, "native-tool")
+	if err := os.WriteFile(native, []byte("#!/bin/sh\nexit 1\n"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	flags := []string{"--state-dir", filepath.Join(dir, "state"), "--native-home", filepath.Join(dir, "profile"), "--native-binary", native, "--read-only"}
+	doctor, dc := cli(t, append([]string{"connection", "doctor"}, flags...), "")
+	armorer, ac := cli(t, append([]string{"connection", "armorer"}, flags...), "")
+	if ac != dc || !reflect.DeepEqual(armorer, doctor) {
+		t.Fatalf("alias differs from doctor: armorer=%+v (%d), doctor=%+v (%d)", armorer, ac, doctor, dc)
+	}
+	if armorer.Error == nil || armorer.Error.ConnectionReport == nil {
+		t.Fatal("missing structured diagnostic report", armorer)
+	}
+	for _, path := range []string{filepath.Join(dir, "state"), filepath.Join(dir, "profile")} {
+		if _, err := os.Stat(path); !os.IsNotExist(err) {
+			t.Fatal("inspection created state", path, err)
+		}
+	}
+}
+
 func TestConnectionPlanCLIAndAgentCatalogShareTheContract(t *testing.T) {
 	dir := t.TempDir()
 	root, bindingPath := filepath.Join(dir, "signet"), filepath.Join(dir, "binding.json")
