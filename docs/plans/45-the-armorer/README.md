@@ -1,8 +1,8 @@
 # Solution Design: The Armorer
 
-- **Status:** Draft
+- **Status:** Final
 - **Issue:** #45
-- **Planning PR:** Pending
+- **Planning PR:** #46
 - **Repository basis:** 5c61d3587703555401092dbd070e162967e37014
 - **Execution envelope:** implementation
 
@@ -20,4 +20,3 @@ Generated local context supplies the verified connection's retained runtime and 
 
 ## Final Gate
 Contributor self-review is authorized for this owner-requested MVP addition under AGENTS.md. No independent approval or release authority is inferred.
-
