@@ -8,10 +8,10 @@ promote their contents into the signet.
 ## Implementation status
 
 Issue #12 is in progress. The engine has immutable registrations with explicit
-active, disconnected and conflicting heads, and internal read-only local/Git
-source observation. These are implementation components, not yet a complete
-user-facing workflow. Local connections, retrieval/promotion operations, CLI/menu
-integration and native-agent verification remain in the reviewed issue plan.
+active, disconnected and conflicting heads, internal read-only local/Git
+source observation, and clone-local connections/inspection. These are implementation
+components, not yet a complete user-facing workflow. Retrieval/promotion operations,
+CLI/menu integration and native-agent verification remain in the reviewed issue plan.
 No real historical memory has been adopted by these synthetic tests.
 
 ## Portable identity versus local content
@@ -41,6 +41,44 @@ interactive transport. It does not run checkout, status refresh, filters or
 text conversion. Untracked files are not enumerated or counted; neither full
 checkout cleanliness nor remote freshness is claimed. An excluded code or binary
 file can be modified without becoming reference evidence.
+
+## Clone-local connections
+
+The internal connection manager stores a strict version-1 JSON connection at
+`.mandalore/foundlings/<foundling-id>.json`, under the signet's ignored local-state
+directory. It binds the signet ID, foundling ID, exact registration revision,
+portable source identity/pin and canonical absolute local root. Its connection ID
+is a SHA-256 fingerprint of those typed fields (excluding the ID itself), not a
+credential or signature. Identical configuration retains the same identity;
+editing a field without updating its fingerprint is invalid configuration.
+
+Connecting requires the expected current active registration revision and verified
+source pin. Replacing a connection additionally requires its exact prior ID.
+Unknown, malformed, redirected or concurrently changed local configuration is
+preserved, not automatically repaired. Another signet's connection is invalid.
+Sources cannot contain or be contained by the selected signet/local-state tree.
+Missing old source paths can be explicitly replaced with a verified new path.
+
+Connection writes share the signet writer lock, recheck metadata/content and use
+temporary-file publication. New connections cannot overwrite an existing file;
+deliberate replacements use the expected connection identity and recheck it before
+publication. This coordinates cooperating toolkit writers, not arbitrary programs
+that ignore the lock. Parent directories are synced after publication. A result
+can report `connected: true, durable: false` with an error if publication happened
+but a subsequent directory sync failed; callers must inspect before retrying.
+
+Inspection reports `unconnected`, `available`, `changed`, `unavailable`,
+`invalid_connection`, `disconnected` or `conflicted`. Only `available` means the
+selected content matched the connected registration during inspection. Missing
+paths or unsupported source reads are unavailable, not proof of absent historical
+knowledge. A new registration revision makes an old connection changed, even if
+its content pin is the same. Disconnection/conflict withholds source access while
+preserving local connections, original files and historical registrations.
+
+Inspection does not acquire a writer lock, create missing local directories,
+repair a connection or publish a registration. Local paths never become portable
+registration fields. Setting up the same signet on another machine requires its
+own local connection; there is no fallback to another bank's configuration.
 
 ## Eligibility and bounds
 
@@ -77,3 +115,13 @@ buffer with a promoted `ReadFrom` method. The bounded writer now owns a named
 buffer so all copied bytes pass through its limit check. Regression tests cover
 stdout/stderr flooding, cancellation and sanitized failures. This is contributor
 engineering evidence, not native workflow or immutable-candidate acceptance.
+
+Connection tests additionally cover fresh routing lookups, absent local state,
+read-only inspection, source disappearance/change, stale/disconnected/conflicting
+registrations, explicit path replacement, matching-request identity stability,
+tampered/unknown connections, wrong-signet isolation, overlap, symlinked local
+state, cancellation and preservation of source/registration bytes. An injected
+post-publication directory-sync failure verifies the partial result, retained
+inspectable connection, removal of the owned temporary file, refusal of a blind
+retry and successful explicit recovery. End-to-end management/API partial outcomes
+remain pending with the rest of the workflow.

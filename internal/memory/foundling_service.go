@@ -55,9 +55,34 @@ type FoundlingSummary struct {
 }
 
 func (s *Service) FoundlingsPage(offset, limit int) (Page[FoundlingSummary], error) {
-	items, err := s.store.FoundlingRegistrations()
+	summaries, err := s.foundlingSummaries()
 	if err != nil {
 		return Page[FoundlingSummary]{}, err
+	}
+	return page(summaries, offset, limit)
+}
+
+// Foundling looks up fresh routing metadata, never selecting a conflicted head.
+func (s *Service) Foundling(foundlingID string) (FoundlingSummary, error) {
+	if !identifier.MatchString(foundlingID) {
+		return FoundlingSummary{}, errors.New("invalid foundling ID")
+	}
+	summaries, err := s.foundlingSummaries()
+	if err != nil {
+		return FoundlingSummary{}, err
+	}
+	for _, summary := range summaries {
+		if summary.FoundlingID == foundlingID {
+			return summary, nil
+		}
+	}
+	return FoundlingSummary{}, errors.New("foundling not registered in selected signet")
+}
+
+func (s *Service) foundlingSummaries() ([]FoundlingSummary, error) {
+	items, err := s.store.FoundlingRegistrations()
+	if err != nil {
+		return nil, err
 	}
 	parents := map[string]bool{}
 	for _, r := range items {
@@ -90,7 +115,7 @@ func (s *Service) FoundlingsPage(offset, limit int) (Page[FoundlingSummary], err
 		summaries = append(summaries, v)
 	}
 	sort.Slice(summaries, func(i, j int) bool { return summaries[i].FoundlingID < summaries[j].FoundlingID })
-	return page(summaries, offset, limit)
+	return summaries, nil
 }
 
 func (s *Service) FoundlingHistoryPage(foundlingID string, offset, limit int) (Page[FoundlingRegistration], error) {
