@@ -1,0 +1,25 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/acoz-labs/mandalore/cmd/mandalore
+BenchmarkCompiledRetrieval
+    evaluation_benchmark_test.go:48: retained source=5b3c7b275bb4bbb058bebdd7153f4b76bbceb59f os=darwin arch=arm64 binary-sha256=eed5c72490079d9ee7bb2d08b7bc7916c5b56f4473f91849dc6e6d5c9d9fb3fc; no candidate build
+BenchmarkCompiledRetrieval/records-100/depth-1/conflict-every-0
+    evaluation_benchmark_test.go:54: corpus: records=100 revisions=100 files=213 bytes=121318; setup excluded; fresh process is not cold disk
+    evaluation_benchmark_test.go:84: read-only fixture hashes and unrelated cwd unchanged
+    evaluation_benchmark_test.go:54: corpus: records=100 revisions=100 files=213 bytes=121318; setup excluded; fresh process is not cold disk
+    evaluation_benchmark_test.go:84: read-only fixture hashes and unrelated cwd unchanged
+BenchmarkCompiledRetrieval/records-100/depth-1/conflict-every-0-10         	      20	  36506481 ns/op	        35.92 p50-ms	        39.50 p95-ms	       869.0 result-B/op	   42300 B/op	      89 allocs/op
+BenchmarkCompiledRetrieval/records-1000/depth-1/conflict-every-0
+    evaluation_benchmark_test.go:54: corpus: records=1000 revisions=1000 files=2013 bytes=1211038; setup excluded; fresh process is not cold disk
+    evaluation_benchmark_test.go:84: read-only fixture hashes and unrelated cwd unchanged
+    evaluation_benchmark_test.go:54: corpus: records=1000 revisions=1000 files=2013 bytes=1211038; setup excluded; fresh process is not cold disk
+    evaluation_benchmark_test.go:84: read-only fixture hashes and unrelated cwd unchanged
+BenchmarkCompiledRetrieval/records-1000/depth-1/conflict-every-0-10        	      20	 158837748 ns/op	       155.9 p50-ms	       179.3 p95-ms	       869.0 result-B/op	   41884 B/op	      87 allocs/op
+BenchmarkCompiledRetrieval/records-10000/depth-1/conflict-every-0
+    evaluation_benchmark_test.go:54: corpus: records=10000 revisions=10000 files=20013 bytes=12108238; setup excluded; fresh process is not cold disk
+    evaluation_benchmark_test.go:84: read-only fixture hashes and unrelated cwd unchanged
+    evaluation_benchmark_test.go:54: corpus: records=10000 revisions=10000 files=20013 bytes=12108238; setup excluded; fresh process is not cold disk
+    evaluation_benchmark_test.go:84: read-only fixture hashes and unrelated cwd unchanged
+BenchmarkCompiledRetrieval/records-10000/depth-1/conflict-every-0-10       	      20	1534193431 ns/op	      1512 p50-ms	      1623 p95-ms	       869.0 result-B/op	   41940 B/op	      87 allocs/op
+PASS
+ok  	github.com/acoz-labs/mandalore/cmd/mandalore	57.829s

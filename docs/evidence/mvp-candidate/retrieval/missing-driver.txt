@@ -1,0 +1,10 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/acoz-labs/mandalore/cmd/mandalore
+BenchmarkCompiledRetrieval
+    evaluation_benchmark_test.go:26: explicit absolute retained candidate path required
+--- FAIL: BenchmarkCompiledRetrieval
+FAIL
+exit status 1
+FAIL	github.com/acoz-labs/mandalore/cmd/mandalore	0.374s
+FAIL

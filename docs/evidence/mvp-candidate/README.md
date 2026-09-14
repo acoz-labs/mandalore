@@ -97,6 +97,15 @@ timings are one local sample, not a benchmark or cross-platform claim.
 
 ## Retained evidence and limits
 
+The [native Linux AMD64 checkpoint](linux/README.md) executes the exact retained
+platform binary, with actual CLI/MCP, synchronization, installation and migration
+receipts. It is model-free contributor evidence, not a Linux Codex conversation.
+
+[Fresh-process retrieval measurements](retrieval/README.md) use the exact retained
+macOS ARM64 binary across 100, 1,000 and 10,000 synthetic records. Every result and
+read-only hash check passed; the 10,000-record case is approximately 1.5 seconds
+on the measured host, not a universal latency promise.
+
 A subsequent [native learning and recovery checkpoint](native.md) verifies fresh
 Codex passive learning, same-record correction, explicit consolidation/journals,
 compaction, unavailable-binding hook/MCP behavior, restored fresh-session recall,

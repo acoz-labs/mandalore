@@ -15,7 +15,7 @@ documentation files, not this retained candidate or its runtime acceptance set.
 | Cwd, native inheritance, separate banks, two machines, origin, external reads | Native inherited-resource/cwd observations; separate synthetic banks; [two physical Macs](physical.md); same live MCP process external refresh | Second machine used compiled CLI, not a fresh native agent session |
 | Compaction, interruption, failed hooks, ambiguous writes, corruption, offline/concurrent sync | Actual native compaction/warnings/interrupted work plus compiled conflict/offline/corrupt/uncertain-push fixtures | Escape did not prove child termination; controlled push-response loss was local, not actual packet loss; no blanket failure coverage |
 | Supported OS/architecture execution | Matrix below | Cross-builds and source-suite tests do not prove execution of all retained platform binaries |
-| Context/retrieval cost without private transcripts | Measured MCP schema/response bytes and native operation summaries; source-level scale measurements in #9 | Aggregate native counters do not isolate Mandalore token cost; source benchmarks are not immutable-artifact benchmarks |
+| Context/retrieval cost without private transcripts | Measured MCP schema/response bytes and native operation summaries; [retained-binary 100/1000/10000-record retrieval](retrieval/README.md), plus separate source-level #9 evaluations | Aggregate native counters do not isolate Mandalore token cost; fresh-process single-revision measurements do not cover every retrieval mode |
 | Exact-digest install/update/repair journey | [21 fresh rendered recordings](ui/README.md), [distinct retained switching/refusals](ui/switch-and-refusals.md) | Contributor judgment only; no live public release/bootstrap yet |
 | Historical references and provenance | Actual CLI/MCP missing/changed-source handling, native selective promotion, source preservation | No arbitrary hostile-source immunity or bulk migration claim |
 | Explicit legacy compatibility (#8 dependency) | [Fresh retained-artifact migration](migration/README.md) | Synthetic memory-only conversion; no real-memory adoption or duplicate-native-writer inventory in this checkpoint |
@@ -26,7 +26,7 @@ documentation files, not this retained candidate or its runtime acceptance set.
 | --- | --- | --- | --- |
 | macOS ARM64 | Yes; full local checks and CLI continuity on two physical machines | Yes, Codex 0.153.4 on the first machine | Actual installer/repair UI and migration tests |
 | macOS AMD64 | Not yet verified | Not verified | Cross-built payload only |
-| Linux AMD64 | Retained payload not yet verified | Not verified | Actual Ubuntu-hosted source-level Go/CLI regression suites, including [candidate-source CI](https://github.com/acoz-labs/mandalore/actions/runs/34840157038); not the retained Linux executable |
+| Linux AMD64 | Yes; [retained native CLI/MCP, sync, install and migration](linux/README.md) | Not verified | Exact retained binary on the existing Ubuntu x86_64 runner; source-level CI remains separate |
 | Linux ARM64 | Not yet verified | Not verified | Cross-built payload only |
 
 The distribution declares all four targets. This audit does not silently redefine

@@ -1,0 +1,1 @@
+{"passed": true, "tool_count": 16, "requests": [{"method": "initialize", "response_bytes": 725}, {"method": "tools/list", "response_bytes": 44087}, {"method": "tools/call", "response_bytes": 1566}, {"method": "tools/call", "response_bytes": 543}]}
