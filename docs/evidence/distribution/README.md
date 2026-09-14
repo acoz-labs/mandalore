@@ -87,8 +87,56 @@ been removed. Red/green tests now require the complete ordered directory observa
 and consistent receipt, launcher and retained-runtime claims. Parsing still does
 not replace fresh source/filesystem verification at apply time.
 
-Retained states in these tests are constructed fixtures. This verifies preview and
-denial behavior, not successful installation, stale-plan apply, concurrent activation,
-recovery, rollback execution or connection updates. Those remain subsequent work.
+Retained states in these preview tests are constructed fixtures. This verifies
+preview and denial behavior, not successful installation, stale-plan apply,
+concurrent activation, recovery, rollback execution or connection updates.
+The later activation evidence below is separate from this preview run.
 The PR checkpoint binds this later verification to its own implementation head;
 it does not change the earlier reproducible candidate's source or manifest identity.
+
+## Native CLI installation, update and rollback
+
+Implementation/candidate source: `2a59cecd92259b22cc219161db0ebec676f61bf7`.
+The pinned builder exported this clean commit and created a second local candidate:
+
+- Manifest SHA-256: `3c2c405c0d68bec6c9c9a23a7677c5cee01f8bdaa95174cff79f7e39e474cbaa`.
+- Native Darwin ARM64 binary SHA-256: `4975862877d654f855a733a8c4c35a1753e3dd46b50f94cf94f1436923c67f95`.
+- Embedded plugin SHA-256: `f0e4df519fc6dbe70d69fd4191c6013b9017800aa4cfe3f45d2b5413872cfef1`.
+
+Actual commands in the designated macOS ARM64 pane used the new candidate CLI,
+the earlier reproducibility candidate and a fresh temporary prefix. They installed
+the earlier candidate, verified its `version`, updated to this candidate through
+typed `release_apply`, and verified the new source/version. The installed new CLI
+then applied its own reviewed retained rollback plan. The older runtime's `version`
+output matched its pre-update output byte-for-byte. Restoring the newer retained
+runtime likewise matched its post-update version output. Both content-keyed runtime
+files remained present; no pending record remained after success.
+
+Both candidates declare the same intended `1.0.0` version, so this verifies selection
+by exact manifest/source identity rather than a mutable version directory. It is
+not a published SemVer upgrade or a production downgrade promise. Before/after
+SHA-256 inventories matched for all files in both candidate directories and the
+separate synthetic signet. No native plugin connection was switched.
+
+A separate compiled-CLI native run verified fresh install, read-only refusal before
+creating a prefix, exact completed-plan replay with no destination change, and
+byte-identical typed/CLI replay results. Candidate/synthetic-bank inventories and
+an unrelated synthetic native-configuration sentinel remained unchanged.
+
+Model-free regressions cover initial/update interruptions after pending record,
+launcher activation and receipt publication; exact-plan recovery; rejection of
+changed plan/runtime/receipt/launcher/pending state; stale plans; competing writers;
+retained rollback; real permission-denied link/receipt writes on a non-root host;
+verified/corrupt mocked public downloads; and production refusal of inert payloads.
+Runtime metadata tests bind version/source/toolchain/platform/protocol/schema/plugin
+fields. Update-recovery tests caught the prior-receipt serialization mismatch;
+exact JSON text now survives the strict decoder. A failing CLI regression reproduced
+rounding filesystem IDs above float64's exact range; typed plan unwrapping preserves
+the full integers. Neither fix relies only on a passing happy-path mock.
+
+Full local pinned-toolchain CI passed at the implementation commit; container-first
+validation was attempted and Docker remained unavailable. Hosted checks are linked
+in the PR at their exact heads. These runs do not establish native Linux/Intel Mac
+release execution, power-loss recovery, interactive installer UX, native plugin
+handoff, final candidate acceptance or publication. The full #11/#10 delivery and
+release gates remain open.
