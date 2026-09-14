@@ -1,0 +1,10 @@
+{
+  "ok": false,
+  "error": {
+    "code": "migration.failed",
+    "message": "output already exists or cannot be inspected; choose a new bundle path",
+    "retryable": false,
+    "write_may_have_occurred": false,
+    "inspect_before_retry": false
+  }
+}

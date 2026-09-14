@@ -1,0 +1,9 @@
+{
+  "ok": true,
+  "result": {
+    "source_id": "bank-migration-demo",
+    "published": true,
+    "phase": "published",
+    "notice": "No writer activated. Inspect history, enroll a new machine binding, configure private Git sync explicitly, then review a fresh-session handoff. Retain the old source and its Git history for recovery."
+  }
+}

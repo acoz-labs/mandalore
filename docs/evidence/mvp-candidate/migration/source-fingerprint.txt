@@ -1,0 +1,21 @@
+05b9208c039ac6f7a0f903fec66fcf3b61c1172b14dafb5832bfc48163d61047  ./memory/events/2026/09/event-setup.json
+1bec22f5c446aadfd74f914e9f33e0cdd8d1ac644e75c7db3fde3d4dd8766c24  ./provenance/changes/change-readme.json
+55696787d645952dc3f864252b239dde469d4668d944b423a65b9d0819dfea0b  ./memory/records/record-project/revision-original.json
+6a15b2ad47f8da05ce47fa6614d3906043a87fbfe562c4cc391c1c06b8ed21d7  ./provenance/devices/device-desktop.json
+73bddd9c17a66929eea7b01d7dc931d137332f8681135155e8bf8bb8c0d91320  ./provenance/devices/device-laptop.json
+ba4f0e197e388f51326d3bfe9420554cd715c8f189bb403169b6f3ce7eaf1955  ./memory/sources/source-original.json
+bc94e098a350096ec7b6c715f5e3058135cbfa597b99421bbda240bb99cb5e76  ./memory/sources/source-rename.json
+c3af55b78cffb48e1eb0771a1b9dfbc1fdc9b762ee575a12f86140e6ab47d4e3  ./README.md
+faf2eb5a57b5177e54a03eb321536486368403ad5325a83fec278ad4585e4ff9  ./memory/records/record-project/revision-rename.json
+feb18966b15b312515336208c4f2d37ee06d3da5cc128f03b485e2a42ba18674  ./bank.json
+.
+./memory
+./memory/events
+./memory/events/2026
+./memory/events/2026/09
+./memory/records
+./memory/records/record-project
+./memory/sources
+./provenance
+./provenance/changes
+./provenance/devices

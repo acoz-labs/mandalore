@@ -130,6 +130,11 @@ fresh recordings for invalid/offline/foreign-source refusals, EOF, navigation an
 actual older/newer/retained-back/retained-forward CLI launches. Both runtimes stayed
 retained; native connection selection and memory were unchanged.
 
+The [retained migration checkpoint](migration/README.md) adds actual conversion,
+no-save/stale-source/unsupported-format refusals and preserved historical metadata.
+The [acceptance audit](acceptance-audit.md) maps requirements to observed evidence
+and explicitly separates retained-artifact execution from source tests/cross-builds.
+
 Keep #10 open. Remaining native-machine/platform coverage still needs its
 exact-candidate evidence. Independent acceptance and publication prerequisites
 remain separate. Cross-builds and a local bare remote are not other-platform or

@@ -1,0 +1,10 @@
+{
+  "ok": false,
+  "error": {
+    "code": "input.invalid",
+    "message": "Stop all relevant writers, then supply --writers-stopped with the reviewed preflight plan.",
+    "retryable": false,
+    "write_may_have_occurred": false,
+    "inspect_before_retry": false
+  }
+}

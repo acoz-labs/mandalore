@@ -1,0 +1,10 @@
+{
+  "ok": false,
+  "error": {
+    "code": "migration.failed",
+    "message": "migration inputs or observations changed after preflight; review a new plan",
+    "retryable": false,
+    "write_may_have_occurred": false,
+    "inspect_before_retry": false
+  }
+}

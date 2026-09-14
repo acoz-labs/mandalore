@@ -1,0 +1,10 @@
+{
+  "ok": false,
+  "error": {
+    "code": "migration.failed",
+    "message": "assistant or mixed format is not a memory-only bank; use foundlings for historical reference material",
+    "retryable": false,
+    "write_may_have_occurred": false,
+    "inspect_before_retry": false
+  }
+}

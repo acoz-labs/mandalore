@@ -1,0 +1,30 @@
+{
+  "ok": true,
+  "result": {
+    "schema_version": 1,
+    "source_id": "bank-migration-demo",
+    "source_sha256": "67cde56aa83bf99c03576922d17a2d910ebdb838308c8d5e13b1ab4e21de7ad1",
+    "counts": {
+      "files": 10,
+      "directories": 11,
+      "bytes": 2823,
+      "devices": 2,
+      "sources": 2,
+      "revisions": 2,
+      "records": 1,
+      "conflicted_records": 0,
+      "journal": 1,
+      "source_changes": 1
+    },
+    "writers": {
+      "legacy_lock": "absent",
+      "native": {
+        "status": "not-tested",
+        "plugins": [],
+        "potential_writers": 0
+      },
+      "notice": "Lock availability and installed plugins do not prove idle sessions, same-bank targeting or quiescence on other machines. Stop all writers before apply."
+    },
+    "notice": "Supported source: My Friday memory-only bank.json format 1. Portable snapshot limits: 4 MiB/file, 64 MiB total, 10000 files. Output retains original portable bytes, not Git history, local state or an off-device backup. Preserve the untouched source. Apply does not activate a writer, initialize Git, copy credentials or synchronize."
+  }
+}
