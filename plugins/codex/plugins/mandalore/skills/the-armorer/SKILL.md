@@ -37,8 +37,10 @@ metadata by hand. The plugin must be installed before it can offer this skill.
 ## Inspect, then act within the request
 
 Read [administration.md](references/administration.md) for the requested operation.
-Discover current schemas with the selected executable's `operations` command;
-keep only relevant operation schemas in context. Use `call OPERATION` with JSON
+Discover current schemas with the selected executable's `operations` command.
+Capture its JSON locally in the tool call, filter `result.operations` by the
+needed `name`, and print only those entries; do not print the entire catalog
+before filtering it. Use `call OPERATION` with JSON
 stdin, explicit paths and returned IDs. Administration is CLI-only, so it needs
 shell access even when the memory MCP is attached. Never assume shell exports
 from the separate MCP process are available in the agent's shell.
@@ -48,6 +50,12 @@ not a request to repair, synchronize or install. Describe the selected target an
 effects before applying an authorized change; ask only for missing choices or
 authority beyond the request. Preview and apply use the same reviewed plan,
 without bypassing ownership, stale-plan or read-only refusals.
+
+Keep verification proportional to the changed resources: use structured receipts,
+selected-bank inspection and scoped diffs. Do not recursively hash native profiles,
+session archives or every retained runtime, or read credential files just to prove
+they were preserved. Summarize checks and differences instead of printing file
+inventories. Retained copies are not additional targets to inspect on every task.
 
 Report what passed, what failed, what was not tested, and the next useful action.
 Separate structural health, live access, local saves and remote delivery. Partial
