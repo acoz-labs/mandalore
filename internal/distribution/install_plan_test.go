@@ -96,6 +96,10 @@ func TestInstallPlanOwnedAndRetainedSelection(t *testing.T) {
 	if p.Observed.ReceiptSHA256 == "" || p.Observed.LauncherTarget != installed.Runtime || p.Observed.Current != installed.Source.Manifest.SHA256 || !p.RuntimeRetained {
 		t.Fatal("owned installation not recognized")
 	}
+	encoded, _ := json.Marshal(p)
+	if _, err := ParseInstallPlan(encoded); err != nil {
+		t.Fatal("owned installation plan does not parse", err)
+	}
 	retained, err := PlanInstall(context.Background(), InstallOptions{Prefix: o.Prefix, Retained: installed.Source.Manifest.SHA256})
 	if err != nil || retained.Source.Kind != "retained" || retained.Runtime != installed.Runtime || !reflect.DeepEqual(retained.Source.Manifest, p.Source.Manifest) {
 		t.Fatal("retained compatible selection failed", err)
@@ -285,6 +289,12 @@ func TestInstallPlanRejectsChangedEffectsAndIdentities(t *testing.T) {
 		func(p *InstallPlan) { p.Arch = "386" },
 		func(p *InstallPlan) { p.Binary.SHA256 = strings.Repeat("0", 64) },
 		func(p *InstallPlan) { p.Notice = "also switch all memory connections" },
+		func(p *InstallPlan) { p.Observed.Directories = nil },
+		func(p *InstallPlan) { p.Observed.Directories[0].Path = "/another-prefix" },
+		func(p *InstallPlan) { p.Observed.Directories[0].Exists = true },
+		func(p *InstallPlan) { p.Observed.ReceiptSHA256 = "unverified" },
+		func(p *InstallPlan) { p.Observed.LauncherTarget = "/foreign-target" },
+		func(p *InstallPlan) { p.RuntimeRetained = true },
 	} {
 		b, _ := json.Marshal(p)
 		var bad InstallPlan

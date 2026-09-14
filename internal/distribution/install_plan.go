@@ -375,5 +375,24 @@ func ParseInstallPlan(b []byte) (InstallPlan, error) {
 	default:
 		return InstallPlan{}, errors.New("unknown installation source")
 	}
+	wantPaths := []string{p.Prefix, filepath.Join(p.Prefix, "bin"), filepath.Join(p.Prefix, "lib"), cliState(p.Prefix), filepath.Join(cliState(p.Prefix), "releases"), filepath.Dir(filepath.Dir(p.Runtime)), filepath.Dir(p.Runtime)}
+	if len(p.Observed.Directories) != len(wantPaths) {
+		return InstallPlan{}, errors.New("installation plan is missing destination observations")
+	}
+	for i, d := range p.Observed.Directories {
+		if d.Path != wantPaths[i] || (d.Exists && d.Inode == 0) || (!d.Exists && (d.Device != 0 || d.Inode != 0)) {
+			return InstallPlan{}, errors.New("installation plan contains inconsistent directory observations")
+		}
+	}
+	if p.RuntimeRetained != p.Observed.Directories[len(wantPaths)-1].Exists {
+		return InstallPlan{}, errors.New("installation plan retained-runtime claim disagrees with its observations")
+	}
+	if p.Observed.ReceiptSHA256 == "" {
+		if p.Observed.Current != "" || p.Observed.LauncherTarget != "" || p.Observed.Directories[3].Exists {
+			return InstallPlan{}, errors.New("installation plan claims ownership without a receipt")
+		}
+	} else if !validHex(p.Observed.ReceiptSHA256, 64) || !validHex(p.Observed.Current, 64) || !p.Observed.Directories[3].Exists || p.Observed.LauncherTarget != filepath.Join(retainedRoot(p.Prefix, p.Observed.Current, p.OS, p.Arch), "mandalore") {
+		return InstallPlan{}, errors.New("installation plan ownership observations are inconsistent")
+	}
 	return p, nil
 }

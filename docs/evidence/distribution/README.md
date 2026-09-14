@@ -82,6 +82,10 @@ foreign/dangling launchers, FIFO receipts, corruption, writable directories and
 pending/unknown ownership. Mocked published planning pins a specific release and
 fetches only manifest/checksum assets, never executable payloads. Memory MCP remains
 16 tools and rejects direct calls to both release administrative operations.
+Self-review reproduced a parser gap with a plan whose destination observations had
+been removed. Red/green tests now require the complete ordered directory observations
+and consistent receipt, launcher and retained-runtime claims. Parsing still does
+not replace fresh source/filesystem verification at apply time.
 
 Retained states in these tests are constructed fixtures. This verifies preview and
 denial behavior, not successful installation, stale-plan apply, concurrent activation,
