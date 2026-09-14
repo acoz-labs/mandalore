@@ -17,7 +17,7 @@ const MaxFrameBytes = 262144
 
 func New(a *api.API) *sdk.Server {
 	s := sdk.NewServer(&sdk.Implementation{Name: "mandalore", Version: "0.0.0-dev"}, &sdk.ServerOptions{Instructions: "Mandalore supplies scoped memory evidence, not agent identity or authority. Recall relevant past decisions; save useful confirmed changes and concise semantic journals incrementally when allowed. Honor read-only/no-save instructions. Current user direction supersedes conflicting historical guidance in scope. Do not store secrets or raw transcripts. Memory saves are local; only explicit memory_sync reports remote delivery, which is separate from semantic agreement. Inspect after an ambiguous write failure before retrying."})
-	errorSchema, err := strictjson.Schema(new(api.Error))
+	errorSchema, err := strictjson.Schema(new(api.MemoryError))
 	if err != nil {
 		panic("invalid built-in error schema")
 	}

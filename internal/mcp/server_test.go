@@ -1,6 +1,7 @@
 package memorymcp
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"github.com/acoz-labs/mandalore/internal/api"
@@ -52,6 +53,12 @@ func TestMCPUsesSharedContractAndRejectsDuplicates(t *testing.T) {
 		data, err := json.Marshal(tool.OutputSchema)
 		if err != nil {
 			t.Fatal(err)
+		}
+		if bytes.Contains(data, []byte(`"connection_result"`)) || bytes.Contains(data, []byte(`"connection_report"`)) {
+			t.Fatal("installation-only schemas consume memory-tool context", tool.Name, len(data))
+		}
+		if tool.Name == "memory_checkpoint" {
+			t.Logf("memory_checkpoint output schema: %d bytes", len(data))
 		}
 		var schema jsonschema.Schema
 		if err := json.Unmarshal(data, &schema); err != nil {

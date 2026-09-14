@@ -175,6 +175,8 @@ Read-only mode refuses apply. Connection failures use `connection.failed`
 (exit 1), retain `connection_result` when application started, and identify the
 last completed phase. Cancellation can retain that receipt too. Do not infer
 rollback from a nonzero exit or repeat an ambiguous native mutation blindly.
+Installation result/report schemas are intentionally absent from bound memory
+MCP error schemas, keeping machine-administration details out of agent context.
 
 Runtime and package copies are retained. Native registration changes use native
 Codex commands, not handwritten profile edits; unknown marketplace ownership or
@@ -182,6 +184,9 @@ active legacy/duplicate memory plugins prevent activation. A partial generation
 is not overwritten. Repair requires an intact ownership receipt and an intact
 runtime copy or explicitly selected trusted replacement. Native trust review and
 a fresh session remain separate from installation success.
+Native marketplace removal may delete Codex's installed cache. Recovery relies
+on retained managed source/runtime copies, not cache retention; edited cache
+files are refused before replacement so that native cleanup cannot erase them.
 
 This is in-progress #7 engineering, not release or immutable-candidate
 acceptance. The interactive menu and published-release update discovery are

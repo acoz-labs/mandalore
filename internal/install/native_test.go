@@ -11,12 +11,13 @@ import (
 )
 
 type fakeNative struct {
-	plan          Plan
-	root, version string
-	pluginRoot    string
-	enabled       bool
-	fail          string
-	calls         []string
+	plan               Plan
+	root, version      string
+	pluginRoot         string
+	clearCacheOnRemove bool
+	enabled            bool
+	fail               string
+	calls              []string
 }
 
 func encoded(v any) []byte { b, _ := json.Marshal(v); return b }
@@ -41,6 +42,12 @@ func (f *fakeNative) run(_ context.Context, _ Options, args ...string) ([]byte, 
 		}
 		return encoded(map[string]any{"installed": items}), nil
 	case command == "plugin marketplace remove mandalore --json":
+		if f.clearCacheOnRemove && f.version != "" {
+			// This is only this fake's generated cache under its disposable profile.
+			if err := os.RemoveAll(filepath.Join(f.plan.NativeHome, "plugins/cache/mandalore/mandalore", f.version)); err != nil {
+				return nil, err
+			}
+		}
 		f.root = ""
 		return []byte(`{}`), nil
 	case len(args) == 4 && args[0] == "plugin" && args[1] == "marketplace" && args[2] == "add":
@@ -77,7 +84,7 @@ func TestApplyNativeSuccessIdempotenceAndPartialRetry(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	f := &fakeNative{plan: p}
+	f := &fakeNative{plan: p, clearCacheOnRemove: true}
 	result, err := apply(context.Background(), p, f.run, noProbe)
 	if err != nil || !result.Installed || !result.RequiresFreshSession {
 		t.Fatal(result, err)

@@ -20,15 +20,20 @@ const ProtocolVersion = 1
 const MaxInputBytes = 32768
 const MaxOutputBytes = 65536
 
-type Error struct {
-	ConnectionResult     *install.Result    `json:"connection_result,omitempty"`
-	ConnectionReport     *install.Report    `json:"connection_report,omitempty"`
+// MemoryError is the bound memory protocol's error shape. Machine installation
+// details must not inflate every memory tool's model-facing schema.
+type MemoryError struct {
 	SyncStatus           *signetsync.Status `json:"sync_status,omitempty"`
 	Code                 string             `json:"code"`
 	Message              string             `json:"message"`
 	Retryable            bool               `json:"retryable"`
 	WriteMayHaveOccurred bool               `json:"write_may_have_occurred"`
 	InspectBeforeRetry   bool               `json:"inspect_before_retry"`
+}
+type Error struct {
+	MemoryError
+	ConnectionResult *install.Result `json:"connection_result,omitempty"`
+	ConnectionReport *install.Report `json:"connection_report,omitempty"`
 }
 type Envelope struct {
 	ProtocolVersion int    `json:"protocol_version"`
@@ -38,7 +43,7 @@ type Envelope struct {
 }
 
 func Failure(code, message string, mayWrite bool) Envelope {
-	return Envelope{ProtocolVersion: ProtocolVersion, Error: &Error{Code: code, Message: message, WriteMayHaveOccurred: mayWrite, InspectBeforeRetry: mayWrite}}
+	return Envelope{ProtocolVersion: ProtocolVersion, Error: &Error{MemoryError: MemoryError{Code: code, Message: message, WriteMayHaveOccurred: mayWrite, InspectBeforeRetry: mayWrite}}}
 }
 func Success(result any) Envelope {
 	return Envelope{ProtocolVersion: ProtocolVersion, OK: true, Result: result}
