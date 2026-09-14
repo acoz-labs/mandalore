@@ -140,3 +140,50 @@ precedence, no-write hashes, real stdio, EOF and interruption. Full race tests,
 vet and four platform builds run in `bin/ci`. Cross-builds are not native runtime
 acceptance. These tests use synthetic local data and an SDK client, not a model
 conversation or installed Codex plugin. Those remain #6/#10.
+
+## Development connection management
+
+The CLI embeds the public Codex package. `connection plan` previews explicit
+runtime, binding and native profile selection without executing binaries or
+writing files. `connection apply` accepts that successful JSON envelope or its
+raw plan object on stdin and revalidates inputs before activation. A plan
+identifies the runtime, native executable, binding and embedded package bytes;
+the selected runtime must also pass machine/protocol and read-only hook probes.
+Checksums establish identity, not publisher trust.
+
+`connection doctor` returns structural checks and explicit `not-tested` entries
+for native login, hook trust, live MCP, remote freshness and active-session
+context. An unhealthy report has a nonzero exit and `error.connection_report`.
+`connection repair --connection-root DIR` only previews a fresh generation;
+`--apply` explicitly applies it. Edited/unknown state and changed bindings are
+preserved and require inspection, not blind overwrites.
+
+Profile flags are `--state-dir`, `--native-home` and `--native-binary`. Defaults
+are the platform config directory's `mandalore/installation`, existing
+`CODEX_HOME` (otherwise the native home directory's `.codex`) and Codex on PATH.
+Plan additionally accepts `--binary` (default current CLI) and `--binding`
+(the ordinary explicit/environment/platform binding selection). These paths
+must be separate from Git-backed memory. No shell configuration is written.
+Generated local defaults still yield to explicit `MANDALORE_BIN/BINDING` values;
+doctor flags an override that selects a different connection.
+
+The equivalent catalog operations are `connection_plan`, `connection_apply`,
+`connection_doctor` and `connection_repair_plan`. All are CLI-only, not bound
+memory MCP tools. The shared API takes raw typed objects; the human apply command
+also accepts its own plan envelope for convenient preview/apply workflows.
+Read-only mode refuses apply. Connection failures use `connection.failed`
+(exit 1), retain `connection_result` when application started, and identify the
+last completed phase. Cancellation can retain that receipt too. Do not infer
+rollback from a nonzero exit or repeat an ambiguous native mutation blindly.
+
+Runtime and package copies are retained. Native registration changes use native
+Codex commands, not handwritten profile edits; unknown marketplace ownership or
+active legacy/duplicate memory plugins prevent activation. A partial generation
+is not overwritten. Repair requires an intact ownership receipt and an intact
+runtime copy or explicitly selected trusted replacement. Native trust review and
+a fresh session remain separate from installation success.
+
+This is in-progress #7 engineering, not release or immutable-candidate
+acceptance. The interactive menu and published-release update discovery are
+still pending. Native #6 behavior evidence is recorded separately in
+[the Codex receipt](codex-native-evidence.md).

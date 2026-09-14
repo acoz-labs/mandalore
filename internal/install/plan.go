@@ -48,6 +48,12 @@ type Plan struct {
 
 func hash(b []byte) string { h := sha256.Sum256(b); return hex.EncodeToString(h[:]) }
 
+func planKey(p Plan) string {
+	p.Root, p.Version = "", ""
+	b, _ := json.Marshal(p) // Plan contains only scalar values.
+	return hash(b)
+}
+
 func inside(root, path string) bool {
 	r, err := filepath.Rel(root, path)
 	return err == nil && r != ".." && !strings.HasPrefix(r, ".."+string(filepath.Separator))
@@ -199,11 +205,7 @@ func Prepare(o Options) (Plan, error) {
 	}
 	p.PackageSHA256 = hash(b)
 	p.Runtime = filepath.Join(o.StateDir, "runtimes", "sha256-"+p.BinarySHA256, "mandalore")
-	b, err = json.Marshal(p)
-	if err != nil {
-		return Plan{}, err
-	}
-	key := hash(b)
+	key := planKey(p)
 	p.Root = filepath.Join(o.StateDir, "connections", key)
 	base, _, _ := strings.Cut(manifest.Version, "+")
 	p.Version = base + "+connection." + key

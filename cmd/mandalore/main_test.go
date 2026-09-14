@@ -7,6 +7,7 @@ import (
 	"github.com/acoz-labs/mandalore/internal/api"
 	"io"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -61,6 +62,17 @@ func TestCLIUsageDoesNotFallThrough(t *testing.T) {
 		if code != 2 || out.OK {
 			t.Fatal(args, out, code)
 		}
+	}
+}
+
+func TestVersionDeclaresMachineAndHookCompatibility(t *testing.T) {
+	v, code := cli(t, []string{"version"}, "")
+	if code != 0 || !v.OK {
+		t.Fatal(v, code)
+	}
+	r, ok := v.Result.(map[string]any)
+	if !ok || r["os"] != runtime.GOOS || r["arch"] != runtime.GOARCH || r["codex_hook_protocol"] != float64(1) {
+		t.Fatal("missing machine or hook compatibility", r)
 	}
 }
 

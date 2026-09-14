@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"runtime"
 	"strings"
 	"syscall"
 
@@ -34,13 +35,20 @@ const help = `Mandalore — durable memory across tools
   mandalore call OPERATION --binding FILE < input.json
   mandalore mcp --binding FILE [--harness NAME] [--read-only]
   mandalore codex-memory-hook [--binding FILE]   Read-only native lifecycle JSON
+  mandalore connection plan [--binary FILE] [--binding FILE] [profile options]
+  mandalore connection apply < approved-plan.json
+  mandalore connection doctor [profile options]
+  mandalore connection repair --connection-root DIR [--apply]
+
+Profile options: --state-dir DIR, --native-home DIR, --native-binary FILE.
+Connection plan/doctor/repair preview do not activate a connection.
 
 Memory options: --limit N, --offset N (scopes/history), --record-id ID (history),
 --budget-bytes N (recall), --query TEXT (recall/journal).
 Common options: --binding FILE, --harness NAME, --read-only, --help.
 Binding selection: explicit file, then MANDALORE_BINDING, then platform config.
 No cwd-based bank discovery. Memory saves are local; explicit sync reports delivery.
-This development build has no native installation or interactive menu yet.
+This development build is not a released installer; the interactive menu is pending.
 `
 
 func main() {
@@ -62,6 +70,9 @@ func bad(out io.Writer, message string) int {
 }
 
 func run(ctx context.Context, args []string, input io.Reader, out, errout io.Writer) int {
+	if len(args) > 0 && args[0] == "connection" {
+		return runConnection(ctx, args[1:], input, out)
+	}
 	if len(args) > 0 && args[0] == "codex-memory-hook" {
 		f := flag.NewFlagSet("codex-memory-hook", flag.ContinueOnError)
 		f.SetOutput(io.Discard)
@@ -89,7 +100,8 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 		if len(args) != 1 {
 			return bad(out, "version takes no arguments")
 		}
-		return emit(out, api.Success(map[string]any{"name": "mandalore", "version": version, "protocol_version": api.ProtocolVersion}))
+		return emit(out, api.Success(map[string]any{"name": "mandalore", "version": version, "protocol_version": api.ProtocolVersion,
+			"codex_hook_protocol": 1, "os": runtime.GOOS, "arch": runtime.GOARCH}))
 	}
 	if args[0] == "operations" {
 		if len(args) != 1 {

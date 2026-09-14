@@ -2,7 +2,8 @@ Mandalore selectively adapts memory storage, revision graph, lexical retrieval,
 journal, response-budget, machine-binding and filesystem primitives and synthetic
 tests, plus shared local MCP adapter, Git checkpoint and reconciliation concepts,
 the thin read-only Codex hook and shell-bridge patterns, and selected local
-installation planning and artifact-identity primitives, from:
+installation planning, artifact staging, native registration and inspection
+primitives, from:
 
 My Friday — https://github.com/acoz-labs/my-friday
 Source commit: f3d337bca419fdaf82bd9a6ce31ebde7f3748eb8
