@@ -68,8 +68,12 @@ func (s *Store) validateRootFiles() error {
 }
 
 func (s *Store) ValidateAuthorship(author Authorship) error {
+	return validateAuthorship(author, s.deviceExists)
+}
+
+func validateAuthorship(author Authorship, device func(string) error) error {
 	if strings.TrimSpace(author.Actor) == "" || strings.TrimSpace(author.Harness) == "" {
 		return errors.New("authorship requires actor and harness")
 	}
-	return s.deviceExists(author.DeviceID)
+	return device(author.DeviceID)
 }

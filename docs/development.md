@@ -48,6 +48,15 @@ unsupported features fail the real two-clone tests rather than being silently
 replaced with an in-place merge. The fixtures use local bare remotes and controlled
 failure wrappers, not external provider authentication. See [synchronization](synchronization.md).
 
+Migration tests use synthetic legacy fixtures under
+`internal/migration/testdata/bank-v1`, not a user's bank or the old executable.
+The converter's preflight shares the memory engine's pure snapshot validation;
+changes to this seam require the existing graph, integrity and synchronization
+regressions. Tests cover raw extension precision, authorship/history, conflicting
+heads, original snapshot bytes/empty directories, lock observations, stale inputs,
+typed/CLI parity and retained staging/publication failures. Cross-builds still
+do not establish native Linux filesystem/locking acceptance.
+
 The Codex plugin and skill also require their native validators when edited.
 The development check used the plugin-creator and skill-creator validators with
 an isolated `uv run --with PyYAML==6.0.2` environment; PyYAML is a validation

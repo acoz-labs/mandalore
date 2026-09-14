@@ -50,6 +50,20 @@ preserve both histories; do not force, reset, remove another writer's lock, or
 rewrite evidence to hide it. A malformed local status receipt is not repaired by
 inspection. No-save/read-only tasks must not trigger synchronization.
 
+### Legacy conversion recovery
+
+Use [migration preflight/apply](migration.md) only for the supported memory-only
+bank format. A refused assistant repository belongs to foundlings, not an in-place
+manifest rename. Review source digest, conflicts, exclusions and writer observations;
+stop all relevant writers explicitly. An available local lock is not global quiescence.
+
+An apply failure may retain a new staging directory or a published bundle. Inspect
+`migration_result.phase`, `published` and recovery paths. A prepared receipt in a
+staging directory is not proof of publication. Source data and existing output
+are never deleted. Before activation, continue with the original writer/source
+for rollback; after new writes, preserve and reconcile both histories. Binding,
+Git configuration, native handoff and synchronization remain separate operations.
+
 ### Native integration and installation recovery
 
 Use `mandalore menu` or the typed `connection` commands to preview, apply,

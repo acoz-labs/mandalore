@@ -11,6 +11,7 @@ import (
 
 	"github.com/acoz-labs/mandalore/internal/install"
 	"github.com/acoz-labs/mandalore/internal/memory"
+	"github.com/acoz-labs/mandalore/internal/migration"
 	"github.com/acoz-labs/mandalore/internal/strictjson"
 	signetsync "github.com/acoz-labs/mandalore/internal/sync"
 	"github.com/google/jsonschema-go/jsonschema"
@@ -32,8 +33,9 @@ type MemoryError struct {
 }
 type Error struct {
 	MemoryError
-	ConnectionResult *install.Result `json:"connection_result,omitempty"`
-	ConnectionReport *install.Report `json:"connection_report,omitempty"`
+	ConnectionResult *install.Result   `json:"connection_result,omitempty"`
+	ConnectionReport *install.Report   `json:"connection_report,omitempty"`
+	MigrationResult  *migration.Result `json:"migration_result,omitempty"`
 }
 type Envelope struct {
 	ProtocolVersion int    `json:"protocol_version"`
@@ -174,7 +176,7 @@ var operations = []Operation{
 }
 
 func Catalog() []Operation {
-	return append(append(append(append([]Operation(nil), operations...), administration...), synchronization...), connections...)
+	return append(append(append(append(append([]Operation(nil), operations...), administration...), synchronization...), connections...), migrations...)
 }
 
 type API struct {
@@ -202,6 +204,17 @@ func (a *API) Call(ctx context.Context, name string, data []byte) Envelope {
 		}
 		v, err := op.invoke(ctx, a.service, data)
 		if err != nil {
+			var migration *migrationFailure
+			if errors.As(err, &migration) {
+				code := "migration.failed"
+				if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+					code = "operation.cancelled"
+				}
+				mayWrite := migration.result != nil && migration.result.Phase != "preflight"
+				out := Failure(code, migration.Error(), mayWrite)
+				out.Error.MigrationResult = migration.result
+				return out
+			}
 			var connection *connectionFailure
 			if errors.As(err, &connection) {
 				code := "connection.failed"

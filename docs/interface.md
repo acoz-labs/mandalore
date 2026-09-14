@@ -52,6 +52,7 @@ uses the same decoder and methods as the human commands and MCP tools.
 | Operation | Human command | MCP |
 | --- | --- | --- |
 | `signet_create`, `signet_bind` | `signet create`, `signet bind` | Not exposed |
+| `migration_preflight`, `migration_apply` | `migration preflight`, `migration apply` | Not exposed |
 | `memory_recall`, `memory_scopes`, `memory_history` | `memory recall`, `scopes`, `history` | Bound signet only |
 | `memory_journal`, `memory_inspect` | `memory journal`, `inspect` | Bound signet only |
 | `memory_remember`, `memory_journal_append` | `memory remember`, `journal-append` | Bound signet only |
@@ -63,6 +64,17 @@ the semantic result schema; MCP advertises its complete envelope schema and
 returns the same envelope in structured content and a text fallback. Tool errors
 also set MCP `isError`. MCP protocol/framing errors remain SDK transport errors,
 not operation results. Startup diagnostics use stderr, never protocol stdout.
+
+Migration administration uses explicit source/output/device-label/actor inputs;
+it never loads the normal binding default. `migration_preflight` accepts optional
+`legacy_binding`, `native_home` and `native_binary`. `migration_apply` accepts
+`{"plan": <preflight-result>, "writers_stopped": true}`. The human apply command
+accepts either the raw plan or its successful preflight envelope on stdin, plus
+`--writers-stopped`. Both routes call the same dispatcher; `--read-only` refuses
+apply before reading input. `migration.failed` (exit 1) may include a
+`migration_result` with phase, published state and retained staging/output paths.
+This administration-only error detail is not added to MCP's memory-tool schemas.
+See [migration](migration.md) for supported data, snapshot limits and handoff.
 
 Strict object input rejects duplicate, unknown or incorrectly cased fields,
 wrong types, missing required fields, trailing objects and excessive nesting.
