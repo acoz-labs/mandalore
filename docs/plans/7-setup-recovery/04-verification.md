@@ -37,6 +37,10 @@ explicit test artifact; delete only a known synthetic generated file; repair;
 fresh session recall; prove original memory/auth/session ownership preserved.
 Repeat relevant paths with another local clone and new device attribution.
 
+## Production Readiness Preflight
+
+The execution envelope is implementation only: no production activation,
+credential enrollment, release publication or live-memory migration is allowed.
 No staging or public release is invented for this artifact repository. #11 must
 provide immutable release distribution before published-update acceptance;
 #10 repeats owner/independent acceptance against that exact artifact. Local
