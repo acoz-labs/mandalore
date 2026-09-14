@@ -8,7 +8,6 @@ import (
 	"io"
 	"os"
 	"os/signal"
-	"runtime"
 	"strings"
 	"syscall"
 
@@ -20,6 +19,7 @@ import (
 )
 
 var version = "0.0.0-dev"
+var sourceCommit = "" // Stamped only by the pinned exact-source release builder.
 
 const help = `Mandalore — durable memory across tools
 
@@ -117,8 +117,11 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 		if len(args) != 1 {
 			return bad(out, "version takes no arguments")
 		}
-		return emit(out, api.Success(map[string]any{"name": "mandalore", "version": version, "protocol_version": api.ProtocolVersion,
-			"codex_hook_protocol": 1, "os": runtime.GOOS, "arch": runtime.GOARCH}))
+		info, err := runtimeMetadata()
+		if err != nil {
+			return emit(out, api.Failure("runtime.invalid", "Cannot inspect embedded runtime metadata.", false))
+		}
+		return emit(out, api.Success(info))
 	}
 	if args[0] == "operations" {
 		if len(args) != 1 {
