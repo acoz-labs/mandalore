@@ -32,7 +32,8 @@ sequence and scope; issue creation is not implementation or acceptance.
 
 Repository foundations, engine/schema, shared interface, synchronization, Codex
 integration, managed setup and explicit memory-only migration are implemented.
-Next: foundling consultation/promotion (#12), retrieval measurements (#9),
+Foundling consultation/promotion (#12) is implemented with synthetic menu/native
+evidence and is undergoing final engineering reconciliation. Next: retrieval measurements (#9),
 distribution (#11) and immutable-candidate acceptance (#10), then foundation
 reconciliation (#1). Foundlings belongs before real-memory adoption, not merely
 an optional post-MVP improvement. Engineering merges are not release acceptance.

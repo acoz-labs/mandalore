@@ -13,8 +13,9 @@ source observation, clone-local connections/inspection and verified retrieval an
 promotion, exposed through the shared CLI/MCP dispatcher. The complete guided
 workflow is still in progress: the guided menu has
 [actual rendered engineering evidence](evidence/foundlings-menu/README.md), and
-the native skill has an on-demand consultation/promotion workflow. Fresh native
-scenarios and final reconciliation remain pending.
+the native skill has an on-demand consultation/promotion workflow with
+[fresh native engineering results](evidence/foundlings-native/README.md).
+Final reconciliation remains pending.
 No real historical memory has been adopted by these synthetic tests.
 
 ## Portable identity versus local content
@@ -103,7 +104,7 @@ Raw subprocess failures are not reflected back to callers.
 
 Format eligibility is not automatic secret or transcript detection. Ordinary
 Markdown, JSON or text can still contain sensitive material. Users must choose
-appropriate references; the eventual agent workflow must not store secrets or
+appropriate references; the agent workflow must not store secrets or
 raw transcripts merely because the source format is eligible.
 
 ## Retrieval and selective promotion
@@ -152,7 +153,9 @@ does not erase previously incorporated knowledge, provenance or supersession his
 The host agent must compare current knowledge and user direction before promotion,
 avoid duplicate memories and use explicit record/predecessor IDs for corrections.
 Neither lexical relevance nor a quoted “this is the way” authorizes saving or
-executing anything. These semantics still require native-agent scenario validation.
+executing anything. The native engineering scenarios exercise these boundaries
+with synthetic historical instructions and explicit no-save scope, not arbitrary
+private sources or universal prompt-injection resistance.
 
 ## CLI workflow
 
@@ -222,8 +225,8 @@ tampered/unknown connections, wrong-signet isolation, overlap, symlinked local
 state, cancellation and preservation of source/registration bytes. An injected
 post-publication directory-sync failure verifies the partial result, retained
 inspectable connection, removal of the owned temporary file, refusal of a blind
-retry and successful explicit recovery. End-to-end management/API partial outcomes
-remain pending with the rest of the workflow.
+retry and successful explicit recovery. Shared API tests and actual menu recordings
+also cover partial registration/connection outcomes and explicit recovery.
 
 Retrieval/promotion tests cover attributed read-only results, deterministic ranking,
 no-match and truncation reporting, UTF-8 continuation and JSON expansion bounds,
@@ -238,15 +241,20 @@ visibility, read-only mutation rejection and retained registration after a faile
 connection. A compiled-process test runs the CLI and real MCP stdio from an
 unrelated working directory, compares identical search results, promotes an adapted
 memory, rejects promotion through read-only MCP and preserves source bytes. No
-model/provider is involved in that test; native-agent behavior remains pending.
+model/provider is involved in that test; actual native-agent results are recorded
+separately in the linked evidence manifest.
 
-The current discovery measurement is 16 MCP tools, 5729 input-schema bytes,
+The discovery baseline at `ac1205b1ab1158f5af2ffa589a89733a5e4f5ccb` was
+16 MCP tools, 5729 input-schema bytes,
 32678 output-schema bytes and 2488 description bytes, excluding transport overhead.
 These are serialized byte counts, not token counts, latency or quality evidence.
 They are an input to issue #9, not a claim that context efficiency is finished.
+Subsequent query-schema guidance adds description bytes; measure the final
+candidate rather than treating this earlier baseline as its current payload.
 
 Automated menu tests cover register/decline/incomplete confirmation, read-only list
 and search, disconnection, a moved local path, explicit superseding pin updates,
 failed output/cancellation and a completed registration retained after connection
-failure. Actual rendered terminal evidence is a separate gate, not established by
-these scripted tests.
+failure. Actual rendered terminal evidence and separate fresh native consultation,
+promotion and no-save results are retained in the linked manifests. Contributor
+verification does not establish independent candidate acceptance.

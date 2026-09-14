@@ -65,3 +65,13 @@ and compiled hook command. These structural checks do not establish model
 behavior: a native forward test caught an ambiguous no-save orientation sentence
 that the unit tests could not. Repeat relevant fresh-session scenarios after
 instruction changes and record the exact tested binary/plugin identities.
+
+Foundling fixtures exercise bounded local files and standalone Git sources without
+executing source configuration. Their creation commands disable automatic Git
+maintenance so background fixture writes cannot race source-preservation snapshots;
+a trace regression guards that boundary and failures report changed paths without
+dumping contents. Keep the full source-tree assertion, including Git metadata.
+The native foundling pilot caught a nonempty-query discoverability/error problem
+that deterministic storage tests did not expose; the resulting strict API test,
+skill correction and actual fresh-session retest are documented in
+[native foundling evidence](evidence/foundlings-native/README.md).

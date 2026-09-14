@@ -104,7 +104,8 @@ for explicit resolution. Registration data is excluded from ordinary recall.
 credential-free HTTPS/SSH URLs or SCP-style identities. SSH transport usernames
 are allowed, HTTPS userinfo and SSH passwords are not. Query strings, fragments,
 traversal and machine-local filesystem paths are refused. Local references use
-an opaque source ID; the actual path belongs to a future machine-local binding.
+an opaque source ID; the actual path belongs to an ignored clone-local connection
+at `.mandalore/foundlings/<foundling-id>.json`, not portable registration metadata.
 `pin` contains algorithm and value: `git-sha1`/40 lowercase hex characters or
 `git-sha256`/64 for Git; `sha256`/64 for local sources. Branch names are not pins.
 
@@ -119,8 +120,10 @@ separately from original author/time.
 
 These are data-validation guarantees only. No registration fetches, executes or
 trusts source content, and a supplied fingerprint is not proof of a successful
-source verification. Retrieval, changed-pin observations and selective promotion
-are the later foundling workflow. Unevaluated references are neither current
+source verification. The separate [foundling workflow](foundlings.md) implements
+bounded local verification, changed-pin observations and selective promotion;
+ordinary supplied citations do not acquire that verification guarantee merely
+by passing schema validation. Unevaluated references are neither current
 knowledge nor automatically superseded history.
 
 ## Compatibility and recovery
