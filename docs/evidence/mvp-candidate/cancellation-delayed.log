@@ -1,0 +1,5 @@
+--- FAIL: TestSyncCancellationExposesPartialWriteEvidence (1.50s)
+    sync_test.go:76: cancellation evidence: {"protocol_version":1,"ok":false,"error":{"sync_status":{"signet_id":"signet-dbd791bf7346bc9feab013fb7818c76a","state":"pending","phase":"checkpoint","checked_at":"2026-09-14T11:34:19.037143Z","checkpointed":false,"delivered":false,"semantic_conflicts":0,"notice":"Synchronization stopped; a write or delivery may have occurred. Inspect this phase and history before retrying."},"code":"operation.cancelled","message":"Synchronization stopped; inspect its phase and local/remote history before retrying","retryable":false,"write_may_have_occurred":true,"inspect_before_retry":true}}
+FAIL
+FAIL	github.com/acoz-labs/mandalore/internal/api	2.015s
+FAIL

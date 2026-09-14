@@ -1,0 +1,147 @@
+{
+  "source_commit": "0fe7e0e1eb175943995b0d0d5e54130ff65b074e",
+  "manifest_sha256": "829be4285324e00ab6c2fdde482c1471df13c74f8facab0e6fdcdba0ed3c09df",
+  "codex_cli": "0.153.4",
+  "platform": "darwin/arm64",
+  "classification": "contributor verification; not independent product acceptance",
+  "counter_notice": "Thread counters aggregate inherited native context and multiple model calls, including compaction where present; they are not isolated Mandalore overhead. Recall byte counts measure the actual UTF-8 text protocol envelope, not its duplicated transport wrapper or tokens.",
+  "sessions": [
+    {
+      "session": "learning-and-compaction",
+      "turns": [
+        {
+          "memory_operations": [
+            "memory_sync",
+            "memory_scopes",
+            "memory_remember",
+            "memory_sync"
+          ],
+          "recall_envelope_utf8_bytes": [],
+          "completed": true,
+          "interrupted": false,
+          "duration_ms": 23345
+        },
+        {
+          "memory_operations": [
+            "memory_sync",
+            "memory_recall",
+            "memory_remember",
+            "memory_sync"
+          ],
+          "recall_envelope_utf8_bytes": [
+            863
+          ],
+          "completed": true,
+          "interrupted": false,
+          "duration_ms": 19872
+        },
+        {
+          "memory_operations": [
+            "memory_sync",
+            "memory_recall",
+            "memory_remember",
+            "memory_journal_append",
+            "memory_sync"
+          ],
+          "recall_envelope_utf8_bytes": [
+            978
+          ],
+          "completed": true,
+          "interrupted": false,
+          "duration_ms": 16752
+        },
+        {
+          "memory_operations": [],
+          "recall_envelope_utf8_bytes": [],
+          "completed": true,
+          "interrupted": false,
+          "duration_ms": 42991
+        },
+        {
+          "memory_operations": [
+            "memory_recall"
+          ],
+          "recall_envelope_utf8_bytes": [
+            1487
+          ],
+          "completed": true,
+          "interrupted": false,
+          "duration_ms": 13300
+        }
+      ],
+      "compaction_events": 1,
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "reported_thread_token_usage": {
+        "input_tokens": 328216,
+        "cached_input_tokens": 301440,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 2542,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 330758
+      }
+    },
+    {
+      "session": "fresh-external-update-interruption",
+      "turns": [
+        {
+          "memory_operations": [
+            "memory_recall"
+          ],
+          "recall_envelope_utf8_bytes": [
+            1487
+          ],
+          "completed": true,
+          "interrupted": false,
+          "duration_ms": 13856
+        },
+        {
+          "memory_operations": [],
+          "recall_envelope_utf8_bytes": [],
+          "completed": true,
+          "interrupted": false,
+          "duration_ms": 5682
+        },
+        {
+          "memory_operations": [
+            "memory_recall"
+          ],
+          "recall_envelope_utf8_bytes": [
+            1527
+          ],
+          "completed": true,
+          "interrupted": false,
+          "duration_ms": 9438
+        },
+        {
+          "memory_operations": [],
+          "recall_envelope_utf8_bytes": [],
+          "completed": false,
+          "interrupted": true
+        },
+        {
+          "memory_operations": [
+            "memory_recall"
+          ],
+          "recall_envelope_utf8_bytes": [
+            1527
+          ],
+          "completed": true,
+          "interrupted": false,
+          "duration_ms": 8423
+        }
+      ],
+      "compaction_events": 0,
+      "model": "gpt-6-astra",
+      "effort": "high",
+      "reported_thread_token_usage": {
+        "input_tokens": 290807,
+        "cached_input_tokens": 259840,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 743,
+        "reasoning_output_tokens": 9,
+        "total_tokens": 291550
+      }
+    }
+  ]
+}
