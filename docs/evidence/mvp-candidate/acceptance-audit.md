@@ -18,7 +18,7 @@ documentation files, not this retained candidate or its runtime acceptance set.
 | Context/retrieval cost without private transcripts | Measured MCP schema/response bytes and native operation summaries; [retained-binary 100/1000/10000-record retrieval](retrieval/README.md), plus separate source-level #9 evaluations | Aggregate native counters do not isolate Mandalore token cost; fresh-process single-revision measurements do not cover every retrieval mode |
 | Exact-digest install/update/repair journey | [21 fresh rendered recordings](ui/README.md), [distinct retained switching/refusals](ui/switch-and-refusals.md) | Contributor judgment only; no live public release/bootstrap yet |
 | Historical references and provenance | Actual CLI/MCP missing/changed-source handling, native selective promotion, source preservation | No arbitrary hostile-source immunity or bulk migration claim |
-| Explicit legacy compatibility (#8 dependency) | [Fresh retained-artifact migration](migration/README.md); [actual single-plugin inventory and held-lock refusals](migration/native/README.md) | Synthetic memory-only conversion; no real-memory adoption, simultaneous old/new native installation or remote writer-quiescence proof |
+| Explicit legacy compatibility (#8 dependency) | [Fresh retained-artifact migration](migration/README.md); [actual single-plugin inventory and held-lock refusals](migration/native/README.md); [native legacy-name coexistence refusal and cleanup](migration/coexistence/README.md) | Synthetic memory-only conversion and inert legacy-name fixture; no actual predecessor writer execution, real-memory adoption or remote writer-quiescence proof |
 
 ## Platform matrix — do not collapse these columns
 
@@ -41,8 +41,11 @@ Foundation #1 completed separately through docs PR #39 with actual PR/main CI an
 main audit. Issues #2–#9/#12 remain in acceptance, not unimplemented merely because
 their issues are open. #10 remains in progress.
 
-Next engineering work is the remaining native/compatibility verification
-boundaries above. Published
+The bounded native coexistence check is now complete. The limitations above
+remain limitations, not requests to expand into arbitrary additional test cases.
+The next required step is an independent exact-candidate acceptance decision,
+including judgment on the documented sync wording, retrieval scale and platform
+coverage. Published
 download/bootstrap cannot pass before an actual authorized release exists; it must
 be a post-publication verification gate, not a fabricated pre-release result.
 
@@ -51,3 +54,33 @@ other than the implementation author. Contributor self-review, additional test
 processes and a second machine do not supply that person or their approval. The
 owner has been asked who will perform and record that acceptance. No actor or
 release configuration has been invented or changed, and no publication is claimed.
+
+## Issues 1–10 closeout map
+
+The current GitHub issue bodies were re-read on 2026-09-14. This map preserves
+their full outcome scope; it does not check acceptance boxes on the owner's behalf.
+
+| Issue | Implementation and engineering evidence | Required next disposition |
+| --- | --- | --- |
+| #1 Foundation | Merged PR #39; exact predecessor ledger, project fields/views/dependencies and successful hosted checks | Closed; no runtime acceptance implied |
+| #2 Engine | PR #20; [extraction/dependency/license inventory](../../memory-extraction.md), engine regression/race tests and retained native CLI/MCP matrix | Independent candidate acceptance; do not reintroduce assistant-platform code |
+| #3 Format | PRs #20/#22; [format/schema/provenance contract](../../signet-format.md), invalid-input/graph/binding tests, retained correction/history/migration receipts | Independent acceptance; unknown formats remain explicit refusals |
+| #4 Interface | PRs #22/#24; [typed CLI/MCP contract](../../interface.md), strict/error/no-save/cwd/cancellation tests and actual retained stdio calls | Independent acceptance of the shared local interface, not remote MCP hosting |
+| #5 Synchronization | PR #24; [sync phases/state/limits](../../synchronization.md), real-Git regression suite, retained conflict/offline/uncertain-push and native two-Mac recovery | Independent acceptance; remote delivery is not every peer's freshness |
+| #6 Codex | PR #26; actual native learning/cue/no-save/inheritance/cwd/compaction/hook-warning/external-refresh and coexistence checks | Independent native acceptance; evaluate observed broad sync wording, do not infer universal model behavior |
+| #7 Setup UX | PR #28; [setup contract](../../setup.md), 21 exact-candidate rendered journeys and second-machine connection | Independent owner journey; live public download/update remains post-release verification |
+| #8 Migration | PR #30; supported-schema census, exact preserved source/output history and refusals, native lock/inventory/coexistence evidence | Independent synthetic compatibility acceptance; real memory migration still needs separate explicit authority |
+| #9 Retrieval | PR #34; [quality/corpus/cost methods](../../retrieval.md), source-level evaluations/profiles and retained binary measurements | Independent judgment on documented lexical misses and growth cost; no cold-disk or isolated model-token claim |
+| #10 MVP proof | Retained artifact matrix and checkpoints linked above cover contributor verification of the requested scenarios | Independent acceptor must repeat/evaluate required journeys and record issue-specific decisions against this candidate |
+
+Current authoritative checks found the retained artifact unexpired, no published
+GitHub releases, no product-acceptance workflow runs, no candidate acceptance
+statuses, and no `ACCEPTANCE_ACTORS` repository variable. The workflow and
+`bin/record-product-acceptance` require an authorized actor distinct from each
+linked implementation PR author. Another process, model, account invented for
+this run, or machine does not satisfy that independent review requirement.
+
+No acceptance workflow was dispatched just to produce an expected authority
+failure. The owner must identify the independent reviewer and authorize the
+appropriate configuration; release authorization remains a separate step under
+#11. This evidence branch changes documentation only, not those policies.

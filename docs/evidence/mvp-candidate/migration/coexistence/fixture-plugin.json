@@ -1,0 +1,17 @@
+{
+  "name": "my-friday-memory",
+  "version": "0.1.0",
+  "description": "Inert synthetic legacy-name coexistence test; not the predecessor implementation",
+  "author": {
+    "name": "Local developer"
+  },
+  "interface": {
+    "displayName": "My Friday Memory",
+    "shortDescription": "Inert coexistence test fixture.",
+    "longDescription": "Synthetic name-only fixture with no skills, hooks, scripts or MCP. Do not use as a memory integration.",
+    "developerName": "Local developer",
+    "category": "Productivity",
+    "capabilities": [],
+    "defaultPrompt": "Explain that this is an inert test fixture."
+  }
+}

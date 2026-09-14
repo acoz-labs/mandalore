@@ -154,7 +154,13 @@ no-save/stale-source/unsupported-format refusals and preserved historical metada
 The [acceptance audit](acceptance-audit.md) maps requirements to observed evidence
 and explicitly separates retained-artifact execution from source tests/cross-builds.
 
-Keep #10 open. Remaining native-machine/platform coverage still needs its
-exact-candidate evidence. Independent acceptance and publication prerequisites
-remain separate. Cross-builds and a local bare remote are not other-platform or
-second-physical-machine acceptance; no live adoption or release is claimed.
+The [native legacy-name coexistence checkpoint](migration/coexistence/README.md)
+verifies actual native registration of an inert legacy-named fixture, refused
+connection replacement, preserved state and cleanup back to the original inventory.
+It is not execution of the predecessor's writer.
+
+Keep #10 open for independent acceptance. All four declared CLI targets and both
+physical Macs now have their scoped retained-candidate evidence; native Codex
+conversation coverage remains limited to the two macOS ARM64 hosts. The audit
+maps issues #1–#10 and the remaining authority gates. No live adoption or release
+is claimed.

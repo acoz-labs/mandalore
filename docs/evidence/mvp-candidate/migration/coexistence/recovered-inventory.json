@@ -1,0 +1,14 @@
+{
+  "status": "inspected",
+  "binary_sha256": "b973d440acac501fd2594a43e7ca9ce41e0a65b9dfb28d0d7a7837c99e1261e3",
+  "plugins": [
+    {
+      "id": "mandalore@mandalore",
+      "name": "mandalore",
+      "version": "1.0.0+codex.cb064c23a068f377bffb2ec995bec1c0ec3d72f307ed841883b1442ac81c7b4a",
+      "enabled": true
+    }
+  ],
+  "potential_writers": 1,
+  "notice": "Enabled memory integrations are potential writers only. Active sessions, same-bank targeting, other machines and authentication are not tested. Listing may produce native-owned logs or caches."
+}

@@ -1,0 +1,13 @@
+{
+  "protocol_version": 1,
+  "ok": false,
+  "error": {
+    "code": "connection.failed",
+    "message": "another active memory integration exists; resolve ownership explicitly before connecting",
+    "retryable": false,
+    "write_may_have_occurred": true,
+    "inspect_before_retry": true,
+    "phase": "preflight",
+    "installed": false
+  }
+}
