@@ -5,6 +5,8 @@ local stdio MCP connection and read-only `SessionStart`/`UserPromptSubmit` hooks
 It preserves native identity, authentication, skills, settings and project cwd.
 Issue #6 tracks native evidence; #10 tracks exact-candidate acceptance. This is
 not a released or independently accepted artifact.
+See the [native engineering receipt](../../docs/codex-native-evidence.md) for
+actual tested artifacts, scenarios and remaining gaps.
 
 ## Connect an explicit test installation
 

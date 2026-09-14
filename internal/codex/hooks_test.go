@@ -137,3 +137,32 @@ func TestUnavailableBindingWarnsAndLongUnicodeFitsBudget(t *testing.T) {
 		t.Fatal(v)
 	}
 }
+
+func TestBoundIdentityMismatchProducesWarningWithoutEvidence(t *testing.T) {
+	_, path := fixture(t)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var b binding.Binding
+	if err := json.Unmarshal(data, &b); err != nil {
+		t.Fatal(err)
+	}
+	// Root and authorship remain valid, so the identity pin itself must reject.
+	b.SignetID = "signet-different"
+	data, err = json.Marshal(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, data, 0600); err != nil {
+		t.Fatal(err)
+	}
+	before := snapshot(t, filepath.Dir(path))
+	v := invoke(t, path, `{"hook_event_name":"UserPromptSubmit","prompt":"answers"}`)
+	if v["systemMessage"] == nil || v["hookSpecificOutput"] != nil {
+		t.Fatal("foreign signet accepted", v)
+	}
+	if !reflect.DeepEqual(before, snapshot(t, filepath.Dir(path))) {
+		t.Fatal("warning changed files")
+	}
+}
