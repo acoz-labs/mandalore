@@ -14,6 +14,9 @@ product acceptance, live-user migration or release authority.
   `b973d440acac501fd2594a43e7ca9ce41e0a65b9dfb28d0d7a7837c99e1261e3`.
 - Hosted implementation CI:
   [34800587289](https://github.com/acoz-labs/mandalore/actions/runs/34800587289), passed.
+  Its Ubuntu runner executed the CLI, migration/filesystem and synchronization
+  Go tests natively. This is Linux engineering evidence, not a Linux Codex session
+  or independent product acceptance.
 - Actual compiled CLI and all build/test commands ran in the owner's designated
   sibling Herdr pane. No live memory or auth fixtures were copied.
 
@@ -102,7 +105,7 @@ OS metadata and external binding/authentication. It is not an off-device backup.
 Prepared receipts do not prove publication when retained in staging. No automatic
 rollback after new writes is provided; preserve and reconcile both histories.
 
-Native Linux filesystem/locking execution, real-memory adoption, native writer
+Native Linux Codex-session behavior, real-memory adoption, native writer
 handoff, independent product acceptance and release are not established here.
 Foundling consultation/promotion remains separate work, required before adopting
 arbitrary historical assistant memory.

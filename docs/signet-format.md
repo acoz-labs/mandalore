@@ -127,8 +127,9 @@ knowledge nor automatically superseded history.
 
 Roots containing legacy `bank.json` or `agent.json` are refused, including mixed
 formats. Do not rename those files to bypass migration checks. Preserve the
-original store and writer until explicit conversion with backups/ID preservation
-and rollback is supported. Normal recovery inspects rejected/corrupt files and
+original store and writer. The [explicit memory-only converter](migration.md)
+preserves IDs and history in a new bundle; assistant repositories remain outside
+that supported format. Normal recovery inspects rejected/corrupt files and
 history; it never silently drops evidence or picks a conflicting head. Native
 Linux CLI/plugin behavior, cross-machine bindings and sync require separate
 acceptance; library tests run natively on macOS/arm64 and Linux/amd64.
