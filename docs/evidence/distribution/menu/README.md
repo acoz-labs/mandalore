@@ -4,6 +4,10 @@ This is an intermediate contributor checkpoint for draft PR #36, classified as
 `new-or-materially-changed-experience`. It is not final-head reconciliation,
 independent product acceptance, release nomination or permission to publish.
 
+A [later exact-source checkpoint](../recovery/README.md) records actual partial
+installation/recovery, cancellation, offline and invalid-artifact journeys and the
+direct-stdin recovery instruction. It does not replace this historical evidence.
+
 ## Exact identities and environment
 
 - Implementation: `4c64d9fde2f94b359a27c8cb3f2706ea1d443eb1`.
