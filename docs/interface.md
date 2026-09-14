@@ -83,9 +83,68 @@ unrecognized state and pending activation are refused without writing anything.
 Retained selection verifies a compatible manifest and platform binary beneath
 `PREFIX/lib/mandalore/releases/sha256-MANIFEST/OS_ARCH/`. A serialized plan is not
 proof that its observations remain current or authorization to change connections.
-Activation, stale-plan revalidation and recovery are still being implemented;
-there is no `release apply` or `release install` command yet. Retained-state tests
-currently use synthetic receipt fixtures, not a claim of completed installation.
+Activation is a separate explicit operation described below. The interactive
+`release install` journey is still being implemented.
+
+## Apply a reviewed CLI installation
+
+```sh
+mandalore release plan --candidate /example/candidate --prefix /example/tools > reviewed-plan.json
+mandalore release apply < reviewed-plan.json
+```
+
+Review the exact source, destinations and effects before applying. Human CLI apply
+accepts its own successful plan envelope or a raw plan object; typed
+`release_apply` accepts the raw object. `--read-only` refuses apply before reading
+stdin. Plan input is bounded at 32 KiB (64 KiB for the human envelope); planning
+refuses a result too large for the typed input budget. These administrative
+operations and their error details stay out of the bound memory MCP.
+
+Apply rechecks the source and destination, stages and hashes the selected bytes,
+and verifies the actual executable's Go build settings and native `version`
+response against the manifest. The version probe runs with a minimal environment,
+no inherited home, memory binding or provider credentials, a 15-second deadline
+and a 16 KiB output limit. This is execution of the explicitly trusted selected
+source, not a sandbox or independent publisher approval. Staged bytes are checked
+again after the probe. Published downloads revalidate the pinned release ID and
+asset identity; an unavailable/corrupt payload does not activate anything.
+
+Installation writers coordinate with a persistent file lock in their owned state.
+An initial state tree is assembled privately and published without replacing an
+existing directory. Updates retain content-keyed runtime directories and switch
+only the verified launcher. Files and affected directories are synchronized around
+atomic publication. Existing runtimes are not removed, and neither PATH nor native
+memory connections are changed. These guards coordinate installers and reject
+observed foreign paths; they are not a security boundary against a malicious
+process running as the same user.
+
+Results expose the phase, exact plan digest, launcher/runtime, previous runtime,
+pending record if present, destination changes and unchanged connections. Errors
+include `release_result`; successful cleanup is required for `installed: true`.
+Do not infer success solely from a launcher that already points at the new binary.
+CLI success also does not imply any native connection was updated.
+
+An interrupted activation retains `PREFIX/lib/mandalore/pending.json`, with the
+exact reviewed plan, previous receipt bytes and observed directory identities.
+Reapplying that **same plan** can finish only if the retained bytes, directories,
+launcher and receipt still match an expected old/new state. Recovery refuses
+foreign or conflicting files, missing/corrupt runtime bytes and a different plan.
+It does not guess ownership or roll back memory. A completed exact-plan replay
+is recognized by the final receipt and verified runtime and performs no writes.
+If staging stopped before a pending record was published, inspect a fresh plan;
+new directories or a retained target can make the original preview stale.
+
+To roll back the CLI, select the older retained **manifest SHA-256**, review the
+new plan and apply it through the same interface:
+
+```sh
+mandalore release plan --retained MANIFEST_SHA256 --prefix /example/tools > rollback-plan.json
+mandalore release apply < rollback-plan.json
+```
+
+Only compatible declared protocol/schema and the current platform are accepted.
+The newer runtime stays retained. No signet data is rewritten, and a CLI rollback
+does not by itself roll back a separately installed native connection.
 
 ## Try a synthetic signet
 

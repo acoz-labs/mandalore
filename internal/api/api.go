@@ -34,10 +34,11 @@ type MemoryError struct {
 }
 type Error struct {
 	MemoryError
-	FoundlingResult  *FoundlingMutationResult `json:"foundling_result,omitempty"`
-	ConnectionResult *install.Result          `json:"connection_result,omitempty"`
-	ConnectionReport *install.Report          `json:"connection_report,omitempty"`
-	MigrationResult  *migration.Result        `json:"migration_result,omitempty"`
+	FoundlingResult  *FoundlingMutationResult    `json:"foundling_result,omitempty"`
+	ConnectionResult *install.Result             `json:"connection_result,omitempty"`
+	ConnectionReport *install.Report             `json:"connection_report,omitempty"`
+	MigrationResult  *migration.Result           `json:"migration_result,omitempty"`
+	ReleaseResult    *distribution.InstallResult `json:"release_result,omitempty"`
 }
 type Envelope struct {
 	ProtocolVersion int    `json:"protocol_version"`
@@ -216,7 +217,13 @@ func (a *API) Call(ctx context.Context, name string, data []byte) Envelope {
 				if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 					code = "operation.cancelled"
 				}
-				return Failure(code, release.Error(), false)
+				mayWrite := release.result != nil && release.result.DestinationChanged
+				out := Failure(code, release.Error(), mayWrite)
+				out.Error.ReleaseResult = release.result
+				if release.result != nil && release.result.Pending != "" {
+					out.Error.InspectBeforeRetry = true
+				}
+				return out
 			}
 			var reference *foundlingFailure
 			if errors.As(err, &reference) {

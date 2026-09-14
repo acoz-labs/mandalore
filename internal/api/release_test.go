@@ -61,3 +61,26 @@ func TestReleasePlanningIsCLIOnlyUnboundAndReadOnly(t *testing.T) {
 		t.Fatal("planning failure has wrong effect report", out)
 	}
 }
+
+func TestReleaseApplyIsExplicitCLIOnlyAndReadOnlyGuarded(t *testing.T) {
+	found := false
+	for _, op := range Catalog() {
+		if op.Name == "release_apply" {
+			found = true
+			if !op.CLIOnly || op.RequiresBinding || op.ReadOnly || !op.Network {
+				t.Fatal("wrong release apply authority")
+			}
+		}
+	}
+	if !found {
+		t.Fatal("release apply missing from discovery")
+	}
+	out := New(nil, true).Call(context.Background(), "release_apply", []byte(`{}`))
+	if out.OK || out.Error.Code != "operation.read_only" || out.Error.WriteMayHaveOccurred {
+		t.Fatal("read-only did not deny apply before decoding", out)
+	}
+	out = New(nil, false).Call(context.Background(), "release_apply", []byte(`{}`))
+	if out.OK || out.Error.Code != "input.invalid" || out.Error.WriteMayHaveOccurred {
+		t.Fatal("invalid plan required binding or caused effects", out)
+	}
+}

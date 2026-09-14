@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/acoz-labs/mandalore/internal/distribution"
 	"github.com/acoz-labs/mandalore/internal/memory"
@@ -21,7 +22,10 @@ type ReleaseInspection struct {
 	Notice    string                       `json:"notice"`
 }
 
-type releaseFailure struct{ err error }
+type releaseFailure struct {
+	err    error
+	result *distribution.InstallResult
+}
 
 func (e *releaseFailure) Error() string { return e.err.Error() }
 func (e *releaseFailure) Unwrap() error { return e.err }
@@ -35,13 +39,13 @@ var releases = []Operation{
 			if in.Candidate != "" {
 				p, err := distribution.VerifyDirectory(in.Candidate)
 				if err != nil {
-					return ReleaseInspection{}, &releaseFailure{err}
+					return ReleaseInspection{}, &releaseFailure{err: err}
 				}
 				return ReleaseInspection{Kind: "local-candidate", Candidate: in.Candidate, Local: &p, Notice: "All declared local bytes and plugin content checked. Explicit local-source trust is still required; no executable, installation, network, signet or native behavior was tested or changed."}, nil
 			}
 			r, err := distribution.NewReleaseClient().Inspect(ctx, in.Version)
 			if err != nil {
-				return ReleaseInspection{}, &releaseFailure{err}
+				return ReleaseInspection{}, &releaseFailure{err: err}
 			}
 			return ReleaseInspection{Kind: "github-release", Published: &r, Notice: "Official immutable release identity, tag commit, manifest/checksum bytes and declared asset metadata checked. Executable payloads were not downloaded or run. No installation or memory change occurred."}, nil
 		}),
@@ -52,9 +56,21 @@ var releases = []Operation{
 			}
 			p, err := distribution.PlanInstall(ctx, in)
 			if err != nil {
-				return distribution.InstallPlan{}, &releaseFailure{err}
+				return distribution.InstallPlan{}, &releaseFailure{err: err}
 			}
 			return p, nil
+		}),
+	operation("release_apply", "Apply an explicitly reviewed CLI installation plan. Revalidates source and destination, retains verified runtime bytes, and changes only an owned launcher/receipt. Matching pending activation can resume. No signet or native connection changes; CLI-only.", false,
+		func(ctx context.Context, _ *memory.Service, in distribution.InstallPlan) (distribution.InstallResult, error) {
+			raw, _ := json.Marshal(in)
+			if _, err := distribution.ParseInstallPlan(raw); err != nil {
+				return distribution.InstallResult{}, strictjson.ErrInvalid
+			}
+			r, err := distribution.ApplyInstall(ctx, in)
+			if err != nil {
+				return r, &releaseFailure{err: err, result: &r}
+			}
+			return r, nil
 		}),
 }
 

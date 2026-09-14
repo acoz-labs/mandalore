@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"io"
 	"os"
@@ -18,7 +19,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-const MaxInstallPlanBytes = 128 << 10
+const MaxInstallPlanBytes = 32 << 10 // Same raw input budget as the typed CLI API.
 const installNotice = "Install the selected verified CLI in this prefix only; executing it trusts its source. Native memory connections, signets, credentials and shell settings remain unchanged. Existing runtimes are retained. A connection update requires a separate preview and confirmation."
 
 type InstallOptions struct {
@@ -72,6 +73,7 @@ type cliReceipt struct {
 	Prefix        string `json:"prefix"`
 	Current       string `json:"current"`
 	Previous      string `json:"previous,omitempty"`
+	LastPlan      string `json:"last_plan,omitempty"`
 }
 
 func cliState(prefix string) string { return filepath.Join(prefix, "lib", "mandalore") }
@@ -221,7 +223,7 @@ func observeInstallation(prefix, goos, arch string) (InstallObservation, error) 
 		return o, errors.New("existing installation state has no readable regular ownership receipt; refusing takeover")
 	}
 	var r cliReceipt
-	if err := strictjson.Decode(b, &r, MaxManifestBytes); err != nil || r.FormatVersion != 1 || r.Product != "mandalore" || r.Prefix != prefix || !validHex(r.Current, 64) || (r.Previous != "" && !validHex(r.Previous, 64)) {
+	if err := strictjson.Decode(b, &r, MaxManifestBytes); err != nil || r.FormatVersion != 1 || r.Product != "mandalore" || r.Prefix != prefix || !validHex(r.Current, 64) || (r.Previous != "" && !validHex(r.Previous, 64)) || (r.LastPlan != "" && !validHex(r.LastPlan, 64)) {
 		return o, errors.New("installation receipt is invalid or belongs to another prefix")
 	}
 	if _, err := retainedManifest(prefix, r.Current, goos, arch); err != nil {
@@ -338,6 +340,10 @@ func planInstall(ctx context.Context, o InstallOptions, client *ReleaseClient) (
 	}
 	if err := ctx.Err(); err != nil {
 		return InstallPlan{}, err
+	}
+	encoded, err := json.Marshal(p)
+	if err != nil || len(encoded) > MaxInstallPlanBytes {
+		return InstallPlan{}, errors.New("installation plan exceeds the typed input budget; choose shorter explicit paths")
 	}
 	return p, nil
 }

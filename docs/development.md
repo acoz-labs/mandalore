@@ -71,8 +71,8 @@ binary against official-release checksums. Curl 8.4+ is required because earlier
 versions do not enforce the size limit during unknown-length transfers.
 See [curl's size-limit contract](https://curl.se/docs/manpage.html#--max-filesize).
 The manual alternative is downloading and verifying the platform binary yourself.
-Release discovery and read-only installation planning are implemented. Activation
-and promotion are still being implemented;
+Release discovery, planning and explicit plan/apply are implemented. The interactive
+install journey, selected native handoff and promotion are still being implemented;
 do not present this early candidate as a complete released installer.
 
 Synthetic bootstrap tests substitute download/host commands and never contact a

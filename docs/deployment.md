@@ -10,8 +10,10 @@ The product now has a pinned [local candidate builder](development.md#local-dist
 checksummed platform/plugin assets, a compatibility manifest and read-only release
 inspection and [CLI installation planning](interface.md#read-only-cli-installation-planning).
 [Engineering evidence](evidence/distribution/README.md) records the
-actual scope tested. CLI activation/update and complete candidate-retention
-and same-byte publication integration remain in progress under #11.
+actual scope tested. Explicit plan/apply now supports owned CLI activation,
+identity-checked recovery and retained rollback. The interactive installer/update
+journey, selected native handoff and complete candidate-retention/same-byte
+publication integration remain in progress under #11.
 
 The template supplies nomination, acceptance and release-ledger workflows, not
 an already completed product publisher. Workflow YAML alone does not establish
