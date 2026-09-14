@@ -1,0 +1,11 @@
+{
+  "protocol_version": 1,
+  "ok": false,
+  "error": {
+    "code": "migration.failed",
+    "message": "legacy writer lock busy; stop writers and preflight again",
+    "retryable": false,
+    "write_may_have_occurred": false,
+    "inspect_before_retry": false
+  }
+}

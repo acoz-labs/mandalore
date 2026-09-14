@@ -14,26 +14,26 @@ documentation files, not this retained candidate or its runtime acceptance set.
 | Ordinary learning, cue, journal, fresh recall, supersession, no-save | [Native checkpoint](native.md), [live reference checkpoint](live-recovery.md) | Contributor-operated; not independent acceptance |
 | Cwd, native inheritance, separate banks, two machines, origin, external reads | Native inherited-resource/cwd observations; separate synthetic banks; [two physical Macs](physical.md); same live MCP process external refresh | Second machine used compiled CLI, not a fresh native agent session |
 | Compaction, interruption, failed hooks, ambiguous writes, corruption, offline/concurrent sync | Actual native compaction/warnings/interrupted work plus compiled conflict/offline/corrupt/uncertain-push fixtures | Escape did not prove child termination; controlled push-response loss was local, not actual packet loss; no blanket failure coverage |
-| Supported OS/architecture execution | Matrix below | Cross-builds and source-suite tests do not prove execution of all retained platform binaries |
+| Supported OS/architecture execution | Native retained CLI/MCP execution on all four targets; matrix below | Native Codex conversations and rendered terminal journeys are not verified on every platform |
 | Context/retrieval cost without private transcripts | Measured MCP schema/response bytes and native operation summaries; [retained-binary 100/1000/10000-record retrieval](retrieval/README.md), plus separate source-level #9 evaluations | Aggregate native counters do not isolate Mandalore token cost; fresh-process single-revision measurements do not cover every retrieval mode |
 | Exact-digest install/update/repair journey | [21 fresh rendered recordings](ui/README.md), [distinct retained switching/refusals](ui/switch-and-refusals.md) | Contributor judgment only; no live public release/bootstrap yet |
 | Historical references and provenance | Actual CLI/MCP missing/changed-source handling, native selective promotion, source preservation | No arbitrary hostile-source immunity or bulk migration claim |
-| Explicit legacy compatibility (#8 dependency) | [Fresh retained-artifact migration](migration/README.md) | Synthetic memory-only conversion; no real-memory adoption or duplicate-native-writer inventory in this checkpoint |
+| Explicit legacy compatibility (#8 dependency) | [Fresh retained-artifact migration](migration/README.md); [actual single-plugin inventory and held-lock refusals](migration/native/README.md) | Synthetic memory-only conversion; no real-memory adoption, simultaneous old/new native installation or remote writer-quiescence proof |
 
 ## Platform matrix — do not collapse these columns
 
 | Platform | Retained candidate CLI/MCP execution | Native Codex conversation | Other engineering evidence |
 | --- | --- | --- | --- |
 | macOS ARM64 | Yes; full local checks and CLI continuity on two physical machines | Yes, Codex 0.153.4 on the first machine | Actual installer/repair UI and migration tests |
-| macOS AMD64 | Not yet verified | Not verified | Cross-built payload only |
+| macOS AMD64 | Yes; [native retained CLI/MCP, sync, install and migration](platforms/README.md) | Not verified | Actual Intel macOS hosted runner, translated execution refused |
 | Linux AMD64 | Yes; [retained native CLI/MCP, sync, install and migration](linux/README.md) | Not verified | Exact retained binary on the existing Ubuntu x86_64 runner; source-level CI remains separate |
-| Linux ARM64 | Not yet verified | Not verified | Cross-built payload only |
+| Linux ARM64 | Yes; [native retained CLI/MCP, sync, install and migration](platforms/README.md) | Not verified | Actual ARM64 Ubuntu hosted runner |
 
-The distribution declares all four targets. This audit does not silently redefine
-support as macOS ARM64 alone. No translation/emulation or cross-build is relabeled
-as native architecture acceptance. The existing local container VM was observed
-stopped; it was not started because its unrelated workloads are outside this test.
-An isolated execution route is needed for the missing platform checks.
+The distribution declares all four targets; all four retained CLI binaries now
+have native execution evidence. No translation/emulation or cross-build is
+relabeled as native architecture acceptance. The existing local container VM was
+not started. The remaining two native routes used explicit standard public runner
+variables on a verification-only branch, without changing the default CI runner.
 
 ## Authority and next work
 
@@ -41,8 +41,8 @@ Foundation #1 completed separately through docs PR #39 with actual PR/main CI an
 main audit. Issues #2–#9/#12 remain in acceptance, not unimplemented merely because
 their issues are open. #10 remains in progress.
 
-Next engineering work is retained-binary execution on the missing platforms and
-the remaining native/compatibility verification boundaries above. Published
+Next engineering work is the remaining native/compatibility verification
+boundaries above. Published
 download/bootstrap cannot pass before an actual authorized release exists; it must
 be a post-publication verification gate, not a fabricated pre-release result.
 

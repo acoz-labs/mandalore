@@ -1,0 +1,17 @@
+{
+  "protocol_version": 1,
+  "ok": false,
+  "error": {
+    "code": "migration.failed",
+    "message": "legacy writer lock busy; stop writers and preflight again",
+    "retryable": false,
+    "write_may_have_occurred": false,
+    "inspect_before_retry": false,
+    "migration_result": {
+      "source_id": "bank-migration-demo",
+      "published": false,
+      "phase": "preflight",
+      "notice": "Migration incomplete. Inspect publication state and any retained staging/output paths before retrying. Source and published bundles are never deleted or rolled back automatically. No writer was activated."
+    }
+  }
+}

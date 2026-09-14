@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "actual_exclusive_lock": true,
+  "busy_preflight_refused": true,
+  "busy_apply_refused": true,
+  "released_lock_available": true,
+  "output_absent": true,
+  "remote_quiescence_verified": false
+}

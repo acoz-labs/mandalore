@@ -1,0 +1,39 @@
+{
+  "protocol_version": 1,
+  "ok": true,
+  "result": {
+    "source_id": "bank-migration-demo",
+    "source_sha256": "67cde56aa83bf99c03576922d17a2d910ebdb838308c8d5e13b1ab4e21de7ad1",
+    "counts": {
+      "files": 10,
+      "directories": 11,
+      "bytes": 2823,
+      "devices": 2,
+      "sources": 2,
+      "revisions": 2,
+      "records": 1,
+      "conflicted_records": 0,
+      "journal": 1,
+      "source_changes": 1
+    },
+    "writers": {
+      "legacy_lock": "absent",
+      "native": {
+        "status": "inspected",
+        "binary_sha256": "b973d440acac501fd2594a43e7ca9ce41e0a65b9dfb28d0d7a7837c99e1261e3",
+        "plugins": [
+          {
+            "id": "mandalore@mandalore",
+            "name": "mandalore",
+            "version": "1.0.0+codex.cb064c23a068f377bffb2ec995bec1c0ec3d72f307ed841883b1442ac81c7b4a",
+            "enabled": true
+          }
+        ],
+        "potential_writers": 1,
+        "notice": "Enabled memory integrations are potential writers only. Active sessions, same-bank targeting, other machines and authentication are not tested. Listing may produce native-owned logs or caches."
+      },
+      "notice": "Lock availability and installed plugins do not prove idle sessions, same-bank targeting or quiescence on other machines. Stop all writers before apply."
+    },
+    "notice": "Supported source: My Friday memory-only bank.json format 1. Portable snapshot limits: 4 MiB/file, 64 MiB total, 10000 files. Output retains original portable bytes, not Git history, local state or an off-device backup. Preserve the untouched source. Apply does not activate a writer, initialize Git, copy credentials or synchronize."
+  }
+}
