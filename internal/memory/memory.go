@@ -289,7 +289,15 @@ func (s *Store) History(recordID string) ([]Revision, error) {
 
 var words = regexp.MustCompile(`[\pL\pN][\pL\pN._-]*`)
 
-func terms(text string) []string { return words.FindAllString(strings.ToLower(text), -1) }
+func terms(text string) []string {
+	tokens := words.FindAllString(strings.ToLower(text), -1)
+	for i := range tokens {
+		// Keep internal dots/hyphens intact (domains, versions, identifiers),
+		// but do not let a sentence-ending period hide an otherwise exact hit.
+		tokens[i] = strings.TrimRight(tokens[i], ".")
+	}
+	return tokens
+}
 
 // A small English inflection fallback for prose, not identifiers or synonyms.
 // Exact hits receive four times the weight. Do not expand arbitrary substrings.

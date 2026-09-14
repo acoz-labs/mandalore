@@ -48,3 +48,27 @@ func TestLexicalMatchingKeepsExactHitsAndIdentifiersDistinct(t *testing.T) {
 		t.Fatal("fuzzy identifier match")
 	}
 }
+
+func TestLexicalTerminalPeriodDoesNotHideProseOrSplitIdentifiers(t *testing.T) {
+	for _, pair := range [][2]string{
+		{"Finch", "Finch."}, {"Finch.", "Finch"}, {"finch", "FINCH..."},
+		{"review", "reviewed."}, {"api.example.com", "api.example.com."},
+		{"v1.2.3", "v1.2.3."}, {"account-prod", "account-prod."},
+	} {
+		if relevance(Revision{Summary: pair[1]}, pair[0]) == 0 {
+			t.Errorf("terminal punctuation hid %q -> %q", pair[0], pair[1])
+		}
+	}
+	for _, pair := range [][2]string{
+		{"example", "api.example.com."}, {"v1.2", "v1.2.3."},
+		{"prod", "account-prod."}, {"account-prod", "account-prods."},
+		{"Finch", "Goldfinch."}, {"name", "namespace."},
+	} {
+		if relevance(Revision{Summary: pair[1]}, pair[0]) != 0 {
+			t.Errorf("punctuation normalization broadened %q -> %q", pair[0], pair[1])
+		}
+	}
+	if relevance(Revision{Summary: "name."}, "name") <= relevance(Revision{Summary: "named."}, "name") {
+		t.Fatal("exact prose match lost priority over inflection")
+	}
+}

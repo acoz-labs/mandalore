@@ -1,0 +1,39 @@
+File: memory-profile.test
+Type: alloc_space
+Time: 2026-09-14 01:37:29 EDT
+Active filters:
+   focus=Service.*Recall
+Showing nodes accounting for 346.79MB, 39.13% of 886.22MB total
+Dropped 78 nodes (cum <= 4.43MB)
+Showing top 30 nodes out of 99
+      flat  flat%   sum%        cum   cum%
+    0.50MB 0.056% 0.056%   810.61MB 91.47%  github.com/acoz-labs/mandalore/internal/memory.(*Service).Recall
+         0     0% 0.056%   810.61MB 91.47%  github.com/acoz-labs/mandalore/internal/memory_test.BenchmarkRetrieval.func1.1
+         0     0% 0.056%   810.61MB 91.47%  github.com/acoz-labs/mandalore/internal/memory_test.BenchmarkRetrieval.func1.1.1
+         0     0% 0.056%   810.61MB 91.47%  github.com/acoz-labs/mandalore/internal/testfixture.Measure
+         0     0% 0.056%   810.61MB 91.47%  testing.(*B).runN
+   16.21MB  1.83%  1.89%   810.11MB 91.41%  github.com/acoz-labs/mandalore/internal/memory.(*Store).Recall
+         0     0%  1.89%   780.33MB 88.05%  testing.(*B).launch
+         0     0%  1.89%   569.98MB 64.32%  github.com/acoz-labs/mandalore/internal/memory.(*Store).validateGraph (inline)
+         0     0%  1.89%   569.98MB 64.32%  github.com/acoz-labs/mandalore/internal/memory.(*Store).validateGraphWithSources
+   27.11MB  3.06%  4.94%   569.98MB 64.32%  github.com/acoz-labs/mandalore/internal/memory.validateRevisionGraph
+       1MB  0.11%  5.06%   342.27MB 38.62%  github.com/acoz-labs/mandalore/internal/memory.readJSON
+         0     0%  5.06%   216.90MB 24.48%  github.com/acoz-labs/mandalore/internal/memory.(*Store).revisions
+         0     0%  5.06%   216.40MB 24.42%  path/filepath.WalkDir
+         0     0%  5.06%   216.40MB 24.42%  path/filepath.walkDir
+         0     0%  5.06%   191.72MB 21.63%  encoding/json.(*Decoder).Decode
+    1.50MB  0.17%  5.23%   179.14MB 20.21%  github.com/acoz-labs/mandalore/internal/memory.(*Store).validateGraphWithSources.func1
+         0     0%  5.23%   172.21MB 19.43%  encoding/json.(*Decoder).readValue
+  171.21MB 19.32% 24.55%   171.21MB 19.32%  encoding/json.(*Decoder).refill
+       9MB  1.02% 25.56%   167.54MB 18.90%  github.com/santhosh-tekuri/jsonschema/v6.(*Schema).validate
+       4MB  0.45% 26.01%   163.12MB 18.41%  github.com/acoz-labs/mandalore/internal/memory.(*Store).deviceExists
+         0     0% 26.01%   162.52MB 18.34%  github.com/santhosh-tekuri/jsonschema/v6.(*Schema).Validate (inline)
+         0     0% 26.01%   158.54MB 17.89%  github.com/santhosh-tekuri/jsonschema/v6.(*validator).objValidate
+         0     0% 26.01%   158.54MB 17.89%  github.com/santhosh-tekuri/jsonschema/v6.(*validator).validate
+   79.51MB  8.97% 34.98%   158.54MB 17.89%  github.com/santhosh-tekuri/jsonschema/v6.(*validator).validateVal
+   31.25MB  3.53% 38.51%   133.34MB 15.05%  github.com/acoz-labs/mandalore/internal/memory.(*Store).revisions.func1
+    5.50MB  0.62% 39.13%    97.04MB 10.95%  encoding/json.(*decodeState).object
+         0     0% 39.13%    97.04MB 10.95%  encoding/json.(*decodeState).unmarshal
+         0     0% 39.13%    97.04MB 10.95%  encoding/json.(*decodeState).value
+         0     0% 39.13%    96.55MB 10.89%  os.ReadFile
+         0     0% 39.13%    80.07MB  9.03%  github.com/acoz-labs/mandalore/internal/memory.(*Store).validateSource

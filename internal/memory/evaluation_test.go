@@ -56,7 +56,7 @@ func TestRetrievalQualityMatrix(t *testing.T) {
 		{"scoped-does-not-inherit-global", "preference", &first, []string{"revision-project-preference"}, true},
 		{"current-name", "Silver Heron", &first, []string{"revision-current-name"}, true},
 		{"retained-alias-finds-current", "Copper Finch", &first, []string{"revision-current-name"}, true},
-		{"terminal-period-is-known-lexical-miss", "Finch", &first, nil, true},
+		{"terminal-period-retained-alias", "Finch", &first, []string{"revision-current-name"}, true},
 		{"shared-keywords-stay-in-project", "fictional project name", &second, []string{"revision-other-name"}, false},
 		{"historical-only-word-not-resurrected", "paperseal", &first, nil, true},
 		{"future-not-current", "Kestrel", &first, nil, true},

@@ -1,0 +1,11 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/acoz-labs/mandalore/internal/memory
+cpu: Apple M1 Pro
+BenchmarkRetrieval
+BenchmarkRetrieval/records-1000/depth-1/conflict-every-0
+    evaluation_benchmark_test.go:16: corpus: records=1000 revisions=1000 conflicts=0 files=2013 bytes=1211038; setup excluded
+BenchmarkRetrieval/records-1000/depth-1/conflict-every-0/warm/narrow
+BenchmarkRetrieval/records-1000/depth-1/conflict-every-0/warm/narrow-10         	      20	 194501498 ns/op	       194.2 p50-ms	       197.8 p95-ms	       826.0 result-B/op	40636533 B/op	  375849 allocs/op
+PASS
+ok  	github.com/acoz-labs/mandalore/internal/memory	5.430s

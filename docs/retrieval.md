@@ -14,8 +14,11 @@ words, same-keyword projects, future-effective revisions, concurrent heads,
 no-match and paginated scope discovery. It asserts exact IDs, omission/conflict
 counts, bounded complete responses and unchanged files. Known lexical misses
 are labeled; they are not semantic search successes. In the initial baseline,
-an absent synonym and a terminal period on a word both miss. The period case
-was discovered by the fixture sanity test, not hidden by the benchmark.
+an absent synonym and a terminal period on a word both missed. The period case
+was discovered by the fixture sanity test, not hidden by the benchmark. A focused
+failing-first correction now ignores terminal periods while preserving internal
+dots/hyphens and exact-match priority. Domains, versions and identifiers are not
+split into matching fragments. Absent synonyms remain a lexical limitation.
 
 `TestRetrievalSameServiceObservesExternalChanges` holds one reader open while
 another writer adds, corrects and branches a record, then introduces corruption
@@ -31,10 +34,10 @@ an installed agent binding, remote repositories or private memory.
 
 ```sh
 mise exec go@1.26.4 -- go test ./internal/testfixture ./internal/memory -run 'TestCorpus|TestNearestRank|TestRetrieval' -count=1
-mise exec go@1.26.4 -- go test ./internal/memory -run '^$' -bench '^BenchmarkRetrieval$' -benchtime=20x -count=1 -timeout=20m
-mise exec go@1.26.4 -- go test ./internal/codex -run '^$' -bench '^BenchmarkPromptHook$' -benchtime=20x -count=1 -timeout=20m
-mise exec go@1.26.4 -- go test ./internal/foundlings -run '^$' -bench '^BenchmarkFoundlingRetrieval$' -benchtime=20x -count=1 -timeout=20m
-mise exec go@1.26.4 -- go test ./cmd/mandalore -run '^$' -bench '^BenchmarkCompiledRetrieval$' -benchtime=20x -count=1 -timeout=20m
+mise exec go@1.26.4 -- go test -v ./internal/memory -run '^$' -bench '^BenchmarkRetrieval$' -benchtime=20x -count=1 -timeout=20m
+mise exec go@1.26.4 -- go test -v ./internal/codex -run '^$' -bench '^BenchmarkPromptHook$' -benchtime=20x -count=1 -timeout=20m
+mise exec go@1.26.4 -- go test -v ./internal/foundlings -run '^$' -bench '^BenchmarkFoundlingRetrieval$' -benchtime=20x -count=1 -timeout=20m
+mise exec go@1.26.4 -- go test -v ./cmd/mandalore -run '^$' -bench '^BenchmarkCompiledRetrieval$' -benchtime=20x -count=1 -timeout=20m
 ```
 
 Memory cases use 100/1000/10000 records, plus independent 1000-record depth-2,
@@ -45,6 +48,8 @@ bank before timing. It is not a supported production writer. Fixture creation
 and validation are excluded from measured operation time, not from total command
 duration. Small generator tests independently check counts and current/conflicting
 heads before its output is trusted.
+Use `-v` to retain parent-benchmark fixture counts in the output; without it Go
+prints the leaf timings but can omit those setup logs.
 
 Memory measurements cover narrow, broad, empty and no-match reads, fresh service
 opening plus recall, and scope pages. Prompt-hook measurements include the actual
