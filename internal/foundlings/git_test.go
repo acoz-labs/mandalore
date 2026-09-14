@@ -54,7 +54,18 @@ func TestGitObservationVerifiesTrackedTextWithoutSourceWrites(t *testing.T) {
 			if s.View.Pin.Algorithm != "git-"+format || s.View.Pin.Value != fixtureGit(t, root, "rev-parse", "HEAD") || s.View.Files != 1 || len(s.Documents) != 1 {
 				t.Fatal(s.View)
 			}
-			if !reflect.DeepEqual(before, fileTree(t, root)) {
+			after := fileTree(t, root)
+			if !reflect.DeepEqual(before, after) {
+				for name, content := range before {
+					if next, exists := after[name]; !exists || next != content {
+						t.Logf("changed or removed fixture path: %s", name)
+					}
+				}
+				for name := range after {
+					if _, exists := before[name]; !exists {
+						t.Logf("added fixture path: %s", name)
+					}
+				}
 				t.Fatal("read changed source or Git metadata")
 			}
 			writeFixture(t, root, "notes/choice.md", "Edited but not committed")
