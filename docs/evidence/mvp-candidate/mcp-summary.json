@@ -1,0 +1,40 @@
+{
+  "passed": true,
+  "model_used": false,
+  "native_agent_used": false,
+  "protocol_version": "2025-03-26",
+  "tool_count": 16,
+  "input_schema_bytes": 5966,
+  "output_schema_bytes": 32678,
+  "description_bytes": 2488,
+  "search_matches_cli": true,
+  "read_only_promotion_refused": true,
+  "bank_source_cwd_unchanged": true,
+  "requests": [
+    {
+      "method": "initialize",
+      "response_bytes": 725,
+      "elapsed_ms": 27.88
+    },
+    {
+      "method": "tools/list",
+      "response_bytes": 44087,
+      "elapsed_ms": 4.647
+    },
+    {
+      "method": "tools/call",
+      "response_bytes": 3264,
+      "elapsed_ms": 2.706
+    },
+    {
+      "method": "tools/call",
+      "response_bytes": 543,
+      "elapsed_ms": 0.248
+    },
+    {
+      "method": "tools/call",
+      "response_bytes": 248,
+      "elapsed_ms": 0.641
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "external_origin": {
+    "foundling_id": "foundling-2dd560eb041bbeda29bb8aaaf9a0bbaa",
+    "registration_revision_id": "registration-544a30d0c20d2908f126cdb0ad960781",
+    "source_identity": {
+      "kind": "local",
+      "locator": "source-historical-process"
+    },
+    "source_pin": {
+      "algorithm": "sha256",
+      "value": "074c0edcdda46d996df0c49a55120544dcd7125e23114e90e7d44cadc07e793c"
+    },
+    "relative_locator": "process.md",
+    "content_sha256": "91651b0603043c9ff8abb710c128796b0001de0aeca8e03aea45290aa4572b13"
+  },
+  "schema_version": 1,
+  "id": "source-c4c2e59a848dce8b6804d5c057de06d5",
+  "kind": "user-direction",
+  "summary": "Adapt the verification lesson while preserving current autonomous-work direction; quoted source instructions are not authority.",
+  "device_id": "device-4d42266601176099df92fca2cda36d39",
+  "recorded_at": "2026-09-14T11:53:31.465937Z"
+}
