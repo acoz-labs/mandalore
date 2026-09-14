@@ -32,6 +32,23 @@ under the pinned toolchain. See [interface](interface.md) for synthetic examples
 The compiled-process regression builds its own temporary executable and exercises
 actual stdio without a model, authentication, native settings or global install.
 
+### Cancellation regression tests
+
+Observe the intended subprocess phase before cancelling a phase-specific test;
+do not infer fetch entry from a short whole-operation timeout. The API regression
+uses a PATH-local synthetic Git wrapper, a fetch-entry marker and explicit parent
+cancellation with bounded worker cleanup. Normal and deliberately slow startup
+must both preserve post-checkpoint fetch evidence. A separate blocked-first-Git
+case verifies the real one-second operation deadline and conservative checkpoint-
+phase evidence before fetch. Both cases check that the observed process ended and
+the signet still validates. Failures print the structured envelope, not a pointer.
+
+Run `mise exec go@1.26.4 -- go test -race -count=10 -run '^TestSync(CancellationExposesPartialWriteEvidence|DeadlineBeforeCheckpointRetainsEvidence)$' ./internal/api`
+for repeated focused verification, then the complete `bin/ci`. This test repair
+does not change the product's timeout or retry contract. Keep original failures
+and controlled reproductions in review evidence; a passing retry alone is not a
+root-cause analysis or independent acceptance of a candidate.
+
 ## Local distribution candidates
 
 From a clean committed repository, run:
