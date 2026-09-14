@@ -107,8 +107,27 @@ func (s *Store) validateGraph(records []Revision) error {
 	return s.validateGraphWithSources(records, nil)
 }
 
+func memoizeDeviceValidation(check func(string) error) func(string) error {
+	validated := map[string]bool{}
+	return func(id string) error {
+		if validated[id] {
+			return nil
+		}
+		if err := check(id); err != nil {
+			return err
+		}
+		validated[id] = true
+		return nil
+	}
+}
+
 func (s *Store) validateGraphWithSources(records []Revision, pending map[string]Source) error {
-	return validateRevisionGraph(records, s.Signet.ID, s.deviceExists, func(id string) error {
+	// One graph validation shares successful device checks between revisions
+	// and their sources. Do not retain this memo on Store/Service: every later
+	// read or write must check current provenance again. Multi-file reads do
+	// not claim atomic snapshots against uncoordinated external filesystem edits.
+	device := memoizeDeviceValidation(s.deviceExists)
+	return validateRevisionGraph(records, s.Signet.ID, device, func(id string) error {
 		source, exists := pending[id]
 		if !exists {
 			if err := readJSON(filepath.Join(s.Root, "memory/sources", id+".json"), &source); err != nil {
@@ -118,7 +137,7 @@ func (s *Store) validateGraphWithSources(records []Revision, pending map[string]
 		if source.ID != id {
 			return errors.New("source ID mismatch")
 		}
-		return s.validateSource(source)
+		return s.validateSourceWithDevice(source, device)
 	})
 }
 
@@ -289,7 +308,15 @@ func (s *Store) History(recordID string) ([]Revision, error) {
 
 var words = regexp.MustCompile(`[\pL\pN][\pL\pN._-]*`)
 
-func terms(text string) []string { return words.FindAllString(strings.ToLower(text), -1) }
+func terms(text string) []string {
+	tokens := words.FindAllString(strings.ToLower(text), -1)
+	for i := range tokens {
+		// Keep internal dots/hyphens intact (domains, versions, identifiers),
+		// but do not let a sentence-ending period hide an otherwise exact hit.
+		tokens[i] = strings.TrimRight(tokens[i], ".")
+	}
+	return tokens
+}
 
 // A small English inflection fallback for prose, not identifiers or synonyms.
 // Exact hits receive four times the weight. Do not expand arbitrary substrings.

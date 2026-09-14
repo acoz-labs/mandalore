@@ -1,0 +1,19 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/acoz-labs/mandalore/cmd/mandalore
+cpu: Apple M1 Pro
+BenchmarkCompiledRetrieval
+BenchmarkCompiledRetrieval/records-100/depth-1/conflict-every-0
+    evaluation_benchmark_test.go:30: corpus: records=100 revisions=100 files=213 bytes=121318; setup/build excluded; fresh process is not cold disk
+    evaluation_benchmark_test.go:30: corpus: records=100 revisions=100 files=213 bytes=121318; setup/build excluded; fresh process is not cold disk
+BenchmarkCompiledRetrieval/records-100/depth-1/conflict-every-0-10         	      20	  40328948 ns/op	        40.39 p50-ms	        44.70 p95-ms	       869.0 result-B/op	   59243 B/op	      93 allocs/op
+BenchmarkCompiledRetrieval/records-1000/depth-1/conflict-every-0
+    evaluation_benchmark_test.go:30: corpus: records=1000 revisions=1000 files=2013 bytes=1211038; setup/build excluded; fresh process is not cold disk
+    evaluation_benchmark_test.go:30: corpus: records=1000 revisions=1000 files=2013 bytes=1211038; setup/build excluded; fresh process is not cold disk
+BenchmarkCompiledRetrieval/records-1000/depth-1/conflict-every-0-10        	      20	 213167398 ns/op	       212.1 p50-ms	       218.2 p95-ms	       869.0 result-B/op	   58935 B/op	      93 allocs/op
+BenchmarkCompiledRetrieval/records-10000/depth-1/conflict-every-0
+    evaluation_benchmark_test.go:30: corpus: records=10000 revisions=10000 files=20013 bytes=12108238; setup/build excluded; fresh process is not cold disk
+    evaluation_benchmark_test.go:30: corpus: records=10000 revisions=10000 files=20013 bytes=12108238; setup/build excluded; fresh process is not cold disk
+BenchmarkCompiledRetrieval/records-10000/depth-1/conflict-every-0-10       	      20	2123872781 ns/op	      2115 p50-ms	      2241 p95-ms	       869.0 result-B/op	   58714 B/op	      92 allocs/op
+PASS
+ok  	github.com/acoz-labs/mandalore/cmd/mandalore	70.354s

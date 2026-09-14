@@ -41,7 +41,11 @@ store secrets or raw transcripts. A correction supplies the returned `record_id`
 and the predecessor revision ID in `supersedes`, plus a new body and reason.
 `memory history --record-id ID` preserves original and correction provenance.
 Omitting scope means only this signet's global scope, not every project; use
-`memory scopes` to discover stored IDs before selecting a project/account/task.
+`memory scopes` to discover stored IDs before selecting a project/account/task
+when the relevant ID has not already been discovered. Reusing a known ID routes
+a fresh recall, not a cached answer. Recall defaults to five hits and an 8192-byte
+result budget; increase these only when needed. See [retrieval](retrieval.md) for
+lexical limits, completeness/conflict semantics and measured scale behavior.
 
 ## Machine-ready contract
 

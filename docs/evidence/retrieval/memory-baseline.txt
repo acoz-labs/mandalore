@@ -1,0 +1,42 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/acoz-labs/mandalore/internal/memory
+cpu: Apple M1 Pro
+BenchmarkRetrieval/records-100/depth-1/conflict-every-0/warm/narrow-10         	      20	  19387269 ns/op	        18.89 p50-ms	        22.65 p95-ms	       826.0 result-B/op	 4579028 B/op	   44969 allocs/op
+BenchmarkRetrieval/records-100/depth-1/conflict-every-0/warm/broad-10          	      20	  20029958 ns/op	        19.19 p50-ms	        22.47 p95-ms	      2902 result-B/op	 4609162 B/op	   44995 allocs/op
+BenchmarkRetrieval/records-100/depth-1/conflict-every-0/warm/empty-10          	      20	  18978435 ns/op	        18.10 p50-ms	        21.72 p95-ms	      2902 result-B/op	 4535034 B/op	   44451 allocs/op
+BenchmarkRetrieval/records-100/depth-1/conflict-every-0/warm/no-match-10       	      20	  19556904 ns/op	        18.62 p50-ms	        22.56 p95-ms	       308.0 result-B/op	 4569692 B/op	   44965 allocs/op
+BenchmarkRetrieval/records-100/depth-1/conflict-every-0/fresh-service/narrow-10         	      20	  20130217 ns/op	        20.37 p50-ms	        22.17 p95-ms	       826.0 result-B/op	 4583376 B/op	   45019 allocs/op
+BenchmarkRetrieval/records-100/depth-1/conflict-every-0/scopes-10                       	      20	  19551300 ns/op	        18.75 p50-ms	        22.56 p95-ms	       369.0 result-B/op	 4417034 B/op	   44278 allocs/op
+BenchmarkRetrieval/records-1000/depth-1/conflict-every-0/warm/narrow-10                 	      20	 195560108 ns/op	       195.3 p50-ms	       199.7 p95-ms	       826.0 result-B/op	40686761 B/op	  376004 allocs/op
+BenchmarkRetrieval/records-1000/depth-1/conflict-every-0/warm/broad-10                  	      20	 195152371 ns/op	       194.0 p50-ms	       199.6 p95-ms	      2903 result-B/op	40826895 B/op	  376072 allocs/op
+BenchmarkRetrieval/records-1000/depth-1/conflict-every-0/warm/empty-10                  	      20	 194628552 ns/op	       194.3 p50-ms	       198.7 p95-ms	      2903 result-B/op	40463226 B/op	  370748 allocs/op
+BenchmarkRetrieval/records-1000/depth-1/conflict-every-0/warm/no-match-10               	      20	 195858627 ns/op	       195.8 p50-ms	       206.1 p95-ms	       308.0 result-B/op	40682713 B/op	  375994 allocs/op
+BenchmarkRetrieval/records-1000/depth-1/conflict-every-0/fresh-service/narrow-10        	      20	 196387140 ns/op	       196.3 p50-ms	       201.5 p95-ms	       826.0 result-B/op	40698740 B/op	  376080 allocs/op
+BenchmarkRetrieval/records-1000/depth-1/conflict-every-0/scopes-10                      	      20	 217691085 ns/op	       194.8 p50-ms	       358.9 p95-ms	       374.0 result-B/op	39340268 B/op	  368808 allocs/op
+BenchmarkRetrieval/records-10000/depth-1/conflict-every-0/warm/narrow-10                	      20	2103524148 ns/op	      2102 p50-ms	      2116 p95-ms	       826.0 result-B/op	406168584 B/op	 3682543 allocs/op
+BenchmarkRetrieval/records-10000/depth-1/conflict-every-0/warm/broad-10                 	      20	2113527835 ns/op	      2107 p50-ms	      2127 p95-ms	      2904 result-B/op	407490293 B/op	 3682605 allocs/op
+BenchmarkRetrieval/records-10000/depth-1/conflict-every-0/warm/empty-10                 	      20	2098747383 ns/op	      2097 p50-ms	      2113 p95-ms	      2904 result-B/op	404332166 B/op	 3629588 allocs/op
+BenchmarkRetrieval/records-10000/depth-1/conflict-every-0/warm/no-match-10              	      20	2119161656 ns/op	      2108 p50-ms	      2192 p95-ms	       308.0 result-B/op	406160715 B/op	 3682529 allocs/op
+BenchmarkRetrieval/records-10000/depth-1/conflict-every-0/fresh-service/narrow-10       	      20	2104147031 ns/op	      2104 p50-ms	      2116 p95-ms	       826.0 result-B/op	406178559 B/op	 3682604 allocs/op
+BenchmarkRetrieval/records-10000/depth-1/conflict-every-0/scopes-10                     	      20	2100424798 ns/op	      2090 p50-ms	      2132 p95-ms	       379.0 result-B/op	393981345 B/op	 3609614 allocs/op
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-0/warm/narrow-10                 	      20	 343775731 ns/op	       343.9 p50-ms	       349.6 p95-ms	       826.0 result-B/op	77495039 B/op	  731224 allocs/op
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-0/warm/broad-10                  	      20	 343233281 ns/op	       342.7 p50-ms	       349.2 p95-ms	      2903 result-B/op	77624465 B/op	  731285 allocs/op
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-0/warm/empty-10                  	      20	 346708377 ns/op	       344.0 p50-ms	       352.9 p95-ms	      2903 result-B/op	77266288 B/op	  725959 allocs/op
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-0/warm/no-match-10               	      20	 343139990 ns/op	       343.4 p50-ms	       350.0 p95-ms	       308.0 result-B/op	77501547 B/op	  731248 allocs/op
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-0/fresh-service/narrow-10        	      20	 342170825 ns/op	       341.4 p50-ms	       347.7 p95-ms	       826.0 result-B/op	77507407 B/op	  731299 allocs/op
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-0/scopes-10                      	      20	 339829217 ns/op	       339.3 p50-ms	       345.6 p95-ms	       374.0 result-B/op	75538976 B/op	  722977 allocs/op
+BenchmarkRetrieval/records-1000/depth-10/conflict-every-0/warm/narrow-10                	      20	1565024635 ns/op	      1563 p50-ms	      1573 p95-ms	       826.0 result-B/op	373343170 B/op	 3561732 allocs/op
+BenchmarkRetrieval/records-1000/depth-10/conflict-every-0/warm/broad-10                 	      20	1564643435 ns/op	      1565 p50-ms	      1577 p95-ms	      2903 result-B/op	373464725 B/op	 3561754 allocs/op
+BenchmarkRetrieval/records-1000/depth-10/conflict-every-0/warm/empty-10                 	      20	1571050648 ns/op	      1569 p50-ms	      1585 p95-ms	      2903 result-B/op	373112053 B/op	 3556435 allocs/op
+BenchmarkRetrieval/records-1000/depth-10/conflict-every-0/warm/no-match-10              	      20	1565853177 ns/op	      1566 p50-ms	      1577 p95-ms	       308.0 result-B/op	373340894 B/op	 3561739 allocs/op
+BenchmarkRetrieval/records-1000/depth-10/conflict-every-0/fresh-service/narrow-10       	      20	1565913300 ns/op	      1565 p50-ms	      1576 p95-ms	       826.0 result-B/op	373350163 B/op	 3561783 allocs/op
+BenchmarkRetrieval/records-1000/depth-10/conflict-every-0/scopes-10                     	      20	1559827254 ns/op	      1558 p50-ms	      1569 p95-ms	       374.0 result-B/op	366901881 B/op	 3545384 allocs/op
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-17/warm/narrow-10                	      20	 350867792 ns/op	       351.0 p50-ms	       357.1 p95-ms	      1289 result-B/op	79559276 B/op	  751987 allocs/op
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-17/warm/broad-10                 	      20	 350073552 ns/op	       348.6 p50-ms	       357.5 p95-ms	      3366 result-B/op	79690326 B/op	  752029 allocs/op
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-17/warm/empty-10                 	      20	 349617944 ns/op	       348.7 p50-ms	       355.3 p95-ms	      3366 result-B/op	79345218 B/op	  747014 allocs/op
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-17/warm/no-match-10              	      20	 349703288 ns/op	       348.7 p50-ms	       356.0 p95-ms	       771.0 result-B/op	79550029 B/op	  751979 allocs/op
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-17/fresh-service/narrow-10       	      20	 350637831 ns/op	       351.2 p50-ms	       354.8 p95-ms	      1289 result-B/op	79566755 B/op	  752034 allocs/op
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-17/scopes-10                     	      20	 353260685 ns/op	       350.3 p50-ms	       378.4 p95-ms	       374.0 result-B/op	77546633 B/op	  743904 allocs/op
+PASS
+ok  	github.com/acoz-labs/mandalore/internal/memory	596.306s

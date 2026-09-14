@@ -1,0 +1,91 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/acoz-labs/mandalore/internal/memory
+cpu: Apple M1 Pro
+BenchmarkRetrieval
+BenchmarkRetrieval/records-100/depth-1/conflict-every-0
+    evaluation_benchmark_test.go:16: corpus: records=100 revisions=100 conflicts=0 files=213 bytes=121318; setup excluded
+BenchmarkRetrieval/records-100/depth-1/conflict-every-0/warm/narrow
+BenchmarkRetrieval/records-100/depth-1/conflict-every-0/warm/narrow-10         	      20	  13286971 ns/op	        12.69 p50-ms	        16.43 p95-ms	       826.0 result-B/op	 3735882 B/op	   40786 allocs/op
+BenchmarkRetrieval/records-100/depth-1/conflict-every-0/warm/broad
+BenchmarkRetrieval/records-100/depth-1/conflict-every-0/warm/broad-10          	      20	  13318254 ns/op	        12.76 p50-ms	        15.91 p95-ms	      2902 result-B/op	 3768690 B/op	   40809 allocs/op
+BenchmarkRetrieval/records-100/depth-1/conflict-every-0/warm/empty
+BenchmarkRetrieval/records-100/depth-1/conflict-every-0/warm/empty-10          	      20	  13437883 ns/op	        13.05 p50-ms	        15.10 p95-ms	      2902 result-B/op	 3699687 B/op	   40274 allocs/op
+BenchmarkRetrieval/records-100/depth-1/conflict-every-0/warm/no-match
+BenchmarkRetrieval/records-100/depth-1/conflict-every-0/warm/no-match-10       	      20	  13191835 ns/op	        12.93 p50-ms	        14.89 p95-ms	       308.0 result-B/op	 3735270 B/op	   40779 allocs/op
+BenchmarkRetrieval/records-100/depth-1/conflict-every-0/fresh-service/narrow
+BenchmarkRetrieval/records-100/depth-1/conflict-every-0/fresh-service/narrow-10         	      20	  13639996 ns/op	        12.99 p50-ms	        15.98 p95-ms	       826.0 result-B/op	 3743319 B/op	   40835 allocs/op
+BenchmarkRetrieval/records-100/depth-1/conflict-every-0/scopes
+BenchmarkRetrieval/records-100/depth-1/conflict-every-0/scopes-10                       	      20	  13169585 ns/op	        12.63 p50-ms	        15.05 p95-ms	       369.0 result-B/op	 3580616 B/op	   40102 allocs/op
+BenchmarkRetrieval/records-1000/depth-1/conflict-every-0
+    evaluation_benchmark_test.go:16: corpus: records=1000 revisions=1000 conflicts=0 files=2013 bytes=1211038; setup excluded
+BenchmarkRetrieval/records-1000/depth-1/conflict-every-0/warm/narrow
+BenchmarkRetrieval/records-1000/depth-1/conflict-every-0/warm/narrow-10                 	      20	 133744769 ns/op	       133.8 p50-ms	       143.7 p95-ms	       826.0 result-B/op	32301993 B/op	  333967 allocs/op
+BenchmarkRetrieval/records-1000/depth-1/conflict-every-0/warm/broad
+BenchmarkRetrieval/records-1000/depth-1/conflict-every-0/warm/broad-10                  	      20	 141993727 ns/op	       142.2 p50-ms	       147.0 p95-ms	      2903 result-B/op	32430771 B/op	  334007 allocs/op
+BenchmarkRetrieval/records-1000/depth-1/conflict-every-0/warm/empty
+BenchmarkRetrieval/records-1000/depth-1/conflict-every-0/warm/empty-10                  	      20	 140786033 ns/op	       141.0 p50-ms	       145.2 p95-ms	      2903 result-B/op	32065551 B/op	  328685 allocs/op
+BenchmarkRetrieval/records-1000/depth-1/conflict-every-0/warm/no-match
+BenchmarkRetrieval/records-1000/depth-1/conflict-every-0/warm/no-match-10               	      20	 142088254 ns/op	       142.8 p50-ms	       144.9 p95-ms	       308.0 result-B/op	32297759 B/op	  333948 allocs/op
+BenchmarkRetrieval/records-1000/depth-1/conflict-every-0/fresh-service/narrow
+BenchmarkRetrieval/records-1000/depth-1/conflict-every-0/fresh-service/narrow-10        	      20	 139095579 ns/op	       140.9 p50-ms	       145.7 p95-ms	       826.0 result-B/op	32305820 B/op	  334019 allocs/op
+BenchmarkRetrieval/records-1000/depth-1/conflict-every-0/scopes
+BenchmarkRetrieval/records-1000/depth-1/conflict-every-0/scopes-10                      	      20	 139763560 ns/op	       141.0 p50-ms	       145.3 p95-ms	       374.0 result-B/op	30944473 B/op	  326749 allocs/op
+BenchmarkRetrieval/records-10000/depth-1/conflict-every-0
+    evaluation_benchmark_test.go:16: corpus: records=10000 revisions=10000 conflicts=0 files=20013 bytes=12108238; setup excluded
+BenchmarkRetrieval/records-10000/depth-1/conflict-every-0/warm/narrow
+BenchmarkRetrieval/records-10000/depth-1/conflict-every-0/warm/narrow-10                	      20	1568869917 ns/op	      1567 p50-ms	      1581 p95-ms	       826.0 result-B/op	322096568 B/op	 3262315 allocs/op
+BenchmarkRetrieval/records-10000/depth-1/conflict-every-0/warm/broad
+BenchmarkRetrieval/records-10000/depth-1/conflict-every-0/warm/broad-10                 	      20	1590963396 ns/op	      1573 p50-ms	      1702 p95-ms	      2904 result-B/op	323416000 B/op	 3262362 allocs/op
+BenchmarkRetrieval/records-10000/depth-1/conflict-every-0/warm/empty
+BenchmarkRetrieval/records-10000/depth-1/conflict-every-0/warm/empty-10                 	      20	1563076954 ns/op	      1566 p50-ms	      1570 p95-ms	      2904 result-B/op	320259302 B/op	 3209341 allocs/op
+BenchmarkRetrieval/records-10000/depth-1/conflict-every-0/warm/no-match
+BenchmarkRetrieval/records-10000/depth-1/conflict-every-0/warm/no-match-10              	      20	1624908998 ns/op	      1576 p50-ms	      1770 p95-ms	       308.0 result-B/op	322099092 B/op	 3262331 allocs/op
+BenchmarkRetrieval/records-10000/depth-1/conflict-every-0/fresh-service/narrow
+BenchmarkRetrieval/records-10000/depth-1/conflict-every-0/fresh-service/narrow-10       	      20	1570905702 ns/op	      1544 p50-ms	      1723 p95-ms	       826.0 result-B/op	322107399 B/op	 3262378 allocs/op
+BenchmarkRetrieval/records-10000/depth-1/conflict-every-0/scopes
+BenchmarkRetrieval/records-10000/depth-1/conflict-every-0/scopes-10                     	      20	1601706715 ns/op	      1551 p50-ms	      1721 p95-ms	       379.0 result-B/op	309916434 B/op	 3189406 allocs/op
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-0
+    evaluation_benchmark_test.go:16: corpus: records=1000 revisions=2000 conflicts=0 files=4013 bytes=2450838; setup excluded
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-0/warm/narrow
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-0/warm/narrow-10                 	      20	 236209817 ns/op	       230.5 p50-ms	       251.9 p95-ms	       826.0 result-B/op	60653363 B/op	  647119 allocs/op
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-0/warm/broad
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-0/warm/broad-10                  	      20	 261621415 ns/op	       266.6 p50-ms	       283.7 p95-ms	      2903 result-B/op	60780370 B/op	  647149 allocs/op
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-0/warm/empty
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-0/warm/empty-10                  	      20	 239031200 ns/op	       231.8 p50-ms	       267.8 p95-ms	      2903 result-B/op	60426508 B/op	  641853 allocs/op
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-0/warm/no-match
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-0/warm/no-match-10               	      20	 262612725 ns/op	       274.6 p50-ms	       289.9 p95-ms	       308.0 result-B/op	60646566 B/op	  647104 allocs/op
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-0/fresh-service/narrow
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-0/fresh-service/narrow-10        	      20	 251820185 ns/op	       236.3 p50-ms	       291.2 p95-ms	       826.0 result-B/op	60661170 B/op	  647169 allocs/op
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-0/scopes
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-0/scopes-10                      	      20	 229713077 ns/op	       229.6 p50-ms	       233.1 p95-ms	       374.0 result-B/op	58698040 B/op	  638873 allocs/op
+BenchmarkRetrieval/records-1000/depth-10/conflict-every-0
+    evaluation_benchmark_test.go:16: corpus: records=1000 revisions=10000 conflicts=0 files=20013 bytes=12369238; setup excluded
+BenchmarkRetrieval/records-1000/depth-10/conflict-every-0/warm/narrow
+BenchmarkRetrieval/records-1000/depth-10/conflict-every-0/warm/narrow-10                	      20	1092315394 ns/op	      1076 p50-ms	      1158 p95-ms	       826.0 result-B/op	289281699 B/op	 3141550 allocs/op
+BenchmarkRetrieval/records-1000/depth-10/conflict-every-0/warm/broad
+BenchmarkRetrieval/records-1000/depth-10/conflict-every-0/warm/broad-10                 	      20	1113967579 ns/op	      1134 p50-ms	      1150 p95-ms	      2903 result-B/op	289406961 B/op	 3141570 allocs/op
+BenchmarkRetrieval/records-1000/depth-10/conflict-every-0/warm/empty
+BenchmarkRetrieval/records-1000/depth-10/conflict-every-0/warm/empty-10                 	      20	1095215798 ns/op	      1106 p50-ms	      1147 p95-ms	      2903 result-B/op	289055382 B/op	 3136275 allocs/op
+BenchmarkRetrieval/records-1000/depth-10/conflict-every-0/warm/no-match
+BenchmarkRetrieval/records-1000/depth-10/conflict-every-0/warm/no-match-10              	      20	1077859835 ns/op	      1059 p50-ms	      1151 p95-ms	       308.0 result-B/op	289280107 B/op	 3141549 allocs/op
+BenchmarkRetrieval/records-1000/depth-10/conflict-every-0/fresh-service/narrow
+BenchmarkRetrieval/records-1000/depth-10/conflict-every-0/fresh-service/narrow-10       	      20	1086848177 ns/op	      1100 p50-ms	      1149 p95-ms	       826.0 result-B/op	289291517 B/op	 3141597 allocs/op
+BenchmarkRetrieval/records-1000/depth-10/conflict-every-0/scopes
+BenchmarkRetrieval/records-1000/depth-10/conflict-every-0/scopes-10                     	      20	1056769344 ns/op	      1026 p50-ms	      1119 p95-ms	       374.0 result-B/op	282838412 B/op	 3125189 allocs/op
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-17
+    evaluation_benchmark_test.go:16: corpus: records=1000 revisions=2059 conflicts=59 files=4131 bytes=2514018; setup excluded
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-17/warm/narrow
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-17/warm/narrow-10                	      20	 233705473 ns/op	       233.8 p50-ms	       245.4 p95-ms	      1289 result-B/op	62219913 B/op	  665395 allocs/op
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-17/warm/broad
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-17/warm/broad-10                 	      20	 238067362 ns/op	       238.2 p50-ms	       242.1 p95-ms	      3366 result-B/op	62342715 B/op	  665417 allocs/op
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-17/warm/empty
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-17/warm/empty-10                 	      20	 235531606 ns/op	       235.3 p50-ms	       240.2 p95-ms	      3366 result-B/op	62009248 B/op	  660440 allocs/op
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-17/warm/no-match
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-17/warm/no-match-10              	      20	 235785492 ns/op	       234.7 p50-ms	       239.9 p95-ms	       771.0 result-B/op	62212703 B/op	  665392 allocs/op
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-17/fresh-service/narrow
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-17/fresh-service/narrow-10       	      20	 238064871 ns/op	       237.2 p50-ms	       243.2 p95-ms	      1289 result-B/op	62232057 B/op	  665455 allocs/op
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-17/scopes
+BenchmarkRetrieval/records-1000/depth-2/conflict-every-17/scopes-10                     	      20	 234924967 ns/op	       234.5 p50-ms	       241.1 p95-ms	       374.0 result-B/op	60202922 B/op	  657287 allocs/op
+PASS
+ok  	github.com/acoz-labs/mandalore/internal/memory	433.831s

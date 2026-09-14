@@ -32,16 +32,17 @@ sequence and scope; issue creation is not implementation or acceptance.
 
 Repository foundations, engine/schema, shared interface, synchronization, Codex
 integration, managed setup and explicit memory-only migration are implemented.
-Foundling consultation/promotion (#12) is implemented with synthetic menu/native
-evidence and is undergoing final engineering reconciliation. Next: retrieval measurements (#9),
-distribution (#11) and immutable-candidate acceptance (#10), then foundation
+Foundling consultation/promotion (#12) is engineering-merged with synthetic menu/native
+evidence. Retrieval measurements and bounded fixes (#9) have synthetic scale,
+freshness and native learning/continuity evidence. Next: final #9 engineering
+reconciliation, distribution (#11) and immutable-candidate acceptance (#10), then foundation
 reconciliation (#1). Foundlings belongs before real-memory adoption, not merely
 an optional post-MVP improvement. Engineering merges are not release acceptance.
 Codex acceptance precedes Pi; Pi acceptance precedes Claude Code. Release-bearing
 issues stay open through independent acceptance and verified GitHub publication.
 
 The public [Mandalore board](https://github.com/orgs/acoz-labs/projects/35) contains
-all 16 successor issues. Template fields/views and item status were verified;
+the original 16 successor issues. Template fields/views and item status were verified;
 see the [project receipt](operations/project.md) and issue #1 for live follow-up.
 My Friday is archived and its planning board is closed; historical work is
 preserved rather than marked successfully implemented.

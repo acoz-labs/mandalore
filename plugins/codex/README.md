@@ -70,6 +70,14 @@ Scope inventory is routing metadata, not unrelated project content. Further
 scoped retrieval uses MCP tools. Files are reread; previously loaded model
 context is not retroactively refreshed by a Git pull.
 
+The skill can reuse a stable scope ID from that inventory or the conversation
+for the same entity and starts recall with compact defaults. It still reads
+current record contents and discovers/pages when the scope is missing or unclear.
+History and incomplete-reference reads remain available when needed; lower tool
+counts are not correctness on their own. See the [retrieval evaluation](../../docs/retrieval.md)
+and [native comparison](../../docs/evidence/retrieval/native.md) for measured
+behavior and the distinction between payload bytes and native token counters.
+
 Hooks never write, sync, parse transcripts, invoke another model or execute user
 scripts. The skill handles relevant confirmed learning and semantic journaling
 incrementally, not only at exit. It can request a three-second sync before

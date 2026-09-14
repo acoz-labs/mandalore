@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "id": "event-c0b984b4658d96ed56cc8d6caf8574f5",
+  "kind": "decision",
+  "summary": "Confirmed Amber Lark replaces Silver Heron as the fictional project's name; updated the existing name record in project scope copper-finch, preserving prior revisions. Settled working process remains unchanged: autonomous routine reversible local work, with relevant checks and accurate verification reporting before declaring implementation complete. Historical reference left unchanged. Saved locally without synchronization.",
+  "recorded_at": "2026-09-14T06:15:15.102109Z",
+  "authorship": {
+    "device_id": "device-9fd6ce5b7044c678ee69de5ef7240383",
+    "actor": "Example user",
+    "harness": "codex",
+    "model": null,
+    "session_id": null
+  }
+}

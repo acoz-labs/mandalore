@@ -1,0 +1,27 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/acoz-labs/mandalore/internal/foundlings
+cpu: Apple M1 Pro
+BenchmarkFoundlingRetrieval
+BenchmarkFoundlingRetrieval/files-100
+    evaluation_benchmark_test.go:41: reference: files=100 bytes=48300; signet records=10; setup excluded; source verification included
+BenchmarkFoundlingRetrieval/files-100/search/narrow
+BenchmarkFoundlingRetrieval/files-100/search/narrow-10         	      20	   7941367 ns/op	         7.428 p50-ms	         9.911 p95-ms	      1514 result-B/op	  829167 B/op	    7919 allocs/op
+BenchmarkFoundlingRetrieval/files-100/search/broad
+BenchmarkFoundlingRetrieval/files-100/search/broad-10          	      20	   6553985 ns/op	         6.201 p50-ms	         8.122 p95-ms	      6483 result-B/op	  872228 B/op	    8056 allocs/op
+BenchmarkFoundlingRetrieval/files-100/search/no-match
+BenchmarkFoundlingRetrieval/files-100/search/no-match-10       	      20	   7299612 ns/op	         7.296 p50-ms	         9.048 p95-ms	       273.0 result-B/op	  820872 B/op	    7908 allocs/op
+BenchmarkFoundlingRetrieval/files-100/read
+BenchmarkFoundlingRetrieval/files-100/read-10                  	      20	   6261304 ns/op	         5.854 p50-ms	         7.897 p95-ms	      1241 result-B/op	  812149 B/op	    7889 allocs/op
+BenchmarkFoundlingRetrieval/files-1000
+    evaluation_benchmark_test.go:41: reference: files=1000 bytes=483000; signet records=10; setup excluded; source verification included
+BenchmarkFoundlingRetrieval/files-1000/search/narrow
+BenchmarkFoundlingRetrieval/files-1000/search/narrow-10        	      20	  59820562 ns/op	        59.76 p50-ms	        65.02 p95-ms	      1514 result-B/op	 6158890 B/op	   58510 allocs/op
+BenchmarkFoundlingRetrieval/files-1000/search/broad
+BenchmarkFoundlingRetrieval/files-1000/search/broad-10         	      20	  49644329 ns/op	        47.52 p50-ms	        56.71 p95-ms	      6484 result-B/op	 6293283 B/op	   59552 allocs/op
+BenchmarkFoundlingRetrieval/files-1000/search/no-match
+BenchmarkFoundlingRetrieval/files-1000/search/no-match-10      	      20	  55434225 ns/op	        54.83 p50-ms	        61.99 p95-ms	       273.0 result-B/op	 6149109 B/op	   58494 allocs/op
+BenchmarkFoundlingRetrieval/files-1000/read
+BenchmarkFoundlingRetrieval/files-1000/read-10                 	      20	  48838262 ns/op	        49.37 p50-ms	        52.60 p95-ms	      1241 result-B/op	 6115210 B/op	   58477 allocs/op
+PASS
+ok  	github.com/acoz-labs/mandalore/internal/foundlings	6.293s
