@@ -9,6 +9,7 @@ import (
 	"os"
 	"syscall"
 
+	"github.com/acoz-labs/mandalore/internal/install"
 	"github.com/acoz-labs/mandalore/internal/memory"
 	"github.com/acoz-labs/mandalore/internal/strictjson"
 	signetsync "github.com/acoz-labs/mandalore/internal/sync"
@@ -19,13 +20,20 @@ const ProtocolVersion = 1
 const MaxInputBytes = 32768
 const MaxOutputBytes = 65536
 
-type Error struct {
+// MemoryError is the bound memory protocol's error shape. Machine installation
+// details must not inflate every memory tool's model-facing schema.
+type MemoryError struct {
 	SyncStatus           *signetsync.Status `json:"sync_status,omitempty"`
 	Code                 string             `json:"code"`
 	Message              string             `json:"message"`
 	Retryable            bool               `json:"retryable"`
 	WriteMayHaveOccurred bool               `json:"write_may_have_occurred"`
 	InspectBeforeRetry   bool               `json:"inspect_before_retry"`
+}
+type Error struct {
+	MemoryError
+	ConnectionResult *install.Result `json:"connection_result,omitempty"`
+	ConnectionReport *install.Report `json:"connection_report,omitempty"`
 }
 type Envelope struct {
 	ProtocolVersion int    `json:"protocol_version"`
@@ -35,7 +43,7 @@ type Envelope struct {
 }
 
 func Failure(code, message string, mayWrite bool) Envelope {
-	return Envelope{ProtocolVersion: ProtocolVersion, Error: &Error{Code: code, Message: message, WriteMayHaveOccurred: mayWrite, InspectBeforeRetry: mayWrite}}
+	return Envelope{ProtocolVersion: ProtocolVersion, Error: &Error{MemoryError: MemoryError{Code: code, Message: message, WriteMayHaveOccurred: mayWrite, InspectBeforeRetry: mayWrite}}}
 }
 func Success(result any) Envelope {
 	return Envelope{ProtocolVersion: ProtocolVersion, OK: true, Result: result}
@@ -166,7 +174,7 @@ var operations = []Operation{
 }
 
 func Catalog() []Operation {
-	return append(append(append([]Operation(nil), operations...), administration...), synchronization...)
+	return append(append(append(append([]Operation(nil), operations...), administration...), synchronization...), connections...)
 }
 
 type API struct {
@@ -194,6 +202,16 @@ func (a *API) Call(ctx context.Context, name string, data []byte) Envelope {
 		}
 		v, err := op.invoke(ctx, a.service, data)
 		if err != nil {
+			var connection *connectionFailure
+			if errors.As(err, &connection) {
+				code := "connection.failed"
+				if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+					code = "operation.cancelled"
+				}
+				out := Failure(code, connection.Error(), connection.result != nil)
+				out.Error.ConnectionResult, out.Error.ConnectionReport = connection.result, connection.report
+				return out
+			}
 			var stopped *signetsync.Failure
 			if errors.As(err, &stopped) && !errors.Is(err, memory.ErrWriterBusy) {
 				code := "sync.failed"

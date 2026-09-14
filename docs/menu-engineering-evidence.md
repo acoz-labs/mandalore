@@ -1,0 +1,92 @@
+# Menu engineering evidence
+
+This is contributor engineering verification, not independent product acceptance
+or the completed rendered-evidence gate. PR #28 remains draft.
+
+Runtime source: `bae7d81547c711dbdd26110e6811075cf1ccc8a9`.
+Compiled macOS arm64 artifact SHA256:
+`2eb2dff392e65632544fbe181243924755ab591bf3dbb6340fcd0125343ebff3`.
+Build and tests used Go 1.26.4 in the designated sibling Herdr pane. The native
+terminal was 57 columns wide, English, with a color-capable theme. No private
+bank, live predecessor migration or provider credentials were involved.
+
+## Automated evidence
+
+Failing-first menu tests initially reported an unknown menu command. Subsequent
+tests exposed approval despite a failed output stream and report overflow at
+eight columns. Both were corrected; the final full local `bin/ci` passed race
+tests, vet and macOS/Linux amd64/arm64 cross-builds. Cross-builds are not native
+acceptance. Hosted CI for this runtime is run `34796947583`; inspect its actual
+conclusion rather than inferring success from the local result.
+That earlier run was cancelled by the subsequent documentation push; final
+documentation-head run `34797046918` passed. The narrow plain-choice correction
+at `05e51d9b13ff2368e9d8a0f2b186d799746c8f53` also passed full local CI and hosted
+run `34797489544`.
+
+Covered behavior: complete-line input, default-No, EOF after an unfinished
+confirmation, :back, process cancellation, binding collision before creation,
+successful create/bind/Git-init, independent enrollment into an existing bank,
+partial Git failure preserving binding, bounded input, failed display refusal,
+local-artifact preview without execution, partial native phase reporting and
+readable nested status fields. Console tests cover arrows/Vim navigation, text
+entry, sanitation, narrow reports, Unicode, literal path preservation and color.
+
+## Native interaction observations
+
+The first worktree build (before the final status-prose refinement) exercised
+the actual terminal, not a fake input adapter:
+
+- Arrows and j/k navigated; gg selected the first option.
+- A name containing `jklgG` remained ordinary text in a text field.
+- The full effects preview retained both synthetic paths at 57 columns.
+- Enter on highlighted No returned to the menu. Direct inspection verified no
+  signet or binding existed afterward.
+- Repeating with explicit Yes created the bank, outside-Git binding and local
+  Git history. The menu labeled remote synchronization as not configured.
+- Inspect reported a clean, local-only bank. Ctrl-C returned to the shell.
+
+The exact committed runtime above repeated read-only inspection and Ctrl-C exit
+against that synthetic bank after the status-prose refinement. Hashing all bank
+file paths/contents (including Git and local receipt files) before and afterward
+matched. This does not cover directory metadata or prove remote freshness.
+The terminal's `stty -g` value also matched before startup and after Ctrl-C exit.
+
+## Narrow-mode follow-up and retained recordings
+
+A real 24-column plain-mode test exposed menu choices being formatted as literal
+paths, splitting words. Added a dedicated prose-choice representation and
+regression test; repeated the compiled menu with normal word wrapping while
+paths/hashes remained complete. The connection preview was declined and created
+no installation state/native profile. Missing-profile doctor reported explicit
+failure and separate not-tested boundaries. [Native recordings and replay
+limitations](evidence/setup-menu/README.md) are retained in the repository.
+
+## Contributor judgment and remaining acceptance
+
+The corrected runtime repeated color TUI setup/cancel/inspection/sync-preview/
+repair-refusal scenarios, recorded as `menu-current.recording`. A separate
+no-color TUI intentionally lacked Git in its child process: signet creation and
+binding completed, then the displayed partial receipt correctly refused to claim
+Git initialization or remote delivery. After exit, the normal CLI validated the
+retained binding and confirmed no `.git` directory existed. Git on the host was
+not removed or reconfigured. See `partial-no-color.recording`.
+
+Contributor rendered judgment: pass for this scoped terminal implementation
+matrix. Real output/cell inspection showed distinct headings/selection, complete
+reviewed paths, visible default-No and understandable local-only/partial/failure
+states. Plain-choice word splitting was corrected and retested, not accepted as
+a baseline. Keyboard and no-color paths remain usable. Instructional footer text
+can be shortened with an ellipsis in narrow TUI layouts; reviewed effect/path
+blocks are not truncated. The setup guide retains the complete key reference.
+
+This judgment uses the owner's engineering self-review delegation; it is not
+independent product acceptance. Recordings retain actual output/timing, with
+platform/protocol playback limitations in their manifest. No fabricated
+screenshots or visual-regression baseline exist. Screen readers, alternative
+fonts/locales, other OS/harness versions and immutable release artifacts remain
+unverified. Native backend tests supplement, not replace, the UI recordings.
+
+Final reconciliation is attached to the exact PR head; documentation/artifact
+changes after the tested runtime do not imply a different tested binary.
+Published update discovery and immutable-candidate physical-machine acceptance
+remain #11/#10; the local menu does not close those gates.

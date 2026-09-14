@@ -1,7 +1,8 @@
 # Runbook
 
 Mandalore remains an unreleased development runtime. Explicit synthetic native
-installation is described in the [Codex guide](../plugins/codex/README.md); do
+installation is described in the [setup guide](setup.md) and
+[Codex guide](../plugins/codex/README.md); do
 not present it as a released installer or accepted production upgrade. Archiving
 My Friday neither migrates nor removes existing pinned installations.
 
@@ -33,8 +34,9 @@ My Friday neither migrates nor removes existing pinned installations.
 - A fresh Git clone can be read without ignored machine-local state. The first
   write creates its local lock directory; reads do not repair or journal.
 
-These library checks do not implement a doctor/repair CLI yet. See the
-[format contract](signet-format.md) for actual data and compatibility boundaries.
+These library checks are separate from the installation doctor/repair CLI.
+See the [format contract](signet-format.md) for data compatibility boundaries;
+connection repair does not rewrite signet records or migrate old schemas.
 
 The development `memory inspect --binding FILE` command validates structure
 read-only; it is not a full installation doctor. The [interface contract](interface.md)
@@ -48,7 +50,26 @@ preserve both histories; do not force, reset, remove another writer's lock, or
 rewrite evidence to hide it. A malformed local status receipt is not repaired by
 inspection. No-save/read-only tasks must not trigger synchronization.
 
-### Remaining integration behavior
+### Native integration and installation recovery
+
+Use `mandalore menu` or the typed `connection` commands to preview, apply,
+inspect and repair. Read [setup](setup.md) for exact paths and side effects and
+[the connection interface](interface.md) for machine-readable receipts.
+Creation, binding and Git initialization can partially succeed; the menu reports
+completed steps. Preserve them and inspect before retrying. New banks have no
+remote until native Git is explicitly configured.
+
+The installer retains source/runtime copies, validates known ownership, and
+refuses edited or foreign registrations. An interrupted replacement may leave
+no active registration; inspect the completed phase and previous/target roots.
+Repair requires an intact ownership receipt and compatible retained runtime and
+binding, then stages a fresh generation. It is not arbitrary in-place repair.
+Native cache replacement is possible even when old source/runtime copies remain.
+Do not remove a lock simply because it exists or assume rollback happened.
+
+Local-artifact update does not replace the running shell command or configure
+PATH; it pins the approved runtime for the native connection. Published artifact
+discovery and exact-candidate acceptance remain separately required.
 
 The development Codex plugin has read-only local hooks and a shared MCP
 connection. Read-only describes the hooks themselves, not the whole session:
