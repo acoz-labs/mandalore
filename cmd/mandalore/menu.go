@@ -78,7 +78,7 @@ func runMenu(ctx context.Context, args []string, input io.Reader, out io.Writer)
 		m.binary, _ = os.Executable()
 	}
 	m.block(console.Block{Title: "Mandalore", Body: "Memory across time and space. Opening this menu changes nothing. A signet is your private memory bank."})
-	choices := []string{"Signet · Create a new local memory bank", "Signet · Connect an existing local clone", "Signet · Inspect selected memory and sync status", "Signet · Synchronize with its configured remote", "Codex · Connect or update from a local artifact", "Codex · Doctor (read-only structural checks)", "Codex · Repair from a retained connection", "Foundlings · Manage historical references", "CLI · Install, update or select a retained runtime", "Exit"}
+	choices := []string{"Signet · Create a new local memory bank", "Signet · Connect an existing local clone", "Signet · Inspect selected memory and sync status", "Signet · Synchronize with its configured remote", "Codex · Connect or update from a local artifact", "The Armorer · Inspect connection (read-only)", "The Armorer · Repair connection", "Foundlings · Manage historical references", "CLI · Install, update or select a retained runtime", "Exit"}
 	for {
 		if m.outputErr != nil {
 			return 1
@@ -494,7 +494,7 @@ func (m *menu) connectionResult(r install.Result) {
 }
 
 func (m *menu) report(r install.Report) {
-	m.block(console.Block{Title: "Connection doctor", Body: r.Notice})
+	m.block(console.Block{Title: "The Armorer · Connection inspection", Body: r.Notice})
 	for _, check := range r.Checks {
 		tone := console.Warning
 		if check.Status == "pass" {
@@ -516,14 +516,14 @@ func (m *menu) doctor() error {
 	}
 	v := m.call("connection_doctor", m.profile, false)
 	if !v.OK {
-		return m.outcome("Doctor", v)
+		return m.outcome("The Armorer", v)
 	}
 	m.report(v.Result.(install.Report))
 	return nil
 }
 
 func (m *menu) repair() error {
-	root, err := m.input("Retained managed connection root (shown by doctor)", "")
+	root, err := m.input("Retained managed connection root (shown by The Armorer)", "")
 	if err != nil {
 		return err
 	}

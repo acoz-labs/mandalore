@@ -52,10 +52,10 @@ Old managed source/runtime copies are retained, but native cache can be replaced
 Unmanaged or edited registrations are not silently removed. Start a fresh native
 session and review exact hooks afterward. No native credentials are copied.
 
-**Doctor** labels pass, fail and not-tested independently. It inspects structure
+**The Armorer · Inspect connection** labels pass, fail and not-tested independently. It inspects structure
 and native inventory; it does not prove login, hook trust, live MCP, remote
-freshness or active context. **Repair** asks for a retained connection root
-(shown by doctor), previews a fresh generation and requires approval. Unknown
+freshness or active context. **The Armorer · Repair connection** asks for a retained connection root
+(shown by inspection), previews a fresh generation and requires approval. Unknown
 edits or missing ownership evidence are refused. Partial native failures show
 completed phase and retained paths; inspect before retrying, not assumed rollback.
 
@@ -132,6 +132,28 @@ clone, fetch, execute source scripts or provision credentials. See
 [foundlings](foundlings.md) for eligibility, provenance and authority limits.
 
 ## Agent-ready equivalents
+
+The plugin's **The Armorer** skill provides conversational administration: ask
+"check my Mandalore setup", "connect these old notes", or "update Mandalore".
+It uses structured CLI operations, not menu navigation. **This Is the Way** stays
+focused on ordinary recall and learning; administrative guidance loads on demand.
+
+Managed installations generate a skill-local `references/connection.json` with
+the retained runtime, binding and native installation paths. Those machine-local
+values are ownership-checked projection, not public package or signet content.
+The skill works without a global PATH entry and does not assume MCP process
+exports are available in the agent shell. Explicit target/override differences
+must be resolved before changes. Public unconnected plugins have no such file;
+an agent needs a supplied runtime or one on PATH and the missing setup choices.
+The skill cannot bootstrap itself before the plugin is installed.
+
+`mandalore connection armorer` is the read-only inspection command;
+`connection doctor` remains a compatibility alias. The typed operation is still
+`connection_doctor`. A diagnostic request does not authorize repair or sync.
+Requested setup/update/repair follows the existing preview/apply contracts;
+native authentication and hook trust remain separate, and a structural pass
+does not establish live memory or remote health. Shell access is required for
+administration, even when memory MCP works.
 
 Use `mandalore operations` for schemas and [the interface](interface.md) for
 `signet`, `memory`, `foundling`, `connection`, `release` and `call` commands. Agents should use structured

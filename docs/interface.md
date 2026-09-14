@@ -237,6 +237,14 @@ lexical limits, completeness/conflict semantics and measured scale behavior.
 
 ## Machine-ready contract
 
+The plugin's on-demand **The Armorer** skill drives these administrative
+operations through shell access. Human inspection is
+`mandalore connection armorer [profile options]`; `connection doctor` is a
+compatible alias with identical flags, JSON reports and exit status. The typed
+name remains `connection_doctor` to preserve existing automation. Repair remains
+`connection_repair_plan` followed by `connection_apply`, not an effect of
+inspection. No administrative tools are added to memory MCP.
+
 `mandalore operations` lists versioned input/result JSON schemas, read/write and
 idempotency annotations, `requires_binding` and `cli_only` visibility.
 `mandalore call OPERATION --binding FILE < input.json`

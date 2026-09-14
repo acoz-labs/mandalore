@@ -150,6 +150,8 @@ func TestEmbeddedPackageIncludesHiddenNativeResources(t *testing.T) {
 		"plugins/mandalore/scripts/run-memory.sh",
 		"plugins/mandalore/skills/this-is-the-way/SKILL.md",
 		"plugins/mandalore/skills/this-is-the-way/references/foundlings.md",
+		"plugins/mandalore/skills/the-armorer/SKILL.md",
+		"plugins/mandalore/skills/the-armorer/references/administration.md",
 	} {
 		if len(files[name]) == 0 {
 			t.Fatal("missing packaged resource", name)

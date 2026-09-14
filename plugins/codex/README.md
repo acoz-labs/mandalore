@@ -1,6 +1,7 @@
 # Codex integration
 
-The development `mandalore` plugin contains the `this-is-the-way` skill, one
+The development `mandalore` plugin contains the `this-is-the-way` memory skill,
+the on-demand `the-armorer` administrative skill, one
 local stdio MCP connection and read-only `SessionStart`/`UserPromptSubmit` hooks.
 It preserves native identity, authentication, skills, settings and project cwd.
 Issue #6 tracks native evidence; #10 tracks exact-candidate acceptance. This is
@@ -17,11 +18,11 @@ menu and [the interface](../../docs/interface.md) for typed commands. The
 installer embeds these public assets, pins a retained runtime/binding and uses
 native registration commands. It does not copy auth, accept hook trust or require
 a source checkout. Explicit runtime/binding environment overrides still take
-precedence; doctor reports conflicting selections.
+precedence; The Armorer inspection reports conflicting selections.
 
 Ownership collisions or edited managed files are preserved, not silently
 replaced. Existing unmanaged development registrations need explicit ownership
-resolution before moving to managed installation. Doctor and repair inspect
+resolution before moving to managed installation. Inspection and repair inspect
 retained receipts, and successful activation still requires a fresh session.
 See [actual managed native tests](../../docs/setup-native-evidence.md).
 
@@ -60,6 +61,14 @@ registration uses the [official CLI route](https://developers.openai.com/plugins
 not manual edits to the native configuration.
 
 ## What runs and what enters context
+
+The Armorer is selected for conversational setup, inspection, repair, update and
+reference management, not normal recall. Its generated local context points to
+this connection's retained runtime and exact profile/binding paths; no PATH export
+or workspace scan is needed. Public source packages have no generated context.
+It uses CLI schemas and preview/apply operations with shell access, not additional
+memory MCP tools. Its administrative reference loads only when the skill is used.
+See [conversational administration](../../docs/setup.md#agent-ready-equivalents).
 
 Startup/resume/compact sources on `SessionStart` get a short orientation. Each
 `UserPromptSubmit` can add up to three signet-wide recall results within a

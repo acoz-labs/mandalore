@@ -70,7 +70,7 @@ func unwrapPlan(raw []byte) ([]byte, error) {
 
 func runConnection(ctx context.Context, args []string, input io.Reader, out io.Writer) int {
 	if len(args) == 0 {
-		return bad(out, "Choose connection plan, apply, doctor or repair; use --help.")
+		return bad(out, "Choose connection plan, apply, armorer or repair; doctor remains an alias. Use --help.")
 	}
 	if args[0] == "--help" || args[0] == "-h" {
 		_, err := io.WriteString(out, help)
@@ -80,6 +80,10 @@ func runConnection(ctx context.Context, args []string, input io.Reader, out io.W
 		return 0
 	}
 	sub := args[0]
+	// Preserve the versioned diagnostic operation and legacy flags/results.
+	if sub == "armorer" {
+		sub = "doctor"
+	}
 	if sub != "plan" && sub != "apply" && sub != "doctor" && sub != "repair" {
 		return bad(out, "Unknown connection command; use --help.")
 	}

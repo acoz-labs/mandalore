@@ -107,7 +107,8 @@ hooks. Do not overwrite trust state or use a blanket bypass as installation.
 The user may delegate routine menu choices without authorizing private-data
 migration, provider account changes or public release.
 
-Doctor separates structural checks from login, MCP startup, hook trust, remote
+The Armorer (`connection armorer`, with `connection doctor` retained as an alias)
+separates structural checks from login, MCP startup, hook trust, remote
 freshness and active-session context. Repair touches only known managed state
 and preserves edits/old copies, reporting partial failures.
 

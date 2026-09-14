@@ -4,8 +4,47 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 )
+
+func TestArmorerContextIsLocalExactAndOwned(t *testing.T) {
+	o := fixture(t)
+	o.StateDir = filepath.Join(filepath.Dir(o.StateDir), "state with 'quotes'")
+	p, err := Prepare(o)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const name = "plugins/mandalore/skills/the-armorer/references/connection.json"
+	public, err := packageFiles()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, exists := public[name]; exists {
+		t.Fatal("public package contains machine-local context")
+	}
+	files, receipt, err := bundle(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got map[string]any
+	if err := json.Unmarshal(files[name], &got); err != nil {
+		t.Fatal("missing valid local Armorer context", err)
+	}
+	want := map[string]any{"schema_version": float64(1), "runtime": p.Runtime, "binding": p.Binding, "state_dir": p.StateDir, "native_home": p.NativeHome, "native_binary": p.NativeBinary, "connection_root": p.Root}
+	if !reflect.DeepEqual(got, want) || receipt.Files[name] != hash(files[name]) {
+		t.Fatal("context must match exact plan and ownership receipt", got)
+	}
+	if err := publishBundle(p); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(p.Root, name), []byte("{}"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := verifyTree(p.Root, receipt.Files, true); err == nil {
+		t.Fatal("edited administrative context accepted for repair")
+	}
+}
 
 func TestStagingRetainsExactBytesAndRefusesChangedOrRedirectedTargets(t *testing.T) {
 	o := fixture(t)
