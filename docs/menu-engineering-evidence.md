@@ -18,6 +18,10 @@ eight columns. Both were corrected; the final full local `bin/ci` passed race
 tests, vet and macOS/Linux amd64/arm64 cross-builds. Cross-builds are not native
 acceptance. Hosted CI for this runtime is run `34796947583`; inspect its actual
 conclusion rather than inferring success from the local result.
+That earlier run was cancelled by the subsequent documentation push; final
+documentation-head run `34797046918` passed. The narrow plain-choice correction
+at `05e51d9b13ff2368e9d8a0f2b186d799746c8f53` also passed full local CI and hosted
+run `34797489544`.
 
 Covered behavior: complete-line input, default-No, EOF after an unfinished
 confirmation, :back, process cancellation, binding collision before creation,
@@ -47,16 +51,42 @@ file paths/contents (including Git and local receipt files) before and afterward
 matched. This does not cover directory metadata or prove remote freshness.
 The terminal's `stty -g` value also matched before startup and after Ctrl-C exit.
 
-## Remaining before readiness
+## Narrow-mode follow-up and retained recordings
 
-Repeat the complete journey matrix on the final implementation head, including
-plain/no-color mode and recovery/error previews. Retain
-openable rendered evidence and record product judgment under the delegated
-self-review policy; these text observations are not screenshots or visual
-approval. The current tool session has no usable screenshot capture backend.
-Do not replace the missing evidence with a fabricated rendering.
+A real 24-column plain-mode test exposed menu choices being formatted as literal
+paths, splitting words. Added a dedicated prose-choice representation and
+regression test; repeated the compiled menu with normal word wrapping while
+paths/hashes remained complete. The connection preview was declined and created
+no installation state/native profile. Missing-profile doctor reported explicit
+failure and separate not-tested boundaries. [Native recordings and replay
+limitations](evidence/setup-menu/README.md) are retained in the repository.
 
-Promote/reconcile the six-file #7 plan into durable operations/architecture docs,
-remove the temporary plan, self-review the exact final head and require hosted
-CI before readiness. Published update discovery and immutable-candidate physical
-machine acceptance remain #11/#10; the local menu does not close those gates.
+## Contributor judgment and remaining acceptance
+
+The corrected runtime repeated color TUI setup/cancel/inspection/sync-preview/
+repair-refusal scenarios, recorded as `menu-current.recording`. A separate
+no-color TUI intentionally lacked Git in its child process: signet creation and
+binding completed, then the displayed partial receipt correctly refused to claim
+Git initialization or remote delivery. After exit, the normal CLI validated the
+retained binding and confirmed no `.git` directory existed. Git on the host was
+not removed or reconfigured. See `partial-no-color.recording`.
+
+Contributor rendered judgment: pass for this scoped terminal implementation
+matrix. Real output/cell inspection showed distinct headings/selection, complete
+reviewed paths, visible default-No and understandable local-only/partial/failure
+states. Plain-choice word splitting was corrected and retested, not accepted as
+a baseline. Keyboard and no-color paths remain usable. Instructional footer text
+can be shortened with an ellipsis in narrow TUI layouts; reviewed effect/path
+blocks are not truncated. The setup guide retains the complete key reference.
+
+This judgment uses the owner's engineering self-review delegation; it is not
+independent product acceptance. Recordings retain actual output/timing, with
+platform/protocol playback limitations in their manifest. No fabricated
+screenshots or visual-regression baseline exist. Screen readers, alternative
+fonts/locales, other OS/harness versions and immutable release artifacts remain
+unverified. Native backend tests supplement, not replace, the UI recordings.
+
+Final reconciliation is attached to the exact PR head; documentation/artifact
+changes after the tested runtime do not imply a different tested binary.
+Published update discovery and immutable-candidate physical-machine acceptance
+remain #11/#10; the local menu does not close those gates.

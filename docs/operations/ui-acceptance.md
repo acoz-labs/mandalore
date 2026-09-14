@@ -127,15 +127,24 @@ issue; it does not weaken the original acceptance criteria.
 
 ## Repository-Specific Configuration
 
-Replace this section as the repository adopts visual automation:
+Mandalore's first owned interface is a native terminal menu. Its implementation
+matrix and actual recordings are retained under
+[`docs/evidence/setup-menu`](../evidence/setup-menu/README.md). This is
+contributor verification under the temporary self-review authorization, not an
+independent acceptor or immutable-candidate result. Desktop/mobile browser
+surfaces are not part of this CLI; later native platforms require their own
+acceptance rather than inferred coverage from a cross-build.
 
 ```text
-UI test command: not configured
-Visual comparison backend: not configured
-Pinned rendering environment: not configured
-Baseline location and approval command: not configured
-Current/diff artifact retention: not configured
-Staging capture command: not configured
-Required real-browser or native-platform checks: not configured
-Manual accessibility checks: defined per issue risk
+UI test command: mise exec go@1.26.4 -- go test ./internal/console ./cmd/mandalore
+Visual comparison backend: no approved pixel/recording baseline yet
+Pinned rendering environment: recorded macOS arm64/Herdr terminal; dimensions in manifest
+Baseline approval: separate product judgment, not automatic first-capture approval
+Artifact retention: actual synthetic native recordings versioned in Git
+Engineering capture: macOS script -qr with an explicit synthetic menu command
+Replay: macOS script player; protocol/platform limitations in evidence manifest
+Candidate capture: fresh immutable-artifact matrix under #10/#11, not these recordings
+Native checks: navigation, text entry, effects/default-No, success/partial/error, cancellation
+Accessibility checks: keyboard paths, no-color labels, plain mode and narrow widths
+Unverified accessibility: screen readers, alternate fonts/locales and other native platforms
 ```
