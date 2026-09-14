@@ -140,3 +140,12 @@ in the PR at their exact heads. These runs do not establish native Linux/Intel M
 release execution, power-loss recovery, interactive installer UX, native plugin
 handoff, final candidate acceptance or publication. The full #11/#10 delivery and
 release gates remain open.
+
+## Guided release journey and selected native handoff
+
+The subsequent [exact-commit menu evidence](menu/README.md) retains actual terminal
+recordings for default-No, CLI success, narrow/plain output, no release, foreign
+launcher refusal, main-menu navigation and separately confirmed native update.
+It binds the driver, selected candidate, native Codex executable and CI independently.
+This is an intermediate engineering checkpoint; the full #11 matrix and #10
+independent exact-candidate acceptance remain open.
