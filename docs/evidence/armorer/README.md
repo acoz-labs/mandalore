@@ -9,6 +9,9 @@ Embedded package SHA-256:
 This evidence-only branch preserves the reviewed implementation head separately
 from generated recordings. It does not replace immutable-candidate verification.
 
+Subsequent owner-driven checks of the replacement immutable artifact are recorded
+separately in [retained-candidate observations](retained-candidate.md).
+
 ## Automated checks
 
 Alias parity, embedded skill resources and exact machine-local context each
