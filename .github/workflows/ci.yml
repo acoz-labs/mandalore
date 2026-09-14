@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -16,6 +17,7 @@ jobs:
   ci:
     name: ci
     runs-on: ${{ vars.CI_RUNNER }}
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
@@ -45,3 +47,26 @@ jobs:
 
       - name: Run project checks
         run: bin/ci
+
+      - name: Verify and execute retained Linux candidate (verification branch only)
+        if: >-
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          github.head_ref == 'verification/retained-linux-candidate'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash verification/retained-candidate/prepare.sh
+
+      - name: Retain Linux execution evidence
+        if: >-
+          success() && github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          github.head_ref == 'verification/retained-linux-candidate'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: retained-linux-evidence-${{ github.sha }}-${{ github.run_attempt }}
+          path: retained-platform-evidence/
+          archive: true
+          retention-days: 90
+          if-no-files-found: error
+          overwrite: false
