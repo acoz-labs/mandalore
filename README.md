@@ -12,9 +12,10 @@ This is the memory-only successor to [My Friday](https://github.com/acoz-labs/my
 The repository contains the memory engine, a development CLI/local MCP server,
 explicit Git synchronization, a development Codex plugin with read-only lifecycle
 hooks and a memory skill, guided setup/local-artifact update/doctor/repair, explicit
-memory-only migration, synthetic regression tests and project foundations.
-Foundling consultation, retrieval evaluation, distribution and independent
-candidate acceptance remain.
+memory-only migration, foundling consultation/selective promotion, retrieval
+evaluation and synthetic regression tests. Versioned candidate builds, guided
+CLI installation/update and guarded same-byte release tooling are implemented.
+Independent exact-candidate acceptance and the first public release remain.
 No Mandalore release has been published.
 
 Codex is the first integration. Pi follows accepted Codex support, then Claude
@@ -51,6 +52,7 @@ portability is not included.
 - [Signet data format](docs/signet-format.md) and [source extraction](docs/memory-extraction.md)
 - [Development CLI, local MCP and machine bindings](docs/interface.md)
 - [Git synchronization, offline work and freshness](docs/synchronization.md)
+- [Guided setup and CLI installation](docs/setup.md) and [historical foundlings](docs/foundlings.md)
 - [Codex plugin](plugins/codex/README.md) and [native engineering evidence](docs/codex-native-evidence.md)
 - [Migration and predecessor disposition](docs/migration.md)
 - [Roadmap](docs/roadmap.md) and [issues](https://github.com/acoz-labs/mandalore/issues)
@@ -62,6 +64,14 @@ The managed workflow uses issues, design/implementation PRs, recorded engineerin
 review, exact-candidate acceptance and GitHub Releases. The current MVP permits
 [engineering self-review](docs/decisions/0001-mvp-self-review.md), not fabricated
 independent acceptance. See [SDLC](docs/operations/sdlc.md).
+
+For prerelease evaluation, use a reviewed local candidate from the
+[pinned builder](docs/development.md#local-distribution-candidates), then run its
+platform executable with `release install --candidate /absolute/candidate-dir`.
+The installer previews its destination and defaults to No. CLI installation and
+connecting a chosen signet to Codex require separate confirmation; no shell,
+credential or memory migration is implicit. There is no published version to
+download until the release prerequisites are met.
 
 Independent community project; not affiliated with or endorsed by Lucasfilm or
 Disney. The theme is naming and prose; no official artwork is bundled.

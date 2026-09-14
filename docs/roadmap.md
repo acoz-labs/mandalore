@@ -15,8 +15,8 @@ sequence and scope; issue creation is not implementation or acceptance.
 - [#8: Provide explicit migration and safe coexistence with prior memory installations](https://github.com/acoz-labs/mandalore/issues/8)
 - [#12: Foundlings — linked historical references and provenance-preserving promotion](https://github.com/acoz-labs/mandalore/issues/12)
 - [#9: Measure retrieval quality, context cost and growing-corpus performance](https://github.com/acoz-labs/mandalore/issues/9)
-- [#10: Prove the Codex memory MVP on an immutable release candidate](https://github.com/acoz-labs/mandalore/issues/10)
 - [#11: Build reproducible artifacts and publish through GitHub Releases](https://github.com/acoz-labs/mandalore/issues/11)
+- [#10: Prove the Codex memory MVP on an immutable release candidate](https://github.com/acoz-labs/mandalore/issues/10)
 
 ## Cross-harness continuity
 
@@ -34,9 +34,11 @@ Repository foundations, engine/schema, shared interface, synchronization, Codex
 integration, managed setup and explicit memory-only migration are implemented.
 Foundling consultation/promotion (#12) is engineering-merged with synthetic menu/native
 evidence. Retrieval measurements and bounded fixes (#9) have synthetic scale,
-freshness and native learning/continuity evidence. Next: final #9 engineering
-reconciliation, distribution (#11) and immutable-candidate acceptance (#10), then foundation
-reconciliation (#1). Foundlings belongs before real-memory adoption, not merely
+freshness and native learning/continuity evidence and are engineering-merged.
+Distribution (#11) has implementation and synthetic build/installer/native evidence;
+its engineering reconciliation precedes actual hosted candidate nomination and
+immutable-candidate acceptance (#10), then foundation reconciliation (#1).
+Foundlings belongs before real-memory adoption, not merely
 an optional post-MVP improvement. Engineering merges are not release acceptance.
 Codex acceptance precedes Pi; Pi acceptance precedes Claude Code. Release-bearing
 issues stay open through independent acceptance and verified GitHub publication.

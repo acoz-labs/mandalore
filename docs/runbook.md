@@ -89,8 +89,10 @@ Native cache replacement is possible even when old source/runtime copies remain.
 Do not remove a lock simply because it exists or assume rollback happened.
 
 Local-artifact update does not replace the running shell command or configure
-PATH; it pins the approved runtime for the native connection. Published artifact
-discovery and exact-candidate acceptance remain separately required.
+PATH; it pins the approved runtime for the native connection. The separate
+`release install` journey previews official/local CLI selection and owned launcher
+activation, then optionally hands one connection to the verified new runtime.
+Exact-candidate acceptance and public release remain separately required.
 
 The development Codex plugin has read-only local hooks and a shared MCP
 connection. Read-only describes the hooks themselves, not the whole session:

@@ -19,12 +19,15 @@ implemented; [their contracts and current verification limits](development.md#re
 are explicit. The [same-byte publisher component](development.md#same-byte-publisher-implementation)
 now has simulated-provider staging, byte verification and retry coverage. The
 artifact finalizer verifies the published product before updating its ledger.
-The retained-candidate promotion workflow is integrated. Final rendered/native
-evidence and actual hosted candidate/promotion execution remain in progress under #11.
+The retained-candidate promotion workflow is integrated. Actual
+[installer/recovery recordings](evidence/distribution/recovery/README.md) and
+[fresh native candidate sessions](evidence/distribution/native-candidate.md) provide
+source-bound contributor evidence. Hosted candidate/nomination execution and
+independent exact-candidate acceptance remain separate from that local evidence.
 
-The template supplies nomination, acceptance and release-ledger workflows, not
-an already completed product publisher. Workflow YAML alone does not establish
-distribution, and these local engineering artifacts are not published releases.
+The repository-specific publisher extends the template's nomination, acceptance
+and ledger workflows; the shared template is unchanged. Workflow YAML and local
+engineering artifacts alone do not establish a successful hosted release.
 
 ## Release contract
 

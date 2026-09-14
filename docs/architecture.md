@@ -14,6 +14,10 @@ and memory skill. `internal/install` supplies explicit native connection plans,
 retained runtime/package publication and doctor/repair; `internal/console` supplies
 presentation-only terminal prompts and reports. The [guided menu](setup.md)
 delegates to shared operations rather than owning a second implementation.
+`internal/distribution` supplies strict release identity, pinned builds, candidate
+transport, owned CLI activation/recovery and verified same-byte publication.
+Maintainer commands and workflows coordinate nomination, acceptance guards and
+release-ledger finalization outside the memory MCP surface.
 Later harness plugins remain integration targets. [Native engineering evidence](codex-native-evidence.md) is
 separate from independent product acceptance; no release is implied.
 
@@ -28,6 +32,8 @@ separate from independent product acceptance; no release is implied.
 | `internal/mcp` | Typed stdio MCP access over the same memory engine |
 | `internal/codex` | Bounded read-only native event adapter; no transcript access or synchronization |
 | `internal/install` | Native connections, runtime pinning, doctor/update/repair |
+| `internal/distribution` | Versioned assets, provenance and byte verification, owned CLI installation and phased publication |
+| `cmd/build-artifacts`, `cmd/candidate-transport`, `cmd/promote-candidate`, `cmd/release-publication` | Repository-maintainer build/verification/publication entrypoints; not memory tools |
 | `internal/migration` | Read-only legacy census, explicit out-of-place conversion and retained recovery receipts |
 | `internal/console` | Presentation-only terminal prompts, navigation and bounded-width reports |
 | `plugins/codex` | First native plugin and `this-is-the-way` skill |
@@ -50,6 +56,24 @@ in-place overwrite. Native commands own registration/cache, not hand-edited nati
 configuration. Ownership receipts and filesystem integrity protect recovery;
 unknown edits or partial publication are preserved for inspection. A structural
 doctor does not establish authentication, hook trust, live MCP or fresh context.
+
+CLI distribution and native connection ownership are separate. A release plan
+pins a manifest, platform binary, embedded plugin and observed prefix state;
+apply retains content-addressed bytes and replaces only a verified owned launcher.
+An incomplete activation retains its exact pending plan for identity-checked
+recovery. Selecting a native update delegates fixed typed operations to the
+verified new runtime so an older installer's plugin cannot substitute for it.
+Neither CLI rollback nor native repair migrates memory schemas.
+
+The maintainer path builds product bytes once, retains and verifies the exact
+Actions archive, derives a candidate identity, and requires independent acceptance
+before promotion. The promoter stages those same bytes, checks both release guards,
+uploads only absent matching draft assets and verifies every remote asset before
+and after publication. Only fresh public verification permits ledger completion.
+Control tooling can compile at its separately trusted revision; accepted product
+payloads cannot be rebuilt during promotion. Partial or conflicting state is
+retained, not overwritten or labeled successful. See [delivery](deployment.md)
+and [the maintainer contracts](development.md#guarded-retained-candidate-promotion).
 
 The host agent supplies semantic interpretation. No separate inference service
 or embedding subscription is required. Memory is evidence, not executable
