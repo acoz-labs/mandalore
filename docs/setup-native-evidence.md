@@ -60,10 +60,23 @@ checks edited cache files before replacement; native cleanup must not be used to
 discard user edits. The automated partial-retry scenario additionally exercises
 a native implementation that clears its cache when unregistering.
 
+## Local artifact update
+
+The connection was updated through preview/apply to source
+`8bd7ca9f02821a2196678173c75ba4da8eded5d4`, binary SHA256
+`3b37c4b1c0e11be3af6bc49930599b46acb7b3174841955b6330a50158321669`.
+Hosted CI run `34795669947` passed. Native apply verified the new source/version
+and actual cache; doctor passed, and every signet-file fingerprint still matched.
+Fresh native Codex startup then recalled the same project and preference through
+MCP, without environment overrides or another hook-review prompt in this run.
+After exit, the signet fingerprint still matched; both runtime copies and the
+previous repaired source receipt remained present.
+This exercises an explicitly selected local artifact, not published-release
+discovery or independent candidate acceptance.
+
 ## Remaining evidence
 
-Runtime update and the interactive menu matrix remain in
-progress. This document will be updated from observations,
+The interactive menu matrix remains in progress. This document is updated from observations,
 not intended outcomes. Physical-machine and immutable-candidate acceptance
 remain #10/#11. Raw sessions, user identity and workstation paths are not public
 evidence artifacts.
