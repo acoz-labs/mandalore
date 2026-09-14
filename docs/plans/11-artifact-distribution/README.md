@@ -1,8 +1,8 @@
 # Solution Design: reproducible artifact distribution
 
-- **Status:** Draft
+- **Status:** Final
 - **Issue:** #11
-- **Planning PR:** Pending
+- **Planning PR:** #35
 - **Repository basis:** 680e352898c8bcaf8b14c16b721ea51441296c0b
 - **Execution envelope:** implementation
 
