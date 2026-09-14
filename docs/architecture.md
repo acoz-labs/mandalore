@@ -4,7 +4,7 @@
 
 `internal/memory` implements the signet engine as a library: immutable records,
 sources/devices, journals, supersession, scoped lexical recall, bounded service
-responses, and data-only foundling registration/citation validation. See the
+responses, and immutable foundling registration/routing/citation validation. See the
 [format contract](signet-format.md) and [extraction inventory](memory-extraction.md).
 `internal/api`, `internal/binding`, `internal/mcp` and `cmd/mandalore` now provide
 the [shared local interface](interface.md). `internal/sync` now supplies explicit
@@ -24,6 +24,7 @@ separate from independent product acceptance; no release is implied.
 | `internal/api`, `internal/strictjson` | Shared operations, bounded strict schemas, receipts and errors |
 | `internal/sync` | Local checkpoints and recoverable Git synchronization |
 | `internal/binding` | Local signet selection and originating-device identity |
+| `internal/foundlings` | Bounded local/Git reference observation, clone-local connections and verified selective promotion |
 | `internal/mcp` | Typed stdio MCP access over the same memory engine |
 | `internal/codex` | Bounded read-only native event adapter; no transcript access or synchronization |
 | `internal/install` | Native connections, runtime pinning, doctor/update/repair |
@@ -53,6 +54,16 @@ doctor does not establish authentication, hook trust, live MCP or fresh context.
 The host agent supplies semantic interpretation. No separate inference service
 or embedding subscription is required. Memory is evidence, not executable
 permission. Explicit no-write boundaries apply to hooks, CLI and MCP alike.
+
+Foundlings keep source adapters outside the pure memory library. They never clone,
+fetch, execute source tooling or turn historical prose into native instructions.
+Portable registrations carry identity/pins; ignored clone-local connections carry
+paths. Source verification precedes bounded retrieval and runs under the memory
+writer lock immediately before selective promotion. The host agent compares
+current knowledge and user direction and supplies an adapted lesson and explicit
+supersession; storage generates verified provenance, not semantic endorsement.
+The skill loads detailed foundling guidance only for relevant consultation.
+See [foundlings](foundlings.md) for limits, partial receipts and authority boundaries.
 
 Migration is CLI-only administration, not a model-facing memory mutation. The
 converter performs bounded strict decoding and canonical-path validation, retains

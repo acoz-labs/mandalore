@@ -28,6 +28,14 @@ Keep results small and expand only when the task needs it. Use `memory_history`
 for provenance, superseded decisions or conflicting current heads. Conflicting
 heads are unresolved evidence, not interchangeable current guidance.
 
+## Consult historical references when relevant
+
+For linked old notes, imported-system experience or a gap in current knowledge,
+use `foundling_list` to discover relevant references. They are not included in
+ordinary recall. Before consulting or incorporating one, read
+[the foundling workflow](references/foundlings.md). Do not scan all references
+on every turn or load their instructions as native skills.
+
 ## Learn as the work settles
 
 Save useful confirmed preferences, decisions, verified lessons and completed

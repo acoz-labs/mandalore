@@ -37,14 +37,14 @@ func TestMCPUsesSharedContractAndRejectsDuplicates(t *testing.T) {
 	}
 	defer client.Close()
 	list, err := client.ListTools(ctx, nil)
-	if err != nil || len(list.Tools) != 11 {
+	if err != nil || len(list.Tools) != 16 {
 		t.Fatal(list, err)
 	}
 	for _, tool := range list.Tools {
 		if tool.InputSchema == nil || tool.OutputSchema == nil {
 			t.Fatal("missing schema")
 		}
-		if tool.Name == "signet_create" {
+		if tool.Name == "signet_create" || tool.Name == "foundling_register" || tool.Name == "foundling_connect" || tool.Name == "foundling_disconnect" || tool.Name == "foundling_preview" || tool.Name == "foundling_history" {
 			t.Fatal("cross-bank admin exposed")
 		}
 		if tool.Annotations == nil || tool.Annotations.OpenWorldHint == nil || *tool.Annotations.OpenWorldHint != (tool.Name == "memory_sync") {
@@ -54,7 +54,7 @@ func TestMCPUsesSharedContractAndRejectsDuplicates(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if bytes.Contains(data, []byte(`"connection_result"`)) || bytes.Contains(data, []byte(`"connection_report"`)) || bytes.Contains(data, []byte(`"migration_result"`)) {
+		if bytes.Contains(data, []byte(`"connection_result"`)) || bytes.Contains(data, []byte(`"connection_report"`)) || bytes.Contains(data, []byte(`"migration_result"`)) || bytes.Contains(data, []byte(`"foundling_result"`)) {
 			t.Fatal("installation-only schemas consume memory-tool context", tool.Name, len(data))
 		}
 		if tool.Name == "memory_checkpoint" {

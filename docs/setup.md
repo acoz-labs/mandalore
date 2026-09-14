@@ -65,10 +65,46 @@ Codex is required only for native journeys, not opening the menu or memory setup
 Published update discovery remains #11; exact-candidate acceptance remains #10.
 No assistant launcher, capability framework or live predecessor import is added.
 
+## Foundling journeys
+
+**Foundlings · Manage historical references** uses the selected signet binding.
+References do not become current memory merely by being registered or searched.
+The submenu pins that signet and its incorporation authorship until Back/exit.
+If another process replaces the binding file while a confirmation is open, the
+reviewed operation cannot jump to a different bank. Return to the main menu and
+re-enter Foundlings to deliberately load a changed binding. Memory and reference
+files are still read fresh; this pins selection, not a cached knowledge snapshot.
+
+- **List** checks a page of registrations and local availability without displaying
+  document bodies. Use Next for further pages; missing paths are not absent knowledge.
+- **Register** asks for a display name/description, local text directory or existing
+  standalone Git checkout, portable identity, absolute local path and reason. The
+  preview distinguishes portable source/pin from the local-only path and shows
+  eligible files/bytes and exclusions. One default-No confirmation registers and
+  connects; a failed connection retains and identifies the completed registration.
+- **Connect** selects an existing active reference and verifies a local directory
+  against its existing pin. It changes only the clone-local connection. A changed
+  pin is refused here, not silently adopted as part of moving to another machine.
+- **Inspect/search** shows availability and recovery advice. Search and relative-file
+  reads display bounded, unreviewed excerpts, file hashes and continuation offsets.
+  These actions never promote, journal or synchronize the reference text.
+- **Update pin**, inside inspection, previews new content plus the previous revision
+  and pin. A reason and default-No confirmation append a superseding registration
+  and reconnect the path. Unchanged pins direct the user to Connect instead.
+- **Disconnect** previews the exact active registration and requires a reason plus
+  default-No confirmation. Original files, connections, historical registrations
+  and previously promoted knowledge remain intact.
+
+Conflicting registration heads and invalid local configuration are displayed, not
+automatically repaired. Use typed registration/history operations for deliberate
+conflict reconciliation. Git sources must already exist locally; the menu does not
+clone, fetch, execute source scripts or provision credentials. See
+[foundlings](foundlings.md) for eligibility, provenance and authority limits.
+
 ## Agent-ready equivalents
 
 Use `mandalore operations` for schemas and [the interface](interface.md) for
-`signet`, `memory`, `connection` and `call` commands. Agents should use structured
+`signet`, `memory`, `foundling`, `connection` and `call` commands. Agents should use structured
 operations rather than menu keys. Installation operations remain CLI-only; they
 do not enlarge the bound memory MCP tool set. Complete JSON receipts are available
 there while the menu shows human summaries.

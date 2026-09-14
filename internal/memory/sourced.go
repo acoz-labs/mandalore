@@ -12,6 +12,10 @@ import (
 // under the same lock as synchronization. A disk failure between the writes
 // can leave unreferenced evidence, but never a revision with missing evidence.
 func (s *Store) PutSourced(r Revision, source Source) error {
+	return s.putSourced(r, source, nil)
+}
+
+func (s *Store) putSourced(r Revision, source Source, verify func() error) error {
 	return s.withLock(func() error {
 		if err := s.validateSource(source); err != nil {
 			return err
@@ -33,6 +37,11 @@ func (s *Store) PutSourced(r Revision, source Source) error {
 		}
 		if _, err := encodeJSON(source); err != nil {
 			return err
+		}
+		if verify != nil {
+			if err := verify(); err != nil {
+				return err
+			}
 		}
 		dir := filepath.Join(s.Root, "memory/records", r.RecordID)
 		if err := os.MkdirAll(dir, 0700); err != nil {

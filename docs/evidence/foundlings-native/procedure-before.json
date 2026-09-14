@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "id": "revision-73002a743b45ea382d2e5c80f2ec3494",
+  "record_id": "record-cee0e7fe91669931ae7648f34af1574d",
+  "kind": "procedure",
+  "scope": {
+    "kind": "project",
+    "id": "copper-finch"
+  },
+  "summary": "Project working process",
+  "body": "Ask for approval before every small local edit in this project.",
+  "sensitivity": "private",
+  "volatility": "drift-prone",
+  "recorded_at": "2026-09-14T04:41:02.230448Z",
+  "effective_from": "2026-09-14T04:41:02.230448Z",
+  "authorship": {
+    "device_id": "device-9fd6ce5b7044c678ee69de5ef7240383",
+    "actor": "Example user",
+    "harness": "cli",
+    "model": null,
+    "session_id": null
+  },
+  "evidence": {
+    "basis": "user-direction",
+    "confidence": "medium",
+    "source_refs": [
+      "source-ebce3839baaee953831335662b77f011"
+    ]
+  },
+  "supersedes": [],
+  "change_reason": "The previously confirmed process, awaiting any explicit redirection."
+}

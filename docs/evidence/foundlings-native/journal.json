@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "id": "event-62101fd60903f7a9e9ba9f25b5fd3908",
+  "kind": "decision",
+  "summary": "Silver Heron (formerly Copper Finch; stable project scope copper-finch): updated the existing working-process memory per the user's confirmed direction to perform routine reversible local work autonomously, superseding approval before every small edit. Retained the lesson from Historical project process/process.md to run relevant checks before claiming completion and state what was verified, motivated by its reported regression after a skipped check; saved with source provenance. Memory-only task: no project edits, source execution, configuration changes, account access, synchronization or Git initialization.",
+  "recorded_at": "2026-09-14T04:48:13.921824Z",
+  "authorship": {
+    "device_id": "device-9fd6ce5b7044c678ee69de5ef7240383",
+    "actor": "Example user",
+    "harness": "codex",
+    "model": null,
+    "session_id": null
+  }
+}

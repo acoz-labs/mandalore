@@ -55,6 +55,12 @@ type ExternalOrigin struct {
 var hexDigest = regexp.MustCompile(`^[0-9a-f]+$`)
 var sshIdentity = regexp.MustCompile(`^(?:[a-zA-Z0-9._-]+@)?[a-zA-Z0-9][a-zA-Z0-9.-]*:[^:]+$`)
 
+// ValidateFoundlingIdentity checks portable metadata only, never local source
+// availability. Adapters use the same rules before connecting reference files.
+func ValidateFoundlingIdentity(source FoundlingSource, pin SourcePin) error {
+	return validateFoundlingSource(source, pin)
+}
+
 func relativeLocator(value string) bool {
 	if !textWithin(value, 2048) || strings.HasPrefix(value, "/") || strings.ContainsAny(value, "\\\r\n\t") || path.Clean(value) != value || value == "." {
 		return false

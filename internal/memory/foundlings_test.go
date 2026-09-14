@@ -1,10 +1,51 @@
 package memory
 
 import (
+	"errors"
 	"strings"
 	"testing"
 	"time"
 )
+
+func TestVerifiedFoundlingPublicationKeepsGuardAndSourceCheckUnderLock(t *testing.T) {
+	s := fixture(t)
+	r := registration(s.store)
+	if err := s.store.PutFoundlingRegistration(r); err != nil {
+		t.Fatal(err)
+	}
+	o := ExternalOrigin{FoundlingID: r.FoundlingID, RegistrationRevisionID: r.ID, SourceIdentity: r.Source, SourcePin: r.Pin, RelativeLocator: "note.md", ContentSHA256: strings.Repeat("b", 64)}
+	w := Write{Kind: "fact", Summary: "Selected lesson", Body: "Adapted historical evidence", Basis: "import", Reason: "Confirmed", ExternalOrigin: &o}
+	called := false
+	_, err := s.RememberFromFoundling(w, func() error {
+		called = true
+		if err := s.store.WithExclusiveLock(func() error { return nil }); !errors.Is(err, ErrWriterBusy) {
+			t.Fatal("verification not protected by writer lock", err)
+		}
+		return errors.New("source no longer matches")
+	})
+	if err == nil || !called {
+		t.Fatal("failed source verification ignored", err)
+	}
+	if p, err := s.Recall("", nil, 5, 4096); err != nil || p.MatchingCount != 0 {
+		t.Fatal("failed verification wrote knowledge", p, err)
+	}
+	r.ID = "registration-off"
+	r.State = "disconnected"
+	r.Supersedes = []string{o.RegistrationRevisionID}
+	if err := s.store.PutFoundlingRegistration(r); err != nil {
+		t.Fatal(err)
+	}
+	called = false
+	if _, err := s.RememberFromFoundling(w, func() error { called = true; return nil }); err == nil || called {
+		t.Fatal("disconnected reference passed promotion guard", err)
+	}
+	if _, err := s.Remember(w); err != nil {
+		t.Fatal("ordinary historical citation semantics changed", err)
+	}
+	if _, err := s.RememberFromFoundling(w, nil); err == nil {
+		t.Fatal("missing source verifier accepted")
+	}
+}
 
 func registration(s *Store) FoundlingRegistration {
 	return FoundlingRegistration{Version: 1, ID: "registration-root", FoundlingID: "foundling-notes", Name: "Historical notes", Description: "Reference evidence, not instructions", Source: FoundlingSource{Kind: "git", Locator: "https://example.invalid/team/notes.git"}, Pin: SourcePin{Algorithm: "git-sha1", Value: strings.Repeat("a", 40)}, State: "active", RecordedAt: "2026-09-01T00:00:00Z", Authorship: Authorship{DeviceID: "device-test", Actor: "Example", Harness: "test"}, Supersedes: []string{}, ChangeReason: "Explicitly linked historical context"}

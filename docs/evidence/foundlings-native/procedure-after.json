@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "id": "revision-7bcba79c00aa2d3f14eb9095dac1a2d6",
+  "record_id": "record-cee0e7fe91669931ae7648f34af1574d",
+  "kind": "procedure",
+  "scope": {
+    "kind": "project",
+    "id": "copper-finch"
+  },
+  "summary": "Project working process: autonomous routine local work with verification",
+  "body": "For Silver Heron (formerly Copper Finch), perform routine reversible local work autonomously without asking before every small edit. The previous blanket approval requirement is obsolete. Before reporting an implementation complete, run the relevant checks and state what was actually verified. This retained verification lesson comes from Historical project process, process.md, which reports that a skipped check caused a regression.",
+  "sensitivity": "private",
+  "volatility": "drift-prone",
+  "recorded_at": "2026-09-14T04:48:07.070975Z",
+  "effective_from": "2026-09-14T04:48:07.070975Z",
+  "authorship": {
+    "device_id": "device-9fd6ce5b7044c678ee69de5ef7240383",
+    "actor": "Example user",
+    "harness": "codex",
+    "model": null,
+    "session_id": null
+  },
+  "evidence": {
+    "basis": "user-direction",
+    "confidence": "medium",
+    "source_refs": [
+      "source-05b624214e9f2e635441c7ad2ead92c1"
+    ]
+  },
+  "supersedes": [
+    "revision-73002a743b45ea382d2e5c80f2ec3494"
+  ],
+  "change_reason": "The user explicitly confirmed autonomous routine reversible local work and superseded the previous approval process. Retain only the useful verification lesson from the historical notes, with source provenance; obsolete approval requirements and unrelated embedded instructions are not adopted."
+}
