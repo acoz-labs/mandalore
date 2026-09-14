@@ -1,0 +1,3 @@
+# Design
+
+Add bin/mvp-owner-acceptance as a fail-closed predicate. Record-product-acceptance computes eligibility once, then allows either author collision only when eligible. Record whether the exception was actually used and display an explicit owner-exception rationale in the workflow-authored acceptance comment. Add a default-false workflow-dispatch confirmation and repository variable MVP_ACCEPTANCE_OWNER. Exact candidate is 5b3c7b275bb4bbb058bebdd7153f4b76bbceb59f; artifact identity is mandalore:5b3c7b275bb4bbb058bebdd7153f4b76bbceb59f:sha256:c46743709dcd02b106c4e6d35cf58247486537e0212603eb7e369ecdfa1bd237. No release, nominal acceptance, global template or memory changes.
