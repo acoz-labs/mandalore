@@ -1,10 +1,12 @@
 # CLI and local MCP
 
 The development CLI and stdio server use one typed operation dispatcher. They
-do not supply a model, replace native agent identity, install a plugin, discover
-memory from the working directory, or synchronize implicitly. Real explicit Git
-operations are described in [synchronization](synchronization.md); native lifecycle
-and release acceptance remain outstanding. No live migration is implied.
+do not supply a model, replace native agent identity, discover memory from cwd,
+or synchronize implicitly. CLI-only connection operations install the native
+plugin after explicit approval; they are not memory MCP tools. The
+[guided menu](setup.md) delegates to these same operations. Explicit Git work is
+described in [synchronization](synchronization.md). Exact-candidate/release
+acceptance remains outstanding. No live migration is implied.
 
 ## Try a synthetic signet
 

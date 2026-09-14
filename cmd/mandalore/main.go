@@ -23,6 +23,7 @@ var version = "0.0.0-dev"
 
 const help = `Mandalore — durable memory across tools
 
+  mandalore menu [--plain]                       Guided setup, inspection and recovery
   mandalore operations                          JSON schemas and implemented operations
   mandalore version                             Runtime/protocol version
   mandalore signet create --repository DIR --name NAME --device-label LABEL
@@ -48,7 +49,7 @@ Memory options: --limit N, --offset N (scopes/history), --record-id ID (history)
 Common options: --binding FILE, --harness NAME, --read-only, --help.
 Binding selection: explicit file, then MANDALORE_BINDING, then platform config.
 No cwd-based bank discovery. Memory saves are local; explicit sync reports delivery.
-This development build is not a released installer; the interactive menu is pending.
+This development build supports local artifact updates, not published update discovery.
 `
 
 func main() {
@@ -70,6 +71,9 @@ func bad(out io.Writer, message string) int {
 }
 
 func run(ctx context.Context, args []string, input io.Reader, out, errout io.Writer) int {
+	if len(args) > 0 && args[0] == "menu" {
+		return runMenu(ctx, args[1:], input, out)
+	}
 	if len(args) > 0 && args[0] == "connection" {
 		return runConnection(ctx, args[1:], input, out)
 	}
