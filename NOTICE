@@ -1,12 +1,14 @@
 Mandalore selectively adapts memory storage, revision graph, lexical retrieval,
 journal, response-budget, machine-binding and filesystem primitives and synthetic
 tests, plus shared local MCP adapter, Git checkpoint and reconciliation concepts,
-and the thin read-only Codex hook and shell-bridge patterns, from:
+the thin read-only Codex hook and shell-bridge patterns, and selected local
+installation planning and artifact-identity primitives, from:
 
 My Friday — https://github.com/acoz-labs/my-friday
 Source commit: f3d337bca419fdaf82bd9a6ce31ebde7f3748eb8
 Copyright (c) 2026 Acoz Labs LLC
 MIT License (see LICENSE).
 
-The assistant framework, capability execution, provider integrations and native
-installation runtime are not included in the memory-engine extraction.
+The assistant framework, capability execution and provider integrations are not
+included. Machine-local installation is adapted separately from the memory
+engine; no predecessor assistant launcher or private configuration is imported.
