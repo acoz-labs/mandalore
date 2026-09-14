@@ -16,8 +16,10 @@ journey uses those same operations, with a separately confirmed native handoff
 prepared and applied by the verified newly installed runtime. A separate candidate
 build/retention workflow and provenance/payload-verified nomination path are now
 implemented; [their contracts and current verification limits](development.md#retained-actions-candidates)
-are explicit. Final rendered/native evidence, actual hosted candidate execution and
-same-byte publication/finalizer integration remain in progress under #11.
+are explicit. The [same-byte publisher component](development.md#same-byte-publisher-implementation)
+now has simulated-provider staging, byte verification and retry coverage. Its
+workflow/finalizer integration, final rendered/native evidence and actual hosted
+candidate execution remain in progress under #11.
 
 The template supplies nomination, acceptance and release-ledger workflows, not
 an already completed product publisher. Workflow YAML alone does not establish
@@ -52,6 +54,18 @@ Current variables: `CI_RUNNER=ubuntu-latest`, `DELIVERY_PROFILE=artifact`,
 `ACCEPTANCE_REQUIRED_CHECKS=ci`. Deliberately configure `ACCEPTANCE_ACTORS` for
 independent acceptance before release; do not copy private account policies.
 No provider service-account credentials are bundled or required.
+
+Real publication also requires immutable releases to be explicitly enabled.
+GitHub's [immutable-release settings endpoint](https://docs.github.com/en/rest/repos/repos?apiVersion=2026-03-10#check-if-immutable-releases-are-enabled-for-a-repository)
+requires repository Administration:read. The publisher refuses before creating a
+draft if that setting is disabled, missing or inaccessible, and rechecks it before
+publishing. The planned scoped workflow token alone must not be assumed to provide
+this administration read. Credential binding for that read remains a release
+integration prerequisite; no additional secret slot, token or setting has been
+created automatically. The component can accept a separately authorized policy-read
+credential without sending it to release or upload endpoints. This is a discovered
+constraint on the earlier no-new-secret assumption, not permission to copy a
+maintainer's personal credential into Actions.
 
 Retain old immutable binaries and connection sources. Preview update/repair
 paths, reject unknown ownership, and preserve memory, auth, sessions and native

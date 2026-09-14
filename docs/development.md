@@ -121,6 +121,48 @@ Primary contracts: [GitHub artifact metadata](https://docs.github.com/en/rest/ac
 [pinned upload action](https://github.com/actions/upload-artifact/blob/043fb46d1a93c77aae656e7c1c64a875d1fc6a0a/action.yml)
 and [pinned download action](https://github.com/actions/download-artifact/blob/3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c/action.yml).
 
+## Same-byte publisher implementation
+
+`internal/distribution.Publisher` is a maintainer-only publication component under
+development. It is not wired into a command or workflow yet. The caller must prove
+transport provenance, exact independent acceptance and publication authority before
+invoking it; its expected-identity argument alone does not prove those prerequisites.
+It does not nominate candidates, close issues or execute/build candidate code.
+
+The component verifies the complete selected local payload and uses bounded,
+authenticated discovery to find a matching release, including drafts. Source/tag,
+deterministic ownership body, prerelease state and existing asset identities must
+agree. It creates a draft only when absent, reuses verified matching assets, uploads
+only missing assets and checks all remote bytes before publishing. Each upload uses
+an owned bounded byte buffer whose hash has already been checked, rather than a
+mutable file stream. After publication, anonymous inspection/downloads verify the
+tag, immutable release, manifest/checksums and every payload again.
+
+Its receipt records identity/source, release ID/URL, asset IDs/digests, the last
+verified phase and any uncertain operation. Provider timeouts and failed writes
+retain possible remote effects. Retry re-inspects the same identity rather than
+replacing assets or publishing twice. Unexpected assets, `starter` uploads, foreign
+release bodies, broken/existing wrong-source tags and changed state are preserved
+for inspection. There are no DELETE, asset-overwrite or policy-write endpoints.
+Discovery is bounded to ten pages of 100 releases; metadata responses are limited
+to 128 KiB and requests share a ten-minute context deadline. A limit refusal does not permit
+creating another release without resolving the incomplete discovery.
+
+The release credential is scoped to fixed repository release/tag operations and
+the upload host. A separate explicit policy-read credential, when supplied, is
+used only for the immutable-release settings GET. Without one, the release
+credential must itself have that read permission. Metadata/write redirects are
+refused; binary redirects to supported asset CDNs receive no credentials. Raw
+provider response/error content is not included in failure messages or receipts.
+
+Simulated-provider tests cover exact bytes and pre/post-publication downloads,
+matching published retries, uncertain create/upload/publish responses, partial conflicts,
+corruption, cancellation, changed local files/links and remote tags/assets, policy
+changes, bounded malformed discovery and credential/redirect isolation. Payloads
+are inert fixtures, not native candidate acceptance or a successful hosted release.
+Publication workflow/finalizer integration and real hosted verification remain
+pending. No new credential source or repository policy is configured by these tests.
+
 ## Bootstrap prerequisites
 
 The packaged POSIX bootstrap currently requires curl 8.4+ plus `sha256sum` or
