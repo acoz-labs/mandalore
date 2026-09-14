@@ -65,15 +65,74 @@ reproducibility. [Recorded engineering evidence](evidence/distribution/README.md
 includes two actual isolated builds and native metadata verification. This does
 not establish cross-host reproducibility or native Linux support by itself.
 
+## Retained Actions candidates
+
+The manually dispatched **Build retained candidate** workflow checks out its exact
+default-branch event commit, runs CI and builds one complete payload. The SHA-pinned
+upload action retains all eight files as one archive for up to 90 days, subject to
+repository policy. Each run attempt has its own name; overwrite is disabled. The
+summary records source, run/artifact IDs and archive digest. Building/retaining is
+not nomination, independent acceptance or publication.
+
+**Nominate artifact candidate** now accepts source SHA plus run/artifact IDs, not a
+free-form accepted artifact string. It checks out trusted default-branch verification
+tooling (not arbitrary input source), inspects official metadata, downloads the exact
+raw archive with extraction disabled, verifies it independently, retains the JSON
+verification receipt, then runs the existing release and issue-nomination gates.
+It derives `mandalore:SOURCE_SHA:sha256:MANIFEST_DIGEST` from verified payload bytes.
+The artifact archive digest is a separate transport identity, not the manifest digest.
+
+The maintainer helper can be invoked with the pinned Go toolchain:
+
+```sh
+bin/candidate-transport inspect --source FULL_SHA --run-id RUN_ID --artifact-id ARTIFACT_ID > transport.json
+bin/candidate-transport verify --receipt transport.json --archive downloaded.zip > verified.json
+```
+
+For promotion, `verify --expected-identity ACCEPTED_IDENTITY` additionally requires
+the independently accepted identity. Verification refreshes metadata before and
+after inspecting the archive; a saved local receipt alone is not provenance. The
+helper never extracts or executes payloads, installs software, writes memory or
+nominates an issue by itself. It is repository-maintenance tooling, not a memory
+MCP operation or personal capability.
+
+An explicitly supplied `GH_TOKEN` is used only for fixed same-repository metadata
+GETs; redirects and unrelated endpoints are refused, and raw provider errors and
+credentials are not printed. The separate pinned download action handles artifact
+transport with its scoped workflow token. Ordinary public release inspection remains
+anonymous and does not borrow this credential.
+
+Checks bind repository IDs, default branch, workflow identity/path, successful run,
+source, attempt, archive ID/name/size/digest and expiry. JSON sizes, ZIP size and
+central-directory parsing are bounded. Every archive member must belong to the
+fixed regular-file inventory; source/toolchain, checksums, payload hashes and plugin
+content identity must agree. ZIP64/multi-disk, nested paths, links, duplicates,
+corruption and changed receipts are rejected. This format's eight bounded payloads
+do not require ZIP64. Expired/deleted/replaced artifacts require new inspection and,
+where identity changes, fresh nomination—not pretending a rebuild is accepted.
+
+The Actions pipeline still requires a real default-branch candidate run and its
+own hosted verification after merge. Local HTTP/ZIP fixtures and a live negative
+provenance check are not successful hosted candidate retention or nomination.
+Publication/finalizer integration and final #11/#10 acceptance remain incomplete.
+
+Primary contracts: [GitHub artifact metadata](https://docs.github.com/en/rest/actions/artifacts?apiVersion=2026-03-10),
+[workflow-run metadata](https://docs.github.com/en/rest/actions/workflow-runs?apiVersion=2026-03-10),
+[pinned upload action](https://github.com/actions/upload-artifact/blob/043fb46d1a93c77aae656e7c1c64a875d1fc6a0a/action.yml)
+and [pinned download action](https://github.com/actions/download-artifact/blob/3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c/action.yml).
+
+## Bootstrap prerequisites
+
 The packaged POSIX bootstrap currently requires curl 8.4+ plus `sha256sum` or
 `shasum`, and invokes the release-install journey after checking the platform
 binary against official-release checksums. Curl 8.4+ is required because earlier
 versions do not enforce the size limit during unknown-length transfers.
 See [curl's size-limit contract](https://curl.se/docs/manpage.html#--max-filesize).
 The manual alternative is downloading and verifying the platform binary yourself.
-Release discovery, planning and explicit plan/apply are implemented. The interactive
-install journey, selected native handoff and promotion are still being implemented;
-do not present this early candidate as a complete released installer.
+Release discovery, planning, explicit plan/apply, the interactive install journey
+and selected native handoff are implemented. Promotion and final candidate
+acceptance remain incomplete; do not present an engineering candidate as a released
+installer.
 
 Synthetic bootstrap tests substitute download/host commands and never contact a
 provider. Run `go test ./internal/distribution ./internal/install ./cmd/mandalore`
