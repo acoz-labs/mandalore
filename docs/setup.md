@@ -62,8 +62,38 @@ completed phase and retained paths; inspect before retrying, not assumed rollbac
 `--state-dir DIR`, `--native-home DIR` and `--native-binary FILE` select an explicit
 installation/profile. `--binary FILE` sets the local artifact offered by the menu.
 Codex is required only for native journeys, not opening the menu or memory setup.
-Published update discovery remains #11; exact-candidate acceptance remains #10.
+Exact-candidate acceptance remains #10.
 No assistant launcher, capability framework or live predecessor import is added.
+
+## CLI installation and updates
+
+**CLI · Install, update or select a retained runtime** offers the latest published
+stable release, a specific version, an explicit local candidate, or a retained
+manifest SHA-256. No release is currently published; an unavailable release is
+reported without changing the machine. This journey is also available directly
+as `mandalore release install`, including `--plain` and optional `--prefix DIR`.
+
+The preview shows source and content identities, compatibility, destination,
+previous runtime and effects. Confirmation defaults to No. Applying activates only
+an owned CLI launcher and retains older runtimes; it changes no memory or native
+connections. A launcher outside PATH is shown as a full command, not silently added
+to shell settings. Missing receipt fields are displayed as None.
+
+After CLI success, optionally choose one Codex connection. Its preview executes
+the verified new runtime to prepare **its own embedded plugin**, then asks for a
+second confirmation before native activation. CLI success and any later native
+failure are reported separately. The default leaves connections unchanged; a
+successful update requires a fresh native session. Use this release journey when
+updating runtime and plugin together. The older local-artifact Codex journey above
+still previews the running toolkit's embedded plugin without executing the selected
+artifact; its `--binary` flag is not a release-package selector.
+
+If activation was interrupted, inspect the retained phase and pending record and
+reapply its exact reviewed plan through the [CLI recovery interface](interface.md#apply-a-reviewed-cli-installation).
+The menu does not guess a replacement recovery plan or delete ambiguous state.
+The guarded publication workflow is implemented under #11; it is not permission
+to publish. Retained-candidate nomination, independent acceptance and explicit
+release prerequisites remain separate from local installation.
 
 ## Foundling journeys
 
@@ -104,7 +134,7 @@ clone, fetch, execute source scripts or provision credentials. See
 ## Agent-ready equivalents
 
 Use `mandalore operations` for schemas and [the interface](interface.md) for
-`signet`, `memory`, `foundling`, `connection` and `call` commands. Agents should use structured
+`signet`, `memory`, `foundling`, `connection`, `release` and `call` commands. Agents should use structured
 operations rather than menu keys. Installation operations remain CLI-only; they
 do not enlarge the bound memory MCP tool set. Complete JSON receipts are available
 there while the menu shows human summaries.

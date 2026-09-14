@@ -8,6 +8,194 @@ plugin after explicit approval; they are not memory MCP tools. The
 described in [synchronization](synchronization.md). Exact-candidate/release
 acceptance remains outstanding. No live migration is implied.
 
+`mandalore version` is read-only and does not need a signet binding. It reports
+the runtime version, source commit (empty for an unstamped development build),
+actual Go version, OS/architecture, protocol and hook compatibility, supported
+signet read/write schema versions, and the actual embedded plugin version/digest.
+The plugin digest uses the same content-map encoding as native connection plans.
+These declarations support verification; they are not publisher authentication or
+proof that the binary has passed independent acceptance. See
+[candidate builds](development.md#local-distribution-candidates).
+
+## Read-only release inspection
+
+```sh
+mandalore release inspect --candidate /example/candidate --read-only
+mandalore release inspect --read-only
+```
+
+The first command checks all files in an explicitly selected local candidate,
+without executing them or contacting a provider. The second checks the official
+latest stable release when one exists. Use `--version VERSION` for an explicit
+published version, including a prerelease. `--candidate` and `--version` are
+mutually exclusive. No release is currently published, so official inspection
+honestly reports `release.unavailable`, not a fabricated update.
+
+Agents can use the equivalent typed `release_inspect` operation with
+`{"candidate":"/example/candidate"}` or `{"version":"1.0.0"}` as structured
+stdin. It is advertised as CLI-only, unbound, read-only and potentially networked;
+it is not listed or callable through memory MCP and adds no memory-tool schema.
+An invalid or absent memory binding does not affect release inspection.
+
+The result distinguishes local byte/content verification from published-release
+inspection. Published inspection checks the official immutable release ID, exact
+tag commit, manifest/checksum bytes and GitHub asset IDs/sizes/digests. It does
+not claim that every executable was downloaded or run. Asset downloads recheck
+the pinned release ID and exact inspection before accepting matching bytes;
+`latest` is not reselected silently. None of these checks installs a runtime,
+activates a native connection, writes memory or establishes independent acceptance.
+
+Only public HTTPS GitHub API/release hosts are used, with bounded redirects,
+headers, responses and timeouts. No GitHub CLI login, provider token or cookies
+are borrowed. Unavailable, incompatible, mutable, corrupt or rate-limited releases
+fail visibly; local candidate inspection remains available offline.
+
+## Read-only CLI installation planning
+
+```sh
+mandalore release plan --candidate /example/candidate --prefix /example/tools --read-only
+mandalore release plan --version 1.0.0 --prefix /example/tools --read-only
+```
+
+`release_plan` is the equivalent typed, CLI-only operation. Its input is
+`{"candidate":"/example/candidate","prefix":"/example/tools"}`. Prefix is
+required for this machine-readable preview; select at most one candidate directory,
+published version or retained manifest SHA-256 (`--retained SHA256`). Omitting all
+three selects the latest stable published release and pins its exact release ID,
+version, manifest and asset identities in the plan. No binary is downloaded or run
+by published planning. Local planning verifies the complete candidate bytes.
+Neither interface requires a signet binding or adds a tool to memory MCP.
+
+The plan names the current machine's exact target, executable and plugin digests,
+launcher, retained runtime, observed directory identities and current receipt/target.
+It describes CLI-only effects: memory connections, signets, credentials and shell
+settings remain unchanged. Local byte verification is not publisher authentication;
+choosing a local source for later execution requires trusting that source.
+
+The selected prefix may resolve an explicit alias, such as macOS `/tmp`. Managed
+descendants must be real directories owned by the current user, not writable by
+other users. Only `PREFIX/bin/mandalore` and `PREFIX/lib/mandalore` are in scope;
+the rest of the prefix is not owned by Mandalore. A pre-existing launcher must
+match a valid ownership receipt and the verified retained target. Regular files,
+foreign/dangling links, redirected managed directories, edited retained bytes,
+unrecognized state and pending activation are refused without writing anything.
+
+Retained selection verifies a compatible manifest and platform binary beneath
+`PREFIX/lib/mandalore/releases/sha256-MANIFEST/OS_ARCH/`. A serialized plan is not
+proof that its observations remain current or authorization to change connections.
+Activation is a separate explicit operation described below. The interactive
+equivalent is [the guided release journey](#guided-cli-installation-and-native-handoff).
+
+## Apply a reviewed CLI installation
+
+```sh
+mandalore release plan --candidate /example/candidate --prefix /example/tools > reviewed-plan.json
+mandalore release apply < reviewed-plan.json
+```
+
+Review the exact source, destinations and effects before applying. Human CLI apply
+accepts its own successful plan envelope or a raw plan object; typed
+`release_apply` accepts the raw object. `--read-only` refuses apply before reading
+stdin. Plan input is bounded at 32 KiB (64 KiB for the human envelope); planning
+refuses a result too large for the typed input budget. These administrative
+operations and their error details stay out of the bound memory MCP.
+
+Apply rechecks the source and destination, stages and hashes the selected bytes,
+and verifies the actual executable's Go build settings and native `version`
+response against the manifest. The version probe runs with a minimal environment,
+no inherited home, memory binding or provider credentials, a 15-second deadline
+and a 16 KiB output limit. This is execution of the explicitly trusted selected
+source, not a sandbox or independent publisher approval. Staged bytes are checked
+again after the probe. Published downloads revalidate the pinned release ID and
+asset identity; an unavailable/corrupt payload does not activate anything.
+
+Installation writers coordinate with a persistent file lock in their owned state.
+An initial state tree is assembled privately and published without replacing an
+existing directory. Updates retain content-keyed runtime directories and switch
+only the verified launcher. Files and affected directories are synchronized around
+atomic publication. Existing runtimes are not removed, and neither PATH nor native
+memory connections are changed. These guards coordinate installers and reject
+observed foreign paths; they are not a security boundary against a malicious
+process running as the same user.
+
+Results expose the phase, exact plan digest, launcher/runtime, previous runtime,
+pending record if present, destination changes and unchanged connections. Errors
+include `release_result`; successful cleanup is required for `installed: true`.
+Do not infer success solely from a launcher that already points at the new binary.
+CLI success also does not imply any native connection was updated.
+
+An interrupted activation retains `PREFIX/lib/mandalore/pending.json`, with the
+exact reviewed plan, previous receipt bytes and observed directory identities.
+After inspecting that record and resolving the reported problem, the human CLI
+can read it directly using the original Mandalore executable:
+
+```sh
+mandalore release apply < /example/tools/lib/mandalore/pending.json
+```
+
+This extracts only its exact digest-matching reviewed plan; apply independently
+re-reads the current pending record and performs the existing ownership checks.
+Do not use a partially activated launcher or edit the record to force a retry.
+Pending input is bounded at 256 KiB; the extracted plan still obeys the 32 KiB
+typed-operation limit. No extra memory MCP operation or parser dependency is added.
+
+Reapplying that **same plan** can finish only if the retained bytes, directories,
+launcher and receipt still match an expected old/new state. Recovery refuses
+foreign or conflicting files, missing/corrupt runtime bytes and a different plan.
+It does not guess ownership or roll back memory. A completed exact-plan replay
+is recognized by the final receipt and verified runtime and performs no writes.
+If staging stopped before a pending record was published, inspect a fresh plan;
+new directories or a retained target can make the original preview stale.
+
+To roll back the CLI, select the older retained **manifest SHA-256**, review the
+new plan and apply it through the same interface:
+
+```sh
+mandalore release plan --retained MANIFEST_SHA256 --prefix /example/tools > rollback-plan.json
+mandalore release apply < rollback-plan.json
+```
+
+Only compatible declared protocol/schema and the current platform are accepted.
+The newer runtime stays retained. No signet data is rewritten, and a CLI rollback
+does not by itself roll back a separately installed native connection.
+
+## Guided CLI installation and native handoff
+
+```sh
+mandalore release install --candidate /example/candidate --prefix /example/tools
+mandalore release install --version 1.0.0 --prefix /example/tools --plain
+```
+
+This uses the same `release_plan` and `release_apply` contracts, with a readable
+preview and default-No confirmation. The main menu also offers published versions,
+explicit local candidates and retained runtimes. Without `--prefix`, it asks for a
+user-owned destination, defaulting to the user's `.local` directory. It never edits
+PATH or shell configuration. `--read-only` refuses the journey before reading input;
+use inspect/plan instead. EOF, Back and cancellation stop subsequent steps without
+undoing an installation already completed. No release is currently published.
+
+After CLI verification, keeping native connections unchanged is the default. An
+optional Codex handoff asks for the selected binding, native executable/profile
+and installation state. Flags `--binding`, `--native-binary`, `--native-home` and
+`--state-dir` prefill these choices; CLI-only installation does not require them.
+Preparing that handoff **executes the explicitly trusted installed runtime** via
+its existing `call connection_plan --read-only` operation. The parent verifies its
+bounded JSON plan against the selected paths, executable/binding hashes and release
+plugin identity. It never substitutes the parent's embedded plugin.
+
+A second default-No confirmation precedes that same runtime's
+`call connection_apply`. Native authentication is inherited normally, not copied;
+raw failed output is suppressed. A typed partial receipt remains visible even
+when the subprocess exits unsuccessfully. CLI installation success remains distinct
+from native failure. Start a fresh native session after a successful connection
+update; existing threads do not reload their plugin context automatically.
+
+Agents do not need to drive menu keys: use the typed release operations, then invoke
+the verified installed executable's existing connection plan/apply operations with
+explicit options. This adds no memory MCP tools. An interrupted CLI activation is
+still recovered by reapplying its saved exact plan as described above, not by
+selecting a different release in the menu.
+
 ## Try a synthetic signet
 
 Build with the pinned toolchain:

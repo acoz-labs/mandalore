@@ -1,0 +1,62 @@
+{
+  "format_version": 1,
+  "product": "mandalore",
+  "version": "1.0.0",
+  "tag": "v1.0.0",
+  "source_commit": "5f81257346dbd0deace438f711dcf6d4d2f2e8e9",
+  "go_version": "go1.26.4",
+  "protocol_version": 1,
+  "signet_read_versions": [
+    1
+  ],
+  "signet_write_versions": [
+    1
+  ],
+  "plugin_sha256": "f0e4df519fc6dbe70d69fd4191c6013b9017800aa4cfe3f45d2b5413872cfef1",
+  "assets": [
+    {
+      "kind": "cli",
+      "name": "mandalore_1.0.0_darwin_amd64",
+      "os": "darwin",
+      "arch": "amd64",
+      "size": 13813984,
+      "sha256": "3cb59e117aa7dbb59fa833e08c184a91824e02011a664921ee94ca2a35840a95"
+    },
+    {
+      "kind": "cli",
+      "name": "mandalore_1.0.0_darwin_arm64",
+      "os": "darwin",
+      "arch": "arm64",
+      "size": 13048466,
+      "sha256": "140c5ed08f39c094431f94e5a44bd5bcfc785e80321db97601921c9dc230226b"
+    },
+    {
+      "kind": "cli",
+      "name": "mandalore_1.0.0_linux_amd64",
+      "os": "linux",
+      "arch": "amd64",
+      "size": 13563000,
+      "sha256": "608fd182cb587697c519dff1e6bb17520f71559a1ecf01c8a31c66a147ece74c"
+    },
+    {
+      "kind": "cli",
+      "name": "mandalore_1.0.0_linux_arm64",
+      "os": "linux",
+      "arch": "arm64",
+      "size": 12765097,
+      "sha256": "360b08be80471bb5c3bed3e12a192dcebf9836f2ae5ea204919938e79da2ec12"
+    },
+    {
+      "kind": "codex-plugin",
+      "name": "mandalore_1.0.0_codex.zip",
+      "size": 13734,
+      "sha256": "b9b4ce72dba0b5b4d011066fc176f5967fbe771d0b5aa27269e7aedb46191b85"
+    },
+    {
+      "kind": "bootstrap",
+      "name": "install.sh",
+      "size": 4141,
+      "sha256": "5acb215faa4d84b967dc896af9436d49b2215981f89c6f5881573815f46759f2"
+    }
+  ]
+}

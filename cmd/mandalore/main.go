@@ -8,7 +8,6 @@ import (
 	"io"
 	"os"
 	"os/signal"
-	"runtime"
 	"strings"
 	"syscall"
 
@@ -20,12 +19,18 @@ import (
 )
 
 var version = "0.0.0-dev"
+var sourceCommit = "" // Stamped only by the pinned exact-source release builder.
 
 const help = `Mandalore — durable memory across tools
 
   mandalore menu [--plain]                       Guided setup, inspection and recovery
   mandalore operations                          JSON schemas and implemented operations
   mandalore version                             Runtime/protocol version
+  mandalore release inspect [--version VERSION | --candidate DIR]
+  mandalore release plan [--version VERSION | --candidate DIR | --retained SHA256] --prefix DIR
+  mandalore release apply < reviewed-plan.json
+  mandalore release apply < PREFIX/lib/mandalore/pending.json
+  mandalore release install [--version VERSION | --candidate DIR | --retained SHA256] [--prefix DIR] [--plain]
   mandalore signet create --repository DIR --name NAME --device-label LABEL
   mandalore signet bind --repository DIR --binding FILE --device-label LABEL --actor NAME
   mandalore memory recall --binding FILE [--query TEXT] [--scope-kind KIND --scope-id ID]
@@ -59,7 +64,9 @@ Foundling setup is CLI-only; MCP exposes list/inspect/search/read/promote.
 Common options: --binding FILE, --harness NAME, --read-only, --help.
 Binding selection: explicit file, then MANDALORE_BINDING, then platform config.
 No cwd-based bank discovery. Memory saves are local; explicit sync reports delivery.
-This development build supports local artifact updates, not published update discovery.
+Release inspection/planning are read-only; apply changes only the selected CLI installation.
+Release install/menu use default-No previews; a native connection update is a separate choice.
+Public release publication is still under development.
 `
 
 func main() {
@@ -81,6 +88,9 @@ func bad(out io.Writer, message string) int {
 }
 
 func run(ctx context.Context, args []string, input io.Reader, out, errout io.Writer) int {
+	if len(args) > 0 && args[0] == "release" {
+		return runRelease(ctx, args[1:], input, out)
+	}
 	if len(args) > 0 && args[0] == "migration" {
 		return runMigration(ctx, args[1:], input, out)
 	}
@@ -117,8 +127,11 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 		if len(args) != 1 {
 			return bad(out, "version takes no arguments")
 		}
-		return emit(out, api.Success(map[string]any{"name": "mandalore", "version": version, "protocol_version": api.ProtocolVersion,
-			"codex_hook_protocol": 1, "os": runtime.GOOS, "arch": runtime.GOARCH}))
+		info, err := runtimeMetadata()
+		if err != nil {
+			return emit(out, api.Failure("runtime.invalid", "Cannot inspect embedded runtime metadata.", false))
+		}
+		return emit(out, api.Success(info))
 	}
 	if args[0] == "operations" {
 		if len(args) != 1 {

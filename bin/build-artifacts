@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+[[ "$(go env GOVERSION)" == "go1.26.4" ]] || {
+  echo 'Go 1.26.4 is required; use mise exec go@1.26.4 -- bin/build-artifacts.' >&2
+  exit 1
+}
+exec go run ./cmd/build-artifacts "$@"

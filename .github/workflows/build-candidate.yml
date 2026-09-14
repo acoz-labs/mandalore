@@ -1,0 +1,63 @@
+name: Build retained candidate
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    if: >-
+      github.ref == format('refs/heads/{0}', github.event.repository.default_branch) &&
+      github.repository == 'acoz-labs/mandalore' &&
+      vars.DELIVERY_PROFILE == 'artifact'
+    runs-on: ${{ vars.CI_RUNNER }}
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact default-branch source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up pinned Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: '1.26.4'
+          cache: true
+      - name: Validate source
+        run: bin/ci
+      - name: Build candidate once from clean source
+        id: build
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          [[ "$(git rev-parse HEAD)" == "$SOURCE_SHA" ]]
+          candidate_root="$(mktemp -d "$RUNNER_TEMP/mandalore-candidate.XXXXXX")"
+          bin/build-artifacts --output "$candidate_root/payload" > "$candidate_root/manifest-receipt.json"
+          jq -e --arg sha "$SOURCE_SHA" '.manifest.source_commit == $sha' "$candidate_root/manifest-receipt.json" >/dev/null
+          printf 'payload=%s\n' "$candidate_root/payload" >> "$GITHUB_OUTPUT"
+      - name: Retain complete immutable payload
+        id: upload
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: mandalore-candidate-${{ github.sha }}-${{ github.run_attempt }}
+          path: ${{ steps.build.outputs.payload }}/
+          archive: true
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 90
+          overwrite: false
+          include-hidden-files: false
+      - name: Record transport coordinates (not nomination)
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+          ARTIFACT_ID: ${{ steps.upload.outputs.artifact-id }}
+          ARCHIVE_SHA256: ${{ steps.upload.outputs.artifact-digest }}
+        run: |
+          set -euo pipefail
+          [[ "$ARTIFACT_ID" =~ ^[1-9][0-9]*$ && "$ARCHIVE_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          printf 'Source: `%s`\n\nRun: `%s`\n\nArtifact ID: `%s`\n\nArchive SHA256: `%s`\n\nRetained for up to 90 days, subject to repository policy. Nomination requires a separate successful-run provenance and payload verification.\n' \
+            "$SOURCE_SHA" "$GITHUB_RUN_ID" "$ARTIFACT_ID" "$ARCHIVE_SHA256" >> "$GITHUB_STEP_SUMMARY"

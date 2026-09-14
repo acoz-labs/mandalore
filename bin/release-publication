@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+[[ "$(go env GOVERSION)" == "go1.26.4" ]] || {
+  echo 'Go 1.26.4 is required; use mise exec go@1.26.4 -- bin/release-publication.' >&2
+  exit 1
+}
+# Compile trusted maintainer control tooling, never rebuild a product candidate.
+exec go run ./cmd/release-publication "$@"

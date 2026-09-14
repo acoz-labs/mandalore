@@ -9,6 +9,7 @@ import (
 	"os"
 	"syscall"
 
+	"github.com/acoz-labs/mandalore/internal/distribution"
 	"github.com/acoz-labs/mandalore/internal/install"
 	"github.com/acoz-labs/mandalore/internal/memory"
 	"github.com/acoz-labs/mandalore/internal/migration"
@@ -33,10 +34,11 @@ type MemoryError struct {
 }
 type Error struct {
 	MemoryError
-	FoundlingResult  *FoundlingMutationResult `json:"foundling_result,omitempty"`
-	ConnectionResult *install.Result          `json:"connection_result,omitempty"`
-	ConnectionReport *install.Report          `json:"connection_report,omitempty"`
-	MigrationResult  *migration.Result        `json:"migration_result,omitempty"`
+	FoundlingResult  *FoundlingMutationResult    `json:"foundling_result,omitempty"`
+	ConnectionResult *install.Result             `json:"connection_result,omitempty"`
+	ConnectionReport *install.Report             `json:"connection_report,omitempty"`
+	MigrationResult  *migration.Result           `json:"migration_result,omitempty"`
+	ReleaseResult    *distribution.InstallResult `json:"release_result,omitempty"`
 }
 type Envelope struct {
 	ProtocolVersion int    `json:"protocol_version"`
@@ -178,7 +180,7 @@ var operations = []Operation{
 }
 
 func Catalog() []Operation {
-	return append(append(append(append(append(append([]Operation(nil), operations...), administration...), synchronization...), connections...), migrations...), foundlingOperations...)
+	return append(append(append(append(append(append(append([]Operation(nil), operations...), administration...), synchronization...), connections...), migrations...), foundlingOperations...), releases...)
 }
 
 type API struct {
@@ -206,6 +208,23 @@ func (a *API) Call(ctx context.Context, name string, data []byte) Envelope {
 		}
 		v, err := op.invoke(ctx, a.service, data)
 		if err != nil {
+			var release *releaseFailure
+			if errors.As(err, &release) {
+				code := "release.failed"
+				if errors.Is(err, distribution.ErrNoRelease) {
+					code = "release.unavailable"
+				}
+				if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+					code = "operation.cancelled"
+				}
+				mayWrite := release.result != nil && release.result.DestinationChanged
+				out := Failure(code, release.Error(), mayWrite)
+				out.Error.ReleaseResult = release.result
+				if release.result != nil && release.result.Pending != "" {
+					out.Error.InspectBeforeRetry = true
+				}
+				return out
+			}
 			var reference *foundlingFailure
 			if errors.As(err, &reference) {
 				return foundlingFailureEnvelope(reference)

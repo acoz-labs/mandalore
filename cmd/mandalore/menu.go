@@ -24,16 +24,21 @@ import (
 // This adapter owns conversation flow only. Every durable operation delegates
 // to the same API that non-interactive callers use.
 type menu struct {
-	ctx          context.Context
-	in           *bufio.Reader
-	out          io.Writer
-	tui          *console.Console
-	binding      string
-	profile      install.Profile
-	binary       string
-	failed       bool
-	outputErr    error
-	foundlingAPI *api.API // Selected signet is fixed while its reference menu is open.
+	ctx           context.Context
+	in            *bufio.Reader
+	out           io.Writer
+	tui           *console.Console
+	binding       string
+	profile       install.Profile
+	binary        string
+	failed        bool
+	outputErr     error
+	foundlingAPI  *api.API // Selected signet is fixed while its reference menu is open.
+	releasePrefix string
+	// Private test seams; never user-configurable scripts or operation names.
+	releaseInvoke             func(string, any) api.Envelope
+	prepareSelectedConnection func(context.Context, install.Options) (install.Plan, error)
+	applySelectedConnection   func(context.Context, install.Plan) (install.Result, error)
 }
 
 var errMenuInputLimit = errors.New("answer exceeds 4096 bytes; menu stopped without interpreting remaining input")
@@ -48,6 +53,7 @@ func runMenu(ctx context.Context, args []string, input io.Reader, out io.Writer)
 	f.StringVar(&m.profile.NativeHome, "native-home", "", "Native Codex profile")
 	f.StringVar(&m.profile.NativeBinary, "native-binary", "", "Native Codex executable")
 	f.StringVar(&m.binary, "binary", "", "Trusted local runtime artifact")
+	f.StringVar(&m.releasePrefix, "prefix", "", "CLI installation prefix for the release journey")
 	if err := f.Parse(args); err != nil || f.NArg() != 0 {
 		if errors.Is(err, flag.ErrHelp) {
 			_, _ = io.WriteString(out, help)
@@ -72,13 +78,13 @@ func runMenu(ctx context.Context, args []string, input io.Reader, out io.Writer)
 		m.binary, _ = os.Executable()
 	}
 	m.block(console.Block{Title: "Mandalore", Body: "Memory across time and space. Opening this menu changes nothing. A signet is your private memory bank."})
-	choices := []string{"Signet · Create a new local memory bank", "Signet · Connect an existing local clone", "Signet · Inspect selected memory and sync status", "Signet · Synchronize with its configured remote", "Codex · Connect or update from a local artifact", "Codex · Doctor (read-only structural checks)", "Codex · Repair from a retained connection", "Foundlings · Manage historical references", "Exit"}
+	choices := []string{"Signet · Create a new local memory bank", "Signet · Connect an existing local clone", "Signet · Inspect selected memory and sync status", "Signet · Synchronize with its configured remote", "Codex · Connect or update from a local artifact", "Codex · Doctor (read-only structural checks)", "Codex · Repair from a retained connection", "Foundlings · Manage historical references", "CLI · Install, update or select a retained runtime", "Exit"}
 	for {
 		if m.outputErr != nil {
 			return 1
 		}
-		n, err := m.selectItem("What would you like to do?", choices, 8)
-		if err == nil && n == 8 {
+		n, err := m.selectItem("What would you like to do?", choices, len(choices)-1)
+		if err == nil && n == len(choices)-1 {
 			break
 		}
 		if err == nil {
@@ -99,6 +105,8 @@ func runMenu(ctx context.Context, args []string, input io.Reader, out io.Writer)
 				err = m.repair()
 			case 7:
 				err = m.foundlings()
+			case 8:
+				err = m.chooseRelease()
 			}
 		}
 		if m.ctx.Err() != nil {
@@ -264,6 +272,9 @@ func (m *menu) call(name string, value any, bound bool) api.Envelope {
 
 func (m *menu) outcome(title string, v api.Envelope) error {
 	if !v.OK {
+		if v.Error.ReleaseResult != nil {
+			m.releaseResult(*v.Error.ReleaseResult)
+		}
 		if v.Error.FoundlingResult != nil {
 			m.foundlingReceipt(*v.Error.FoundlingResult)
 		}
@@ -459,9 +470,7 @@ func (m *menu) connect() error {
 }
 
 func (m *menu) applyPlan(p install.Plan) error {
-	m.block(console.Block{Title: "Review Codex connection", Body: "Apply executes the selected trusted binaries and manages this native plugin registration. A hash identifies bytes; it does not prove publisher trust. Retain old source/runtime copies; native cache may be replaced. No signet edits or authentication setup. Review hooks and start a fresh native session afterward.", Fields: []console.Field{
-		{Label: "Signet ID", Value: p.SignetID}, {Label: "Binding", Value: p.Binding}, {Label: "Selected runtime", Value: p.Binary}, {Label: "Runtime SHA256", Value: p.BinarySHA256}, {Label: "Pinned runtime", Value: p.Runtime}, {Label: "Native binary", Value: p.NativeBinary}, {Label: "Native SHA256", Value: p.NativeSHA256}, {Label: "Native profile", Value: p.NativeHome}, {Label: "Installation state", Value: p.StateDir}, {Label: "Managed package", Value: p.Root}, {Label: "Package version", Value: p.Version}, {Label: "Embedded package SHA256", Value: p.PackageSHA256},
-	}})
+	m.connectionPreview(p)
 	if err := m.confirm(); err != nil {
 		return err
 	}
@@ -472,6 +481,12 @@ func (m *menu) applyPlan(p install.Plan) error {
 	m.connectionResult(v.Result.(install.Result))
 	m.binary = p.Binary
 	return nil
+}
+
+func (m *menu) connectionPreview(p install.Plan) {
+	m.block(console.Block{Title: "Review Codex connection", Body: "Apply executes the selected trusted binaries and manages this native plugin registration. A hash identifies bytes; it does not prove publisher trust. Retain old source/runtime copies; native cache may be replaced. No signet edits or authentication setup. Review hooks and start a fresh native session afterward.", Fields: []console.Field{
+		{Label: "Signet ID", Value: p.SignetID}, {Label: "Binding", Value: p.Binding}, {Label: "Selected runtime", Value: p.Binary}, {Label: "Runtime SHA256", Value: p.BinarySHA256}, {Label: "Pinned runtime", Value: p.Runtime}, {Label: "Native binary", Value: p.NativeBinary}, {Label: "Native SHA256", Value: p.NativeSHA256}, {Label: "Native profile", Value: p.NativeHome}, {Label: "Installation state", Value: p.StateDir}, {Label: "Managed package", Value: p.Root}, {Label: "Package version", Value: p.Version}, {Label: "Embedded package SHA256", Value: p.PackageSHA256},
+	}})
 }
 
 func (m *menu) connectionResult(r install.Result) {

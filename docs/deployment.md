@@ -6,9 +6,28 @@ Delivery profile: **artifact**. There is no staging service or hosted production
 application. GitHub Releases will distribute the CLI and native plugins. No
 Mandalore runtime or release is published yet.
 
-The template supplies nomination, acceptance and release-ledger workflows, not
-this product's build matrix, checksummed assets, installer or update manifest.
-Those remain tracked work; workflow YAML alone does not establish distribution.
+The product now has a pinned [local candidate builder](development.md#local-distribution-candidates),
+checksummed platform/plugin assets, a compatibility manifest and read-only release
+inspection and [CLI installation planning](interface.md#read-only-cli-installation-planning).
+[Engineering evidence](evidence/distribution/README.md) records the
+actual scope tested. Explicit plan/apply now supports owned CLI activation,
+identity-checked recovery and retained rollback. The interactive installer/update
+journey uses those same operations, with a separately confirmed native handoff
+prepared and applied by the verified newly installed runtime. A separate candidate
+build/retention workflow and provenance/payload-verified nomination path are now
+implemented; [their contracts and current verification limits](development.md#retained-actions-candidates)
+are explicit. The [same-byte publisher component](development.md#same-byte-publisher-implementation)
+now has simulated-provider staging, byte verification and retry coverage. The
+artifact finalizer verifies the published product before updating its ledger.
+The retained-candidate promotion workflow is integrated. Actual
+[installer/recovery recordings](evidence/distribution/recovery/README.md) and
+[fresh native candidate sessions](evidence/distribution/native-candidate.md) provide
+source-bound contributor evidence. Hosted candidate/nomination execution and
+independent exact-candidate acceptance remain separate from that local evidence.
+
+The repository-specific publisher extends the template's nomination, acceptance
+and ledger workflows; the shared template is unchanged. Workflow YAML and local
+engineering artifacts alone do not establish a successful hosted release.
 
 ## Release contract
 
@@ -25,8 +44,12 @@ Those remain tracked work; workflow YAML alone does not establish distribution.
 6. Verify downloadable assets, checksums/manifests, fresh install, update and
    recovery before completing the issue/project release ledger.
 
-Repository creation does not authorize a release. SemVer, asset naming and
-promotion commands are finalized in the distribution issue. Never treat old
+Repository creation does not authorize a release. `VERSION` declares the intended
+SemVer release, initially 1.0.0, with tag `vVERSION`. Candidate identity additionally
+binds the exact commit and manifest digest; a shared version label is insufficient.
+Current asset names and compatibility fields are defined by the v1 manifest.
+Promotion commands are implemented but not yet accepted against a real hosted
+candidate. Never treat old
 My Friday releases as compatible Mandalore updates just because they contain Go.
 
 ## Configuration and recovery
@@ -36,6 +59,25 @@ Current variables: `CI_RUNNER=ubuntu-latest`, `DELIVERY_PROFILE=artifact`,
 `ACCEPTANCE_REQUIRED_CHECKS=ci`. Deliberately configure `ACCEPTANCE_ACTORS` for
 independent acceptance before release; do not copy private account policies.
 No provider service-account credentials are bundled or required.
+
+Real publication also requires immutable releases to be explicitly enabled.
+GitHub's [immutable-release settings endpoint](https://docs.github.com/en/rest/repos/repos?apiVersion=2026-03-10#check-if-immutable-releases-are-enabled-for-a-repository)
+requires repository Administration:read. The publisher refuses before creating a
+draft if that setting is disabled, missing or inaccessible, and rechecks it before
+publishing. The planned scoped workflow token alone must not be assumed to provide
+this administration read. The workflow now defines an optional
+`RELEASE_POLICY_READ_TOKEN` secret binding for a deliberately authorized credential
+with repository Administration:read. The command supports the same explicit
+environment variable. It is used only for the policy GET, not release/upload APIs
+or child authority-check processes. If absent, the publisher tries the explicit
+release token and refuses if the setting cannot be read. No actual secret/token,
+acceptance actor or repository setting has been configured automatically.
+
+This additional optional binding is a documented deviation from the earlier
+no-new-secret assumption, required by GitHub's policy-read permission contract.
+Provisioning remains a deliberate release prerequisite, not permission to copy
+a maintainer's personal credential into Actions. The scoped workflow token remains
+the release/ledger credential; the separate policy credential needs no write access.
 
 Retain old immutable binaries and connection sources. Preview update/repair
 paths, reject unknown ownership, and preserve memory, auth, sessions and native

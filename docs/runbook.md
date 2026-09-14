@@ -66,6 +66,13 @@ Git configuration, native handoff and synchronization remain separate operations
 
 ### Native integration and installation recovery
 
+For a partial **CLI** activation, preserve the pending record and retained runtime.
+The failure screen shows the pending path and retry command. Inspect the record,
+resolve the reported cause, then use the original Mandalore executable to run
+`release apply < PREFIX/lib/mandalore/pending.json`. This retries the exact recorded
+plan with fresh filesystem/byte checks; it does not take over foreign files or
+change a memory connection. See [the release recovery contract](interface.md#apply-a-reviewed-cli-installation).
+
 Use `mandalore menu` or the typed `connection` commands to preview, apply,
 inspect and repair. Read [setup](setup.md) for exact paths and side effects and
 [the connection interface](interface.md) for machine-readable receipts.
@@ -82,8 +89,10 @@ Native cache replacement is possible even when old source/runtime copies remain.
 Do not remove a lock simply because it exists or assume rollback happened.
 
 Local-artifact update does not replace the running shell command or configure
-PATH; it pins the approved runtime for the native connection. Published artifact
-discovery and exact-candidate acceptance remain separately required.
+PATH; it pins the approved runtime for the native connection. The separate
+`release install` journey previews official/local CLI selection and owned launcher
+activation, then optionally hands one connection to the verified new runtime.
+Exact-candidate acceptance and public release remain separately required.
 
 The development Codex plugin has read-only local hooks and a shared MCP
 connection. Read-only describes the hooks themselves, not the whole session:
