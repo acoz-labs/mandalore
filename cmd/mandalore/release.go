@@ -27,7 +27,7 @@ func runRelease(ctx context.Context, args []string, input io.Reader, out io.Writ
 		return 0
 	}
 	if len(args) == 0 || (args[0] != "inspect" && args[0] != "plan") {
-		return bad(out, "Choose release inspect, plan or apply; interactive installation and promotion are still under development.")
+		return bad(out, "Choose release inspect, plan, apply or install; use --help for the available commands.")
 	}
 	f := flag.NewFlagSet("release "+args[0], flag.ContinueOnError)
 	f.SetOutput(io.Discard)
@@ -77,7 +77,7 @@ func runReleaseApply(ctx context.Context, args []string, input io.Reader, out io
 		return bad(out, "Invalid release apply flags; use --help.")
 	}
 	if f.NArg() != 0 {
-		return bad(out, "Release apply reads its reviewed plan from stdin.")
+		return bad(out, "Release apply reads its reviewed plan or exact pending installation record from stdin.")
 	}
 	if *readOnly {
 		return emit(out, api.Failure("operation.read_only", "Mutations are disabled for this task.", false))
@@ -85,15 +85,15 @@ func runReleaseApply(ctx context.Context, args []string, input io.Reader, out io
 	if ctx.Err() != nil {
 		return emit(out, api.Failure("operation.cancelled", "Cancelled before installation work.", false))
 	}
-	// Human CLI accepts its own pretty-printed envelope (bounded at 64 KiB).
-	// The extracted raw plan still obeys the typed operation's 32 KiB budget.
-	raw, err := io.ReadAll(io.LimitReader(input, 2*distribution.MaxInstallPlanBytes+1))
+	// Pending recovery records have their own bound. Raw plans and pretty-printed
+	// plan envelopes retain their existing 32/64 KiB budgets after extraction.
+	raw, err := io.ReadAll(io.LimitReader(input, distribution.MaxPendingInstallBytes+1))
 	if err != nil {
 		return bad(out, "Could not read the reviewed installation plan.")
 	}
 	raw, err = unwrapReleasePlan(raw)
 	if err != nil {
-		return bad(out, "Expected a valid plan or successful installation-plan envelope.")
+		return bad(out, "Expected a valid reviewed plan, successful plan envelope or exact pending installation record.")
 	}
 	if _, err := distribution.ParseInstallPlan(raw); err != nil {
 		return bad(out, "Installation plan is invalid or exceeds its input budget.")
@@ -103,8 +103,15 @@ func runReleaseApply(ctx context.Context, args []string, input io.Reader, out io
 
 func unwrapReleasePlan(raw []byte) ([]byte, error) {
 	var object map[string]any
-	if err := strictjson.Decode(raw, &object, 2*distribution.MaxInstallPlanBytes); err != nil {
+	if err := strictjson.Decode(raw, &object, distribution.MaxPendingInstallBytes); err != nil {
 		return nil, err
+	}
+	if _, pending := object["plan"]; pending {
+		p, err := distribution.ParsePendingInstallPlan(raw)
+		if err != nil {
+			return nil, err
+		}
+		return json.Marshal(p)
 	}
 	if _, wrapped := object["protocol_version"]; wrapped {
 		var envelope struct {

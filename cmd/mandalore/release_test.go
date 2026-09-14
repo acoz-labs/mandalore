@@ -13,6 +13,9 @@ func TestReleaseInspectionCLIValidationAndNoBinding(t *testing.T) {
 		if code != 2 || out.Error.Code != "input.invalid" {
 			t.Fatal("invalid release request did not fail before network", args, out)
 		}
+		if strings.Contains(out.Error.Message, "still under development") {
+			t.Fatal("command discovery incorrectly hides the implemented installer")
+		}
 	}
 	out, code := cli(t, []string{"release", "inspect", "--candidate", t.TempDir(), "--read-only"}, "")
 	if code != 1 || out.Error.Code != "release.failed" || out.Error.WriteMayHaveOccurred || strings.Contains(out.Error.Message, "binding") {

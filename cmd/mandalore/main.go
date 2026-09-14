@@ -29,6 +29,7 @@ const help = `Mandalore — durable memory across tools
   mandalore release inspect [--version VERSION | --candidate DIR]
   mandalore release plan [--version VERSION | --candidate DIR | --retained SHA256] --prefix DIR
   mandalore release apply < reviewed-plan.json
+  mandalore release apply < PREFIX/lib/mandalore/pending.json
   mandalore release install [--version VERSION | --candidate DIR | --retained SHA256] [--prefix DIR] [--plain]
   mandalore signet create --repository DIR --name NAME --device-label LABEL
   mandalore signet bind --repository DIR --binding FILE --device-label LABEL --actor NAME

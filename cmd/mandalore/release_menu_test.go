@@ -80,8 +80,16 @@ func TestReleaseMenuPartialFailureShowsReceipt(t *testing.T) {
 		r.Error.ReleaseResult = &distribution.InstallResult{Phase: "launcher-activated", Runtime: "/synthetic/new", PreviousRuntime: "/synthetic/old", Pending: "/synthetic/pending.json", Connections: "unchanged", DestinationChanged: true}
 		return r
 	}
-	if err := m.installRelease(o); err == nil || !strings.Contains(out.String(), "launcher-activated") || !strings.Contains(out.String(), "/synthetic/pending.json") || strings.Contains(out.String(), "CLI installation verified") {
+	if err := m.installRelease(o); err == nil || !strings.Contains(out.String(), "launcher-activated") || !strings.Contains(out.String(), "/synthetic/pending.json") || !strings.Contains(out.String(), "release apply <") || strings.Contains(out.String(), "CLI installation verified") {
 		t.Fatal("partial state was lost", err, out.String())
+	}
+}
+
+func TestReleaseRecoveryInstructionQuotesPendingPath(t *testing.T) {
+	m, out, _, _ := releaseMenuFixture(t, "")
+	m.releaseResult(distribution.InstallResult{Pending: "/synthetic/owner's tools/pending.json"})
+	if !strings.Contains(out.String(), "'/synthetic/owner'\"'\"'s tools/pending.json'") || !strings.Contains(out.String(), "original Mandalore executable") {
+		t.Fatal("unsafe or ambiguous recovery instruction", out.String())
 	}
 }
 

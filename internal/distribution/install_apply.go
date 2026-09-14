@@ -39,6 +39,29 @@ type pendingInstall struct {
 
 const MaxPendingInstallBytes = 256 << 10
 
+// ParsePendingInstallPlan recovers only the exact recorded plan. It performs no
+// writes and makes no claim that the current filesystem still matches. ApplyInstall
+// must independently re-read the pending record and validate retained bytes,
+// directory identities and the expected old/new launcher and receipt states.
+func ParsePendingInstallPlan(raw []byte) (InstallPlan, error) {
+	var pending pendingInstall
+	if err := strictjson.Decode(raw, &pending, MaxPendingInstallBytes); err != nil || pending.FormatVersion != 1 {
+		return InstallPlan{}, errors.New("invalid pending installation record")
+	}
+	b, err := json.Marshal(pending.Plan)
+	if err != nil {
+		return InstallPlan{}, errors.New("invalid recorded installation plan")
+	}
+	p, err := ParseInstallPlan(b)
+	if err != nil {
+		return InstallPlan{}, err
+	}
+	if pending.PlanSHA256 != installPlanKey(p) {
+		return InstallPlan{}, errors.New("pending record does not match its exact plan digest")
+	}
+	return p, nil
+}
+
 func installPlanKey(p InstallPlan) string { b, _ := json.Marshal(p); return Digest(b) }
 
 func ApplyInstall(ctx context.Context, p InstallPlan) (InstallResult, error) {

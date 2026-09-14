@@ -126,6 +126,19 @@ CLI success also does not imply any native connection was updated.
 
 An interrupted activation retains `PREFIX/lib/mandalore/pending.json`, with the
 exact reviewed plan, previous receipt bytes and observed directory identities.
+After inspecting that record and resolving the reported problem, the human CLI
+can read it directly using the original Mandalore executable:
+
+```sh
+mandalore release apply < /example/tools/lib/mandalore/pending.json
+```
+
+This extracts only its exact digest-matching reviewed plan; apply independently
+re-reads the current pending record and performs the existing ownership checks.
+Do not use a partially activated launcher or edit the record to force a retry.
+Pending input is bounded at 256 KiB; the extracted plan still obeys the 32 KiB
+typed-operation limit. No extra memory MCP operation or parser dependency is added.
+
 Reapplying that **same plan** can finish only if the retained bytes, directories,
 launcher and receipt still match an expected old/new state. Recovery refuses
 foreign or conflicting files, missing/corrupt runtime bytes and a different plan.
