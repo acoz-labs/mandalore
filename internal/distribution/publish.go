@@ -447,21 +447,12 @@ func (p *Publisher) Publish(ctx context.Context, path, expectedIdentity string) 
 	}
 	receipt.Phase = "published"
 	// Verify the public, anonymous download surface, including every payload.
-	view, err := p.public.inspect(ctx, releasePath, m.Manifest.Version, false)
+	verified, err := p.public.VerifyPublication(ctx, m.Manifest.Version, m.Identity())
 	if err != nil {
 		return receipt, err
 	}
-	if view.ID != r.ID || view.Manifest.Identity() != m.Identity() || !reflect.DeepEqual(view.Assets, receipt.Assets) {
+	if verified.ReleaseID != r.ID || !reflect.DeepEqual(verified.Assets, receipt.Assets) {
 		return receipt, errors.New("published candidate differs from the staged identity")
 	}
-	for _, a := range view.Assets {
-		if err := p.public.asset(ctx, a, io.Discard); err != nil {
-			return receipt, err
-		}
-	}
-	if err := ctx.Err(); err != nil {
-		return receipt, err
-	}
-	receipt.Phase = "publication-verified"
-	return receipt, nil
+	return verified, nil
 }

@@ -124,7 +124,7 @@ and [pinned download action](https://github.com/actions/download-artifact/blob/3
 ## Same-byte publisher implementation
 
 `internal/distribution.Publisher` is a maintainer-only publication component under
-development. It is not wired into a command or workflow yet. The caller must prove
+development. Its mutation path is not wired into a command or workflow yet. The caller must prove
 transport provenance, exact independent acceptance and publication authority before
 invoking it; its expected-identity argument alone does not prove those prerequisites.
 It does not nominate candidates, close issues or execute/build candidate code.
@@ -160,8 +160,51 @@ matching published retries, uncertain create/upload/publish responses, partial c
 corruption, cancellation, changed local files/links and remote tags/assets, policy
 changes, bounded malformed discovery and credential/redirect isolation. Payloads
 are inert fixtures, not native candidate acceptance or a successful hosted release.
-Publication workflow/finalizer integration and real hosted verification remain
-pending. No new credential source or repository policy is configured by these tests.
+The read-only verifier and artifact ledger integration below are implemented;
+retained-transport-to-publisher workflow integration and real hosted verification
+remain pending. No new credential source or repository policy is configured by
+these tests.
+
+## Published verification and artifact finalization
+
+The maintainer helper shares the publisher's anonymous post-publication verifier:
+
+```sh
+bin/release-publication selection --version VERSION --identity ACCEPTED_IDENTITY
+bin/release-publication verify --version VERSION --identity ACCEPTED_IDENTITY
+```
+
+`selection` validates explicit coordinates locally; it does not prove existence,
+provenance or acceptance. `verify` inspects the immutable published release,
+source tag, exact manifest/checksums, ownership body and every asset's bytes,
+then refreshes metadata. It emits success JSON only after complete verification;
+a failed check does not emit a partial receipt as success. Neither command
+reads GitHub CLI authentication or changes remote/local product state.
+
+`bin/finalize-release artifact` now requires `RELEASE_VERSION` as well as the
+existing accepted SHA/identity and explicit issue set. After the existing
+issue-specific workflow-authored nomination/acceptance checks, it calls the live
+read-only verifier before any label/comment/body/closure mutation. It never creates
+an empty calendar release. Existing release comments must match the canonical
+product tag/URL and exact artifact. Partial/closed retries reverify the published
+product; a local tag or saved publisher receipt cannot replace that check. Accepted
+open-issue `--preflight` remains usable before publication; a preflight that relies
+on already-released issue evidence additionally verifies the published product.
+
+The release workflow checks out trusted default-branch control tooling, serializes
+release runs, and uses pinned Go for the helpers. It can currently verify/finalize
+an already-published accepted product; the retained-candidate publication step is
+still pending. These wrappers compile trusted **control tooling**, not the accepted
+product. This qualifies the plan's literal no-compiler wording: promotion must never
+rebuild or replace accepted product payloads, but verification tooling may be built
+from its separately pinned trusted control revision.
+
+`internal/releaseworkflow` runs the actual finalizer script in disposable Git
+repositories with fake GitHub/verifier commands and no provider credentials. It
+tests closure ordering, unaccepted/unlinked/foreign-status denials, wrong/incomplete
+published identities, omitted issues, partial-ledger recovery, closed retries and
+preservation of the production deployment/calendar-release path. HTTP tests exercise
+the real verifier separately; fake script receipts alone do not prove remote bytes.
 
 ## Bootstrap prerequisites
 

@@ -32,6 +32,8 @@ jobs:
           bash -n
           bin/ci
           bin/container
+          bin/finalize-release
+          bin/release-publication
           bin/dependency-merge-steward
           bin/mark-staging-candidate
           bin/nominate-release-candidate

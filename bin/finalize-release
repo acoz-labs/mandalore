@@ -33,6 +33,7 @@ server_url="${GITHUB_SERVER_URL:-https://github.com}"
 run_id="${GITHUB_RUN_ID:-}"
 sha="${RELEASE_SHA:-}"
 artifact="${RELEASE_ARTIFACT:-}"
+version="${RELEASE_VERSION:-}"
 requested_issues="${RELEASE_ISSUES:-}"
 summary="${RELEASE_SUMMARY:-}"
 rollback="${RELEASE_ROLLBACK:-}"
@@ -47,6 +48,10 @@ if [[ -z "$repo" || ! "$repo" =~ ^[^/]+/[^/]+$ || ! "$sha" =~ ^[0-9a-f]{40}$ ||
 fi
 if grep -Eq '^- Artifact:' <<< "$summary"; then
   echo "RELEASE_SUMMARY must not contain Release artifact-ledger lines." >&2
+  exit 64
+fi
+if [[ "$mode" == "artifact" && ("$repo" != "acoz-labs/mandalore" || "$server_url" != "https://github.com") ]]; then
+  echo "Product artifact verification is restricted to the official Mandalore repository." >&2
   exit 64
 fi
 if [[ "$preflight_only" == "0" && "$mode" == "production" &&
@@ -78,26 +83,37 @@ fi
 short_sha="${sha:0:7}"
 artifact_digest="$(printf '%s' "$artifact" | git hash-object --stdin)"
 release_tag=""
-while IFS= read -r tag; do
-  [[ -n "$tag" ]] || continue
-  tag_sha="$(git rev-list -n 1 "$tag")"
-  if [[ "$tag_sha" != "$sha" ]]; then
-    echo "Existing tag $tag targets $tag_sha instead of accepted commit $sha." >&2
-    exit 1
+if [[ "$mode" == "artifact" ]]; then
+  selection_json="$(bin/release-publication selection --version "$version" --identity "$artifact")"
+  if ! jq -e --arg sha "$sha" --arg artifact "$artifact" --arg version "$version" \
+    '.source_commit == $sha and .identity == $artifact and .version == $version and .tag == ("v" + $version)' \
+    <<< "$selection_json" >/dev/null; then
+    echo "Product version and identity must bind the accepted source." >&2
+    exit 64
   fi
-  if [[ -n "$release_tag" && "$release_tag" != "$tag" ]]; then
-    echo "Multiple $tag_prefix release tags already target accepted commit $sha." >&2
-    exit 1
-  fi
-  release_tag="$tag"
-done < <(git tag --list "${tag_prefix}-????.??.??-${short_sha}" | sort)
-
-if [[ -z "$release_tag" ]]; then
-  release_date="$(date -u +%Y.%m.%d)"
-  release_tag="${tag_prefix}-${release_date}-${short_sha}"
+  release_tag="$(jq -er '.tag' <<< "$selection_json")"
 else
-  release_date="${release_tag#"${tag_prefix}-"}"
-  release_date="${release_date%-"${short_sha}"}"
+  while IFS= read -r tag; do
+    [[ -n "$tag" ]] || continue
+    tag_sha="$(git rev-list -n 1 "$tag")"
+    if [[ "$tag_sha" != "$sha" ]]; then
+      echo "Existing tag $tag targets $tag_sha instead of accepted commit $sha." >&2
+      exit 1
+    fi
+    if [[ -n "$release_tag" && "$release_tag" != "$tag" ]]; then
+      echo "Multiple $tag_prefix release tags already target accepted commit $sha." >&2
+      exit 1
+    fi
+    release_tag="$tag"
+  done < <(git tag --list "${tag_prefix}-????.??.??-${short_sha}" | sort)
+
+  if [[ -z "$release_tag" ]]; then
+    release_date="$(date -u +%Y.%m.%d)"
+    release_tag="${tag_prefix}-${release_date}-${short_sha}"
+  else
+    release_date="${release_tag#"${tag_prefix}-"}"
+    release_date="${release_date%-"${short_sha}"}"
+  fi
 fi
 if git rev-parse -q --verify "refs/tags/$release_tag" >/dev/null; then
   tag_sha="$(git rev-list -n 1 "$release_tag")"
@@ -109,9 +125,11 @@ fi
 
 release_ledger_matches_artifact() {
   local release_json="$1"
-  jq -e --arg tag "$release_tag" --arg artifact_line "- Artifact: \`$artifact\`" '
+  jq -e --arg tag "$release_tag" --arg artifact_line "- Artifact: \`$artifact\`" \
+    --arg mode "$mode" --arg expected_url "$release_url" '
     ((.body // "") | split("\n") | map(select(startswith("- Artifact:")))) as $artifact_lines |
-    .tagName == $tag and $artifact_lines == [$artifact_line]
+    .tagName == $tag and $artifact_lines == [$artifact_line] and
+    ($mode != "artifact" or .url == $expected_url)
   ' <<< "$release_json" >/dev/null
 }
 
@@ -120,6 +138,23 @@ release_comment="Released in [${release_tag}](${release_url}) from \`${sha}\`."
 if [[ "$mode" == "production" ]]; then
   release_comment+=" Production deployment \`${production_deployment_id}\` recorded by control revision \`${control_sha}\`."
 fi
+
+verify_product_publication() {
+  local publication_json
+  publication_json="$(bin/release-publication verify --version "$version" --identity "$artifact")" || return 1
+  if ! jq -e --arg sha "$sha" --arg artifact "$artifact" --arg url "$release_url" '
+    .phase == "publication-verified" and .identity == $artifact and
+    .source_commit == $sha and .release_url == $url and
+    (.release_id | type == "number" and . > 0) and
+    (.assets | type == "array" and length == 8) and
+    (.pending_operation // "") == ""
+  ' <<< "$publication_json" >/dev/null; then
+    echo "Published product verification is incomplete or does not match the accepted release." >&2
+    return 1
+  fi
+}
+
+published_retry=0
 
 issue_numbers=()
 issue_lines=""
@@ -246,8 +281,8 @@ for issue_number in "${issue_numbers[@]}"; do
 
   if [[ "$preflight_only" == "1" && "$issue_state" == "CLOSED" ]] &&
     jq -e 'any(.labels[]; .name == "delivery:released")' <<< "$issue_json" >/dev/null; then
-    if ! git rev-parse -q --verify "refs/tags/$release_tag" >/dev/null ||
-      [[ "$(git rev-list -n 1 "$release_tag")" != "$sha" ]]; then
+    if [[ "$mode" == "production" ]] && { ! git rev-parse -q --verify "refs/tags/$release_tag" >/dev/null ||
+      [[ "$(git rev-list -n 1 "$release_tag")" != "$sha" ]]; }; then
       echo "Issue #$issue_number claims release without an exact local release tag." >&2
       exit 1
     fi
@@ -264,6 +299,7 @@ for issue_number in "${issue_numbers[@]}"; do
     if jq -e --arg prefix "$release_prefix" \
       'any(.[][]; (.user.login // "") == "github-actions[bot]" and
         ((.body // "") | startswith($prefix)))' <<< "$comments_json" >/dev/null; then
+      published_retry=1
       continue
     fi
   elif jq -e --arg body "$release_comment" \
@@ -277,6 +313,7 @@ for issue_number in "${issue_numbers[@]}"; do
       echo "Issue #$issue_number release comment points to a different artifact." >&2
       exit 1
     fi
+    published_retry=1
     continue
   fi
 
@@ -285,56 +322,65 @@ for issue_number in "${issue_numbers[@]}"; do
 done
 
 if [[ "$preflight_only" == "1" ]]; then
+  if [[ "$mode" == "artifact" && "$published_retry" == "1" ]]; then
+    verify_product_publication
+  fi
   echo "Verified $mode release issue authority for $repo@$sha."
   exit 0
 fi
 
-workflow_url="${server_url}/${repo}/actions/runs/${run_id}"
-notes="$(printf '%s\n\n%s\n%s\n%s\n%s\n' \
-  "$summary" \
-  "- Commit: \`$sha\`" \
-  "- Artifact: \`$artifact\`" \
-  "- Issues: $requested_issues" \
-  "- Workflow: $workflow_url")"
-if [[ "$mode" == "production" ]]; then
-  # shellcheck disable=SC2016 # backticks are literal Markdown in the printf template
-  notes+="$(printf '\n- Rollback: %s\n\n## Production smoke\n\n```text\n%s\n```\n' \
-    "$rollback" "$smoke_summary")"
-  # shellcheck disable=SC2016 # backticks are literal Markdown in the printf template
-  notes+="$(printf '\n- Production deployment: `%s`\n- Control revision: `%s`\n' \
-    "$production_deployment_id" "$control_sha")"
-fi
-
-if release_json="$(gh release view "$release_tag" --repo "$repo" --json tagName,url,body 2>/dev/null)"; then
-  release_url="$(jq -r '.url' <<< "$release_json")"
-  if ! release_ledger_matches_artifact "$release_json"; then
-    echo "Existing GitHub Release $release_tag does not match artifact $artifact." >&2
-    exit 1
-  fi
-  release_comment="Released in [${release_tag}](${release_url}) from \`${sha}\`."
-  if [[ "$mode" == "production" ]]; then
-    release_comment+=" Production deployment \`${production_deployment_id}\` recorded by control revision \`${control_sha}\`."
-  fi
+if [[ "$mode" == "artifact" ]]; then
+  # Fresh anonymous remote-byte verification, not a serialized publisher receipt,
+  # must precede every artifact ledger mutation, including partial/closed retries.
+  verify_product_publication
 else
-  create_args=(
-    release create "$release_tag"
-    --repo "$repo"
-    --title "$title_prefix $release_date $short_sha"
-    --notes "$notes"
-    --generate-notes
-  )
-  if git rev-parse -q --verify "refs/tags/$release_tag" >/dev/null; then
-    create_args+=(--verify-tag)
+  workflow_url="${server_url}/${repo}/actions/runs/${run_id}"
+  notes="$(printf '%s\n\n%s\n%s\n%s\n%s\n' \
+    "$summary" \
+    "- Commit: \`$sha\`" \
+    "- Artifact: \`$artifact\`" \
+    "- Issues: $requested_issues" \
+    "- Workflow: $workflow_url")"
+  if [[ "$mode" == "production" ]]; then
+    # shellcheck disable=SC2016 # backticks are literal Markdown in the printf template
+    notes+="$(printf '\n- Rollback: %s\n\n## Production smoke\n\n```text\n%s\n```\n' \
+      "$rollback" "$smoke_summary")"
+    # shellcheck disable=SC2016 # backticks are literal Markdown in the printf template
+    notes+="$(printf '\n- Production deployment: `%s`\n- Control revision: `%s`\n' \
+      "$production_deployment_id" "$control_sha")"
+  fi
+
+  if release_json="$(gh release view "$release_tag" --repo "$repo" --json tagName,url,body 2>/dev/null)"; then
+    release_url="$(jq -r '.url' <<< "$release_json")"
+    if ! release_ledger_matches_artifact "$release_json"; then
+      echo "Existing GitHub Release $release_tag does not match artifact $artifact." >&2
+      exit 1
+    fi
+    release_comment="Released in [${release_tag}](${release_url}) from \`${sha}\`."
+    if [[ "$mode" == "production" ]]; then
+      release_comment+=" Production deployment \`${production_deployment_id}\` recorded by control revision \`${control_sha}\`."
+    fi
   else
-    create_args+=(--target "$sha")
+    create_args=(
+      release create "$release_tag"
+      --repo "$repo"
+      --title "$title_prefix $release_date $short_sha"
+      --notes "$notes"
+      --generate-notes
+    )
+    if git rev-parse -q --verify "refs/tags/$release_tag" >/dev/null; then
+      create_args+=(--verify-tag)
+    else
+      create_args+=(--target "$sha")
+    fi
+    gh "${create_args[@]}" >/dev/null
+    release_json="$(gh release view "$release_tag" --repo "$repo" --json tagName,url,body)"
+    if ! release_ledger_matches_artifact "$release_json"; then
+      echo "New GitHub Release $release_tag does not contain one exact artifact ledger entry." >&2
+      exit 1
+    fi
+    release_url="$(jq -r '.url' <<< "$release_json")"
   fi
-  gh "${create_args[@]}" >/dev/null
-  release_json="$(gh release view "$release_tag" --repo "$repo" --json tagName,url,body)"
-  if ! release_ledger_matches_artifact "$release_json"; then
-    echo "New GitHub Release $release_tag does not contain one exact artifact ledger entry." >&2
-    exit 1
-  fi
-  release_url="$(jq -r '.url' <<< "$release_json")"
 fi
 release_comment="Released in [${release_tag}](${release_url}) from \`${sha}\`."
 if [[ "$mode" == "production" ]]; then

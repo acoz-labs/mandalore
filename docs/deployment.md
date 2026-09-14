@@ -17,9 +17,10 @@ prepared and applied by the verified newly installed runtime. A separate candida
 build/retention workflow and provenance/payload-verified nomination path are now
 implemented; [their contracts and current verification limits](development.md#retained-actions-candidates)
 are explicit. The [same-byte publisher component](development.md#same-byte-publisher-implementation)
-now has simulated-provider staging, byte verification and retry coverage. Its
-workflow/finalizer integration, final rendered/native evidence and actual hosted
-candidate execution remain in progress under #11.
+now has simulated-provider staging, byte verification and retry coverage. The
+artifact finalizer verifies the published product before updating its ledger.
+Retained-candidate promotion workflow integration, final rendered/native evidence
+and actual hosted candidate execution remain in progress under #11.
 
 The template supplies nomination, acceptance and release-ledger workflows, not
 an already completed product publisher. Workflow YAML alone does not establish

@@ -325,11 +325,22 @@ mode's release-ready label and fails closed if one was omitted or lacks matching
 SHA/artifact acceptance evidence. GitHub query failures also abort instead of
 appearing as an empty set. This keeps carried-forward accepted work complete
 without inferring scope from every historical pull request.
+
+Mandalore's artifact distribution makes one explicit repository-specific deviation
+from the managed finalizer: artifact mode requires `RELEASE_VERSION`, uses the
+product's `vVERSION` release and never creates an empty artifact-calendar release.
+It verifies the actual immutable published manifest, ownership, source tag and all
+payload bytes before any ledger mutation, including partial and closed retries.
+An accepted open-issue preflight does not yet require publication; a preflight
+relying on prior released-issue evidence does. Production mode retains its existing
+deployment receipt and calendar-release behavior. See
+[the helper contract and verification boundaries](../development.md#published-verification-and-artifact-finalization).
+
 Managed-standard adoption issues and lifecycle entries that declare
 `Release: not applicable` are excluded from candidate nomination. Their
 completion boundary is the reviewed merge plus stewardship audit, not product
 acceptance or release.
-GitHub-generated release notes supply commit-to-pull-request associations; the
+For the managed production path, GitHub-generated release notes supply commit-to-pull-request associations; the
 finalizer never guesses PR numbers by parsing `#123` fragments from titles or
 commit subjects.
 
