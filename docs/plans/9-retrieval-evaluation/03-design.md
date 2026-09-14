@@ -28,7 +28,8 @@ complete validation before measurements; it is not a new production write route.
 
 Measure warm repeated operations on an existing service, opening a fresh service
 plus recall, and a bounded compiled CLI sample including process startup. Report
-sample count and median/p95 for timed samples, benchmark ns/op, B/op and allocs/op
+sample count and median/p95 for timed samples (at least 20 samples when reporting
+p95), benchmark ns/op, B/op and allocs/op
 where available, corpus bytes/files/current and total revision counts, Go/Git/OS/
 architecture, exact head and binary identity. Do not equate fresh process with
 cold disk, purge caches or require privileged performance tooling.

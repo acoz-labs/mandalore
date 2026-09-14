@@ -1,8 +1,8 @@
 # Solution Design: retrieval quality and context efficiency
 
-- **Status:** Draft
+- **Status:** Final
 - **Issue:** #9
-- **Planning PR:** Pending
+- **Planning PR:** #33
 - **Repository basis:** b283e7cc8890d0c2f1da33c649614d25da09aba4
 - **Execution envelope:** implementation
 
