@@ -41,6 +41,8 @@ head with this plan, remove all six temporary files, and record engineering self
 under decision 0001. Hosted checks must pass the final reviewed commit. Keep #9 open
 for independent candidate acceptance if release-bearing changes are included.
 
+## Production Readiness Preflight
+
 The execution envelope cannot touch production. There is no new secret slot,
 service deployment, live migration, package install or public release. Candidate
 build/nomination and independent acceptance remain #11/#10; native contributor
