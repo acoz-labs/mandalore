@@ -50,6 +50,43 @@ headers, responses and timeouts. No GitHub CLI login, provider token or cookies
 are borrowed. Unavailable, incompatible, mutable, corrupt or rate-limited releases
 fail visibly; local candidate inspection remains available offline.
 
+## Read-only CLI installation planning
+
+```sh
+mandalore release plan --candidate /example/candidate --prefix /example/tools --read-only
+mandalore release plan --version 1.0.0 --prefix /example/tools --read-only
+```
+
+`release_plan` is the equivalent typed, CLI-only operation. Its input is
+`{"candidate":"/example/candidate","prefix":"/example/tools"}`. Prefix is
+required for this machine-readable preview; select at most one candidate directory,
+published version or retained manifest SHA-256 (`--retained SHA256`). Omitting all
+three selects the latest stable published release and pins its exact release ID,
+version, manifest and asset identities in the plan. No binary is downloaded or run
+by published planning. Local planning verifies the complete candidate bytes.
+Neither interface requires a signet binding or adds a tool to memory MCP.
+
+The plan names the current machine's exact target, executable and plugin digests,
+launcher, retained runtime, observed directory identities and current receipt/target.
+It describes CLI-only effects: memory connections, signets, credentials and shell
+settings remain unchanged. Local byte verification is not publisher authentication;
+choosing a local source for later execution requires trusting that source.
+
+The selected prefix may resolve an explicit alias, such as macOS `/tmp`. Managed
+descendants must be real directories owned by the current user, not writable by
+other users. Only `PREFIX/bin/mandalore` and `PREFIX/lib/mandalore` are in scope;
+the rest of the prefix is not owned by Mandalore. A pre-existing launcher must
+match a valid ownership receipt and the verified retained target. Regular files,
+foreign/dangling links, redirected managed directories, edited retained bytes,
+unrecognized state and pending activation are refused without writing anything.
+
+Retained selection verifies a compatible manifest and platform binary beneath
+`PREFIX/lib/mandalore/releases/sha256-MANIFEST/OS_ARCH/`. A serialized plan is not
+proof that its observations remain current or authorization to change connections.
+Activation, stale-plan revalidation and recovery are still being implemented;
+there is no `release apply` or `release install` command yet. Retained-state tests
+currently use synthetic receipt fixtures, not a claim of completed installation.
+
 ## Try a synthetic signet
 
 Build with the pinned toolchain:

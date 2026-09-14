@@ -45,10 +45,23 @@ var releases = []Operation{
 			}
 			return ReleaseInspection{Kind: "github-release", Published: &r, Notice: "Official immutable release identity, tag commit, manifest/checksum bytes and declared asset metadata checked. Executable payloads were not downloaded or run. No installation or memory change occurred."}, nil
 		}),
+	operation("release_plan", "Preview an exact CLI installation or retained-version selection. CLI-only and read-only; no binary execution, launcher activation, native connection changes or signet binding. Published selection requires public network access.", true,
+		func(ctx context.Context, _ *memory.Service, in distribution.InstallOptions) (distribution.InstallPlan, error) {
+			if err := in.Validate(); err != nil {
+				return distribution.InstallPlan{}, strictjson.ErrInvalid
+			}
+			p, err := distribution.PlanInstall(ctx, in)
+			if err != nil {
+				return distribution.InstallPlan{}, &releaseFailure{err}
+			}
+			return p, nil
+		}),
 }
 
 func init() {
-	releases[0].CLIOnly = true
-	releases[0].RequiresBinding = false
-	releases[0].Network = true
+	for i := range releases {
+		releases[i].CLIOnly = true
+		releases[i].RequiresBinding = false
+		releases[i].Network = true
+	}
 }

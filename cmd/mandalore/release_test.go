@@ -17,3 +17,16 @@ func TestReleaseInspectionCLIValidationAndNoBinding(t *testing.T) {
 		t.Fatal("read-only local inspection was not unbound", out, code)
 	}
 }
+
+func TestReleasePlanCLIValidationAndNoBinding(t *testing.T) {
+	for _, args := range [][]string{{"release", "plan"}, {"release", "plan", "--prefix", "/example", "--version", "../bad"}, {"release", "plan", "--prefix", "/example", "--retained", "bad"}} {
+		out, code := cli(t, args, "")
+		if code != 2 || out.Error.Code != "input.invalid" {
+			t.Fatal("invalid release plan accepted", out, code)
+		}
+	}
+	out, code := cli(t, []string{"release", "plan", "--prefix", t.TempDir(), "--candidate", t.TempDir(), "--read-only"}, "")
+	if code != 1 || out.Error.Code != "release.failed" || out.Error.WriteMayHaveOccurred || strings.Contains(out.Error.Message, "binding") {
+		t.Fatal("CLI plan required binding or wrote", out, code)
+	}
+}

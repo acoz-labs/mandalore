@@ -27,6 +27,7 @@ const help = `Mandalore — durable memory across tools
   mandalore operations                          JSON schemas and implemented operations
   mandalore version                             Runtime/protocol version
   mandalore release inspect [--version VERSION | --candidate DIR]
+  mandalore release plan [--version VERSION | --candidate DIR | --retained SHA256] --prefix DIR
   mandalore signet create --repository DIR --name NAME --device-label LABEL
   mandalore signet bind --repository DIR --binding FILE --device-label LABEL --actor NAME
   mandalore memory recall --binding FILE [--query TEXT] [--scope-kind KIND --scope-id ID]
@@ -60,7 +61,7 @@ Foundling setup is CLI-only; MCP exposes list/inspect/search/read/promote.
 Common options: --binding FILE, --harness NAME, --read-only, --help.
 Binding selection: explicit file, then MANDALORE_BINDING, then platform config.
 No cwd-based bank discovery. Memory saves are local; explicit sync reports delivery.
-Release inspection is read-only. CLI installation from published releases is still under development.
+Release inspection and planning are read-only. CLI activation is still under development.
 `
 
 func main() {

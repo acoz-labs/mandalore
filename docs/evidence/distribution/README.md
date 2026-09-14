@@ -64,3 +64,27 @@ each destination before contacting it, rather than checking only the final host.
 The synthetic tests include a bounded redirect loop. That source change does not
 retroactively change the retained manifest above; final nomination needs newly
 built and independently accepted bytes from the completed implementation.
+
+## CLI installation preview
+
+A later compiled development CLI was exercised against the unchanged real candidate
+above on macOS ARM64, through the designated verification pane. `release plan`
+and typed `release_plan` emitted byte-identical successful JSON with an intentionally
+invalid memory binding. The plan selected the exact manifest and native binary
+digests, a new user prefix and an absent launcher; no prefix was created. A separate
+synthetic pre-existing regular launcher was refused. Before/after hashes matched
+for all eight candidate files and the foreign launcher.
+
+Failing-first tests cover missing plan interfaces, then CLI operation discovery;
+passing tests cover exact identities/effects, canonical selection, strict parsing,
+owned/retained fixture recognition, changed receipt bytes, redirected directories,
+foreign/dangling launchers, FIFO receipts, corruption, writable directories and
+pending/unknown ownership. Mocked published planning pins a specific release and
+fetches only manifest/checksum assets, never executable payloads. Memory MCP remains
+16 tools and rejects direct calls to both release administrative operations.
+
+Retained states in these tests are constructed fixtures. This verifies preview and
+denial behavior, not successful installation, stale-plan apply, concurrent activation,
+recovery, rollback execution or connection updates. Those remain subsequent work.
+The PR checkpoint binds this later verification to its own implementation head;
+it does not change the earlier reproducible candidate's source or manifest identity.
