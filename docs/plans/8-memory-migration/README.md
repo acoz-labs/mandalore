@@ -1,7 +1,8 @@
 # Solution Design: explicit memory-only migration
 
-- **Status:** Draft
+- **Status:** Final
 - **Issue:** #8
+- **Planning PR:** #29
 - **Repository basis:** 3cebe0b51a1f28aef91e3df3d793826243265123
 - **Execution envelope:** implementation
 

@@ -15,6 +15,8 @@ designated Herdr pane under pinned Go 1.26.4.
 - Preserve all record/revision/source/device IDs, original attribution/dates,
   journals, orphan evidence, branched supersession and explicit conflict state.
   Only the supported manifest/scope mapping changes; other scopes stay intact.
+  Include high-precision extension numbers and body text containing legacy names
+  to catch lossy decoding or broad replacement.
 - Original snapshot bytes and declared exclusions match the source inventory;
   operational provenance is retained outside current signet knowledge.
 - Faults before/during publication, no overwrite on retry, returned staging or

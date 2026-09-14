@@ -29,6 +29,9 @@ without substituting the importing machine for an original author. Project,
 account and task scopes are unchanged. Source/device/journal IDs and timestamps
 remain unchanged. Generate only the required empty signet directories and new
 ignore rules; exclude operational change observations from normal memory.
+Transform only the structural manifest/scope members, never global text matches.
+Retain raw JSON values for untouched members so extension numbers do not lose
+precision through a float64 round trip; validation must not become reauthoring.
 Add a separately identified conversion device and one semantic migration journal
 entry using the caller's explicit machine label/actor and CLI harness. This entry
 records source content identity and conversion summary, not machine-local paths.
