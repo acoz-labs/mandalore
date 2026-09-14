@@ -33,23 +33,75 @@ Do not bulk-copy predecessor history, docs, private-agent narratives, workstatio
 paths, account rules, capabilities or raw evidence logs. Inspect dependency
 closure for memory primitives co-located in `internal/portable` before extraction.
 
-## Existing issues
+## Open predecessor work ledger
+
+Snapshot verified against the archived repository on 2026-09-14: 21 open issues
+and five open pull requests. The dispositions below account for every item in
+that snapshot; they do not close, merge or certify the predecessor work. Links
+identify the archived proposals, not instructions to adopt their contents.
+
+The exact selective code basis remains `f3d337bca419fdaf82bd9a6ce31ebde7f3748eb8`.
+See [the extraction inventory](memory-extraction.md) for reused primitives,
+dependency closure, deliberate changes and exclusions, and the adapter map below
+for the rest of the memory-only boundary.
 
 | Predecessor issues | Disposition |
 | --- | --- |
-| #94 governed memory | Relevant semantics move into the memory-only engine outcome |
-| #117 Pi; #118 Claude Code | Sanitized successor issues, preserving sequence |
-| #95/#102 acceptance | Preserve evidence quality, not old cohort requirements |
-| #111 timeout; #112 container tooling | Carry lessons into bounded-execution and reproducible-CI tests |
-| #51/#74/#83 capability foundations | Historical assistant work, not a Mandalore dependency |
-| #81/#92/#93 assistant kernel | Superseded by the memory-only product boundary |
-| #99/#101/#108/#113 delivery authority | Historical; use the new managed workflow |
-| #104/#106 capability routing | Retrieval-efficiency lessons only, no capability framework |
-| #116 agent adaptation | Memory integration host readiness only; arbitrary capability porting excluded |
+| [#51](https://github.com/acoz-labs/my-friday/issues/51) inspectable capability | Archived assistant-platform scope; not a Mandalore dependency |
+| [#74](https://github.com/acoz-labs/my-friday/issues/74) capability workshop | Archived assistant-platform scope; no capability builder port |
+| [#81](https://github.com/acoz-labs/my-friday/issues/81) assistant baseline discovery | Superseded by the memory-only [product contract](product.md); historical references are separately scoped in Mandalore #12 |
+| [#83](https://github.com/acoz-labs/my-friday/issues/83) instruction-only foundation | Historical assistant work; no baseline certification carried forward |
+| [#92](https://github.com/acoz-labs/my-friday/issues/92) assistant repository/kernel | Excluded assistant identity/kernel; signet structure is Mandalore #3 |
+| [#93](https://github.com/acoz-labs/my-friday/issues/93) capability packages/compiler | Excluded; thin native memory integration is Mandalore #6, not a capability compiler |
+| [#94](https://github.com/acoz-labs/my-friday/issues/94) governed memory | Selected memory semantics adapted under Mandalore #2–#5; not an inherited capability |
+| [#95](https://github.com/acoz-labs/my-friday/issues/95) public baseline | Fresh artifact/acceptance work under Mandalore #10/#11; old baseline not accepted by implication |
+| [#99](https://github.com/acoz-labs/my-friday/issues/99) dogfood authority | Historical proposal; current managed release authority applies |
+| [#101](https://github.com/acoz-labs/my-friday/issues/101) versioned acceptance contract | Historical proposal; no private account policy or owner-only acceptance exception imported |
+| [#102](https://github.com/acoz-labs/my-friday/issues/102) validation cohort | Evidence-quality lessons inform #10; no predecessor cohort requirement adopted |
+| [#104](https://github.com/acoz-labs/my-friday/issues/104) capability discovery | Capability routing excluded; bounded memory retrieval measured in #9 |
+| [#106](https://github.com/acoz-labs/my-friday/issues/106) routing experiment | Historical experiment; measurements may inform #9, not accepted results or a routing framework |
+| [#108](https://github.com/acoz-labs/my-friday/issues/108) laptop test sequencing | Current engineering/independent-acceptance distinction applies under #10/#11 |
+| [#111](https://github.com/acoz-labs/my-friday/issues/111) process timeouts | Bounded execution/cancellation lessons tested in Mandalore; no old runner copied wholesale |
+| [#112](https://github.com/acoz-labs/my-friday/issues/112) container prerequisites | Current reproducible CI is owned by #11; legacy container patch not imported |
+| [#113](https://github.com/acoz-labs/my-friday/issues/113) delivery reconciliation | Historical workflow design; current repository instructions and #11 govern |
+| [#116](https://github.com/acoz-labs/my-friday/issues/116) machine adaptation | Narrowed to memory integration readiness in Mandalore #15; arbitrary capability/package/credential adaptation excluded |
+| [#117](https://github.com/acoz-labs/my-friday/issues/117) Pi integration | Mandalore #13, waiting for Codex MVP acceptance |
+| [#118](https://github.com/acoz-labs/my-friday/issues/118) Claude integration | Mandalore #14, waiting for Pi acceptance |
+| [#119](https://github.com/acoz-labs/my-friday/issues/119) transition notice | Retained public redirect to Mandalore; not an unfinished implementation to port |
+
+| Open predecessor PR | Observed head | Disposition |
+| --- | --- | --- |
+| [#2](https://github.com/acoz-labs/my-friday/pull/2) dependency-review v5 | `60eb12a48dc625ddcdd3ffb0d4b7ba2cad9bc37d` | Not merged/imported. Mandalore's managed baseline currently uses v4; any update follows its own dependency review, not this archived PR. |
+| [#29](https://github.com/acoz-labs/my-friday/pull/29) upload-artifact v7 | `042b827ffb6a8048c423498e7fc67f5e2cf07eac` | Not merged/imported. Mandalore independently pins v7.0.1 in its artifact workflows; that does not complete this predecessor proposal. |
+| [#110](https://github.com/acoz-labs/my-friday/pull/110) routing experiment | `d676983db3f41058e87430c56f3197d4398dd386` | Archive only; capability experiment code/results are not accepted memory-engine evidence. |
+| [#114](https://github.com/acoz-labs/my-friday/pull/114) integrated-test design | `92ba0762f4134fe98e3ca4d01dc77e8b99ddb1d9` | Archive only; current managed workflow and explicit MVP self-review authorization govern. |
+| [#115](https://github.com/acoz-labs/my-friday/pull/115) dogfood authority | `5192e83a99b17b4da822aa755459a34a6f951b75` | Archive only; no acceptance actor, exception or account policy imported. |
 
 Predecessor open PRs remain historical proposals, not accepted work. The new
 backlog owns current scope. Archive notices must not mark unfinished work as
 successfully completed.
+
+## Memory-only adapter map
+
+All source paths below refer to the pinned public code basis, not open PR heads.
+This is a selective adaptation map, not a claim of one-to-one copying or unchanged
+behavior. Detailed contracts and current tests belong to the linked documents.
+
+| Pinned predecessor reference | Mandalore boundary | Reused or excluded |
+| --- | --- | --- |
+| `internal/portable/{store,memory,bank,events}.go` and selected tests | `internal/memory`; [extraction inventory](memory-extraction.md) | Storage, graph, journal and provenance primitives; assistant/capability identity excluded |
+| `internal/memorybank/{binding,service,pages}.go` | `internal/binding`, shared service/CLI contracts in [interface](interface.md) | Explicit local binding, compact bounded memory access; no assistant discovery |
+| `internal/memorymcp/server.go` | `internal/mcp`, `internal/api`, `cmd/mandalore` | Shared local stdio concept; new strict memory-only operation catalog, not assistant CLI copy |
+| `internal/portable/sync.go`, `sync_transport.go` | `internal/sync`; [synchronization](synchronization.md) | Append-only Git delivery/endpoint concepts; hosting-account adapters and credential helpers excluded |
+| `internal/memorycodex`, `internal/memoryinstall`, `plugins/codex` | `internal/codex`, `internal/install`, `plugins/codex`; [Codex package](../plugins/codex/README.md) | Thin native hooks/MCP and pinned connection concepts; no inherited native home, account rules or assistant launcher |
+| `internal/portable/references.go`, `reference_read.go`, reference menu | `internal/foundlings`; [foundlings](foundlings.md) | Reference/pin lessons adapted into separate historical evidence and explicit promotion; no wholesale historical-memory import |
+| Assistant-aware CLI/menu and installation modules | [setup](setup.md), [migration](#explicit-memory-only-conversion) | Generic navigation/receipt lessons only; memory-only journeys and explicit conversion, no capability management |
+
+The feature branch remains at `b67b169cd6e2de1681f48470400d7b44f73fecc1`.
+The three observed archived releases remain `artifact-2026.08.21-5bc3092`,
+`artifact-2026.08.21-915b8fa` and `artifact-2026.08.25-ae5c103`. They are historical
+My Friday assets, never Mandalore update/download targets. No branch, issue, PR,
+tag or release was changed by this ledger audit.
 
 ## Compatibility and safety
 
