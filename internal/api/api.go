@@ -33,9 +33,10 @@ type MemoryError struct {
 }
 type Error struct {
 	MemoryError
-	ConnectionResult *install.Result   `json:"connection_result,omitempty"`
-	ConnectionReport *install.Report   `json:"connection_report,omitempty"`
-	MigrationResult  *migration.Result `json:"migration_result,omitempty"`
+	FoundlingResult  *FoundlingMutationResult `json:"foundling_result,omitempty"`
+	ConnectionResult *install.Result          `json:"connection_result,omitempty"`
+	ConnectionReport *install.Report          `json:"connection_report,omitempty"`
+	MigrationResult  *migration.Result        `json:"migration_result,omitempty"`
 }
 type Envelope struct {
 	ProtocolVersion int    `json:"protocol_version"`
@@ -103,6 +104,7 @@ type Inspection struct {
 	Notice   string `json:"notice"`
 }
 type Operation struct {
+	CLIOnly         bool               `json:"cli_only"`
 	Network         bool               `json:"network"`
 	RequiresBinding bool               `json:"requires_binding"`
 	Name            string             `json:"name"`
@@ -176,7 +178,7 @@ var operations = []Operation{
 }
 
 func Catalog() []Operation {
-	return append(append(append(append(append([]Operation(nil), operations...), administration...), synchronization...), connections...), migrations...)
+	return append(append(append(append(append(append([]Operation(nil), operations...), administration...), synchronization...), connections...), migrations...), foundlingOperations...)
 }
 
 type API struct {
@@ -204,6 +206,10 @@ func (a *API) Call(ctx context.Context, name string, data []byte) Envelope {
 		}
 		v, err := op.invoke(ctx, a.service, data)
 		if err != nil {
+			var reference *foundlingFailure
+			if errors.As(err, &reference) {
+				return foundlingFailureEnvelope(reference)
+			}
 			var migration *migrationFailure
 			if errors.As(err, &migration) {
 				code := "migration.failed"

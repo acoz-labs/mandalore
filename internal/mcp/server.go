@@ -22,7 +22,7 @@ func New(a *api.API) *sdk.Server {
 		panic("invalid built-in error schema")
 	}
 	for _, op := range api.Catalog() {
-		if !op.RequiresBinding {
+		if !op.RequiresBinding || op.CLIOnly {
 			continue
 		}
 		no := false

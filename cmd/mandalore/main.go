@@ -33,6 +33,8 @@ const help = `Mandalore — durable memory across tools
   mandalore memory remember|journal-append --binding FILE < input.json
   mandalore memory git-init|checkpoint|sync-status --binding FILE
   mandalore memory sync --binding FILE [--timeout-seconds 10]
+  mandalore foundling list|inspect|history|search|read --binding FILE [options]
+  mandalore foundling preview|register|connect|disconnect|promote --binding FILE < input.json
   mandalore call OPERATION --binding FILE < input.json
   mandalore mcp --binding FILE [--harness NAME] [--read-only]
   mandalore codex-memory-hook [--binding FILE]   Read-only native lifecycle JSON
@@ -51,6 +53,9 @@ Migration does not activate a writer or copy Git history/configuration.
 
 Memory options: --limit N, --offset N (scopes/history), --record-id ID (history),
 --budget-bytes N (recall), --query TEXT (recall/journal).
+Foundling options: --foundling-id ID, --query TEXT (search), --limit N (list/history/search),
+--offset N (list/history/read), --registration-id ID --locator PATH --limit-bytes N (read).
+Foundling setup is CLI-only; MCP exposes list/inspect/search/read/promote.
 Common options: --binding FILE, --harness NAME, --read-only, --help.
 Binding selection: explicit file, then MANDALORE_BINDING, then platform config.
 No cwd-based bank discovery. Memory saves are local; explicit sync reports delivery.
@@ -125,7 +130,7 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 	var rest []string
 	human := false
 	switch args[0] {
-	case "memory", "signet", "call":
+	case "memory", "signet", "foundling", "call":
 		if len(args) < 2 {
 			return bad(out, "missing operation; use --help")
 		}
@@ -172,6 +177,7 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 	harness := f.String("harness", harnessDefault, "Attribution harness label")
 	readOnly := f.Bool("read-only", false, "Reject mutations")
 	var repository, label, actor, displayName, query, kind, scopeID, recordID string
+	var foundlingID, registrationID, locator string
 	var limit, offset, budget, timeout int
 	if human {
 		switch name {
@@ -200,6 +206,24 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 			f.IntVar(&limit, "limit", 5, "Result limit")
 		case "memory_sync":
 			f.IntVar(&timeout, "timeout-seconds", 10, "Sync budget, 1–30 seconds")
+		case "foundling_list", "foundling_history":
+			f.IntVar(&limit, "limit", 5, "Page limit")
+			f.IntVar(&offset, "offset", 0, "Page offset")
+			if name == "foundling_history" {
+				f.StringVar(&foundlingID, "foundling-id", "", "Explicit reference ID")
+			}
+		case "foundling_inspect", "foundling_search", "foundling_read":
+			f.StringVar(&foundlingID, "foundling-id", "", "Explicit reference ID")
+			if name == "foundling_search" {
+				f.StringVar(&query, "query", "", "Literal search terms")
+				f.IntVar(&limit, "limit", 5, "Result limit")
+			}
+			if name == "foundling_read" {
+				f.StringVar(&registrationID, "registration-id", "", "Exact registration revision")
+				f.StringVar(&locator, "locator", "", "Relative document locator")
+				f.IntVar(&offset, "offset", 0, "UTF-8 byte offset")
+				f.IntVar(&budget, "limit-bytes", 4096, "Excerpt content bytes")
+			}
 		}
 	}
 	if err := f.Parse(rest); err != nil {
@@ -276,6 +300,16 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 			value = api.SyncInput{TimeoutSeconds: &timeout}
 		case "memory_inspect", "memory_git_init", "memory_checkpoint", "memory_sync_status":
 			value = struct{}{}
+		case "foundling_list":
+			value = api.PageInput{Offset: offset, Limit: &limit}
+		case "foundling_history":
+			value = api.FoundlingHistoryInput{FoundlingID: foundlingID, Offset: offset, Limit: &limit}
+		case "foundling_inspect":
+			value = api.FoundlingSelector{FoundlingID: foundlingID}
+		case "foundling_search":
+			value = api.FoundlingSearchInput{FoundlingID: foundlingID, Query: query, Limit: &limit}
+		case "foundling_read":
+			value = api.FoundlingReadInput{FoundlingID: foundlingID, RegistrationID: registrationID, Locator: locator, Offset: offset, Limit: &budget}
 		}
 	}
 	if value != nil {

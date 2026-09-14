@@ -46,7 +46,8 @@ Omitting scope means only this signet's global scope, not every project; use
 ## Machine-ready contract
 
 `mandalore operations` lists versioned input/result JSON schemas, read/write and
-idempotency annotations. `mandalore call OPERATION --binding FILE < input.json`
+idempotency annotations, `requires_binding` and `cli_only` visibility.
+`mandalore call OPERATION --binding FILE < input.json`
 uses the same decoder and methods as the human commands and MCP tools.
 
 | Operation | Human command | MCP |
@@ -57,6 +58,8 @@ uses the same decoder and methods as the human commands and MCP tools.
 | `memory_journal`, `memory_inspect` | `memory journal`, `inspect` | Bound signet only |
 | `memory_remember`, `memory_journal_append` | `memory remember`, `journal-append` | Bound signet only |
 | `memory_git_init`, `memory_checkpoint`, `memory_sync`, `memory_sync_status` | `memory git-init`, `checkpoint`, `sync`, `sync-status` | Bound signet only |
+| `foundling_list`, `foundling_inspect`, `foundling_search`, `foundling_read`, `foundling_promote` | `foundling list`, `inspect`, `search`, `read`, `promote` | Bound signet only |
+| `foundling_preview`, `foundling_register`, `foundling_connect`, `foundling_disconnect`, `foundling_history` | `foundling preview`, `register`, `connect`, `disconnect`, `history` | Not exposed; still require a selected binding |
 
 Every operation returns `{protocol_version, ok, result}` or
 `{protocol_version, ok, error}`. The current protocol is 1. The catalog describes
@@ -75,6 +78,37 @@ apply before reading input. `migration.failed` (exit 1) may include a
 `migration_result` with phase, published state and retained staging/output paths.
 This administration-only error detail is not added to MCP's memory-tool schemas.
 See [migration](migration.md) for supported data, snapshot limits and handoff.
+
+Foundling administration separates portable registrations from ignored clone-local
+paths. Preview takes `source: {kind, locator}` and an absolute `local_root`.
+Register takes `name`, `description`, `source`, the exact preview `pin`, and
+`reason`; optional `local_root` connects after registration. Without a local root,
+registration is metadata-only, not proof of source availability. Updates also
+require `foundling_id` and explicit predecessor registration IDs in `supersedes`.
+Replacing a local connection requires its `expected_connection_id`.
+
+Registration/connection is not one atomic transaction. A failed setup can return
+`error.foundling_result` with a phase, compact completed registration receipt and
+connection publication/durability result. Inspect those before retrying; do not
+create a duplicate registration because its connection failed. These administrative
+error details are excluded from MCP's memory-tool schemas.
+
+`foundling connect` takes `foundling_id`, `registration_revision_id`, `local_root`
+and an optional `expected_connection_id`. `foundling disconnect` takes the foundling
+ID, exact single active registration revision and a reason; it appends history,
+not deletion. Resolve conflicts explicitly through registration updates first.
+Concurrent metadata writes can produce visible conflicting heads; a receipt is
+evidence of the appended revision, not an enduring availability guarantee.
+
+The human read commands support `--foundling-id`, `--query` (search), `--limit`
+(list/history/search), `--offset` (list/history/read), and `--registration-id`,
+`--locator`, `--limit-bytes` (read). Setup mutations, preview and promotion accept
+JSON on stdin; use the catalog for exact schemas. Search defaults to five results
+(range 1–10); read defaults to 4096 bytes (range 1–8192). Promotion supplies exact
+foundling/registration/locator/file-SHA fields and a normal `write`, without its
+`external_origin`: verified provenance is generated. Optional original author/date
+are distinct from current incorporation authorship. Read-only rejects every mutation.
+See [foundlings](foundlings.md) for source limits, reference authority and examples.
 
 Strict object input rejects duplicate, unknown or incorrectly cased fields,
 wrong types, missing required fields, trailing objects and excessive nesting.
@@ -122,6 +156,7 @@ signet does **not** initialize Git in this slice; its receipt says so explicitly
 | `binding.invalid`, `store.invalid` | 1 | Inspect selected configuration/data; no automatic repair |
 | `operation.io`, `output.invalid` | 1 | Inspect I/O/output failure and any possible partial write |
 | `sync.failed` | 1 | Inspect the returned sync phase/head and local/remote history before retrying |
+| `foundling.changed`, `foundling.unavailable`, `foundling.connection`, `foundling.failed` | 1 | Inspect the selected source/registration/connection and any partial setup result; no automatic repair or promotion |
 
 Errors include `retryable`, `write_may_have_occurred` and `inspect_before_retry`.
 Stopped synchronization may also include `sync_status`; its wrapped cancellation

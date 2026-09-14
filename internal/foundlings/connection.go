@@ -19,6 +19,22 @@ type Manager struct{ memory *memory.Service }
 
 func New(service *memory.Service) *Manager { return &Manager{memory: service} }
 
+// Preview checks an explicitly selected source without writing a registration
+// or local connection and without allowing overlap through path aliases.
+func (m *Manager) Preview(ctx context.Context, source memory.FoundlingSource, path string) (Observation, error) {
+	if _, err := m.store(); err != nil {
+		return Observation{}, err
+	}
+	root, err := canonicalDirectory(path)
+	if err != nil {
+		return Observation{}, err
+	}
+	if overlapping(root, m.memory.Root()) {
+		return Observation{}, errors.New("reference source cannot overlap the selected signet")
+	}
+	return Observe(ctx, source, root)
+}
+
 // Connection is ignored, clone-local configuration. It is never registration
 // evidence, a credential source, or permission to execute the reference.
 type Connection struct {

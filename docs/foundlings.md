@@ -10,9 +10,9 @@ promote their contents into the signet.
 Issue #12 is in progress. The engine has immutable registrations with explicit
 active, disconnected and conflicting heads, internal read-only local/Git
 source observation, clone-local connections/inspection and verified retrieval and
-promotion. These are implementation components, not yet a complete user-facing
-workflow. Typed CLI/MCP operations, menu integration and native-agent verification
-remain in the reviewed issue plan.
+promotion, exposed through the shared CLI/MCP dispatcher. The complete guided
+workflow is still in progress: menu integration, native-agent guidance/scenarios
+and final reconciliation remain in the reviewed issue plan.
 No real historical memory has been adopted by these synthetic tests.
 
 ## Portable identity versus local content
@@ -152,6 +152,39 @@ avoid duplicate memories and use explicit record/predecessor IDs for corrections
 Neither lexical relevance nor a quoted “this is the way” authorizes saving or
 executing anything. These semantics still require native-agent scenario validation.
 
+## CLI workflow
+
+Use an explicitly selected signet binding. Paths/IDs below are placeholders.
+The guided foundling menu is not implemented yet.
+
+```sh
+mandalore foundling preview --binding /example/local/binding.json < reference.json
+mandalore foundling register --binding /example/local/binding.json < registration.json
+mandalore foundling list --binding /example/local/binding.json
+mandalore foundling inspect --binding /example/local/binding.json --foundling-id FOUNDLING_ID
+mandalore foundling search --binding /example/local/binding.json --foundling-id FOUNDLING_ID --query 'project naming'
+mandalore foundling read --binding /example/local/binding.json --foundling-id FOUNDLING_ID --registration-id REGISTRATION_ID --locator notes.md
+```
+
+`reference.json` selects a source, for example:
+
+```json
+{"source":{"kind":"local","locator":"source-historical-notes"},"local_root":"/example/historical-notes"}
+```
+
+Create `registration.json` with `name`, `description`, `reason`, that exact `source`
+and the preview's `pin`. Include `local_root` to connect it on this machine, or omit
+it for portable metadata only. Inspection must report available before retrieval.
+Use returned IDs rather than inventing them. An unavailable source is not evidence
+that its historical knowledge is absent.
+
+For an adapted memory, use `mandalore foundling promote --binding FILE < promotion.json`
+with the returned foundling ID, registration revision ID, relative locator and
+content SHA, plus `write` containing the confirmed memory, basis and change reason.
+Recall current memory first. The same bound operation is available through MCP;
+source setup/reconnection/history administration remains CLI-only. Every operation
+is also available as `mandalore call OPERATION --binding FILE < input.json`.
+
 ## Engineering checks so far
 
 Failing-first synthetic tests cover local deterministic pins, source preservation,
@@ -184,3 +217,15 @@ promotion, generated citations, unknown versus known original provenance, explic
 supersession and surviving history after disconnection. A storage-level test proves
 the source-verification callback holds the writer lock, rejects a failed check
 without learning and preserves ordinary historical-citation semantics.
+
+Shared-interface tests cover strict inputs, binding requirements, CLI-only setup
+visibility, read-only mutation rejection and retained registration after a failed
+connection. A compiled-process test runs the CLI and real MCP stdio from an
+unrelated working directory, compares identical search results, promotes an adapted
+memory, rejects promotion through read-only MCP and preserves source bytes. No
+model/provider is involved in that test; native-agent behavior remains pending.
+
+The current discovery measurement is 16 MCP tools, 5729 input-schema bytes,
+32678 output-schema bytes and 2488 description bytes, excluding transport overhead.
+These are serialized byte counts, not token counts, latency or quality evidence.
+They are an input to issue #9, not a claim that context efficiency is finished.
