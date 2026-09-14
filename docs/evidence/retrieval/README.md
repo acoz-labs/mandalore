@@ -1,7 +1,7 @@
 # Retrieval engineering measurements
 
-Status: baseline and same-fixture engine comparison complete; native guidance
-evaluation remains in progress under #9 / PR #34. This is contributor evidence, not independent
+Status: baseline, same-fixture engine comparison and native guidance/learning
+evaluation complete under #9 / PR #34. This is contributor evidence, not independent
 immutable-candidate acceptance or an application performance SLA.
 
 ## Source and method

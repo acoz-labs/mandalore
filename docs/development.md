@@ -75,3 +75,12 @@ The native foundling pilot caught a nonempty-query discoverability/error problem
 that deterministic storage tests did not expose; the resulting strict API test,
 skill correction and actual fresh-session retest are documented in
 [native foundling evidence](evidence/foundlings-native/README.md).
+
+Opt-in [retrieval evaluations](retrieval.md) measure filesystem-backed memory,
+scope routing, prompt hooks, foundlings and a compiled CLI using validated synthetic
+fixtures. Corpus construction is outside timed sections. Report at least 20
+samples for p95 and distinguish returned bytes, allocations, native counters and
+fresh processes from OS-cold storage. Expensive scale measurements are not noisy
+wall-time gates in CI; deterministic quality, freshness, corruption and budget
+regressions remain required. The shared fixture generator is test-only, not a
+second supported memory writer.

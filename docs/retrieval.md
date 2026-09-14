@@ -1,7 +1,8 @@
 # Retrieval quality and efficiency
 
-Issue #9 is in progress. This guide records the evaluation method, not a claim
-that corpus-scale performance or native efficiency has already passed acceptance.
+Issue #9's engineering evaluations and bounded corrections are implemented.
+This guide records their method and limits, not independent candidate acceptance
+or a universal corpus-scale performance promise.
 Mandalore keeps scoped current evidence separate from history, conflicts and
 foundling references. Exact-byte bounds and accurate evidence take precedence
 over a smaller but misleading answer.
@@ -102,10 +103,14 @@ Neither a requested ceiling nor that warranted read proves a billed-token
 regression. See
 [native foundling evidence](evidence/foundlings-native/README.md).
 
-Record actual ordered calls, returned sizes, needed provenance/recovery versus
-redundant reads, correct final results and no-save preservation before tuning
-native guidance. Do not optimize by suppressing conflict/history or skipping a
-fresh read after relevant state changes. Candidate acceptance remains #10/#11.
+The [native comparison](evidence/retrieval/native.md) records actual ordered
+calls, returned sizes, warranted provenance/recovery reads, correct final results
+and unchanged files. The refined skill reuses an already-discovered scope ID
+for a fresh read and starts with documented defaults. It preserved warranted
+history/reference reads, ordinary confirmed learning, explicit supersession and
+fresh-session recall after a rename. Single native before/after observations do
+not isolate token cost or establish a latency distribution. Candidate acceptance
+remains #10/#11.
 
 Provisional investigation triggers are warm scoped p95 over 250 ms or fresh
 process p95 over one second at 1000 current records, and more than two redundant

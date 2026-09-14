@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "id": "revision-85d9f9b1192ec9d4b21f55115abf351b",
+  "record_id": "record-29685cda19b883a038568c3c35eb2916",
+  "kind": "fact",
+  "scope": {
+    "kind": "project",
+    "id": "copper-finch"
+  },
+  "summary": "Fictional project name: Amber Lark",
+  "body": "The fictional project's confirmed name going forward is Amber Lark, replacing Silver Heron (previously Copper Finch). The existing project scope remains copper-finch.",
+  "sensitivity": "private",
+  "volatility": "drift-prone",
+  "recorded_at": "2026-09-14T06:15:07.751795Z",
+  "effective_from": "2026-09-14T06:15:07.751795Z",
+  "authorship": {
+    "device_id": "device-9fd6ce5b7044c678ee69de5ef7240383",
+    "actor": "Example user",
+    "harness": "codex",
+    "model": null,
+    "session_id": null
+  },
+  "evidence": {
+    "basis": "user-direction",
+    "confidence": "medium",
+    "source_refs": [
+      "source-fdc8ef71b65c2c5896219e8f64624398"
+    ]
+  },
+  "supersedes": [
+    "revision-afa546cfb75e92a6321abca0e34f5ec3"
+  ],
+  "change_reason": "The user confirmed Amber Lark as the new name, replacing Silver Heron, while keeping the settled working process unchanged."
+}

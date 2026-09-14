@@ -83,8 +83,12 @@ by Git and not necessary for reads; a writer creates its local lock directory.
 Corrections preserve history through supersession edges. Concurrent heads remain
 conflicts; a successful Git merge does not prove semantic agreement. Reads must
 use current local state, not an unbounded stale process cache. Start with scoped
-lexical retrieval, byte budgets, pagination and history access; measure before
-adding indexes or vectors.
+lexical retrieval, byte budgets, pagination and history access. Lexical tokens
+ignore terminal prose periods but preserve internal dots/hyphens; absent synonyms
+remain a limitation. A graph validation reuses successful device checks only
+within that validation, never across later service operations. Full source and
+graph checks still run. See [retrieval](retrieval.md) for quality/freshness tests,
+measured history-growth costs and the evidence required before adding an index.
 
 Git remotes and harness executables are explicit dependencies. Local persistence
 works offline; cross-machine freshness requires successful sync. The initial MCP

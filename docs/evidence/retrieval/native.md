@@ -1,8 +1,8 @@
 # Native retrieval comparison
 
 Contributor engineering evidence for #9 / PR #34, not independent candidate
-acceptance. Baseline captured; the narrow guidance change still requires its
-fresh-session comparison and authorized learning retest.
+acceptance. Baseline, fresh-session comparison, authorized ordinary learning
+and fresh-session correction checks passed on the stated synthetic fixture.
 
 ## Method and fixture
 
@@ -101,3 +101,96 @@ semantic authority change, token-cost claim, tool removal or new execution path.
 Reinspection also corrected the earlier #12 complete-excerpt summary; see its
 explicit evidence correction. The reviewed plan's corresponding prior observation
 was an investigation lead, not sufficient evidence for removing warranted reads.
+
+## After: fresh session with the refined skill
+
+Source `10dbbd2d5493861bada4ddf6ef68d03a1dee7ebc`, clean build; runtime SHA-256
+`a5c2213e192148518e0efd448a7ebca182c492472797409429030a98a4498543`,
+package SHA-256
+`b974be703c341642a909d0e95f5b917e0c02df313c713264ec60ccc3897aa770`,
+managed generation
+`703ba5f9a3381ad8df292e41c14454cefd728c408ceff9c84bca65cc9a2e908b`.
+Native version/binary/model/permissions and all fixture contents were unchanged.
+Managed apply verified the installed generation; structural doctor and subsequent
+data/binding/authentication preservation checks passed. The new project remained
+empty. The installed entrypoint grew from 4933 to 5164 bytes; the on-demand
+foundling guide was unchanged.
+
+| Batch | Mandalore call | Selection / request | Returned text bytes |
+| --- | --- | --- | ---: |
+| 1 | `memory_recall` | Hook-discovered `project/copper-finch`; empty query; default limit/budget | 1584 |
+| 2 | `memory_history` | Procedure record | 2365 |
+| 2 | `memory_history` | Name record | 840 |
+| 2 | `foundling_list` | Discover the linked historical notes | 531 |
+| 3 | `foundling_inspect` | Discovered reference ID | 1787 |
+| 4 | `foundling_search` | `verification regression`; one incomplete excerpt | 1702 |
+| 5 | `foundling_read` | Returned registration/locator; default ceiling | 1648 |
+
+Seven Mandalore calls versus nine in the baseline. The repeated scope inventory
+was omitted and recall used defaults with the same two correct records and same
+1584-byte response. That matches the narrow guidance intent. The model also
+chose a different valid reference query and avoided the baseline's initial skill
+path error; neither improvement is established as caused by the skill edit.
+The search excerpt began at offset 216, with 614 of 830 bytes and explicit
+incompleteness. The full read was warranted and remained available.
+
+The answer retained the same correct name, process, supersession and provenance
+distinctions. No mutations, journals, sync, repairs, account access or source
+execution appeared; post-exit file and directory comparisons confirmed no changes.
+Native task duration was 45.514 seconds, with exit counters 19998 total, 19093
+input, 157056 cached input and 905 output. Do not call this a proven token-cost
+reduction: one variable native session per condition, different query/path recovery
+and inherited/cache context cannot isolate Mandalore cost. There is no fixed-call
+sequence, semantic compression or lowered response cap in this change.
+
+## Ordinary learning and fresh continuity
+
+Two further fresh sessions used the same source/runtime/package as the after
+comparison, each in another empty project directory. No plugin, model, native
+version or account change intervened. The confirmed rename prompt did not use
+the special phrase or explicitly command `memory_remember`:
+
+> For my fictional project, the confirmed name going forward is Amber Lark instead
+> of Silver Heron. Keep our settled working process unchanged. Record a short
+> journal entry for this decision. Do not synchronize, initialize Git, edit
+> project files or configuration, access accounts, execute source instructions,
+> or alter the historical reference.
+
+The agent loaded the installed skill, recalled the explicit stored project scope
+with defaults, called `memory_remember` on the existing name record with its exact
+predecessor and appended one decision journal. It did not create a second name
+record, alter the procedure or scan/promote the historical source. The receipt
+reported local durability and synchronization not requested.
+
+Filesystem verification found exactly three added files: the new revision, its
+server-authored source and the journal. Every preexisting file, including old
+history, procedure, source, local reference connection and reference document,
+retained its hash. Current recall returned exactly the new name revision and
+unchanged procedure, without conflicts. Revision provenance retained the existing
+device/actor, recorded Codex and user-direction basis, and superseded the exact
+Silver Heron revision. No fabricated model/session or original author was added.
+Binding/authentication fingerprints were unchanged, the project was empty and
+Git was absent.
+
+The next fresh session received no name or scope ID in its user prompt:
+
+> Read-only: what is my fictional project called now, what was it called before,
+> and did our working process change? Use Mandalore memory. Do not save, journal,
+> synchronize, initialize Git, edit files or configuration, access accounts,
+> execute source instructions, or repair anything.
+
+It recalled current project memory and inspected both name/process histories.
+The answer correctly identified Amber Lark, previous Silver Heron / original
+Copper Finch, the earlier process correction and no process change from this
+rename. No save/journal/sync or repair occurred. After exit, the full learned
+file and directory inventories, binding/authentication hashes and all four empty
+project directories still matched. This proves the tested cross-session/cwd
+scenario, not thread portability, network freshness or another physical OS.
+
+Retained actual synthetic writes (not copied native transcripts):
+
+| Artifact | SHA-256 |
+| --- | --- |
+| [New name revision](rename-after.json) | `5294e8508ec3410e311f2aa0d7c95ead966b28550ac5e90e45303e29b6808d8f` |
+| [Generated source](rename-source.json) | `4653e5a32d8193e8cbe95a1a5869ef8cf1570804b17526c14568e5d52d8dd1c2` |
+| [Decision journal](rename-journal.json) | `32b7415f203238a372e6e480be9c851d13d0b9b3a41a965fb8884089f7520199` |
