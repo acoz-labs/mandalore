@@ -168,6 +168,7 @@ func readJSON(path string, out any) error {
 	}
 	d := json.NewDecoder(bytes.NewReader(b))
 	d.DisallowUnknownFields()
+	d.UseNumber() // Opaque extension numbers must survive history/recall unchanged.
 	if err = d.Decode(out); err != nil {
 		return fmt.Errorf("%s: %w", path, err)
 	}
@@ -306,16 +307,20 @@ func (s *Store) AddSource(source Source) error {
 }
 
 func (s *Store) validateSource(source Source) error {
+	if err := validateSourceMetadata(source, s.deviceExists); err != nil {
+		return err
+	}
+	return s.validateOrigin(source.ExternalOrigin)
+}
+
+func validateSourceMetadata(source Source, device func(string) error) error {
 	if source.Version != 1 || !identifier.MatchString(source.ID) || strings.TrimSpace(source.Summary) == "" || strings.TrimSpace(source.Kind) == "" {
 		return errors.New("invalid source record")
 	}
 	if _, err := time.Parse(time.RFC3339Nano, source.RecordedAt); err != nil {
 		return err
 	}
-	if err := s.deviceExists(source.DeviceID); err != nil {
-		return err
-	}
-	return s.validateOrigin(source.ExternalOrigin)
+	return device(source.DeviceID)
 }
 
 func (s *Store) readSource(id string, out *Source) error {

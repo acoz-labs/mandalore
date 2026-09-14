@@ -1,0 +1,1 @@
+{"schema_version":1,"id":"change-readme","recorded_at":"2026-09-06T12:00:00Z","base_commit":"","checkpoint_observer":{"device_id":"device-desktop","actor":"Example","harness":"codex","model":null,"session_id":null},"files":[{"path":"README.md","before":null,"after":{"git_object_id":"1111111111111111111111111111111111111111","git_mode":"100644"}}]}

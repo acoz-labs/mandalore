@@ -54,7 +54,7 @@ func TestMCPUsesSharedContractAndRejectsDuplicates(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if bytes.Contains(data, []byte(`"connection_result"`)) || bytes.Contains(data, []byte(`"connection_report"`)) {
+		if bytes.Contains(data, []byte(`"connection_result"`)) || bytes.Contains(data, []byte(`"connection_report"`)) || bytes.Contains(data, []byte(`"migration_result"`)) {
 			t.Fatal("installation-only schemas consume memory-tool context", tool.Name, len(data))
 		}
 		if tool.Name == "memory_checkpoint" {

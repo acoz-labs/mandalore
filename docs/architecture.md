@@ -27,6 +27,7 @@ separate from independent product acceptance; no release is implied.
 | `internal/mcp` | Typed stdio MCP access over the same memory engine |
 | `internal/codex` | Bounded read-only native event adapter; no transcript access or synchronization |
 | `internal/install` | Native connections, runtime pinning, doctor/update/repair |
+| `internal/migration` | Read-only legacy census, explicit out-of-place conversion and retained recovery receipts |
 | `internal/console` | Presentation-only terminal prompts, navigation and bounded-width reports |
 | `plugins/codex` | First native plugin and `this-is-the-way` skill |
 | `plugins/pi` | Reserved second integration after Codex acceptance |
@@ -52,6 +53,15 @@ doctor does not establish authentication, hook trust, live MCP or fresh context.
 The host agent supplies semantic interpretation. No separate inference service
 or embedding subscription is required. Memory is evidence, not executable
 permission. Explicit no-write boundaries apply to hooks, CLI and MCP alike.
+
+Migration is CLI-only administration, not a model-facing memory mutation. The
+converter performs bounded strict decoding and canonical-path validation, retains
+raw JSON values, and reuses `memory.ValidateSnapshot` for closed-set provenance
+and graph checks without filesystem access. That validation shares the normal
+engine's rules; it is not a second memory implementation. Only the supported
+legacy memory-only format is accepted. Canonical on-disk validation runs again
+before no-replace publication. Native inventory reuses the bounded installer
+adapter and distinguishes potential writers from active sessions.
 
 The engine has no assistant identity, capability registry, provider adapter,
 subprocess execution, networking or synchronization dependency. `net/url` is used

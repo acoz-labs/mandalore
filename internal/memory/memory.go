@@ -108,6 +108,23 @@ func (s *Store) validateGraph(records []Revision) error {
 }
 
 func (s *Store) validateGraphWithSources(records []Revision, pending map[string]Source) error {
+	return validateRevisionGraph(records, s.Signet.ID, s.deviceExists, func(id string) error {
+		source, exists := pending[id]
+		if !exists {
+			if err := readJSON(filepath.Join(s.Root, "memory/sources", id+".json"), &source); err != nil {
+				return fmt.Errorf("source %s: %w", id, err)
+			}
+		}
+		if source.ID != id {
+			return errors.New("source ID mismatch")
+		}
+		return s.validateSource(source)
+	})
+}
+
+// Resolve provenance through caller-owned lookups so a migration preflight can
+// validate the same graph entirely in memory, without a filesystem fallback.
+func validateRevisionGraph(records []Revision, signetID string, device, source func(string) error) error {
 	schema, err := memorySchema()
 	if err != nil {
 		return err
@@ -130,23 +147,14 @@ func (s *Store) validateGraphWithSources(records []Revision, pending map[string]
 			return fmt.Errorf("duplicate revision %s", r.ID)
 		}
 		byID[r.ID] = r
-		if err = s.deviceExists(r.Authorship.DeviceID); err != nil {
+		if err = device(r.Authorship.DeviceID); err != nil {
 			return err
 		}
-		if r.Scope.Kind == "signet" && r.Scope.ID != s.Signet.ID {
+		if r.Scope.Kind == "signet" && r.Scope.ID != signetID {
 			return errors.New("signet-wide scope must match the selected signet")
 		}
 		for _, id := range r.Evidence.SourceRefs {
-			source, exists := pending[id]
-			if !exists {
-				if err = readJSON(filepath.Join(s.Root, "memory/sources", id+".json"), &source); err != nil {
-					return fmt.Errorf("source %s: %w", id, err)
-				}
-			}
-			if source.ID != id {
-				return errors.New("source ID mismatch")
-			}
-			if err := s.validateSource(source); err != nil {
+			if err := source(id); err != nil {
 				return err
 			}
 		}

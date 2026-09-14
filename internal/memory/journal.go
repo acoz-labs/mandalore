@@ -19,6 +19,14 @@ type JournalEntry struct {
 	Authorship Authorship `json:"authorship"`
 }
 
+func validateJournalEntry(entry JournalEntry, device func(string) error) error {
+	_, err := time.Parse(time.RFC3339Nano, entry.RecordedAt)
+	if err != nil || entry.Version != 1 || !identifier.MatchString(entry.ID) || strings.TrimSpace(entry.Kind) == "" || strings.TrimSpace(entry.Summary) == "" {
+		return errors.New("invalid journal entry")
+	}
+	return validateAuthorship(entry.Authorship, device)
+}
+
 func (s *Store) RecordEvent(kind, summary string, author Authorship) (JournalEntry, error) {
 	entry := JournalEntry{Version: 1, ID: NewID("event"), Kind: kind, Summary: summary, RecordedAt: time.Now().UTC().Format(time.RFC3339Nano), Authorship: author}
 	if strings.TrimSpace(kind) == "" || strings.TrimSpace(summary) == "" {
@@ -66,15 +74,15 @@ func (s *Store) Journal(query string, limit int) ([]JournalEntry, error) {
 		if err := readJSON(path, &entry); err != nil {
 			return err
 		}
-		at, err := time.Parse(time.RFC3339Nano, entry.RecordedAt)
-		if err != nil || entry.Version != 1 || !identifier.MatchString(entry.ID) || seen[entry.ID] || strings.TrimSpace(entry.Kind) == "" || strings.TrimSpace(entry.Summary) == "" {
-			return errors.New("invalid journal entry")
+		if err := validateJournalEntry(entry, s.deviceExists); err != nil {
+			return err
 		}
+		if seen[entry.ID] {
+			return errors.New("duplicate journal entry")
+		}
+		at, _ := time.Parse(time.RFC3339Nano, entry.RecordedAt)
 		if path != filepath.Join(s.Root, "memory/events", at.UTC().Format("2006/01"), entry.ID+".json") {
 			return errors.New("journal ID/date/path mismatch")
-		}
-		if err := s.ValidateAuthorship(entry.Authorship); err != nil {
-			return err
 		}
 		seen[entry.ID] = true
 		if strings.TrimSpace(query) == "" || relevance(Revision{Summary: entry.Summary, Body: entry.Kind}, query) > 0 {

@@ -40,9 +40,14 @@ const help = `Mandalore — durable memory across tools
   mandalore connection apply < approved-plan.json
   mandalore connection doctor [profile options]
   mandalore connection repair --connection-root DIR [--apply]
+  mandalore migration preflight --source DIR --output NEW-DIR --device-label LABEL --actor NAME
+  mandalore migration apply --writers-stopped < reviewed-preflight.json
 
 Profile options: --state-dir DIR, --native-home DIR, --native-binary FILE.
 Connection plan/doctor/repair preview do not activate a connection.
+Migration preflight accepts optional --legacy-binding FILE and explicit
+--native-home DIR --native-binary FILE for native inventory. No implicit defaults.
+Migration does not activate a writer or copy Git history/configuration.
 
 Memory options: --limit N, --offset N (scopes/history), --record-id ID (history),
 --budget-bytes N (recall), --query TEXT (recall/journal).
@@ -71,6 +76,9 @@ func bad(out io.Writer, message string) int {
 }
 
 func run(ctx context.Context, args []string, input io.Reader, out, errout io.Writer) int {
+	if len(args) > 0 && args[0] == "migration" {
+		return runMigration(ctx, args[1:], input, out)
+	}
 	if len(args) > 0 && args[0] == "menu" {
 		return runMenu(ctx, args[1:], input, out)
 	}

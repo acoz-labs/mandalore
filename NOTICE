@@ -4,7 +4,8 @@ tests, plus shared local MCP adapter, Git checkpoint and reconciliation concepts
 the thin read-only Codex hook and shell-bridge patterns, and selected local
 installation planning, artifact staging, native registration and inspection
 primitives, plus terminal prompt, navigation and report-formatting primitives
-and synthetic tests, from:
+and synthetic tests, plus legacy source-change validation for explicit memory-only
+migration, from:
 
 My Friday — https://github.com/acoz-labs/my-friday
 Source commit: f3d337bca419fdaf82bd9a6ce31ebde7f3748eb8
