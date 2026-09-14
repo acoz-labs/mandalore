@@ -62,7 +62,8 @@ Functional verdict: pass for selective adaptation and attribution. Efficiency
 finding: searching `verification` did not match the document's different word
 forms. The next empty query incorrectly encouraged source inspection through a
 generic error; the agent recovered with `project`. The 830-byte search excerpt
-was complete, so an extra `foundling_read` was not necessary. The corrected
+was complete and the agent promoted from it without a separate `foundling_read`.
+The corrected
 interface adds explicit nonempty literal-query guidance and a safe `input.invalid`
 diagnosis. A failing-first API regression covers empty/whitespace, oversized and
 too-many-term queries without suggesting source repair. This correction requires
@@ -131,9 +132,18 @@ journal, sync or configuration-write calls. This validates the stated read-only
 scenario, not universal resistance to arbitrary hostile inputs.
 
 Efficiency observations for #9: the fresh session requested a 16,000-byte recall
-budget despite this small fixture, and reread the already complete search excerpt.
-Neither changed results or state, but both merit measurement rather than declaring
-the workflow maximally efficient. Exit counters displayed 36,688 total tokens,
+budget despite this small fixture. Its `check` search returned 734 bytes at offset
+96 of the 830-byte file, explicitly `complete: false` / `truncated: true`.
+Reading the complete document was justified, not a demonstrated redundant read.
+Exit counters displayed 36,688 total tokens,
 35,755 input, 142,464 cached input and 933 output. Inherited context makes these
 unsuitable as isolated Mandalore token-cost comparisons. No exact latency or
 cross-platform acceptance is inferred from this second run.
+
+Evidence correction during #9: an earlier version of this summary incorrectly
+described both runs as rereading a complete search excerpt. Reinspection of the
+actual ordered calls and response completeness/offset fields established the
+distinction above: initial promotion used the complete excerpt directly; the
+fresh consultation read after an incomplete excerpt. This corrects the efficiency
+classification, not the preserved functional/no-save findings. Do not optimize
+away warranted provenance or continuation reads based on the earlier summary.

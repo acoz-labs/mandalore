@@ -1,0 +1,19 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/acoz-labs/mandalore/internal/codex
+cpu: Apple M1 Pro
+BenchmarkPromptHook
+BenchmarkPromptHook/records-100/depth-1/conflict-every-0
+    evaluation_benchmark_test.go:17: corpus: records=100 revisions=100 files=213 bytes=121318; setup excluded
+    evaluation_benchmark_test.go:17: corpus: records=100 revisions=100 files=213 bytes=121318; setup excluded
+BenchmarkPromptHook/records-100/depth-1/conflict-every-0-10         	      20	  28766804 ns/op	        28.77 p50-ms	        31.01 p95-ms	      3846 result-B/op	 7407756 B/op	   81366 allocs/op
+BenchmarkPromptHook/records-1000/depth-1/conflict-every-0
+    evaluation_benchmark_test.go:17: corpus: records=1000 revisions=1000 files=2013 bytes=1211038; setup excluded
+    evaluation_benchmark_test.go:17: corpus: records=1000 revisions=1000 files=2013 bytes=1211038; setup excluded
+BenchmarkPromptHook/records-1000/depth-1/conflict-every-0-10        	      20	 279172850 ns/op	       278.7 p50-ms	       283.9 p95-ms	      3852 result-B/op	63501183 B/op	  661723 allocs/op
+BenchmarkPromptHook/records-10000/depth-1/conflict-every-0
+    evaluation_benchmark_test.go:17: corpus: records=10000 revisions=10000 files=20013 bytes=12108238; setup excluded
+    evaluation_benchmark_test.go:17: corpus: records=10000 revisions=10000 files=20013 bytes=12108238; setup excluded
+BenchmarkPromptHook/records-10000/depth-1/conflict-every-0-10       	      20	3097282929 ns/op	      3090 p50-ms	      3122 p95-ms	      3858 result-B/op	633556769 B/op	 6458134 allocs/op
+PASS
+ok  	github.com/acoz-labs/mandalore/internal/codex	88.999s

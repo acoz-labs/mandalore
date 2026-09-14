@@ -20,11 +20,14 @@ local recall; state the limitation if material. Do not repeatedly retry a failed
 sync during the same task without a relevant change.
 
 An unscoped `memory_recall` searches only signet-wide knowledge. For projects,
-accounts or tasks, use `memory_scopes` to discover stable stored IDs, then pass
-an explicit `scope` to recall. Do not guess an existing scope from cwd or a renamed
-project's current display name. Page inventories when needed. An empty search is
-not proof of absence: try a broader query or empty query in the relevant scope.
-Keep results small and expand only when the task needs it. Use `memory_history`
+accounts or tasks, pass an explicit `scope`. Reuse a stable stored ID already
+discovered in the hook inventory or this conversation when it still identifies
+the intended entity; otherwise use `memory_scopes` and page as needed. Do not guess
+an existing scope from cwd or a renamed project's current display name. A scope
+ID routes a fresh read; it does not make previously recalled content current.
+An empty search is not proof of absence: try a broader query or empty query in
+the relevant scope. Start with recall's compact defaults (five hits, 8192 result
+bytes); expand when omissions or the task justify more. Use `memory_history`
 for provenance, superseded decisions or conflicting current heads. Conflicting
 heads are unresolved evidence, not interchangeable current guidance.
 

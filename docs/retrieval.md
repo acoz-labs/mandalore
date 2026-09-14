@@ -95,8 +95,11 @@ Run suites sequentially for comparable host evidence, not concurrently.
 
 Schema sizes, tool response bytes, hook text, requested context ceilings and
 native aggregate token counters are distinct. Prior foundling tests observed
-a 16000-byte recall request for two records and a repeat read of an already
-complete source excerpt. Neither alone proves a billed-token regression. See
+a 16000-byte recall request for two records. An earlier report of a redundant
+complete-excerpt read was corrected by inspecting actual response flags: the
+consultation excerpt was incomplete, so the subsequent read was warranted.
+Neither a requested ceiling nor that warranted read proves a billed-token
+regression. See
 [native foundling evidence](evidence/foundlings-native/README.md).
 
 Record actual ordered calls, returned sizes, needed provenance/recovery versus
