@@ -13,6 +13,11 @@ runtime, binding, native binary/profile and machine-local state directory.
 Apply accepts the emitted plan on stdin; repair previews by default and requires
 explicit apply for mutation. Connection update is a new plan with a selected
 runtime; it does not rewrite the currently executing CLI or shell PATH.
+The preview identifies both the selected runtime and the preparing toolkit's
+embedded plugin version/digest; these are not silently assumed identical. Reject
+unsupported product/interface combinations and verify the staged hook command
+before native activation. Published update orchestration later runs the chosen
+release toolkit to obtain its own matching package, under #11.
 Advertise equivalent typed CLI-only operations through the operation catalog;
 do not attach machine-configuration mutations to the normal bound memory MCP.
 

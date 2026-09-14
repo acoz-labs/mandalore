@@ -1,8 +1,8 @@
 # Solution Design: everyday setup and recovery
 
-- **Status:** Draft
+- **Status:** Final
 - **Issue:** #7
-- **Planning PR:** Pending
+- **Planning PR:** #27
 - **Repository basis:** 5c55bbdd8b50b21d610274f9d7479417ca967671
 - **Execution envelope:** implementation
 
