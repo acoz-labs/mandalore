@@ -1,8 +1,8 @@
 # Solution Design: foundling reference workflow
 
-- **Status:** Draft
+- **Status:** Final
 - **Issue:** #12
-- **Planning PR:** Pending
+- **Planning PR:** #31
 - **Repository basis:** ad621e58ba65eaf2cfcb66a73b3801ff4ccebb8d
 - **Execution envelope:** implementation
 
