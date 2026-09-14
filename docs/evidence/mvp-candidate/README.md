@@ -97,6 +97,13 @@ timings are one local sample, not a benchmark or cross-platform claim.
 
 ## Retained evidence and limits
 
+A subsequent [native learning and recovery checkpoint](native.md) verifies fresh
+Codex passive learning, same-record correction, explicit consolidation/journals,
+compaction, unavailable-binding hook/MCP behavior, restored fresh-session recall,
+quoted-cue/no-save boundaries and interrupted-work recovery on this exact artifact.
+That checkpoint updated only the owned synthetic native connection and preserves
+its actual limits separately from the initial CLI/MCP-only work above.
+
 `candidate.json` is the actual verification receipt. `history.json`, `recall.json`,
 `journal.json` and `incorporation-source.json` are synthetic toolkit/store outputs.
 `reference-search.json` preserves the source/authority distinction and
@@ -104,8 +111,8 @@ timings are one local sample, not a benchmark or cross-platform claim.
 file other than itself. No credentials, local bindings, workstation paths or raw
 native transcripts are published.
 
-Keep #10 open. Fresh native learning/cue/journal/compaction/interrupt/hook/foundling
-scenarios, recovery/offline/concurrent/ambiguous-write cases, physical-machine
+Keep #10 open. Native foundling/live external-refresh scenarios,
+recovery/offline/concurrent/ambiguous-write cases, physical-machine
 coverage and the full rendered install/update/repair journey still need their
 exact-candidate evidence. Independent acceptance and publication prerequisites
 remain separate. Cross-builds and a local bare remote are not other-platform or
