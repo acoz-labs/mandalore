@@ -6,6 +6,16 @@ For the current MVP effort, the [self-review authorization](../decisions/0001-mv
 supersedes separate engineering reviewer/product sign-off and planning-merge
 prerequisites in this standard. It does not waive checks or release acceptance.
 
+For the one retained MVP candidate, the explicitly authorized
+[owner-acceptance exception](../decisions/0002-mvp-owner-acceptance.md) permits
+personally confirmed owner review despite matching PR authorship. Configure
+`MVP_ACCEPTANCE_OWNER` and the normal `ACCEPTANCE_ACTORS`, then select the
+default-false `owner_review_confirmed` workflow input only for an actual owner
+verdict. Exact repository/candidate/artifact/issue limits are enforced in both
+author checks. Other reviewers and candidates retain the normal policy. Clearing
+the owner variable disables further exception submissions. This is not release
+authorization and does not remove prior decisions.
+
 ## Standard Flow
 
 1. Capture an ambiguous opportunity as a discovery issue and move it to

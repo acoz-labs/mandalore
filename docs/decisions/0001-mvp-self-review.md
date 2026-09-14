@@ -30,3 +30,7 @@ to retain the inspected test version, reviewing the authored test hooks and
 driving the designated test pane. Preserve the native trust mechanism and record
 what was selected; do not substitute an unattended trust bypass. This removes a
 routine dialogue bottleneck, not the independent release-acceptance boundary.
+
+The later [candidate-specific owner acceptance decision](0002-mvp-owner-acceptance.md)
+supersedes only the independent-author restriction within its exact MVP scope.
+Engineering self-review still cannot supply the owner's product verdict.
