@@ -11,8 +11,8 @@ Issue #12 is in progress. The engine has immutable registrations with explicit
 active, disconnected and conflicting heads, internal read-only local/Git
 source observation, clone-local connections/inspection and verified retrieval and
 promotion, exposed through the shared CLI/MCP dispatcher. The complete guided
-workflow is still in progress: menu integration, native-agent guidance/scenarios
-and final reconciliation remain in the reviewed issue plan.
+workflow is still in progress: the guided menu is implemented, but actual rendered
+evidence, native-agent guidance/scenarios and final reconciliation remain pending.
 No real historical memory has been adopted by these synthetic tests.
 
 ## Portable identity versus local content
@@ -155,7 +155,7 @@ executing anything. These semantics still require native-agent scenario validati
 ## CLI workflow
 
 Use an explicitly selected signet binding. Paths/IDs below are placeholders.
-The guided foundling menu is not implemented yet.
+`mandalore menu` also provides guided foundling management; see [setup](setup.md).
 
 ```sh
 mandalore foundling preview --binding /example/local/binding.json < reference.json
@@ -229,3 +229,9 @@ The current discovery measurement is 16 MCP tools, 5729 input-schema bytes,
 32678 output-schema bytes and 2488 description bytes, excluding transport overhead.
 These are serialized byte counts, not token counts, latency or quality evidence.
 They are an input to issue #9, not a claim that context efficiency is finished.
+
+Automated menu tests cover register/decline/incomplete confirmation, read-only list
+and search, disconnection, a moved local path, explicit superseding pin updates,
+failed output/cancellation and a completed registration retained after connection
+failure. Actual rendered terminal evidence is a separate gate, not established by
+these scripted tests.

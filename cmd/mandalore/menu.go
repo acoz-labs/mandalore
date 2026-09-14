@@ -71,13 +71,13 @@ func runMenu(ctx context.Context, args []string, input io.Reader, out io.Writer)
 		m.binary, _ = os.Executable()
 	}
 	m.block(console.Block{Title: "Mandalore", Body: "Memory across time and space. Opening this menu changes nothing. A signet is your private memory bank."})
-	choices := []string{"Signet · Create a new local memory bank", "Signet · Connect an existing local clone", "Signet · Inspect selected memory and sync status", "Signet · Synchronize with its configured remote", "Codex · Connect or update from a local artifact", "Codex · Doctor (read-only structural checks)", "Codex · Repair from a retained connection", "Exit"}
+	choices := []string{"Signet · Create a new local memory bank", "Signet · Connect an existing local clone", "Signet · Inspect selected memory and sync status", "Signet · Synchronize with its configured remote", "Codex · Connect or update from a local artifact", "Codex · Doctor (read-only structural checks)", "Codex · Repair from a retained connection", "Foundlings · Manage historical references", "Exit"}
 	for {
 		if m.outputErr != nil {
 			return 1
 		}
-		n, err := m.selectItem("What would you like to do?", choices, 7)
-		if err == nil && n == 7 {
+		n, err := m.selectItem("What would you like to do?", choices, 8)
+		if err == nil && n == 8 {
 			break
 		}
 		if err == nil {
@@ -96,6 +96,8 @@ func runMenu(ctx context.Context, args []string, input io.Reader, out io.Writer)
 				err = m.doctor()
 			case 6:
 				err = m.repair()
+			case 7:
+				err = m.foundlings()
 			}
 		}
 		if m.ctx.Err() != nil {
@@ -258,6 +260,9 @@ func (m *menu) call(name string, value any, bound bool) api.Envelope {
 
 func (m *menu) outcome(title string, v api.Envelope) error {
 	if !v.OK {
+		if v.Error.FoundlingResult != nil {
+			m.foundlingReceipt(*v.Error.FoundlingResult)
+		}
 		if v.Error.ConnectionReport != nil {
 			m.report(*v.Error.ConnectionReport)
 		}
