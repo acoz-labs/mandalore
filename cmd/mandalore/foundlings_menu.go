@@ -6,12 +6,22 @@ import (
 	"strconv"
 
 	"github.com/acoz-labs/mandalore/internal/api"
+	"github.com/acoz-labs/mandalore/internal/binding"
 	"github.com/acoz-labs/mandalore/internal/console"
 	"github.com/acoz-labs/mandalore/internal/foundlings"
 	"github.com/acoz-labs/mandalore/internal/memory"
 )
 
 func (m *menu) foundlings() error {
+	// A binding file can be explicitly replaced by another process while a user
+	// reads a confirmation. Preserve this journey's selected bank and authorship,
+	// like a running MCP connection; reopen the menu to select a changed binding.
+	s, err := binding.Open(m.binding, "menu")
+	if err != nil {
+		return errors.New("cannot open the selected binding; inspect it or connect a signet first")
+	}
+	m.foundlingAPI = api.New(s, false)
+	defer func() { m.foundlingAPI = nil }()
 	m.block(console.Block{Title: "Foundlings", Body: "Historical references, not current guidance. Source paths stay local to this clone. Nothing is imported, fetched or executed automatically.", Fields: []console.Field{{Label: "Selected binding", Value: m.binding}}})
 	for {
 		n, err := m.selectItem("Manage historical references", []string{"List references and local availability", "Register a reference", "Connect an existing reference on this machine", "Inspect, search or update a reference pin", "Disconnect a reference", "Back"}, 5)

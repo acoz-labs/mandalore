@@ -69,6 +69,11 @@ No assistant launcher, capability framework or live predecessor import is added.
 
 **Foundlings · Manage historical references** uses the selected signet binding.
 References do not become current memory merely by being registered or searched.
+The submenu pins that signet and its incorporation authorship until Back/exit.
+If another process replaces the binding file while a confirmation is open, the
+reviewed operation cannot jump to a different bank. Return to the main menu and
+re-enter Foundlings to deliberately load a changed binding. Memory and reference
+files are still read fresh; this pins selection, not a cached knowledge snapshot.
 
 - **List** checks a page of registrations and local availability without displaying
   document bodies. Use Next for further pages; missing paths are not absent knowledge.

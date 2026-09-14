@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"os"
 	"path/filepath"
@@ -11,6 +12,52 @@ import (
 	"github.com/acoz-labs/mandalore/internal/binding"
 	"github.com/acoz-labs/mandalore/internal/memory"
 )
+
+type bindingSwapWriter struct {
+	buffer    bytes.Buffer
+	onConfirm func()
+}
+
+func (w *bindingSwapWriter) String() string { return w.buffer.String() }
+
+func (w *bindingSwapWriter) Write(p []byte) (int, error) {
+	if w.onConfirm != nil && strings.Contains(string(p), "Apply these changes?") {
+		f := w.onConfirm
+		w.onConfirm = nil
+		f()
+	}
+	return w.buffer.Write(p)
+}
+
+func TestFoundlingMenuPinsItsSelectedSignetThroughConfirmation(t *testing.T) {
+	first, bind, source := foundlingMenuFixture(t)
+	second, secondBind, _ := foundlingMenuFixture(t)
+	other, err := os.ReadFile(secondBind)
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := &bindingSwapWriter{onConfirm: func() {
+		if err := os.WriteFile(bind, other, 0600); err != nil {
+			t.Fatal(err)
+		}
+	}}
+	// The first confirmation must keep its original bank. Back and re-entry
+	// deliberately pick up the replacement binding for a second registration.
+	script := registerMenuScript(source, "2") + "6\n" + registerMenuScript(source, "2") + "6\n9\n"
+	code := run(context.Background(), []string{"menu", "--plain", "--binding", bind}, strings.NewReader(script), out, out)
+	if code != 0 || out.onConfirm != nil {
+		t.Fatal("confirmation was not exercised", code, out.String())
+	}
+	for _, target := range []struct {
+		service *memory.Service
+		count   int
+	}{{first, 1}, {second, 1}} {
+		p, err := target.service.FoundlingsPage(0, 5)
+		if err != nil || len(p.Items) != target.count {
+			t.Fatal("confirmation redirected to another signet", p, err)
+		}
+	}
+}
 
 func foundlingMenuFixture(t *testing.T) (*memory.Service, string, string) {
 	t.Helper()

@@ -85,6 +85,10 @@ Inspection does not acquire a writer lock, create missing local directories,
 repair a connection or publish a registration. Local paths never become portable
 registration fields. Setting up the same signet on another machine requires its
 own local connection; there is no fallback to another bank's configuration.
+The management submenu retains the selected signet service/authorship through
+confirmation. Replacing its binding file cannot redirect a pending registration;
+Back and re-entry deliberately reload selection. CLI invocations select their
+binding once per invocation; a running MCP server retains its startup selection.
 
 ## Eligibility and bounds
 

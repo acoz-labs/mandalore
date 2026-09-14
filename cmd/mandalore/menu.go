@@ -24,15 +24,16 @@ import (
 // This adapter owns conversation flow only. Every durable operation delegates
 // to the same API that non-interactive callers use.
 type menu struct {
-	ctx       context.Context
-	in        *bufio.Reader
-	out       io.Writer
-	tui       *console.Console
-	binding   string
-	profile   install.Profile
-	binary    string
-	failed    bool
-	outputErr error
+	ctx          context.Context
+	in           *bufio.Reader
+	out          io.Writer
+	tui          *console.Console
+	binding      string
+	profile      install.Profile
+	binary       string
+	failed       bool
+	outputErr    error
+	foundlingAPI *api.API // Selected signet is fixed while its reference menu is open.
 }
 
 var errMenuInputLimit = errors.New("answer exceeds 4096 bytes; menu stopped without interpreting remaining input")
@@ -248,6 +249,9 @@ func (m *menu) call(name string, value any, bound bool) api.Envelope {
 		return api.Failure("input.invalid", "Cannot encode operation input.", false)
 	}
 	a := api.New(nil, false)
+	if bound && m.foundlingAPI != nil && strings.HasPrefix(name, "foundling_") {
+		return m.foundlingAPI.Call(m.ctx, name, raw)
+	}
 	if bound {
 		s, err := binding.Open(m.binding, "menu")
 		if err != nil {
