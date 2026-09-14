@@ -17,6 +17,39 @@ These declarations support verification; they are not publisher authentication o
 proof that the binary has passed independent acceptance. See
 [candidate builds](development.md#local-distribution-candidates).
 
+## Read-only release inspection
+
+```sh
+mandalore release inspect --candidate /example/candidate --read-only
+mandalore release inspect --read-only
+```
+
+The first command checks all files in an explicitly selected local candidate,
+without executing them or contacting a provider. The second checks the official
+latest stable release when one exists. Use `--version VERSION` for an explicit
+published version, including a prerelease. `--candidate` and `--version` are
+mutually exclusive. No release is currently published, so official inspection
+honestly reports `release.unavailable`, not a fabricated update.
+
+Agents can use the equivalent typed `release_inspect` operation with
+`{"candidate":"/example/candidate"}` or `{"version":"1.0.0"}` as structured
+stdin. It is advertised as CLI-only, unbound, read-only and potentially networked;
+it is not listed or callable through memory MCP and adds no memory-tool schema.
+An invalid or absent memory binding does not affect release inspection.
+
+The result distinguishes local byte/content verification from published-release
+inspection. Published inspection checks the official immutable release ID, exact
+tag commit, manifest/checksum bytes and GitHub asset IDs/sizes/digests. It does
+not claim that every executable was downloaded or run. Asset downloads recheck
+the pinned release ID and exact inspection before accepting matching bytes;
+`latest` is not reselected silently. None of these checks installs a runtime,
+activates a native connection, writes memory or establishes independent acceptance.
+
+Only public HTTPS GitHub API/release hosts are used, with bounded redirects,
+headers, responses and timeouts. No GitHub CLI login, provider token or cookies
+are borrowed. Unavailable, incompatible, mutable, corrupt or rate-limited releases
+fail visibly; local candidate inspection remains available offline.
+
 ## Try a synthetic signet
 
 Build with the pinned toolchain:

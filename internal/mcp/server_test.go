@@ -44,7 +44,7 @@ func TestMCPUsesSharedContractAndRejectsDuplicates(t *testing.T) {
 		if tool.InputSchema == nil || tool.OutputSchema == nil {
 			t.Fatal("missing schema")
 		}
-		if tool.Name == "signet_create" || tool.Name == "foundling_register" || tool.Name == "foundling_connect" || tool.Name == "foundling_disconnect" || tool.Name == "foundling_preview" || tool.Name == "foundling_history" {
+		if tool.Name == "signet_create" || tool.Name == "release_inspect" || tool.Name == "foundling_register" || tool.Name == "foundling_connect" || tool.Name == "foundling_disconnect" || tool.Name == "foundling_preview" || tool.Name == "foundling_history" {
 			t.Fatal("cross-bank admin exposed")
 		}
 		if tool.Annotations == nil || tool.Annotations.OpenWorldHint == nil || *tool.Annotations.OpenWorldHint != (tool.Name == "memory_sync") {
@@ -84,6 +84,9 @@ func TestMCPUsesSharedContractAndRejectsDuplicates(t *testing.T) {
 		if err := resolved.Validate(generic); err != nil {
 			t.Fatalf("%s result violates schema: %v", tool.Name, err)
 		}
+	}
+	if _, err := client.CallTool(ctx, &sdk.CallToolParams{Name: "release_inspect", Arguments: json.RawMessage(`{"candidate":"/synthetic/unavailable"}`)}); err == nil {
+		t.Fatal("CLI-only release operation was callable through memory MCP")
 	}
 	for _, raw := range []string{`{"query":"one","query":"two"}`, `{"unknown":"PRIVATE-CANARY"}`, `{"limit":-1}`, `{}`} {
 		result, err := client.CallTool(ctx, &sdk.CallToolParams{Name: "memory_recall", Arguments: json.RawMessage(raw)})

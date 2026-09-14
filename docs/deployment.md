@@ -6,9 +6,15 @@ Delivery profile: **artifact**. There is no staging service or hosted production
 application. GitHub Releases will distribute the CLI and native plugins. No
 Mandalore runtime or release is published yet.
 
+The product now has a pinned [local candidate builder](development.md#local-distribution-candidates),
+checksummed platform/plugin assets, a compatibility manifest and read-only release
+inspection. [Engineering evidence](evidence/distribution/README.md) records the
+actual scope tested. Owned CLI installation/update and complete candidate-retention
+and same-byte publication integration remain in progress under #11.
+
 The template supplies nomination, acceptance and release-ledger workflows, not
-this product's build matrix, checksummed assets, installer or update manifest.
-Those remain tracked work; workflow YAML alone does not establish distribution.
+an already completed product publisher. Workflow YAML alone does not establish
+distribution, and these local engineering artifacts are not published releases.
 
 ## Release contract
 
@@ -25,8 +31,11 @@ Those remain tracked work; workflow YAML alone does not establish distribution.
 6. Verify downloadable assets, checksums/manifests, fresh install, update and
    recovery before completing the issue/project release ledger.
 
-Repository creation does not authorize a release. SemVer, asset naming and
-promotion commands are finalized in the distribution issue. Never treat old
+Repository creation does not authorize a release. `VERSION` declares the intended
+SemVer release, initially 1.0.0, with tag `vVERSION`. Candidate identity additionally
+binds the exact commit and manifest digest; a shared version label is insufficient.
+Current asset names and compatibility fields are defined by the v1 manifest.
+Promotion commands are still being completed in the distribution issue. Never treat old
 My Friday releases as compatible Mandalore updates just because they contain Go.
 
 ## Configuration and recovery

@@ -9,6 +9,7 @@ import (
 	"os"
 	"syscall"
 
+	"github.com/acoz-labs/mandalore/internal/distribution"
 	"github.com/acoz-labs/mandalore/internal/install"
 	"github.com/acoz-labs/mandalore/internal/memory"
 	"github.com/acoz-labs/mandalore/internal/migration"
@@ -178,7 +179,7 @@ var operations = []Operation{
 }
 
 func Catalog() []Operation {
-	return append(append(append(append(append(append([]Operation(nil), operations...), administration...), synchronization...), connections...), migrations...), foundlingOperations...)
+	return append(append(append(append(append(append(append([]Operation(nil), operations...), administration...), synchronization...), connections...), migrations...), foundlingOperations...), releases...)
 }
 
 type API struct {
@@ -206,6 +207,17 @@ func (a *API) Call(ctx context.Context, name string, data []byte) Envelope {
 		}
 		v, err := op.invoke(ctx, a.service, data)
 		if err != nil {
+			var release *releaseFailure
+			if errors.As(err, &release) {
+				code := "release.failed"
+				if errors.Is(err, distribution.ErrNoRelease) {
+					code = "release.unavailable"
+				}
+				if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+					code = "operation.cancelled"
+				}
+				return Failure(code, release.Error(), false)
+			}
 			var reference *foundlingFailure
 			if errors.As(err, &reference) {
 				return foundlingFailureEnvelope(reference)
