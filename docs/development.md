@@ -32,6 +32,56 @@ under the pinned toolchain. See [interface](interface.md) for synthetic examples
 The compiled-process regression builds its own temporary executable and exercises
 actual stdio without a model, authentication, native settings or global install.
 
+## Local distribution candidates
+
+From a clean committed repository, run:
+
+```sh
+mise exec go@1.26.4 -- bin/build-artifacts --output ../mandalore-candidate
+```
+
+The output must not exist, its parent must exist, and it must not overlap the
+source repository. This builds local engineering artifacts only: no release,
+tag, native connection or signet is created. `VERSION` declares the intended
+release version; unstamped development binaries continue to report `0.0.0-dev`.
+
+The builder exports the exact commit, refuses unsafe archive entries, stamps
+the native plugin in that private export and compiles all four supported targets.
+Go 1.26.4, disabled CGO, trimpath, isolated build/module caches, readonly module
+resolution and the public Go module proxy/checksum database are explicit. Ambient
+Go workspace/configuration and provider tokens are not passed to those children.
+No home-directory or shell configuration is changed. Each tool process has a
+bounded output and five-minute deadline; the build has a twenty-minute deadline.
+Cancellation cleans its process group and the invocation's private export/cache.
+
+The candidate contains four raw executables, a deterministic Codex ZIP, reviewed
+bootstrap, manifest and checksums. Every payload digest and the separate embedded
+plugin identity are verified before a no-replace directory publication. Retrying
+an existing destination is deliberately refused; select a new output directory.
+Candidate integrity is not native behavior, independent provenance or acceptance.
+
+Repeat with another absent output directory and compare all eight files to measure
+reproducibility. [Recorded engineering evidence](evidence/distribution/README.md)
+includes two actual isolated builds and native metadata verification. This does
+not establish cross-host reproducibility or native Linux support by itself.
+
+The packaged POSIX bootstrap currently requires curl 8.4+ plus `sha256sum` or
+`shasum`, and invokes the release-install journey after checking the platform
+binary against official-release checksums. Curl 8.4+ is required because earlier
+versions do not enforce the size limit during unknown-length transfers.
+See [curl's size-limit contract](https://curl.se/docs/manpage.html#--max-filesize).
+The manual alternative is downloading and verifying the platform binary yourself.
+Public release discovery/installation and promotion are still being implemented;
+do not present this early candidate as a complete released installer.
+
+Synthetic bootstrap tests substitute download/host commands and never contact a
+provider. Run `go test ./internal/distribution ./internal/install ./cmd/mandalore`
+under the pinned toolchain for package/build and process-bound regressions.
+The real subprocess output tests are important: directly testing a writer's `Write`
+method alone would miss an `io.Copy`/promoted `ReadFrom` limit bypass.
+
+## Other development checks
+
 Menu presentation uses pinned Bubble Tea 2.0.9 and small terminal/ANSI/Unicode
 helpers declared in go.mod/go.sum. It remains optional at invocation time: pipes,
 `--plain`, `MANDALORE_PLAIN=1` and dumb terminals use line-oriented prompts.

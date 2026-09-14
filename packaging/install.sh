@@ -47,14 +47,29 @@ release_base="https://github.com/acoz-labs/mandalore/releases/download/v$release
 asset_name="mandalore_${release_version}_${target_os}_${target_arch}"
 download() {
   # -q disables user curlrc settings; no credentials, netrc or token headers are used.
-  effective_url=$(curl -q --fail --silent --show-error --location --max-redirs 5 \
-    --proto '=https' --proto-redir '=https' --connect-timeout 15 --max-time 120 \
-    --max-filesize "$3" --output "$2" --write-out '%{url_effective}' "$1" 2>/dev/null) ||
-    fail 'Download failed, exceeded its limit or the selected release does not exist. Nothing was installed.'
-  case "$effective_url" in
-    https://github.com/*|https://release-assets.githubusercontent.com/*|https://objects.githubusercontent.com/*) ;;
-    *) fail 'Download ended at an untrusted release host. Nothing was installed.';;
-  esac
+  # Follow redirects ourselves so an untrusted intermediate host is never contacted.
+  download_url=$1
+  redirects=0
+  while :; do
+    case "$download_url" in
+      https://github.com/*|https://release-assets.githubusercontent.com/*|https://objects.githubusercontent.com/*) ;;
+      *) fail 'Download requested an untrusted release host. Nothing was installed.';;
+    esac
+    response=$(curl -q --fail --silent --show-error --proto '=https' \
+      --connect-timeout 15 --max-time 120 --max-filesize "$3" --output "$2" \
+      --write-out '%{http_code}\n%{redirect_url}' "$download_url" 2>/dev/null) ||
+      fail 'Download failed, exceeded its limit or the selected release does not exist. Nothing was installed.'
+    status=$(printf '%s\n' "$response" | sed -n '1p')
+    case "$status" in
+      200) return;;
+      301|302|303|307|308)
+        [ "$redirects" -lt 5 ] || fail 'Release download exceeded its redirect limit.'
+        redirects=$((redirects+1))
+        download_url=$(printf '%s\n' "$response" | sed -n '2p')
+        ;;
+      *) fail 'Unexpected release download response. Nothing was installed.';;
+    esac
+  done
 }
 printf 'Downloading Mandalore %s for %s/%s from its official GitHub release.\n' "$release_version" "$target_os" "$target_arch"
 download "$release_base/SHA256SUMS" "$bootstrap_tmp/SHA256SUMS" 65536

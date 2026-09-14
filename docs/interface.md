@@ -8,6 +8,15 @@ plugin after explicit approval; they are not memory MCP tools. The
 described in [synchronization](synchronization.md). Exact-candidate/release
 acceptance remains outstanding. No live migration is implied.
 
+`mandalore version` is read-only and does not need a signet binding. It reports
+the runtime version, source commit (empty for an unstamped development build),
+actual Go version, OS/architecture, protocol and hook compatibility, supported
+signet read/write schema versions, and the actual embedded plugin version/digest.
+The plugin digest uses the same content-map encoding as native connection plans.
+These declarations support verification; they are not publisher authentication or
+proof that the binary has passed independent acceptance. See
+[candidate builds](development.md#local-distribution-candidates).
+
 ## Try a synthetic signet
 
 Build with the pinned toolchain:

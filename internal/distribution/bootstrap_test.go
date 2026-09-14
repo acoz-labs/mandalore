@@ -11,7 +11,7 @@ import (
 )
 
 func TestBootstrapVerifiedHandoffAndRefusals(t *testing.T) {
-	for _, scenario := range []string{"valid", "bad-digest", "duplicate", "missing", "download-error", "redirect", "old-curl", "unsupported", "invalid-version"} {
+	for _, scenario := range []string{"valid", "bad-digest", "duplicate", "missing", "download-error", "redirect", "redirect-loop", "old-curl", "unsupported", "invalid-version"} {
 		t.Run(scenario, func(t *testing.T) {
 			root := t.TempDir()
 			bin, scratch := filepath.Join(root, "bin"), filepath.Join(root, "scratch")
@@ -53,7 +53,9 @@ case "$url" in
   https://github.com/acoz-labs/mandalore/releases/download/v1.0.0/mandalore_1.0.0_linux_arm64) cp "$TEST_FIXTURES/payload" "$output";;
   *) exit 91;;
 esac
-if [ "$SCENARIO" = redirect ]; then printf 'https://untrusted.example/file'; else printf '%s' "$url"; fi
+if [ "$SCENARIO" = redirect ]; then printf '302\nhttps://untrusted.example/file'
+elif [ "$SCENARIO" = redirect-loop ]; then printf '302\n%s' "$url"
+else printf '200\n'; fi
 `
 			uname := "#!/bin/sh\nif [ \"$SCENARIO\" = unsupported ]; then echo Unsupported; elif [ \"$1\" = -s ]; then echo Linux; else echo aarch64; fi\n"
 			for name, data := range map[string]string{"curl": curl, "uname": uname} {
