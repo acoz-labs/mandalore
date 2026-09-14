@@ -307,7 +307,11 @@ func (s *Store) AddSource(source Source) error {
 }
 
 func (s *Store) validateSource(source Source) error {
-	if err := validateSourceMetadata(source, s.deviceExists); err != nil {
+	return s.validateSourceWithDevice(source, s.deviceExists)
+}
+
+func (s *Store) validateSourceWithDevice(source Source, device func(string) error) error {
+	if err := validateSourceMetadata(source, device); err != nil {
 		return err
 	}
 	return s.validateOrigin(source.ExternalOrigin)

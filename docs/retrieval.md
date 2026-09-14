@@ -26,6 +26,17 @@ and replaces the signet identity. The reader must see new local evidence or
 refuse invalid/replaced data without a restart. Existing integrity, real-Git,
 budget and scope tests remain required too.
 
+The initial [baseline and profile](evidence/retrieval/README.md) showed repeated
+device-provenance reads dominating a substantial part of graph validation.
+Each graph validation now reuses successful checks of the same device between
+revisions and their source metadata. The memo is local to that single validation,
+never stored on a service, in a file or across calls. A subsequent read/write
+validates current provenance again; errors are not cached. Source objects, source
+origins, schema and graph integrity still undergo their existing checks.
+This does not make multi-file reads atomic against uncoordinated filesystem edits
+or introduce an index. Freshness/corruption tests and a same-fixture performance
+comparison are required for this correction.
+
 ## Reproduce measurements
 
 Use Go 1.26.4 on a disposable development checkout. These opt-in benchmarks create
