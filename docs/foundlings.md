@@ -196,6 +196,19 @@ dirty selected files, wrong/ambiguous origins, missing trees/blobs, redirected
 files, excluded untracked/code/binary content, inherited Git environment
 redirection, source-program canaries and unchanged source/metadata bytes.
 
+Hosted run `34806925833` exposed an intermittent source-snapshot assertion on Git
+2.55.0. A subsequent diagnostic-only head passed hosted CI; 30 local repetitions
+on Apple Git 2.50.1 and 40 plus 100 race-enabled repetitions on Git 2.55.0 did not
+reproduce the changed-tree assertion. A separate failing trace test established
+that fixture commits launched automatic maintenance. Git 2.55.0
+[takes an objects-directory lock before detaching maintenance](https://github.com/git/git/blob/v2.55.0/builtin/gc.c#L1683),
+so fixture creation now disables automatic maintenance on its own commands.
+The trace regression checks that no maintenance subprocess is launched; the full
+source-tree comparison remains intact. This removes a demonstrated fixture race
+opportunity, not a proven reconstruction of the original runner's unnamed changed
+path. Path-only failure diagnostics remain to investigate any recurrence. No
+production source observer or user's Git settings were changed by this correction.
+
 An excessive-output test exposed a stream-copy bypass caused by embedding a
 buffer with a promoted `ReadFrom` method. The bounded writer now owns a named
 buffer so all copied bytes pass through its limit check. Regression tests cover

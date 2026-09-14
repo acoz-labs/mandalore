@@ -16,7 +16,9 @@ import (
 
 func fixtureGit(t *testing.T, root string, args ...string) string {
 	t.Helper()
-	cmd := exec.Command("git", append([]string{"-C", root, "-c", "user.name=Test", "-c", "user.email=test@example.invalid", "-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null"}, args...)...)
+	// Fixture creation must finish its writes before a source snapshot. In newer
+	// Git versions commit can detach maintenance with a transient objects lock.
+	cmd := exec.Command("git", append([]string{"-C", root, "-c", "user.name=Test", "-c", "user.email=test@example.invalid", "-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", "-c", "maintenance.auto=false"}, args...)...)
 	cmd.Env = append(os.Environ(), "GIT_CONFIG_NOSYSTEM=1", "GIT_CONFIG_GLOBAL=/dev/null")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -40,6 +42,19 @@ func gitFixture(t *testing.T, format string) (memory.FoundlingSource, string) {
 	fixtureGit(t, root, "commit", "-m", "Synthetic historical source")
 	writeFixture(t, root, "untracked.md", "Not part of the selected commit")
 	return memory.FoundlingSource{Kind: "git", Locator: "https://example.invalid/history.git"}, root
+}
+
+func TestGitFixtureDoesNotLaunchBackgroundMaintenance(t *testing.T) {
+	trace := filepath.Join(t.TempDir(), "fixture-git.trace")
+	t.Setenv("GIT_TRACE", trace)
+	gitFixture(t, "sha1")
+	data, err := os.ReadFile(trace)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(data), "maintenance run") || strings.Contains(string(data), "gc --auto") {
+		t.Fatal("fixture creation launched automatic maintenance; source snapshots can race its cleanup")
+	}
 }
 
 func TestGitObservationVerifiesTrackedTextWithoutSourceWrites(t *testing.T) {
