@@ -7,15 +7,16 @@ promote their contents into the signet.
 
 ## Implementation status
 
-Issue #12 is in progress. The engine has immutable registrations with explicit
+Issue #12's engineering implementation has immutable registrations with explicit
 active, disconnected and conflicting heads, internal read-only local/Git
 source observation, clone-local connections/inspection and verified retrieval and
 promotion, exposed through the shared CLI/MCP dispatcher. The complete guided
-workflow is still in progress: the guided menu has
+workflow includes the guided menu with
 [actual rendered engineering evidence](evidence/foundlings-menu/README.md), and
 the native skill has an on-demand consultation/promotion workflow with
 [fresh native engineering results](evidence/foundlings-native/README.md).
-Final reconciliation remains pending.
+Independent immutable-candidate acceptance remains #10/#11; engineering evidence
+and reconciliation do not authorize live adoption or release.
 No real historical memory has been adopted by these synthetic tests.
 
 ## Portable identity versus local content
@@ -194,7 +195,7 @@ Recall current memory first. The same bound operation is available through MCP;
 source setup/reconnection/history administration remains CLI-only. Every operation
 is also available as `mandalore call OPERATION --binding FILE < input.json`.
 
-## Engineering checks so far
+## Engineering verification
 
 Failing-first synthetic tests cover local deterministic pins, source preservation,
 changed content, invalid identities/paths/text, symlinks/FIFOs, size/count limits
@@ -248,17 +249,22 @@ memory, rejects promotion through read-only MCP and preserves source bytes. No
 model/provider is involved in that test; actual native-agent results are recorded
 separately in the linked evidence manifest.
 
-The discovery baseline at `ac1205b1ab1158f5af2ffa589a89733a5e4f5ccb` was
-16 MCP tools, 5729 input-schema bytes,
+Compiled-process discovery at `36cf969bf7991a20702681dbb9d9d93d512d5ab9`
+measured 16 MCP tools, 5966 input-schema bytes,
 32678 output-schema bytes and 2488 description bytes, excluding transport overhead.
 These are serialized byte counts, not token counts, latency or quality evidence.
 They are an input to issue #9, not a claim that context efficiency is finished.
-Subsequent query-schema guidance adds description bytes; measure the final
-candidate rather than treating this earlier baseline as its current payload.
+The earlier baseline at `ac1205b1ab1158f5af2ffa589a89733a5e4f5ccb` had
+5729 input-schema bytes; explicit nonempty-query guidance accounts for the increase.
+Remeasure the immutable candidate rather than assuming this engineering snapshot
+is its payload.
 
 Automated menu tests cover register/decline/incomplete confirmation, read-only list
 and search, disconnection, a moved local path, explicit superseding pin updates,
 failed output/cancellation and a completed registration retained after connection
-failure. Actual rendered terminal evidence and separate fresh native consultation,
+failure. A failing-first regression and an actual terminal run also verify that
+replacing a binding during confirmation cannot redirect the selected signet or
+writer, while Back/re-entry deliberately loads the new binding.
+Actual rendered terminal evidence and separate fresh native consultation,
 promotion and no-save results are retained in the linked manifests. Contributor
 verification does not establish independent candidate acceptance.

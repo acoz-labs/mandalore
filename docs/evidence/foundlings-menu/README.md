@@ -105,8 +105,44 @@ not a packet-capture claim.
 
 There is no approved pixel/recording baseline, screen-reader acceptance, alternate
 locale/font coverage or native Linux UI evidence. Fresh native-agent consultation
-and promotion remain a separate #12 test. Final PR reconciliation must bind this
+and promotion have [separate recorded results](../foundlings-native/README.md).
+Final PR reconciliation must bind this
 runtime evidence to its exact reviewed head and account for any later UI changes.
 Independent acceptance must repeat the relevant matrix on the nominated immutable
 artifact under #10/#11; these contributor recordings cannot be relabeled as that
 acceptance.
+
+## Final review: selection stays fixed through confirmation
+
+[Selection continuity recording](selection-binding.recording) is an additional
+actual 57-column color-TUI run on source
+`36cf969bf7991a20702681dbb9d9d93d512d5ab9` (Go 1.26.4, macOS arm64).
+Runtime SHA-256:
+`63a3e026932645a091f3f23c3dac2cb6795400204bb77f3455c49aa545c0769e`.
+Recording SHA-256:
+`2a0871864e1b7dfbc5fa277863f8077a4817faf728ad9f9eb97e0fd1786c4685`.
+Hosted CI `34808076623` passed on that code head.
+
+A distinct review found that reloading the selected binding for every menu call
+could redirect a new registration if another process replaced that file while
+the user reviewed confirmation. A failing regression reproduced this. The
+foundlings submenu now holds its selected service/authorship until Back, while
+ordinary reads still load current files. Re-entry deliberately loads a changed
+binding; the automated regression exercises both destinations in one invocation.
+
+The actual run opened the first of two synthetic signets, entered a registration
+and stopped at default-No confirmation. The controller then replaced only the
+synthetic selected binding with the second signet's binding (this filesystem edit
+is not visible in the terminal recording). Approval saved and connected the
+reference in the first signet, and List showed it available. Back/re-entry then
+listed no references in the second signet. Separate CLI history verified the first
+writer/device attribution; the second signet's list remained empty. Terminal
+settings matched the pre-session baseline and dimensions returned as 42 by 57.
+
+Contributor verdict: pass. Normal rendering/components and operation contracts
+are unchanged; the earlier full journey recordings remain relevant, with this
+additional exact-code test covering the reviewed selection change. Native MCP
+and memory-skill code were unchanged by this menu-only correction. No private
+bank or installed runtime binding was edited. Missing/invalid binding at entry
+now fails before the submenu, using the existing error report; there is no
+fallback to another signet. Playback/platform limitations above still apply.
