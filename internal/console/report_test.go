@@ -59,3 +59,17 @@ func TestLiteralFieldSpacesSurviveWrapping(t *testing.T) {
 		t.Fatalf("literal changed: %q", recovered.String())
 	}
 }
+
+func TestPlainChoicesWrapAsProseNotLiteralPaths(t *testing.T) {
+	text := RenderBlock(Block{Title: "Choose", Choices: []string{"Connect an existing local clone", "Inspect selected memory and sync status"}}, Theme{}, 24)
+	for _, word := range []string{"existing", "Inspect", "selected", "memory", "status"} {
+		if !strings.Contains(text, word) {
+			t.Fatalf("split prose word %q: %s", word, text)
+		}
+	}
+	for _, line := range strings.Split(text, "\n") {
+		if uniseg.StringWidth(line) > 24 {
+			t.Fatal("overflow", line)
+		}
+	}
+}

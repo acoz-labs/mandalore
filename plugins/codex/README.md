@@ -8,7 +8,24 @@ not a released or independently accepted artifact.
 See the [native engineering receipt](../../docs/codex-native-evidence.md) for
 actual tested artifacts, scenarios and remaining gaps.
 
-## Connect an explicit test installation
+## Managed connection
+
+Use `mandalore menu` after creating or connecting a signet, or use
+`mandalore connection plan --binding /absolute/local/binding.json` and explicitly
+apply the reviewed JSON plan. See [guided setup](../../docs/setup.md) for the
+menu and [the interface](../../docs/interface.md) for typed commands. The
+installer embeds these public assets, pins a retained runtime/binding and uses
+native registration commands. It does not copy auth, accept hook trust or require
+a source checkout. Explicit runtime/binding environment overrides still take
+precedence; doctor reports conflicting selections.
+
+Ownership collisions or edited managed files are preserved, not silently
+replaced. Existing unmanaged development registrations need explicit ownership
+resolution before moving to managed installation. Doctor and repair inspect
+retained receipts, and successful activation still requires a fresh session.
+See [actual managed native tests](../../docs/setup-native-evidence.md).
+
+## Source-checkout connection for plugin development
 
 Build the CLI and create/bind a synthetic signet using [the CLI guide](../../docs/interface.md).
 Keep the binding outside the signet. Before installation inspect `codex plugin
@@ -27,8 +44,8 @@ Start a fresh native Codex session with absolute `MANDALORE_BIN` and
 `MANDALORE_BINDING` values for your selected runtime and local binding. These
 are machine-local configuration, not portable bank content. Without the runtime
 override, the bridge uses `mandalore` on the process PATH; without a binding
-override, it uses the CLI's platform-config default. Setup #7 will provide the
-guided, pinned connection experience. Launch from any project directory; there
+override, it uses the CLI's platform-config default. This direct development
+route is not a managed connection. Launch from any project directory; there
 is no assistant-specific launcher or replacement CODEX_HOME.
 
 Review new hooks using Codex's native `/hooks` UI. Installation does not itself
@@ -37,6 +54,10 @@ after changing runtime selection, binding or plugin resources; a running MCP
 server retains its original binding. Test this directory's installed cache copy,
 not just edited source. For local iterations, refresh the plugin version cache
 suffix and reinstall from the same confirmed local marketplace.
+Native hook trust remains a distinct step, as specified in
+[official hook guidance](https://learn.chatgpt.com/docs/hooks). Marketplace
+registration uses the [official CLI route](https://developers.openai.com/plugins/build/plugins),
+not manual edits to the native configuration.
 
 ## What runs and what enters context
 

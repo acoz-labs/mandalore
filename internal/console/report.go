@@ -15,6 +15,7 @@ type Field struct{ Label, Value string }
 type Block struct {
 	Title, Body string
 	Fields      []Field
+	Choices     []string
 	Tone        Tone
 }
 
@@ -41,6 +42,9 @@ func RenderBlock(b Block, theme Theme, width int) string {
 	appendText(clean(b.Title), 0, Heading)
 	if b.Body != "" {
 		appendText(clean(b.Body), 2, b.Tone)
+	}
+	for n, choice := range b.Choices {
+		appendText(fmt.Sprintf("%d. %s", n+1, clean(choice)), 2, Plain)
 	}
 	labelWidth := 0
 	for _, f := range b.Fields {

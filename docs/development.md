@@ -32,6 +32,16 @@ under the pinned toolchain. See [interface](interface.md) for synthetic examples
 The compiled-process regression builds its own temporary executable and exercises
 actual stdio without a model, authentication, native settings or global install.
 
+Menu presentation uses pinned Bubble Tea 2.0.9 and small terminal/ANSI/Unicode
+helpers declared in go.mod/go.sum. It remains optional at invocation time: pipes,
+`--plain`, `MANDALORE_PLAIN=1` and dumb terminals use line-oriented prompts.
+The shared API remains the automation interface, not terminal key simulation.
+Tests cover incomplete EOF, default-No, output failure, partial durable setup,
+navigation, normal text entry, literal paths and narrow output. Native menu tests
+also compare terminal settings before/after cancellation. See
+[menu engineering evidence](menu-engineering-evidence.md) for actual coverage and
+limits; no-color/text checks do not establish screen-reader acceptance.
+
 Synchronization tests additionally require native Git with merge-tree --write-tree,
 commit-tree and standalone repository support. CI logs the actual Git version;
 unsupported features fail the real two-clone tests rather than being silently

@@ -10,8 +10,11 @@ responses, and data-only foundling registration/citation validation. See the
 the [shared local interface](interface.md). `internal/sync` now supplies explicit
 [Git checkpoints and reconciliation](synchronization.md). `internal/codex` and
 `plugins/codex` supply the development native plugin, read-only lifecycle context
-and memory skill. Guided installation/menus and later harness plugins remain
-integration targets. [Native engineering evidence](codex-native-evidence.md) is
+and memory skill. `internal/install` supplies explicit native connection plans,
+retained runtime/package publication and doctor/repair; `internal/console` supplies
+presentation-only terminal prompts and reports. The [guided menu](setup.md)
+delegates to shared operations rather than owning a second implementation.
+Later harness plugins remain integration targets. [Native engineering evidence](codex-native-evidence.md) is
 separate from independent product acceptance; no release is implied.
 
 | Location | Responsibility |
@@ -23,7 +26,8 @@ separate from independent product acceptance; no release is implied.
 | `internal/binding` | Local signet selection and originating-device identity |
 | `internal/mcp` | Typed stdio MCP access over the same memory engine |
 | `internal/codex` | Bounded read-only native event adapter; no transcript access or synchronization |
-| `internal/install` (planned) | Native connections, runtime pinning, doctor/update/repair |
+| `internal/install` | Native connections, runtime pinning, doctor/update/repair |
+| `internal/console` | Presentation-only terminal prompts, navigation and bounded-width reports |
 | `plugins/codex` | First native plugin and `this-is-the-way` skill |
 | `plugins/pi` | Reserved second integration after Codex acceptance |
 | `plugins/claude-code` | Reserved third integration after Pi acceptance |
@@ -35,6 +39,15 @@ Local bindings own clone paths and device enrollment. Generated connections own
 only declared managed files. The public repository owns code, schemas, templates
 and synthetic tests. Do not retain an assistant-framework dependency merely to
 avoid extracting memory primitives.
+
+Installation is CLI-only administration, not another bound memory tool. Plans
+identify the preparing toolkit's embedded plugin and selected trusted runtime
+separately; applying revalidates bytes, paths and binding identity before execution.
+Retained content-addressed runtimes and versioned package generations avoid
+in-place overwrite. Native commands own registration/cache, not hand-edited native
+configuration. Ownership receipts and filesystem integrity protect recovery;
+unknown edits or partial publication are preserved for inspection. A structural
+doctor does not establish authentication, hook trust, live MCP or fresh context.
 
 The host agent supplies semantic interpretation. No separate inference service
 or embedding subscription is required. Memory is evidence, not executable

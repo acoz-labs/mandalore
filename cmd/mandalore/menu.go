@@ -186,11 +186,7 @@ func (m *menu) selectItem(title string, choices []string, def int) (int, error) 
 		return m.tui.Select(title, choices, def)
 	}
 	for {
-		fields := make([]console.Field, len(choices))
-		for n, value := range choices {
-			fields[n] = console.Field{Label: strconv.Itoa(n + 1), Value: value}
-		}
-		m.block(console.Block{Title: title, Fields: fields, Body: fmt.Sprintf("Enter a number (default %d); :back cancels; EOF exits.", def+1)})
+		m.block(console.Block{Title: title, Choices: choices, Body: fmt.Sprintf("Enter a number (default %d); :back cancels; EOF exits.", def+1)})
 		m.promptMark()
 		line, err := m.line()
 		if err != nil {
