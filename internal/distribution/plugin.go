@@ -40,6 +40,41 @@ func pluginMode(name string) fs.FileMode {
 	return 0644
 }
 
+// fs.WalkDir follows a symlink passed as its starting root. Inspect every root
+// component through its parent entries before walking, including .agents parents.
+// The release builder must additionally supply an isolated, symlink-free tracked export.
+func checkPluginRoot(source fs.FS, root string) error {
+	parts := strings.Split(root, "/")
+	parent := "."
+	for i, part := range parts {
+		entries, err := fs.ReadDir(source, parent)
+		if err != nil {
+			return err
+		}
+		found := false
+		for _, entry := range entries {
+			if entry.Name() != part {
+				continue
+			}
+			found = true
+			wantDir := i < len(parts)-1 || root == "plugins/mandalore"
+			if entry.Type()&fs.ModeSymlink != 0 || entry.IsDir() != wantDir || (!wantDir && !entry.Type().IsRegular()) {
+				return errors.New("plugin embed root must not be redirected or have an unexpected type")
+			}
+			break
+		}
+		if !found {
+			return errors.New("plugin embed root is missing")
+		}
+		if parent == "." {
+			parent = part
+		} else {
+			parent += "/" + part
+		}
+	}
+	return nil
+}
+
 func pluginMetadata(files map[string][]byte, version string) (map[string]any, error) {
 	var p, market map[string]any
 	if err := strictjson.Decode(files[pluginManifestPath], &p, MaxBootstrapBytes); err != nil {
@@ -76,6 +111,9 @@ func PreparePlugin(source fs.FS, version string) (PluginPackage, error) {
 	files := map[string][]byte{}
 	total := 0
 	for _, root := range []string{marketplacePath, "plugins/mandalore"} {
+		if err := checkPluginRoot(source, root); err != nil {
+			return PluginPackage{}, err
+		}
 		err := fs.WalkDir(source, root, func(name string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err

@@ -5,6 +5,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"io/fs"
+	"os"
+	"path/filepath"
 	"testing"
 	"testing/fstest"
 
@@ -146,5 +148,37 @@ func TestVerifyPluginRejectsUnsafeArchives(t *testing.T) {
 	}
 	if err := VerifyPlugin([]byte("not zip"), "1.0.0", p.SHA256); err == nil {
 		t.Fatal("corrupt archive accepted")
+	}
+}
+
+func TestPreparePluginRejectsSymlinkEmbedRoots(t *testing.T) {
+	p, err := PreparePlugin(codexplugin.Files, "1.0.0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, redirected := range []string{".agents", "plugins/mandalore"} {
+		t.Run(redirected, func(t *testing.T) {
+			outside, source := t.TempDir(), t.TempDir()
+			for name, data := range p.Files {
+				for _, root := range []string{outside, source} {
+					if err := os.MkdirAll(filepath.Dir(filepath.Join(root, name)), 0700); err != nil {
+						t.Fatal(err)
+					}
+					if err := os.WriteFile(filepath.Join(root, name), data, 0600); err != nil {
+						t.Fatal(err)
+					}
+				}
+			}
+			old := filepath.Join(source, redirected)
+			if err := os.Rename(old, old+"-retained"); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Symlink(filepath.Join(outside, redirected), old); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := PreparePlugin(os.DirFS(source), "1.0.0"); err == nil {
+				t.Fatal("redirected embed root copied into release package")
+			}
+		})
 	}
 }
