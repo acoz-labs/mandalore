@@ -19,8 +19,8 @@ implemented; [their contracts and current verification limits](development.md#re
 are explicit. The [same-byte publisher component](development.md#same-byte-publisher-implementation)
 now has simulated-provider staging, byte verification and retry coverage. The
 artifact finalizer verifies the published product before updating its ledger.
-Retained-candidate promotion workflow integration, final rendered/native evidence
-and actual hosted candidate execution remain in progress under #11.
+The retained-candidate promotion workflow is integrated. Final rendered/native
+evidence and actual hosted candidate/promotion execution remain in progress under #11.
 
 The template supplies nomination, acceptance and release-ledger workflows, not
 an already completed product publisher. Workflow YAML alone does not establish
@@ -45,7 +45,8 @@ Repository creation does not authorize a release. `VERSION` declares the intende
 SemVer release, initially 1.0.0, with tag `vVERSION`. Candidate identity additionally
 binds the exact commit and manifest digest; a shared version label is insufficient.
 Current asset names and compatibility fields are defined by the v1 manifest.
-Promotion commands are still being completed in the distribution issue. Never treat old
+Promotion commands are implemented but not yet accepted against a real hosted
+candidate. Never treat old
 My Friday releases as compatible Mandalore updates just because they contain Go.
 
 ## Configuration and recovery
@@ -61,12 +62,19 @@ GitHub's [immutable-release settings endpoint](https://docs.github.com/en/rest/r
 requires repository Administration:read. The publisher refuses before creating a
 draft if that setting is disabled, missing or inaccessible, and rechecks it before
 publishing. The planned scoped workflow token alone must not be assumed to provide
-this administration read. Credential binding for that read remains a release
-integration prerequisite; no additional secret slot, token or setting has been
-created automatically. The component can accept a separately authorized policy-read
-credential without sending it to release or upload endpoints. This is a discovered
-constraint on the earlier no-new-secret assumption, not permission to copy a
-maintainer's personal credential into Actions.
+this administration read. The workflow now defines an optional
+`RELEASE_POLICY_READ_TOKEN` secret binding for a deliberately authorized credential
+with repository Administration:read. The command supports the same explicit
+environment variable. It is used only for the policy GET, not release/upload APIs
+or child authority-check processes. If absent, the publisher tries the explicit
+release token and refuses if the setting cannot be read. No actual secret/token,
+acceptance actor or repository setting has been configured automatically.
+
+This additional optional binding is a documented deviation from the earlier
+no-new-secret assumption, required by GitHub's policy-read permission contract.
+Provisioning remains a deliberate release prerequisite, not permission to copy
+a maintainer's personal credential into Actions. The scoped workflow token remains
+the release/ledger credential; the separate policy credential needs no write access.
 
 Retain old immutable binaries and connection sources. Preview update/repair
 paths, reject unknown ownership, and preserve memory, auth, sessions and native

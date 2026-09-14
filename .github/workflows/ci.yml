@@ -34,6 +34,7 @@ jobs:
           bin/container
           bin/finalize-release
           bin/release-publication
+          bin/promote-candidate
           bin/dependency-merge-steward
           bin/mark-staging-candidate
           bin/nominate-release-candidate

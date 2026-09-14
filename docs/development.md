@@ -114,7 +114,8 @@ where identity changes, fresh nomination—not pretending a rebuild is accepted.
 The Actions pipeline still requires a real default-branch candidate run and its
 own hosted verification after merge. Local HTTP/ZIP fixtures and a live negative
 provenance check are not successful hosted candidate retention or nomination.
-Publication/finalizer integration and final #11/#10 acceptance remain incomplete.
+The guarded promotion/finalizer path is implemented below; real hosted execution
+and final #11/#10 acceptance remain incomplete.
 
 Primary contracts: [GitHub artifact metadata](https://docs.github.com/en/rest/actions/artifacts?apiVersion=2026-03-10),
 [workflow-run metadata](https://docs.github.com/en/rest/actions/workflow-runs?apiVersion=2026-03-10),
@@ -123,8 +124,8 @@ and [pinned download action](https://github.com/actions/download-artifact/blob/3
 
 ## Same-byte publisher implementation
 
-`internal/distribution.Publisher` is a maintainer-only publication component under
-development. Its mutation path is not wired into a command or workflow yet. The caller must prove
+`internal/distribution.Publisher` is a maintainer-only publication component used
+by the guarded promotion command below. The caller must prove
 transport provenance, exact independent acceptance and publication authority before
 invoking it; its expected-identity argument alone does not prove those prerequisites.
 It does not nominate candidates, close issues or execute/build candidate code.
@@ -160,10 +161,59 @@ matching published retries, uncertain create/upload/publish responses, partial c
 corruption, cancellation, changed local files/links and remote tags/assets, policy
 changes, bounded malformed discovery and credential/redirect isolation. Payloads
 are inert fixtures, not native candidate acceptance or a successful hosted release.
-The read-only verifier and artifact ledger integration below are implemented;
-retained-transport-to-publisher workflow integration and real hosted verification
-remain pending. No new credential source or repository policy is configured by
-these tests.
+The read-only verifier, guarded transport-to-publisher command and artifact ledger
+integration are implemented. Real hosted verification remains pending. No actual
+credential or repository policy is configured by these tests.
+
+## Guarded retained-candidate promotion
+
+`bin/promote-candidate` is explicit maintainer publication tooling, not a memory
+operation or a personal-agent capability:
+
+```sh
+bin/promote-candidate --receipt transport.json --archive downloaded.zip \
+  --identity ACCEPTED_IDENTITY --staging-parent EXISTING_SCRATCH_DIRECTORY
+```
+
+This command can publish a release. It requires an explicitly supplied `GH_TOKEN`,
+the official repository context, existing release-check configuration, and the
+explicit `RELEASE_ISSUES`/`RELEASE_SUMMARY` for issue authority. It refreshes official
+transport metadata, verifies the entire archive against the expected identity,
+and stages exact bytes in a new private directory. Members are created exclusively
+as non-executable regular files; nothing is overwritten or executed. Failed
+extraction retains the partial directory and does not return a verified payload.
+
+The command refreshes transport again, invokes both `bin/release-gate
+--require-acceptance` and `bin/finalize-release artifact --preflight`, and refreshes
+transport once more before calling the publisher. Source, version and identity
+for those guards come from verified payload data, not ambient overrides. No flag
+skips a guard. Child process groups have cancellation/deadline handling; their
+output is discarded rather than placed in receipts. A refusal names the read-only
+guard to run directly for diagnostics. The optional policy-read credential is not
+passed to those child processes.
+
+The command returns phased JSON and a nonzero exit on failure. Its local receipt
+includes the retained staging directory and any publisher receipt, including an
+uncertain operation. A partially completed command must not be interpreted as a
+published or ledger-complete release. Retrying creates fresh local staging but
+reuses only the same matching remote release/assets.
+
+The `Release artifact` workflow now accepts source SHA, accepted candidate identity,
+and retained run/artifact IDs. It performs the initial acceptance check, inspects
+provenance, downloads the exact raw ZIP through the pinned action, verifies it,
+and invokes the guarded promoter. Only successful publication continues to the
+finalizer, which independently verifies the public release again. The product
+version is derived from the verified manifest, not a separate input. Serialized
+runs, trusted control checkout, pinned helpers/actions and all existing acceptance
+checks remain in place.
+
+After a promotion attempt, the workflow retains transport, byte-verification and
+publication/ledger evidence for 90 days without overwriting previous receipts.
+Machine-local staging paths are removed. Missing/truncated process output produces
+an explicitly unconfirmed recovery record, not a fabricated successful publication.
+Only a successful finalizer sets `ledger-complete`. These fixtures and source-level
+workflow checks do not establish successful real Actions promotion or independent
+product acceptance; neither has occurred.
 
 ## Published verification and artifact finalization
 
@@ -192,9 +242,9 @@ open-issue `--preflight` remains usable before publication; a preflight that rel
 on already-released issue evidence additionally verifies the published product.
 
 The release workflow checks out trusted default-branch control tooling, serializes
-release runs, and uses pinned Go for the helpers. It can currently verify/finalize
-an already-published accepted product; the retained-candidate publication step is
-still pending. These wrappers compile trusted **control tooling**, not the accepted
+release runs, and uses pinned Go for the helpers. It promotes the exact retained
+candidate and then verifies/finalizes the published accepted product. These wrappers
+compile trusted **control tooling**, not the accepted
 product. This qualifies the plan's literal no-compiler wording: promotion must never
 rebuild or replace accepted product payloads, but verification tooling may be built
 from its separately pinned trusted control revision.
@@ -215,7 +265,7 @@ versions do not enforce the size limit during unknown-length transfers.
 See [curl's size-limit contract](https://curl.se/docs/manpage.html#--max-filesize).
 The manual alternative is downloading and verifying the platform binary yourself.
 Release discovery, planning, explicit plan/apply, the interactive install journey
-and selected native handoff are implemented. Promotion and final candidate
+and selected native handoff are implemented. Actual hosted promotion and final candidate
 acceptance remain incomplete; do not present an engineering candidate as a released
 installer.
 
