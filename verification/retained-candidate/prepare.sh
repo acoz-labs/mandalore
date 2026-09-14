@@ -18,5 +18,10 @@ chmod 700 "$probe_root/payload/mandalore_1.0.0_linux_amd64"
 env -i PATH=/usr/bin:/bin:/usr/local/bin LANG=C.UTF-8 bash "$repo_root/verification/retained-candidate/probe.sh" "$probe_root" "$repo_root"
 mkdir retained-platform-evidence
 cp "$probe_root/results/"*.json retained-platform-evidence/
-if rg -n '/Users/|/home/|OP_SERVICE_ACCOUNT_TOKEN|gh[pousr]_[A-Za-z0-9]{30,}' retained-platform-evidence; then exit 1; else test "$?" = 1; fi
+if grep -Eq '/Users/|/home/|OP_SERVICE_ACCOUNT_TOKEN|gh[pousr]_[A-Za-z0-9]{30,}' retained-platform-evidence/*.json; then
+  printf 'Evidence privacy scan refused publication; matching content is not printed.\n' >&2
+  exit 1
+else
+  test "$?" = 1
+fi
 printf 'Retained candidate executed natively on Linux AMD64; contributor model-free evidence only.\n'
