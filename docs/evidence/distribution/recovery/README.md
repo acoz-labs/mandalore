@@ -74,10 +74,10 @@ pixel baseline, screen-reader result, alternative locale/font coverage, native
 Linux/Intel Mac result or browser/mobile surface. Cross-builds do not supply these.
 
 The earlier checkpoint retains success, owned/foreign paths, menu navigation and
-separate native handoff evidence. A fresh native model session, final-head
-reconciliation and #10 independent exact-candidate/physical cross-machine
-acceptance remain separate work. These recordings must not be relabeled as that
-acceptance or as a later source build.
+separate native handoff evidence. A [subsequent fresh native-session check](../native-candidate.md)
+uses this same candidate. Final-head reconciliation and #10 independent
+exact-candidate/physical cross-machine acceptance remain separate work. These
+recordings must not be relabeled as that acceptance or as a later source build.
 
 ## Recording integrity
 

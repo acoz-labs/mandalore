@@ -91,7 +91,9 @@ artifact; its `--binary` flag is not a release-package selector.
 If activation was interrupted, inspect the retained phase and pending record and
 reapply its exact reviewed plan through the [CLI recovery interface](interface.md#apply-a-reviewed-cli-installation).
 The menu does not guess a replacement recovery plan or delete ambiguous state.
-Publication integration remains in progress under #11.
+The guarded publication workflow is implemented under #11; it is not permission
+to publish. Retained-candidate nomination, independent acceptance and explicit
+release prerequisites remain separate from local installation.
 
 ## Foundling journeys
 
