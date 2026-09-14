@@ -13,6 +13,9 @@ import (
 )
 
 func runRelease(ctx context.Context, args []string, input io.Reader, out io.Writer) int {
+	if len(args) > 0 && args[0] == "install" {
+		return runReleaseInstall(ctx, args[1:], input, out)
+	}
 	if len(args) > 0 && args[0] == "apply" {
 		return runReleaseApply(ctx, args[1:], input, out)
 	}

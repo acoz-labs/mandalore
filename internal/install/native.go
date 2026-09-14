@@ -22,16 +22,30 @@ type runner func(context.Context, Options, ...string) ([]byte, error)
 type probeFunc func(context.Context, Plan) error
 
 // Do not promote bytes.Buffer.ReadFrom: io.Copy could otherwise bypass Write.
-type boundedOutput struct{ buffer bytes.Buffer }
+type boundedOutput struct {
+	buffer   bytes.Buffer
+	exceeded bool
+}
 
 func (b *boundedOutput) Write(p []byte) (int, error) {
 	if b.buffer.Len()+len(p) > 1<<20 {
+		b.exceeded = true
 		return 0, errors.New("process output exceeded limit")
 	}
 	return b.buffer.Write(p)
 }
 
 func execute(ctx context.Context, binary, dir string, env []string, input io.Reader, args ...string) ([]byte, error) {
+	raw, err := executeBounded(ctx, binary, dir, env, input, args...)
+	if err != nil {
+		return nil, err
+	}
+	return raw, nil
+}
+
+// Only typed delegation may inspect bounded stdout after an ordinary nonzero
+// exit. Existing native commands still discard all failed raw output above.
+func executeBounded(ctx context.Context, binary, dir string, env []string, input io.Reader, args ...string) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, binary, args...)
@@ -50,10 +64,19 @@ func execute(ctx context.Context, binary, dir string, env []string, input io.Rea
 	cmd.WaitDelay = time.Second
 	var out boundedOutput
 	cmd.Stdout = &out
-	// No raw stderr or failed stdout reaches receipts, which may be shared.
-	if err := cmd.Run(); err != nil {
+	// Stderr is never retained. Typed callers may decode bounded failed stdout,
+	// but an ExitError must not hide a simultaneous output-copy limit failure.
+	err := cmd.Run()
+	if out.exceeded {
+		return nil, errors.New("selected process exceeded its output limit; raw output suppressed")
+	}
+	if err != nil {
 		if ctx.Err() != nil {
 			return nil, fmt.Errorf("selected process cancelled: %w", ctx.Err())
+		}
+		var exited *exec.ExitError
+		if errors.As(err, &exited) {
+			return out.buffer.Bytes(), errors.New("selected process exited unsuccessfully")
 		}
 		return nil, errors.New("selected process failed, timed out or exceeded its output limit; raw output suppressed")
 	}

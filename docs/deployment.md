@@ -12,8 +12,10 @@ inspection and [CLI installation planning](interface.md#read-only-cli-installati
 [Engineering evidence](evidence/distribution/README.md) records the
 actual scope tested. Explicit plan/apply now supports owned CLI activation,
 identity-checked recovery and retained rollback. The interactive installer/update
-journey, selected native handoff and complete candidate-retention/same-byte
-publication integration remain in progress under #11.
+journey uses those same operations, with a separately confirmed native handoff
+prepared and applied by the verified newly installed runtime. Final rendered/native
+evidence and complete candidate-retention/same-byte publication integration remain
+in progress under #11.
 
 The template supplies nomination, acceptance and release-ledger workflows, not
 an already completed product publisher. Workflow YAML alone does not establish

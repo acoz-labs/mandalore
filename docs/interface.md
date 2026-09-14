@@ -84,7 +84,7 @@ Retained selection verifies a compatible manifest and platform binary beneath
 `PREFIX/lib/mandalore/releases/sha256-MANIFEST/OS_ARCH/`. A serialized plan is not
 proof that its observations remain current or authorization to change connections.
 Activation is a separate explicit operation described below. The interactive
-`release install` journey is still being implemented.
+equivalent is [the guided release journey](#guided-cli-installation-and-native-handoff).
 
 ## Apply a reviewed CLI installation
 
@@ -145,6 +145,43 @@ mandalore release apply < rollback-plan.json
 Only compatible declared protocol/schema and the current platform are accepted.
 The newer runtime stays retained. No signet data is rewritten, and a CLI rollback
 does not by itself roll back a separately installed native connection.
+
+## Guided CLI installation and native handoff
+
+```sh
+mandalore release install --candidate /example/candidate --prefix /example/tools
+mandalore release install --version 1.0.0 --prefix /example/tools --plain
+```
+
+This uses the same `release_plan` and `release_apply` contracts, with a readable
+preview and default-No confirmation. The main menu also offers published versions,
+explicit local candidates and retained runtimes. Without `--prefix`, it asks for a
+user-owned destination, defaulting to the user's `.local` directory. It never edits
+PATH or shell configuration. `--read-only` refuses the journey before reading input;
+use inspect/plan instead. EOF, Back and cancellation stop subsequent steps without
+undoing an installation already completed. No release is currently published.
+
+After CLI verification, keeping native connections unchanged is the default. An
+optional Codex handoff asks for the selected binding, native executable/profile
+and installation state. Flags `--binding`, `--native-binary`, `--native-home` and
+`--state-dir` prefill these choices; CLI-only installation does not require them.
+Preparing that handoff **executes the explicitly trusted installed runtime** via
+its existing `call connection_plan --read-only` operation. The parent verifies its
+bounded JSON plan against the selected paths, executable/binding hashes and release
+plugin identity. It never substitutes the parent's embedded plugin.
+
+A second default-No confirmation precedes that same runtime's
+`call connection_apply`. Native authentication is inherited normally, not copied;
+raw failed output is suppressed. A typed partial receipt remains visible even
+when the subprocess exits unsuccessfully. CLI installation success remains distinct
+from native failure. Start a fresh native session after a successful connection
+update; existing threads do not reload their plugin context automatically.
+
+Agents do not need to drive menu keys: use the typed release operations, then invoke
+the verified installed executable's existing connection plan/apply operations with
+explicit options. This adds no memory MCP tools. An interrupted CLI activation is
+still recovered by reapplying its saved exact plan as described above, not by
+selecting a different release in the menu.
 
 ## Try a synthetic signet
 

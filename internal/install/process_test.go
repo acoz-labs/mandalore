@@ -72,3 +72,11 @@ func TestRealProcessCannotBypassOutputLimitThroughReadFrom(t *testing.T) {
 		t.Fatalf("real subprocess bypassed output limit: returned %d bytes, error %v", len(out), err)
 	}
 }
+
+func TestTypedProcessDiscardsOversizedOutputEvenOnNonzeroExit(t *testing.T) {
+	out, err := executeBounded(context.Background(), "/bin/sh", t.TempDir(), os.Environ(), nil,
+		"-c", "printf '{\"ok\":false}'; dd if=/dev/zero bs=1048576 count=2 2>/dev/null; exit 2")
+	if err == nil || len(out) != 0 {
+		t.Fatalf("nonzero exit retained overflowing stdout: %d bytes, error %v", len(out), err)
+	}
+}

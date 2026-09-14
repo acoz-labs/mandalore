@@ -22,7 +22,7 @@ func menuTrial(t *testing.T, script string, args ...string) (string, int) {
 }
 
 func TestMenuExitAndIncompleteInputDoNotConsent(t *testing.T) {
-	for _, script := range []string{"", "9\n", ":back\n", "1\n", "garbage\n9\n"} {
+	for _, script := range []string{"", "10\n", ":back\n", "1\n", "garbage\n10\n"} {
 		out, code := menuTrial(t, script)
 		if code != 0 || !strings.Contains(out, "Opening this menu changes nothing") || strings.Contains(out, "\x1b") {
 			t.Fatal(code, out)
@@ -31,7 +31,7 @@ func TestMenuExitAndIncompleteInputDoNotConsent(t *testing.T) {
 }
 
 func TestMenuCreatePreviewDefaultNoAndEOF(t *testing.T) {
-	for _, consent := range []string{"\n9\n", "2", ":back\n9\n"} {
+	for _, consent := range []string{"\n10\n", "2", ":back\n10\n"} {
 		dir := t.TempDir()
 		root, path := filepath.Join(dir, "signet"), filepath.Join(dir, "binding.json")
 		script := strings.Join([]string{"1", root, "Synthetic", "Test machine", "Test actor", path}, "\n") + "\n" + consent
@@ -50,7 +50,7 @@ func TestMenuCreatePreviewDefaultNoAndEOF(t *testing.T) {
 func TestMenuCreatesBindsAndInspectsWithOneReader(t *testing.T) {
 	dir := t.TempDir()
 	root, path := filepath.Join(dir, "signet"), filepath.Join(dir, "binding.json")
-	script := strings.Join([]string{"1", root, "Synthetic", "Test machine", "Test actor", path, "2", "3", "9", ""}, "\n")
+	script := strings.Join([]string{"1", root, "Synthetic", "Test machine", "Test actor", path, "2", "3", "10", ""}, "\n")
 	out, code := menuTrial(t, script)
 	if code != 0 || !strings.Contains(out, "[PASS] Local signet ready") || !strings.Contains(out, "[PASS] Signet structure") || !strings.Contains(out, "not configured") {
 		t.Fatal(code, out)
@@ -69,7 +69,7 @@ func TestMenuBindingCollisionPrecedesCreate(t *testing.T) {
 	if err := os.WriteFile(path, []byte("preserve"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	script := strings.Join([]string{"1", root, "Synthetic", "Test machine", "Test actor", path, "9", ""}, "\n")
+	script := strings.Join([]string{"1", root, "Synthetic", "Test machine", "Test actor", path, "10", ""}, "\n")
 	out, code := menuTrial(t, script)
 	if code != 1 || !strings.Contains(out, "binding already exists") {
 		t.Fatal(code, out)
@@ -96,7 +96,7 @@ func TestMenuPartialGitFailurePreservesReadyBinding(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("PATH", dir) // no Git; creation and binding are still real operations
 	root, path := filepath.Join(dir, "signet"), filepath.Join(dir, "binding.json")
-	script := strings.Join([]string{"1", root, "Synthetic", "Test machine", "Test actor", path, "2", "9", ""}, "\n")
+	script := strings.Join([]string{"1", root, "Synthetic", "Test machine", "Test actor", path, "2", "10", ""}, "\n")
 	out, code := menuTrial(t, script)
 	if code != 1 || !strings.Contains(out, "Partial setup: signet and binding are ready") || strings.Contains(out, "[PASS] Local signet ready") {
 		t.Fatal(code, out)
@@ -113,7 +113,7 @@ func (failedMenuWriter) Write([]byte) (int, error) { return 0, io.ErrClosedPipe 
 func TestMenuCannotApplyIfPreviewCannotBeDisplayed(t *testing.T) {
 	dir := t.TempDir()
 	root, path := filepath.Join(dir, "signet"), filepath.Join(dir, "binding.json")
-	script := strings.Join([]string{"1", root, "Synthetic", "Test machine", "Test actor", path, "2", "9", ""}, "\n")
+	script := strings.Join([]string{"1", root, "Synthetic", "Test machine", "Test actor", path, "2", "10", ""}, "\n")
 	if code := run(context.Background(), []string{"menu", "--plain"}, strings.NewReader(script), failedMenuWriter{}, io.Discard); code != 1 {
 		t.Fatal(code)
 	}
@@ -123,7 +123,7 @@ func TestMenuCannotApplyIfPreviewCannotBeDisplayed(t *testing.T) {
 }
 
 func TestMenuOverlongInputStopsWithoutReadingFollowingConsent(t *testing.T) {
-	out, code := menuTrial(t, strings.Repeat("x", 8192)+"\n9\n")
+	out, code := menuTrial(t, strings.Repeat("x", 8192)+"\n10\n")
 	if code != 1 || !strings.Contains(out, "answer exceeds") {
 		t.Fatal(code, out)
 	}
@@ -141,7 +141,7 @@ func TestMenuExistingSignetGetsIndependentBindingWithoutGitInit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	script := strings.Join([]string{"2", root, "Second machine", "Synthetic", second, "2", "9", ""}, "\n")
+	script := strings.Join([]string{"2", root, "Second machine", "Synthetic", second, "2", "10", ""}, "\n")
 	out, code := menuTrial(t, script)
 	if code != 0 || !strings.Contains(out, "[PASS] Local signet connected") {
 		t.Fatal(code, out)
@@ -174,7 +174,7 @@ func TestMenuConnectionPreviewDoesNotRunArtifact(t *testing.T) {
 		t.Fatal(err)
 	}
 	state, native := filepath.Join(dir, "state"), filepath.Join(dir, "native")
-	out, code := menuTrial(t, "5\n\n\n9\n", "--binding", path, "--binary", binary, "--native-binary", binary, "--state-dir", state, "--native-home", native)
+	out, code := menuTrial(t, "5\n\n\n10\n", "--binding", path, "--binary", binary, "--native-binary", binary, "--state-dir", state, "--native-home", native)
 	if code != 0 || !strings.Contains(out, "Review Codex connection") || !strings.Contains(out, "Native profile") || !strings.Contains(out, "Runtime SHA256") {
 		t.Fatal(code, out)
 	}

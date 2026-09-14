@@ -29,6 +29,7 @@ const help = `Mandalore — durable memory across tools
   mandalore release inspect [--version VERSION | --candidate DIR]
   mandalore release plan [--version VERSION | --candidate DIR | --retained SHA256] --prefix DIR
   mandalore release apply < reviewed-plan.json
+  mandalore release install [--version VERSION | --candidate DIR | --retained SHA256] [--prefix DIR] [--plain]
   mandalore signet create --repository DIR --name NAME --device-label LABEL
   mandalore signet bind --repository DIR --binding FILE --device-label LABEL --actor NAME
   mandalore memory recall --binding FILE [--query TEXT] [--scope-kind KIND --scope-id ID]
@@ -63,7 +64,8 @@ Common options: --binding FILE, --harness NAME, --read-only, --help.
 Binding selection: explicit file, then MANDALORE_BINDING, then platform config.
 No cwd-based bank discovery. Memory saves are local; explicit sync reports delivery.
 Release inspection/planning are read-only; apply changes only the selected CLI installation.
-Interactive release install/update and publication are still under development.
+Release install/menu use default-No previews; a native connection update is a separate choice.
+Public release publication is still under development.
 `
 
 func main() {
