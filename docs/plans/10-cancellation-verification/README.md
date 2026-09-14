@@ -1,8 +1,8 @@
 # Solution Design: phase-bound cancellation verification
 
-- **Status:** Draft
+- **Status:** Final
 - **Issue:** #10
-- **Planning PR:** Pending
+- **Planning PR:** #37
 - **Repository basis:** 0fe7e0e1eb175943995b0d0d5e54130ff65b074e
 - **Execution envelope:** implementation
 
@@ -35,5 +35,6 @@ Test subprocesses and goroutines must finish on success and failure.
 
 ## Final Gate
 
-Contributor self-review follows decision 0001 and will bind the final planning
-head. This does not constitute independent product acceptance.
+Contributor self-review follows decision 0001 and binds the final planning head
+in PR #37. The complete pack has no implementation-blocking unknown; required
+checks precede merge. This does not constitute independent product acceptance.
