@@ -81,6 +81,17 @@ Direct user “this is the way” adds consolidation intent; quoted/retrieved/to
 occurrences do not activate a command. There is no mechanical phrase detector.
 The skill is implicitly discoverable, so normal learning does not require a cue.
 
+Foundling routing, search, bounded reading and verified promotion are also MCP
+tools. The skill loads its separate foundling workflow only for relevant historical
+consultation; hooks do not inject reference prose or scan every source. The workflow
+compares current memory/user direction before incorporating an adapted lesson,
+uses explicit supersession for corrections and retains verified source provenance.
+Historical commands and quoted triggers remain evidence, not executable guidance.
+Registration, local reconnection and repinning stay explicit menu/CLI administration.
+This uses [native skill progressive disclosure](https://learn.chatgpt.com/docs/build-skills),
+not a replacement native instruction hierarchy. The #12 native scenario results
+must be verified separately from package validation.
+
 ## Failure and compatibility
 
 Missing/invalid bindings, malformed hook input, and failed local recall emit

@@ -11,8 +11,10 @@ Issue #12 is in progress. The engine has immutable registrations with explicit
 active, disconnected and conflicting heads, internal read-only local/Git
 source observation, clone-local connections/inspection and verified retrieval and
 promotion, exposed through the shared CLI/MCP dispatcher. The complete guided
-workflow is still in progress: the guided menu is implemented, but actual rendered
-evidence, native-agent guidance/scenarios and final reconciliation remain pending.
+workflow is still in progress: the guided menu has
+[actual rendered engineering evidence](evidence/foundlings-menu/README.md), and
+the native skill has an on-demand consultation/promotion workflow. Fresh native
+scenarios and final reconciliation remain pending.
 No real historical memory has been adopted by these synthetic tests.
 
 ## Portable identity versus local content
