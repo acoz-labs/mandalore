@@ -208,7 +208,7 @@ func Prepare(o Options) (Plan, error) {
 	key := planKey(p)
 	p.Root = filepath.Join(o.StateDir, "connections", key)
 	base, _, _ := strings.Cut(manifest.Version, "+")
-	p.Version = base + "+connection." + key
+	p.Version = base + "+codex." + key
 	for _, path := range []string{p.Root, p.Runtime} {
 		resolved, err := canonical(path)
 		if err != nil || resolved != path {

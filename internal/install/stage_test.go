@@ -1,6 +1,7 @@
 package install
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
@@ -114,5 +115,30 @@ func TestBundlePinsDefaultsAndPreservesMissingOrEditedGenerations(t *testing.T) 
 	}
 	if got, _ := os.ReadFile(file); string(got) != "user edit" {
 		t.Fatal("old generation changed")
+	}
+}
+
+func TestReceiptCannotRedirectNativeCacheWithAnEditedVersion(t *testing.T) {
+	p, err := Prepare(fixture(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := publishBundle(p); err != nil {
+		t.Fatal(err)
+	}
+	r, err := loadReceipt(p.Root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r.Plan.Version = "../../escape"
+	b, err := json.Marshal(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(p.Root, "connection.json"), b, 0600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := loadReceipt(p.Root); err == nil {
+		t.Fatal("edited cache path accepted")
 	}
 }

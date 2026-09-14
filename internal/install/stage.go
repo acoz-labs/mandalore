@@ -168,6 +168,10 @@ func loadReceipt(root string) (Receipt, error) {
 		return Receipt{}, errors.New("invalid connection receipt")
 	}
 	p := r.Plan
+	base, _, _ := strings.Cut(p.PackageVersion, "+")
+	if p.Version != base+"+codex."+planKey(p) || strings.ContainsAny(p.Version, "/\\") {
+		return Receipt{}, errors.New("invalid native cache version in connection receipt")
+	}
 	if p.Marketplace != "mandalore" || p.PluginID != "mandalore@mandalore" ||
 		p.Root != filepath.Join(p.StateDir, "connections", planKey(p)) ||
 		p.Runtime != filepath.Join(p.StateDir, "runtimes", "sha256-"+p.BinarySHA256, "mandalore") {
