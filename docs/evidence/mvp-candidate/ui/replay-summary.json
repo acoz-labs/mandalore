@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "result": {
+    "phase": "complete",
+    "installed": true,
+    "already_current": true,
+    "destination_changed": false,
+    "plan_sha256": "9a4e188a3ee2c83ffb2f09cfcb3f32c67e344eabbc5045dbf19fea2f5483c45f",
+    "connections": "unchanged"
+  }
+}

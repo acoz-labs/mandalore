@@ -120,8 +120,13 @@ The [two-machine CLI checkpoint](physical.md) verifies bidirectional memory and
 origin continuity over SSH between two physical macOS ARM64 machines. It does not
 claim a second native Codex installation or other-platform acceptance.
 
-Keep #10 open. Remaining native-machine/platform coverage and the full rendered
-install/update/repair journey still need their
+The [rendered installer/repair checkpoint](ui/README.md) adds ten fresh recordings
+of this candidate: core installation, native handoff, healthy/missing-hook repair,
+real partial activation/recovery and keyboard/narrow-mode cancellation. It retains
+the failed first native attempt and distinguishes structural from session checks.
+
+Keep #10 open. Remaining native-machine/platform coverage, installer negative and
+source-selection cases, and a distinct retained-runtime switch still need their
 exact-candidate evidence. Independent acceptance and publication prerequisites
 remain separate. Cross-builds and a local bare remote are not other-platform or
 second-physical-machine acceptance; no live adoption or release is claimed.

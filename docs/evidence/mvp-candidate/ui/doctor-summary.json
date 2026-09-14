@@ -1,0 +1,91 @@
+{
+  "healthy": true,
+  "checks": [
+    {
+      "name": "state-path",
+      "status": "pass",
+      "detail": "Passed"
+    },
+    {
+      "name": "native-home",
+      "status": "pass",
+      "detail": "Passed"
+    },
+    {
+      "name": "native-binary",
+      "status": "pass",
+      "detail": "Passed"
+    },
+    {
+      "name": "native-inventory",
+      "status": "pass",
+      "detail": "Passed"
+    },
+    {
+      "name": "connection-receipt",
+      "status": "pass",
+      "detail": "Passed"
+    },
+    {
+      "name": "bundle-integrity",
+      "status": "pass",
+      "detail": "Passed"
+    },
+    {
+      "name": "cache-integrity",
+      "status": "pass",
+      "detail": "Passed"
+    },
+    {
+      "name": "runtime-integrity",
+      "status": "pass",
+      "detail": "Passed"
+    },
+    {
+      "name": "native-executable-identity",
+      "status": "pass",
+      "detail": "Passed"
+    },
+    {
+      "name": "signet-binding",
+      "status": "pass",
+      "detail": "Passed"
+    },
+    {
+      "name": "binding-integrity",
+      "status": "pass",
+      "detail": "Passed"
+    },
+    {
+      "name": "native-plugin",
+      "status": "pass",
+      "detail": "Passed"
+    },
+    {
+      "name": "native-login",
+      "status": "not-tested",
+      "detail": "Native account authentication was not exercised."
+    },
+    {
+      "name": "hook-trust",
+      "status": "not-tested",
+      "detail": "Review the exact hooks through the native agent UI."
+    },
+    {
+      "name": "live-mcp",
+      "status": "not-tested",
+      "detail": "Check MCP startup in a fresh native session."
+    },
+    {
+      "name": "remote-freshness",
+      "status": "not-tested",
+      "detail": "Local receipts do not prove network freshness; explicitly synchronize when allowed."
+    },
+    {
+      "name": "active-context",
+      "status": "not-tested",
+      "detail": "Existing sessions may retain earlier instructions or bindings; start a fresh session after a change."
+    }
+  ],
+  "notice": "Read-only structural inspection and native inventory. Untested boundaries are not implied healthy; no repair or synchronization is performed."
+}
