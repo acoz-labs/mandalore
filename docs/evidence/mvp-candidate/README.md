@@ -116,7 +116,11 @@ selective adaptation, same-process external refresh, two-clone conflict resoluti
 offline recall, corruption refusal/restoration and controlled uncertain-push
 recovery. Its local-only native changes are explicitly pending, not delivered.
 
-Keep #10 open. Physical-machine/platform coverage and the full rendered
+The [two-machine CLI checkpoint](physical.md) verifies bidirectional memory and
+origin continuity over SSH between two physical macOS ARM64 machines. It does not
+claim a second native Codex installation or other-platform acceptance.
+
+Keep #10 open. Remaining native-machine/platform coverage and the full rendered
 install/update/repair journey still need their
 exact-candidate evidence. Independent acceptance and publication prerequisites
 remain separate. Cross-builds and a local bare remote are not other-platform or
