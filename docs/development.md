@@ -24,6 +24,14 @@ following the public predecessor's pattern. No public fork code goes to private
 runners. This is an intentional configuration, not an automatic fallback.
 Release/acceptance workflows retain their separate permissions and checks.
 
+Verification-only branch deviation: `verification/retained-platforms` adds two
+same-repository PR jobs using explicit `CI_RUNNER_LINUX_ARM64=ubuntu-24.04-arm`
+and `CI_RUNNER_MACOS_AMD64=macos-15-intel` variables. The ordinary `ci` job and
+default `CI_RUNNER` stay unchanged. These standard public runners execute only
+the already-retained candidate, after CI passes, without native accounts or
+provider credentials in the candidate process. This temporary collector is not
+an intended product merge or a relaxation of release/acceptance checks.
+
 Local validation is not independent product acceptance. Record exact source and
 artifact identities, actual native results and pending checks in the issue/PR.
 
