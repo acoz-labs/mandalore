@@ -64,3 +64,11 @@ func TestProcessFailureOutputSuppressedAndCancellationBounded(t *testing.T) {
 		t.Fatal("output bound ignored")
 	}
 }
+
+func TestRealProcessCannotBypassOutputLimitThroughReadFrom(t *testing.T) {
+	out, err := execute(context.Background(), "/bin/sh", t.TempDir(), os.Environ(), nil,
+		"-c", "dd if=/dev/zero bs=1048576 count=2 2>/dev/null")
+	if err == nil || len(out) != 0 {
+		t.Fatalf("real subprocess bypassed output limit: returned %d bytes, error %v", len(out), err)
+	}
+}

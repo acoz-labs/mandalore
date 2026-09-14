@@ -21,13 +21,14 @@ import (
 type runner func(context.Context, Options, ...string) ([]byte, error)
 type probeFunc func(context.Context, Plan) error
 
-type boundedOutput struct{ bytes.Buffer }
+// Do not promote bytes.Buffer.ReadFrom: io.Copy could otherwise bypass Write.
+type boundedOutput struct{ buffer bytes.Buffer }
 
 func (b *boundedOutput) Write(p []byte) (int, error) {
-	if b.Len()+len(p) > 1<<20 {
+	if b.buffer.Len()+len(p) > 1<<20 {
 		return 0, errors.New("process output exceeded limit")
 	}
-	return b.Buffer.Write(p)
+	return b.buffer.Write(p)
 }
 
 func execute(ctx context.Context, binary, dir string, env []string, input io.Reader, args ...string) ([]byte, error) {
@@ -56,7 +57,7 @@ func execute(ctx context.Context, binary, dir string, env []string, input io.Rea
 		}
 		return nil, errors.New("selected process failed, timed out or exceeded its output limit; raw output suppressed")
 	}
-	return out.Bytes(), nil
+	return out.buffer.Bytes(), nil
 }
 
 func environment(overrides map[string]string) []string {
