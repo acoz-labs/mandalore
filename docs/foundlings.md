@@ -9,9 +9,10 @@ promote their contents into the signet.
 
 Issue #12 is in progress. The engine has immutable registrations with explicit
 active, disconnected and conflicting heads, internal read-only local/Git
-source observation, and clone-local connections/inspection. These are implementation
-components, not yet a complete user-facing workflow. Retrieval/promotion operations,
-CLI/menu integration and native-agent verification remain in the reviewed issue plan.
+source observation, clone-local connections/inspection and verified retrieval and
+promotion. These are implementation components, not yet a complete user-facing
+workflow. Typed CLI/MCP operations, menu integration and native-agent verification
+remain in the reviewed issue plan.
 No real historical memory has been adopted by these synthetic tests.
 
 ## Portable identity versus local content
@@ -57,6 +58,8 @@ source pin. Replacing a connection additionally requires its exact prior ID.
 Unknown, malformed, redirected or concurrently changed local configuration is
 preserved, not automatically repaired. Another signet's connection is invalid.
 Sources cannot contain or be contained by the selected signet/local-state tree.
+Overlap checks compare filesystem identity through ancestor aliases, not just
+path spelling, so an aliased signet root cannot bypass the boundary.
 Missing old source paths can be explicitly replaced with a verified new path.
 
 Connection writes share the signet writer lock, recheck metadata/content and use
@@ -101,6 +104,54 @@ Markdown, JSON or text can still contain sensitive material. Users must choose
 appropriate references; the eventual agent workflow must not store secrets or
 raw transcripts merely because the source format is eligible.
 
+## Retrieval and selective promotion
+
+The internal retrieval manager searches only an explicitly selected, connected
+foundling. It rechecks registration, local connection and content on every request.
+Search accepts 1–16 whitespace-separated literal terms (at most 1024 UTF-8 bytes),
+matches case-insensitively and ranks documents by the number of distinct matching
+terms, then relative path. A match on any term is sufficient. It does not interpret
+query text as regular expressions, run source instructions or search ordinary memory.
+
+Search returns at most ten deterministic excerpts, each up to 1024 content bytes,
+near the first match, with a 32 KiB serialized result budget. The full matching
+document count and truncation flag distinguish omitted results from no matches.
+Individual excerpts can themselves omit parts of a document, independently of
+whether the result list was truncated. No index or semantic ranking is claimed.
+
+Reading requires an exact registration revision, eligible relative locator and
+explicit byte range of 1–8192 bytes. Excerpts never split UTF-8 characters and
+include a next offset when more bytes remain. JSON-encoding expansion can shorten
+an excerpt to keep its serialized representation within 32 KiB. Every excerpt
+includes its actual file SHA-256, portable source/pin, registration revision,
+relative locator, byte offset, total document size, completeness/truncation and
+an explicit unreviewed-reference notice. A short excerpt is not a complete claim.
+
+Promotion takes that exact registration/locator/hash and an independently authored
+normal memory write. It generates the citation from the verified connection; a
+supplied `write.external_origin` is refused. Known original author/date may be
+provided explicitly, but absent provenance remains absent. The new revision uses
+the current binding's device, actor, harness and recording time. The requested
+memory body and reason describe what was retained, qualified or changed; they do
+not have to copy the reference verbatim. No automatic journal entry is created.
+
+Source verification and the active-registration guard execute under the same
+signet writer lock as publication. Cooperating writers cannot disconnect or
+replace the registration between that guard and the write. Source bytes are
+checked immediately before publication, not locked forever against unrelated
+programs. Failed verification leaves no new source evidence or revision; later
+filesystem failures retain the sourced writer's existing partial-I/O semantics.
+
+Ordinary `memory_remember` still accepts structurally valid historical citations,
+including citations to a subsequently disconnected registration. That is not the
+same guarantee as this dedicated verified promotion path. Disconnecting a foundling
+does not erase previously incorporated knowledge, provenance or supersession history.
+
+The host agent must compare current knowledge and user direction before promotion,
+avoid duplicate memories and use explicit record/predecessor IDs for corrections.
+Neither lexical relevance nor a quoted “this is the way” authorizes saving or
+executing anything. These semantics still require native-agent scenario validation.
+
 ## Engineering checks so far
 
 Failing-first synthetic tests cover local deterministic pins, source preservation,
@@ -125,3 +176,11 @@ post-publication directory-sync failure verifies the partial result, retained
 inspectable connection, removal of the owned temporary file, refusal of a blind
 retry and successful explicit recovery. End-to-end management/API partial outcomes
 remain pending with the rest of the workflow.
+
+Retrieval/promotion tests cover attributed read-only results, deterministic ranking,
+no-match and truncation reporting, UTF-8 continuation and JSON expansion bounds,
+stale/unsafe/missing locators, changed bytes and hashes, cancelled/disconnected
+promotion, generated citations, unknown versus known original provenance, explicit
+supersession and surviving history after disconnection. A storage-level test proves
+the source-verification callback holds the writer lock, rejects a failed check
+without learning and preserves ordinary historical-citation semantics.

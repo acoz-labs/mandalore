@@ -72,6 +72,31 @@ func textWithin(value string, maxBytes int) bool {
 }
 
 func (s *Service) Remember(input Write) (Revision, error) {
+	return s.remember(input, nil)
+}
+
+// RememberFromFoundling requires a current active registration and a caller's
+// fresh source verification under the same lock as publication. The callback
+// must be read-only and must not invoke another locking memory mutation.
+// Ordinary Remember keeps accepting historical citations without this guarantee.
+func (s *Service) RememberFromFoundling(input Write, verify func() error) (Revision, error) {
+	if input.ExternalOrigin == nil || verify == nil {
+		return Revision{}, errors.New("foundling promotion requires origin and source verification")
+	}
+	return s.remember(input, func() error {
+		o := input.ExternalOrigin
+		r, err := s.Foundling(o.FoundlingID)
+		if err != nil {
+			return err
+		}
+		if r.State != "active" || len(r.HeadIDs) != 1 || r.HeadIDs[0] != o.RegistrationRevisionID {
+			return errors.New("foundling registration changed before promotion")
+		}
+		return verify()
+	})
+}
+
+func (s *Service) remember(input Write, verify func() error) (Revision, error) {
 	if err := s.validateScope(s.scope(input.Scope)); err != nil {
 		return Revision{}, err
 	}
@@ -107,7 +132,7 @@ func (s *Service) Remember(input Write) (Revision, error) {
 		Evidence:   Evidence{Basis: input.Basis, Confidence: input.Confidence, SourceRefs: []string{source.ID}},
 		Supersedes: input.Supersedes, ChangeReason: input.Reason,
 	}
-	if err := s.store.PutSourced(r, source); err != nil {
+	if err := s.store.putSourced(r, source, verify); err != nil {
 		return Revision{}, err
 	}
 	return r, nil

@@ -273,3 +273,24 @@ func TestPublishedConnectionReportsDurabilityFailureWithoutRollback(t *testing.T
 		t.Fatal("explicit recovery failed", recovered, err)
 	}
 }
+
+func TestSourceOverlapRecognizesAncestorAliases(t *testing.T) {
+	parent := t.TempDir()
+	if err := os.Mkdir(filepath.Join(parent, "signet"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	alias := filepath.Join(t.TempDir(), "alias")
+	if err := os.Symlink(parent, alias); err != nil {
+		t.Fatal(err)
+	}
+	canonical, err := filepath.EvalSymlinks(parent)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !overlapping(canonical, filepath.Join(alias, "signet")) || !overlapping(filepath.Join(canonical, "signet"), filepath.Join(alias, "signet")) {
+		t.Fatal("ancestor alias bypassed overlap detection")
+	}
+	if overlapping(filepath.Join(canonical, "signet"), t.TempDir()) {
+		t.Fatal("unrelated sources overlap")
+	}
+}

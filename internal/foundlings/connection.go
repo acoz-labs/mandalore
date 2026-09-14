@@ -125,9 +125,32 @@ func (m *Manager) load(id string) (*Connection, error) {
 }
 
 func overlapping(a, b string) bool {
+	// Compare filesystem identity, not just path spelling: native bindings may
+	// name a real root through an ancestor alias (or a case-insensitive spelling).
+	a, err := canonicalDirectory(a)
+	if err != nil {
+		return true
+	}
+	b, err = canonicalDirectory(b)
+	if err != nil {
+		return true
+	}
 	contains := func(parent, child string) bool {
-		rel, err := filepath.Rel(parent, child)
-		return err != nil || (rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)))
+		ancestor, err := os.Stat(parent)
+		if err != nil {
+			return true
+		}
+		for {
+			current, err := os.Stat(child)
+			if err != nil || os.SameFile(ancestor, current) {
+				return true
+			}
+			next := filepath.Dir(child)
+			if next == child {
+				return false
+			}
+			child = next
+		}
 	}
 	return contains(a, b) || contains(b, a)
 }
