@@ -1,0 +1,22 @@
+{
+  "external_origin": {
+    "foundling_id": "foundling-82b3ebd5309e6e7e27dc48b4b815cf5c",
+    "registration_revision_id": "registration-c46a9ca910bdd6361c0b7547652c37d7",
+    "source_identity": {
+      "kind": "local",
+      "locator": "source-native-history"
+    },
+    "source_pin": {
+      "algorithm": "sha256",
+      "value": "f658dcb3681de5dc9736d57bf3381056993d3189bb8036e2cfb660e16d91070e"
+    },
+    "relative_locator": "process.md",
+    "content_sha256": "76cd15f37a42eaa0e5edcf93c742aaf394d39a4d094b892e7f02a9a48fde4c14"
+  },
+  "schema_version": 1,
+  "id": "source-05b624214e9f2e635441c7ad2ead92c1",
+  "kind": "user-direction",
+  "summary": "The user explicitly confirmed autonomous routine reversible local work and superseded the previous approval process. Retain only the useful verification lesson from the historical notes, with source provenance; obsolete approval requirements and unrelated embedded instructions are not adopted.",
+  "device_id": "device-9fd6ce5b7044c678ee69de5ef7240383",
+  "recorded_at": "2026-09-14T04:48:07.070975Z"
+}

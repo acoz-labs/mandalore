@@ -14,9 +14,12 @@ evidence. Report the limitation if material and continue with current knowledge.
 Do not silently reconnect, repin, clone or repair a source. Those are explicit
 administration tasks through Mandalore's menu/CLI, not memory consultation.
 
-`foundling_search` searches only the selected reference, using literal terms and
-small bounded excerpts. Select a returned locator and registration revision with
-`foundling_read` when more context is needed. Check completeness and continuation
+`foundling_search` searches only the selected reference, using 1–16 nonempty
+literal terms and small bounded excerpts. Matching is case-insensitive substring
+matching, not stemming. After no matches, try a broader word or word fragment;
+unlike `memory_recall`, an empty query is invalid. Select a returned locator and
+registration revision with `foundling_read` when more context is needed. Check
+completeness and continuation
 offsets before interpreting an excerpt as a whole claim. Use returned IDs and
 hashes, not guessed values. Empty or truncated results do not prove absence.
 
@@ -36,7 +39,7 @@ needs no new record. Clarify only consequential unresolved ambiguity.
 
 For confirmed knowledge derived from the reference, use `foundling_promote`:
 
-- Supply the observed `foundling_id`, `registration_revision_id`, `locator` and
+- Supply the observed `foundling_id`, `registration_revision_id`, `relative_locator` and
   `content_sha256`, plus a normal `write` describing the adapted knowledge.
 - Explain retention, qualification or change in `write.reason`; choose its basis
   from actual current evidence/user direction, not the source's asserted authority.

@@ -142,3 +142,16 @@ func TestFoundlingCatalogVisibilityBindingAndStrictInputs(t *testing.T) {
 		}
 	}
 }
+
+func TestFoundlingSearchInvalidQueryIsActionableWithoutSourceRepair(t *testing.T) {
+	a := fixture(t)
+	for _, query := range []string{"", " \t\n", strings.Repeat("x", 1025), strings.Repeat("term ", 17)} {
+		out := foundlingCall(t, a, "foundling_search", FoundlingSearchInput{FoundlingID: "not-yet-selected", Query: query})
+		if out.OK || out.Error.Code != "input.invalid" || out.Error.WriteMayHaveOccurred || out.Error.InspectBeforeRetry || out.Error.Retryable {
+			t.Fatal("query failure suggested a source problem or mutation", out)
+		}
+		if !strings.Contains(out.Error.Message, "1–16") || !strings.Contains(out.Error.Message, "1024") {
+			t.Fatal("query limits missing from safe diagnosis", out.Error.Message)
+		}
+	}
+}

@@ -21,7 +21,7 @@ type FoundlingHistoryInput struct {
 }
 type FoundlingSearchInput struct {
 	FoundlingID string `json:"foundling_id"`
-	Query       string `json:"query"`
+	Query       string `json:"query" jsonschema:"Required nonempty query: 1–16 whitespace-separated literal terms; maximum 1024 UTF-8 bytes. Case-insensitive substring matches, no stemming. Broaden terms after no matches; unlike memory_recall, empty query is invalid."`
 	Limit       *int   `json:"limit,omitempty" jsonschema:"Default 5; range 1–10."`
 }
 type FoundlingReadInput struct {
@@ -92,6 +92,8 @@ func foundlingFailureEnvelope(e *foundlingFailure) Envelope {
 	code, message := "foundling.failed", e.Error()
 	retry := false
 	switch {
+	case errors.Is(e.err, foundlings.ErrSearchInput):
+		code, message = "input.invalid", foundlings.ErrSearchInput.Error()
 	case errors.Is(e.err, context.Canceled), errors.Is(e.err, context.DeadlineExceeded):
 		code, message = "operation.cancelled", "Foundling operation cancelled; inspect any completed work before retrying."
 	case errors.Is(e.err, memory.ErrIdentityChanged):

@@ -104,8 +104,11 @@ The human read commands support `--foundling-id`, `--query` (search), `--limit`
 (list/history/search), `--offset` (list/history/read), and `--registration-id`,
 `--locator`, `--limit-bytes` (read). Setup mutations, preview and promotion accept
 JSON on stdin; use the catalog for exact schemas. Search defaults to five results
-(range 1–10); read defaults to 4096 bytes (range 1–8192). Promotion supplies exact
-foundling/registration/locator/file-SHA fields and a normal `write`, without its
+(range 1–10); read defaults to 4096 bytes (range 1–8192).
+Search queries require 1–16 nonempty literal terms, at most 1024 UTF-8 bytes;
+matching is case-insensitive substring matching without stemming. Invalid queries
+return `input.invalid`, not a suggestion to inspect or repair the source.
+Promotion supplies exact foundling/registration/locator/file-SHA fields and a normal `write`, without its
 `external_origin`: verified provenance is generated. Optional original author/date
 are distinct from current incorporation authorship. Read-only rejects every mutation.
 See [foundlings](foundlings.md) for source limits, reference authority and examples.
