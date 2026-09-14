@@ -38,6 +38,13 @@ automation remains separate from engineering self-review.
 
 Keep the durable rationale in `docs/decisions/0001-mvp-self-review.md`.
 
+The owner subsequently authorized personally performed owner acceptance for the
+exact retained MVP candidate despite matching implementation-account authorship.
+Follow `docs/decisions/0002-mvp-owner-acceptance.md` and its fail-closed workflow
+scope. This supersedes only the independent-author rule in that case. It is not
+agent self-acceptance, an acceptance verdict, or permission to publish. All other
+evidence, checks, privacy and release gates remain in effect.
+
 The owner also authorizes routine interactive selections during this goal,
 including native startup menus and review/trust of the exact synthetic-test
 hooks authored here. Drive these in the designated testing pane and record
