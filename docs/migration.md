@@ -191,6 +191,9 @@ does not stop running native sessions or make a local snapshot an adequate backu
 
 ## Evidence boundary
 
+See [migration engineering evidence](migration-engineering-evidence.md) for the
+tested implementation, synthetic cases, corrections and untested boundaries.
+
 Prototype synthetic/native tests and macOS user trials are prior evidence only.
 Rerun ported tests and reaccept the actual new artifacts. Linux cross-compilation
 is not Linux runtime acceptance. Publish sanitized summaries and synthetic
