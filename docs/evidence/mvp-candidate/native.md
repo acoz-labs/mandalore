@@ -122,7 +122,10 @@ arbitrary remote remains current forever. Here the explicit local bare fixture's
 head was also inspected. All three native sessions are closed; the new synthetic
 connection remains installed and its prior generation is retained.
 
-Native foundling adaptation, externally refreshed reads in a live native session,
-corruption/ambiguous-write/offline/concurrent recovery, physical-machine/platform
-coverage and the complete exact-candidate rendered install/update/repair journey
-remain. Independent acceptance and public release require their separate gates.
+The subsequent [live reference and recovery checkpoint](live-recovery.md) covers
+native foundling adaptation, same-process externally refreshed reads and bounded
+corruption/uncertain-push/offline/concurrent recovery scenarios. It intentionally
+changes this synthetic bank; the snapshots above remain the earlier checkpoint,
+not its latest state. Physical-machine/platform coverage and the complete
+exact-candidate rendered install/update/repair journey remain. Independent
+acceptance and public release require their separate gates.

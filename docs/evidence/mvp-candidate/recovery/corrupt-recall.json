@@ -1,0 +1,1 @@
+{"protocol_version":1,"ok":false,"error":{"code":"store.invalid","message":"Selected signet failed structural validation; inspect its files and history before retrying.","retryable":false,"write_may_have_occurred":false,"inspect_before_retry":false}}

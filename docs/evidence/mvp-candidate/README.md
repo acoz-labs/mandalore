@@ -1,4 +1,4 @@
-# Retained MVP candidate: reference/interface checkpoint
+# Retained MVP candidate: engineering checkpoints
 
 Contributor engineering verification for #10, not independent product acceptance
 or a public release. This evidence-only branch does not change or rebuild the
@@ -76,8 +76,8 @@ a useful verification lesson, a quoted cue and an inert command fragment.
 
 This tests caller-authored selective promotion through the public interface, not
 whether a model will independently choose an appropriate adaptation or resist
-arbitrary hostile reference instructions. Native-agent consultation remains pending
-against this new artifact.
+arbitrary hostile reference instructions. Subsequent native-agent consultation is
+recorded separately in the [live reference and recovery checkpoint](live-recovery.md).
 
 ## Actual MCP stdio checks and measurements
 
@@ -111,9 +111,13 @@ its actual limits separately from the initial CLI/MCP-only work above.
 file other than itself. No credentials, local bindings, workstation paths or raw
 native transcripts are published.
 
-Keep #10 open. Native foundling/live external-refresh scenarios,
-recovery/offline/concurrent/ambiguous-write cases, physical-machine
-coverage and the full rendered install/update/repair journey still need their
+The [live reference and recovery checkpoint](live-recovery.md) adds actual native
+selective adaptation, same-process external refresh, two-clone conflict resolution,
+offline recall, corruption refusal/restoration and controlled uncertain-push
+recovery. Its local-only native changes are explicitly pending, not delivered.
+
+Keep #10 open. Physical-machine/platform coverage and the full rendered
+install/update/repair journey still need their
 exact-candidate evidence. Independent acceptance and publication prerequisites
 remain separate. Cross-builds and a local bare remote are not other-platform or
 second-physical-machine acceptance; no live adoption or release is claimed.
