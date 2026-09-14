@@ -23,3 +23,10 @@ exists rather than blocking preliminary engineering work on final acceptance.
 The end-of-work handoff should identify format/compatibility choices, data and
 trust boundaries, test coverage gaps, and deferred work. Keep factual evidence in
 repository docs and PRs rather than depending on a conversation transcript.
+
+The owner subsequently authorized acting through routine interactive choices
+for the remainder of this goal. This includes skipping a native runtime update
+to retain the inspected test version, reviewing the authored test hooks and
+driving the designated test pane. Preserve the native trust mechanism and record
+what was selected; do not substitute an unattended trust bypass. This removes a
+routine dialogue bottleneck, not the independent release-acceptance boundary.

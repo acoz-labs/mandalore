@@ -38,6 +38,12 @@ automation remains separate from engineering self-review.
 
 Keep the durable rationale in `docs/decisions/0001-mvp-self-review.md`.
 
+The owner also authorizes routine interactive selections during this goal,
+including native startup menus and review/trust of the exact synthetic-test
+hooks authored here. Drive these in the designated testing pane and record
+consequential choices; do not repeatedly stop for routine menu permission.
+This does not expand data, migration, credential or release authority.
+
 ## Roles
 
 - Product owners set intent, priority, and product judgment.
