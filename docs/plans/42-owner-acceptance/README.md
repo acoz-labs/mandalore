@@ -1,8 +1,8 @@
 # Solution Design: retained MVP owner acceptance
 
-- **Status:** Draft
+- **Status:** Final
 - **Issue:** #42
-- **Planning PR:** Pending
+- **Planning PR:** #43
 - **Repository basis:** 08129ed5ecb75df5950dff663f93207b7cfb7045
 - **Execution envelope:** implementation
 
