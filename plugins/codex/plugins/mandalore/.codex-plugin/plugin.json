@@ -1,0 +1,22 @@
+{
+  "name": "mandalore",
+  "version": "0.0.0-dev",
+  "description": "Your lore, across time and space. Recall and learn with your private signet.",
+  "author": {
+    "name": "Acoz Labs"
+  },
+  "repository": "https://github.com/acoz-labs/mandalore",
+  "license": "MIT",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Mandalore",
+    "shortDescription": "Your lore, across time and space.",
+    "longDescription": "Recall relevant decisions and learn confirmed changes with a private, Git-backed signet. This is the way.",
+    "developerName": "Acoz Labs",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write"],
+    "defaultPrompt": ["This is the way: remember what we decided."],
+    "brandColor": "#527D88"
+  },
+  "mcpServers": "./.mcp.json"
+}

@@ -1,0 +1,18 @@
+{
+  "hooks": {
+    "SessionStart": [{"hooks": [{
+      "type": "command",
+      "command": "/bin/sh \"${PLUGIN_ROOT}/scripts/run-memory.sh\" hook",
+      "timeout": 5,
+      "additionalContextLimit": 16384,
+      "statusMessage": "Connecting Mandalore memory"
+    }]}],
+    "UserPromptSubmit": [{"hooks": [{
+      "type": "command",
+      "command": "/bin/sh \"${PLUGIN_ROOT}/scripts/run-memory.sh\" hook",
+      "timeout": 5,
+      "additionalContextLimit": 16384,
+      "statusMessage": "Recalling Mandalore memory"
+    }]}]
+  }
+}

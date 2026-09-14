@@ -8,8 +8,11 @@ responses, and data-only foundling registration/citation validation. See the
 [format contract](signet-format.md) and [extraction inventory](memory-extraction.md).
 `internal/api`, `internal/binding`, `internal/mcp` and `cmd/mandalore` now provide
 the [shared local interface](interface.md). `internal/sync` now supplies explicit
-[Git checkpoints and reconciliation](synchronization.md). Menus, native installation
-and plugins below remain integration targets. No release is implied by these tests.
+[Git checkpoints and reconciliation](synchronization.md). `internal/codex` and
+`plugins/codex` supply the development native plugin, read-only lifecycle context
+and memory skill. Guided installation/menus and later harness plugins remain
+integration targets. [Native engineering evidence](codex-native-evidence.md) is
+separate from independent product acceptance; no release is implied.
 
 | Location | Responsibility |
 | --- | --- |
@@ -19,7 +22,8 @@ and plugins below remain integration targets. No release is implied by these tes
 | `internal/sync` | Local checkpoints and recoverable Git synchronization |
 | `internal/binding` | Local signet selection and originating-device identity |
 | `internal/mcp` | Typed stdio MCP access over the same memory engine |
-| `internal/install` | Native connections, runtime pinning, doctor/update/repair |
+| `internal/codex` | Bounded read-only native event adapter; no transcript access or synchronization |
+| `internal/install` (planned) | Native connections, runtime pinning, doctor/update/repair |
 | `plugins/codex` | First native plugin and `this-is-the-way` skill |
 | `plugins/pi` | Reserved second integration after Codex acceptance |
 | `plugins/claude-code` | Reserved third integration after Pi acceptance |

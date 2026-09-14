@@ -64,6 +64,17 @@ func TestCLIUsageDoesNotFallThrough(t *testing.T) {
 	}
 }
 
+func TestHookConfigurationErrorsAreNativeWarnings(t *testing.T) {
+	for _, args := range [][]string{{"codex-memory-hook", "--unknown"}, {"codex-memory-hook", "extra"}, {"codex-memory-hook", "--binding", "/missing"}} {
+		var out, errout bytes.Buffer
+		code := run(context.Background(), args, strings.NewReader(`{"hook_event_name":"SessionStart"}`), &out, &errout)
+		var result map[string]any
+		if code != 0 || errout.Len() != 0 || json.Unmarshal(out.Bytes(), &result) != nil || result["systemMessage"] == nil {
+			t.Fatalf("blocking/malformed hook failure: %d %s %s", code, out.String(), errout.String())
+		}
+	}
+}
+
 func TestMCPStartupErrorsStayOffProtocolStdout(t *testing.T) {
 	for _, args := range [][]string{{"mcp", "--unknown"}, {"mcp", "extra"}, {"mcp", "--binding", filepath.Join(t.TempDir(), "missing.json")}} {
 		var out, errout bytes.Buffer

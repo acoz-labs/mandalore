@@ -85,6 +85,29 @@ func TestCompiledCLIAndStdio(t *testing.T) {
 		t.Fatal("compiled sync did not deliver", delivery)
 	}
 	before := treeDigest(t, root)
+	// Exercise the actual native bridge against this compiled binary, from a
+	// different project, with an explicit binding shared by MCP and hooks.
+	bridge, err := filepath.Abs("../../plugins/codex/plugins/mandalore/scripts/run-memory.sh")
+	if err != nil {
+		t.Fatal(err)
+	}
+	hook := exec.CommandContext(ctx, "/bin/sh", bridge, "hook")
+	hook.Dir = cwd
+	for _, e := range os.Environ() {
+		if !strings.HasPrefix(e, "MANDALORE_BIN=") && !strings.HasPrefix(e, "MANDALORE_BINDING=") {
+			hook.Env = append(hook.Env, e)
+		}
+	}
+	hook.Env = append(hook.Env, "MANDALORE_BIN="+binary, "MANDALORE_BINDING="+binding)
+	hook.Stdin = strings.NewReader(`{"hook_event_name":"UserPromptSubmit","prompt":"project"}`)
+	hookBytes, err := hook.CombinedOutput()
+	if err != nil || !bytes.Contains(hookBytes, []byte("Silver Heron")) || bytes.Contains(hookBytes, []byte("Copper Finch")) {
+		t.Fatalf("native bridge: %s: %v", hookBytes, err)
+	}
+	var hookOutput map[string]any
+	if err := json.Unmarshal(hookBytes, &hookOutput); err != nil || hookOutput["hookSpecificOutput"] == nil {
+		t.Fatal("invalid native hook output", err)
+	}
 	recall := invoke("", 0, "memory", "recall", "--binding", binding)
 	data, _ = json.Marshal(recall.Result)
 	if !bytes.Contains(data, []byte("Silver Heron")) || bytes.Contains(data, []byte("Copper Finch")) {

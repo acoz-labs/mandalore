@@ -1,0 +1,6 @@
+interface:
+  display_name: "This Is the Way"
+  short_description: "Recall your lore and remember confirmed changes"
+  default_prompt: "Use $this-is-the-way to remember what we decided."
+policy:
+  allow_implicit_invocation: true

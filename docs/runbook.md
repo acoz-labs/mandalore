@@ -1,8 +1,9 @@
 # Runbook
 
-No Mandalore runtime is installed or released by this foundation. Do not offer
-an install command until distribution acceptance passes. Archiving My Friday
-neither migrates nor removes existing pinned installations.
+Mandalore remains an unreleased development runtime. Explicit synthetic native
+installation is described in the [Codex guide](../plugins/codex/README.md); do
+not present it as a released installer or accepted production upgrade. Archiving
+My Friday neither migrates nor removes existing pinned installations.
 
 ## Project operations
 
@@ -48,6 +49,19 @@ rewrite evidence to hide it. A malformed local status receipt is not repaired by
 inspection. No-save/read-only tasks must not trigger synchronization.
 
 ### Remaining integration behavior
+
+The development Codex plugin has read-only local hooks and a shared MCP
+connection. Read-only describes the hooks themselves, not the whole session:
+ordinary confirmed learning remains enabled unless the current user task
+prohibits it. When diagnosing a refusal to save, distinguish an instruction
+interpretation from unavailable tools or a verified storage error. Do not fix a
+prompt ambiguity by bypassing a real user no-save instruction. Restart after
+correcting loaded instructions; old context is not evidence for the new wording.
+
+Inspect and trust the exact new hooks through native review, preserving other
+hooks. Do not overwrite trust state or use a blanket bypass as installation.
+The user may delegate routine menu choices without authorizing private-data
+migration, provider account changes or public release.
 
 Doctor separates structural checks from login, MCP startup, hook trust, remote
 freshness and active-session context. Repair touches only known managed state

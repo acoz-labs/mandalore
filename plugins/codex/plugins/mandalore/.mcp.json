@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "mandalore": {
+      "command": "/bin/sh",
+      "args": ["./scripts/run-memory.sh", "mcp"],
+      "cwd": ".",
+      "env_vars": ["MANDALORE_BIN", "MANDALORE_BINDING", "XDG_CONFIG_HOME", "SSH_AUTH_SOCK", "GH_TOKEN", "GITHUB_TOKEN", "GH_CONFIG_DIR"]
+    }
+  }
+}
