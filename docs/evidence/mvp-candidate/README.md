@@ -125,8 +125,12 @@ of this candidate: core installation, native handoff, healthy/missing-hook repai
 real partial activation/recovery and keyboard/narrow-mode cancellation. It retains
 the failed first native attempt and distinguishes structural from session checks.
 
-Keep #10 open. Remaining native-machine/platform coverage, installer negative and
-source-selection cases, and a distinct retained-runtime switch still need their
+The subsequent [switch/refusal checkpoint](ui/switch-and-refusals.md) adds eleven
+fresh recordings for invalid/offline/foreign-source refusals, EOF, navigation and
+actual older/newer/retained-back/retained-forward CLI launches. Both runtimes stayed
+retained; native connection selection and memory were unchanged.
+
+Keep #10 open. Remaining native-machine/platform coverage still needs its
 exact-candidate evidence. Independent acceptance and publication prerequisites
 remain separate. Cross-builds and a local bare remote are not other-platform or
 second-physical-machine acceptance; no live adoption or release is claimed.

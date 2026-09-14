@@ -100,7 +100,7 @@ host CI passed with cached tests after an actual container attempt could not rea
 the Docker daemon. Builds are not additional native-platform execution.
 
 This checkpoint covers core installation, same-candidate handoff, actual repair
-and partial recovery. Fresh exact-candidate evidence is still needed for the
-remaining installer negative/source-selection cases and a distinct retained-runtime
-switch; older implementation recordings are not relabeled. Native platform matrix,
+and partial recovery. The subsequent [switch/refusal checkpoint](switch-and-refusals.md)
+adds eleven actual recordings for installer negative/source-selection cases and a
+distinct retained-runtime switch; older implementation recordings are not relabeled. Native platform matrix,
 independent acceptance and publication prerequisites remain separate work.
