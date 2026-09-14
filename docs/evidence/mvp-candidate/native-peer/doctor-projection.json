@@ -1,0 +1,89 @@
+{
+  "protocol_version": 1,
+  "ok": true,
+  "result": {
+    "connection": {
+      "schema_version": 1,
+      "signet_id": "signet-c1a6d2d714c60924034d740cbd1951e8",
+      "binary_sha256": "eed5c72490079d9ee7bb2d08b7bc7916c5b56f4473f91849dc6e6d5c9d9fb3fc",
+      "native_sha256": "4f85982624b3898c8991cb80c0981b2aa71070e3537046c9a95950318a95afcc",
+      "binding_sha256": "c10da9a151214177717b1b99a140c7a73986e051fef96c50e55102b7a475978a",
+      "package_sha256": "f0e4df519fc6dbe70d69fd4191c6013b9017800aa4cfe3f45d2b5413872cfef1",
+      "package_version": "1.0.0",
+      "marketplace": "mandalore",
+      "plugin_id": "mandalore@mandalore",
+      "plugin_version": "1.0.0+codex.eae20bf3289caf655519fa4f5c2a1201c2ff59fe2c1130b65f3a24ad886507a3"
+    },
+    "healthy": true,
+    "checks": [
+      {
+        "name": "state-path",
+        "status": "pass"
+      },
+      {
+        "name": "native-home",
+        "status": "pass"
+      },
+      {
+        "name": "native-binary",
+        "status": "pass"
+      },
+      {
+        "name": "native-inventory",
+        "status": "pass"
+      },
+      {
+        "name": "connection-receipt",
+        "status": "pass"
+      },
+      {
+        "name": "bundle-integrity",
+        "status": "pass"
+      },
+      {
+        "name": "cache-integrity",
+        "status": "pass"
+      },
+      {
+        "name": "runtime-integrity",
+        "status": "pass"
+      },
+      {
+        "name": "native-executable-identity",
+        "status": "pass"
+      },
+      {
+        "name": "signet-binding",
+        "status": "pass"
+      },
+      {
+        "name": "binding-integrity",
+        "status": "pass"
+      },
+      {
+        "name": "native-plugin",
+        "status": "pass"
+      },
+      {
+        "name": "native-login",
+        "status": "not-tested"
+      },
+      {
+        "name": "hook-trust",
+        "status": "not-tested"
+      },
+      {
+        "name": "live-mcp",
+        "status": "not-tested"
+      },
+      {
+        "name": "remote-freshness",
+        "status": "not-tested"
+      },
+      {
+        "name": "active-context",
+        "status": "not-tested"
+      }
+    ]
+  }
+}

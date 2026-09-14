@@ -12,7 +12,7 @@ documentation files, not this retained candidate or its runtime acceptance set.
 | Requirement | Actual evidence | Remaining boundary |
 | --- | --- | --- |
 | Ordinary learning, cue, journal, fresh recall, supersession, no-save | [Native checkpoint](native.md), [live reference checkpoint](live-recovery.md) | Contributor-operated; not independent acceptance |
-| Cwd, native inheritance, separate banks, two machines, origin, external reads | Native inherited-resource/cwd observations; separate synthetic banks; [two physical Macs](physical.md); same live MCP process external refresh | Second machine used compiled CLI, not a fresh native agent session |
+| Cwd, native inheritance, separate banks, two machines, origin, external reads | Native inherited-resource/cwd observations; separate synthetic banks; [two physical Macs](physical.md); [native peer continuity and sync recovery](native-peer/README.md); earlier same-live-MCP local refresh | Native peer tests cover two macOS ARM64 hosts and Codex 0.153.4/0.154.0, not all native platforms |
 | Compaction, interruption, failed hooks, ambiguous writes, corruption, offline/concurrent sync | Actual native compaction/warnings/interrupted work plus compiled conflict/offline/corrupt/uncertain-push fixtures | Escape did not prove child termination; controlled push-response loss was local, not actual packet loss; no blanket failure coverage |
 | Supported OS/architecture execution | Native retained CLI/MCP execution on all four targets; matrix below | Native Codex conversations and rendered terminal journeys are not verified on every platform |
 | Context/retrieval cost without private transcripts | Measured MCP schema/response bytes and native operation summaries; [retained-binary 100/1000/10000-record retrieval](retrieval/README.md), plus separate source-level #9 evaluations | Aggregate native counters do not isolate Mandalore token cost; fresh-process single-revision measurements do not cover every retrieval mode |
@@ -24,7 +24,7 @@ documentation files, not this retained candidate or its runtime acceptance set.
 
 | Platform | Retained candidate CLI/MCP execution | Native Codex conversation | Other engineering evidence |
 | --- | --- | --- | --- |
-| macOS ARM64 | Yes; full local checks and CLI continuity on two physical machines | Yes, Codex 0.153.4 on the first machine | Actual installer/repair UI and migration tests |
+| macOS ARM64 | Yes; full local checks and continuity on two physical machines | Yes, 0.153.4 on A and 0.154.0 on B, including native peer recall/learning/sync recovery | Actual installer/repair UI and migration tests; version-specific limits recorded |
 | macOS AMD64 | Yes; [native retained CLI/MCP, sync, install and migration](platforms/README.md) | Not verified | Actual Intel macOS hosted runner, translated execution refused |
 | Linux AMD64 | Yes; [retained native CLI/MCP, sync, install and migration](linux/README.md) | Not verified | Exact retained binary on the existing Ubuntu x86_64 runner; source-level CI remains separate |
 | Linux ARM64 | Yes; [native retained CLI/MCP, sync, install and migration](platforms/README.md) | Not verified | Actual ARM64 Ubuntu hosted runner |

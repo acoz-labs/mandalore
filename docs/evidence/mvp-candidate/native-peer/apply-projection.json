@@ -1,0 +1,22 @@
+{
+  "protocol_version": 1,
+  "ok": true,
+  "result": {
+    "connection": {
+      "schema_version": 1,
+      "signet_id": "signet-c1a6d2d714c60924034d740cbd1951e8",
+      "binary_sha256": "eed5c72490079d9ee7bb2d08b7bc7916c5b56f4473f91849dc6e6d5c9d9fb3fc",
+      "native_sha256": "4f85982624b3898c8991cb80c0981b2aa71070e3537046c9a95950318a95afcc",
+      "binding_sha256": "c10da9a151214177717b1b99a140c7a73986e051fef96c50e55102b7a475978a",
+      "package_sha256": "f0e4df519fc6dbe70d69fd4191c6013b9017800aa4cfe3f45d2b5413872cfef1",
+      "package_version": "1.0.0",
+      "marketplace": "mandalore",
+      "plugin_id": "mandalore@mandalore",
+      "plugin_version": "1.0.0+codex.eae20bf3289caf655519fa4f5c2a1201c2ff59fe2c1130b65f3a24ad886507a3"
+    },
+    "installed": true,
+    "requires_fresh_session": true,
+    "phase": "verified",
+    "notice": "Connected for fresh Codex sessions. Review native hook trust and MCP startup. Signet contents, synchronization, authentication, shell startup files and existing sessions were not changed. Explicit MANDALORE_BIN/BINDING overrides still take precedence."
+  }
+}

@@ -106,6 +106,11 @@ retained CLI/MCP execution across all four declared targets. Native Codex and
 rendered terminal coverage remain separate. [Migration inventory and lock checks](migration/native/README.md)
 also verify the actual selected Codex listing and cooperating-writer refusals.
 
+The [native two-machine checkpoint](native-peer/README.md) adds actual Codex
+0.154.0 learning on the second Mac and 0.153.4 peer recall/fetch recovery on the
+first. It retains a genuine test-transport failure, correct pending reporting,
+the verified recovery, and a synchronization-wording rough edge for review.
+
 [Fresh-process retrieval measurements](retrieval/README.md) use the exact retained
 macOS ARM64 binary across 100, 1,000 and 10,000 synthetic records. Every result and
 read-only hash check passed; the 10,000-record case is approximately 1.5 seconds
