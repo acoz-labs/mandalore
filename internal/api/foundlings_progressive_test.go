@@ -163,7 +163,7 @@ func TestProgressiveFoundlingInitialDefaults(t *testing.T) {
 }
 
 func TestProgressiveFoundlingRegistrationChangesInvalidateContinuation(t *testing.T) {
-	for _, state := range []string{"active", "disconnected"} {
+	for _, state := range []string{"active", "disconnected", "conflicted"} {
 		t.Run(state, func(t *testing.T) {
 			a, _, id, revision := progressiveFixture(t)
 			input := map[string]any{"foundling_id": id, "query": "InventoryMarker"}
@@ -176,9 +176,22 @@ func TestProgressiveFoundlingRegistrationChangesInvalidateContinuation(t *testin
 			if err != nil {
 				t.Fatal(err)
 			}
-			_, err = a.service.WriteFoundling(memory.FoundlingWrite{FoundlingID: id, Name: r.Name, Description: r.Description, Source: *r.Source, Pin: *r.Pin, State: state, Supersedes: []string{revision}, Reason: "Explicit synthetic registration change between pages"})
+			write := memory.FoundlingWrite{FoundlingID: id, Name: r.Name, Description: r.Description, Source: *r.Source, Pin: *r.Pin, State: state, Supersedes: []string{revision}, Reason: "Explicit synthetic registration change between pages"}
+			if state == "conflicted" {
+				write.State = "active"
+			}
+			_, err = a.service.WriteFoundling(write)
 			if err != nil {
 				t.Fatal(err)
+			}
+			if state == "conflicted" {
+				if _, err := a.service.WriteFoundling(write); err != nil {
+					t.Fatal(err)
+				}
+				current, err := a.service.Foundling(id)
+				if err != nil || current.State != "conflicted" || len(current.HeadIDs) != 2 {
+					t.Fatal("fixture did not create two conflicting heads", err)
+				}
 			}
 			input["offset"], input["registration_revision_id"] = *p.NextOffset, revision
 			before := inlineInventory(t, a.service.Root())
@@ -187,6 +200,25 @@ func TestProgressiveFoundlingRegistrationChangesInvalidateContinuation(t *testin
 				t.Fatal("registration transition failed closed continuation", out.Error)
 			}
 		})
+	}
+}
+
+func TestProgressiveFoundlingContinuationCannotCrossSignets(t *testing.T) {
+	a, root, id, revision := progressiveFixture(t)
+	first := foundlingCall(t, a, "foundling_search", FoundlingSearchInput{FoundlingID: id, Query: "InventoryMarker"})
+	if !first.OK {
+		t.Fatal(first.Error)
+	}
+	p := first.Result.(foundlings.SearchResult)
+	other := fixture(t)
+	other.ReadOnly = true
+	before, otherBefore, sourceBefore := inlineInventory(t, a.service.Root()), inlineInventory(t, other.service.Root()), inlineInventory(t, root)
+	out := foundlingCall(t, other, "foundling_search", FoundlingSearchInput{FoundlingID: id, RegistrationID: revision, Query: "InventoryMarker", Offset: *p.NextOffset})
+	if out.OK || out.Error == nil || out.Error.WriteMayHaveOccurred || out.Result != nil {
+		t.Fatal("foreign continuation returned evidence or mutated", out)
+	}
+	if !reflect.DeepEqual(before, inlineInventory(t, a.service.Root())) || !reflect.DeepEqual(otherBefore, inlineInventory(t, other.service.Root())) || !reflect.DeepEqual(sourceBefore, inlineInventory(t, root)) {
+		t.Fatal("foreign continuation changed signets or reference")
 	}
 }
 

@@ -192,6 +192,26 @@ func TestCompiledFoundlingCLIAndMCP(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = readOnlyClient.Close() })
+	readOnlyBefore := treeDigest(t, root)
+	for _, tc := range []struct {
+		name string
+		args map[string]any
+		want api.Envelope
+	}{
+		{"foundling_search", map[string]any{"foundling_id": id, "query": "PaginationMarker"}, page},
+		{"foundling_search", map[string]any{"foundling_id": id, "query": "PaginationMarker", "registration_revision_id": revision, "offset": 3, "excerpt_bytes": 1024, "budget_bytes": 32768, "limit": 10}, continued},
+		{"foundling_read", map[string]any{"foundling_id": id, "registration_revision_id": revision, "relative_locator": "page-00.md"}, initialRead},
+	} {
+		wire, err := readOnlyClient.CallTool(ctx, &sdk.CallToolParams{Name: tc.name, Arguments: tc.args})
+		if err != nil || wire.IsError {
+			t.Fatalf("read-only retrieval refused: %s: %v %+v", tc.name, err, wire)
+		}
+		encoded, _ := json.Marshal(wire.StructuredContent)
+		var actual api.Envelope
+		if err := json.Unmarshal(encoded, &actual); err != nil || !reflect.DeepEqual(actual, tc.want) {
+			t.Fatalf("read-only retrieval changed result: %s: %v", tc.name, err)
+		}
+	}
 	denied, err := readOnlyClient.CallTool(ctx, &sdk.CallToolParams{Name: "foundling_promote", Arguments: promotion})
 	if err != nil || !denied.IsError {
 		t.Fatal("read-only MCP promoted reference", denied, err)
@@ -203,6 +223,9 @@ func TestCompiledFoundlingCLIAndMCP(t *testing.T) {
 	}
 	if err := readOnlyClient.Close(); err != nil || diagnostics.Len() != 0 {
 		t.Fatal(err, diagnostics.String())
+	}
+	if !reflect.DeepEqual(readOnlyBefore, treeDigest(t, root)) {
+		t.Fatal("read-only retrieval/refused promotion changed signet")
 	}
 	if !reflect.DeepEqual(sourceBefore, treeDigest(t, reference)) {
 		t.Fatal("promotion changed reference source")
