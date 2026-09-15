@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"syscall"
 	"testing"
 	"time"
@@ -94,7 +95,16 @@ func TestSaveAndSyncWriterContentionAtEachStage(t *testing.T) {
 }
 
 func TestSaveAndSyncCancellationDuringFetchKeepsReceipt(t *testing.T) {
-	a, _, marker := cancellationFixture(t, "normal")
+	testSaveAndSyncCancellationDuringFetch(t, "normal")
+}
+
+func TestSaveAndSyncCancellationWaitsForCompleteFetchMarker(t *testing.T) {
+	testSaveAndSyncCancellationDuringFetch(t, "slow-marker")
+}
+
+func testSaveAndSyncCancellationDuringFetch(t *testing.T, startup string) {
+	t.Helper()
+	a, _, marker := cancellationFixture(t, startup)
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan Envelope, 1)
 	finished := make(chan struct{})
@@ -122,9 +132,11 @@ wait:
 		case <-deadline.C:
 			t.Fatal("fetch did not start")
 		case <-ticker.C:
-			if _, err := os.Stat(marker); err == nil {
+			// Redirection creates the marker before printf writes its PID. Wait
+			// for the complete line, or cancellation can destroy our evidence.
+			if data, err := os.ReadFile(marker); err == nil && strings.HasSuffix(string(data), "\n") && len(strings.TrimSpace(string(data))) > 0 {
 				break wait
-			} else if !os.IsNotExist(err) {
+			} else if err != nil && !os.IsNotExist(err) {
 				t.Fatal(err)
 			}
 		}
