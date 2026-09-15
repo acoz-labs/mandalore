@@ -1,0 +1,159 @@
+# Discovery: reliable delivery without overriding the current task
+
+- **Status:** Draft
+- **Discovery issue:** #55
+- **Repository basis:** 0e4329e28e1aaa70f605d4c67ce502171cf0de4b
+- **Recommended decision:** follow-up with bounded native probes
+- **Gate 1:** evidence incomplete; no implementation decision yet
+- **Confidence:** Medium on constraints, Low on safe lifecycle authorization
+- **Private evidence:** none
+
+## Decision sought
+
+Choose the smallest mechanism that reliably attempts delivery of already-saved
+memory while respecting current read-only/no-save/no-sync direction. Keep semantic
+learning agent-driven. This discovery does not authorize network work from existing
+hooks, introduce a daemon, change the bank or activate a personal installation.
+
+## Audience and critical tasks
+
+People moving between machines need useful learning to survive a lost session and
+reach the next machine without remembering a separate command. They also need a
+read-only task to stay read-only, including previously pending delivery. Explicit
+consolidation should attempt delivery even when no new memory is worth creating.
+
+## Evidence
+
+At the repository basis:
+
+- `internal/codex/hooks.go` handles only SessionStart/UserPromptSubmit, reads the
+  local bank and returns context. Other events are no-ops. It does not persist
+  authorization, read transcripts, synchronize or invoke subprocesses.
+- `plugins/codex/plugins/mandalore/hooks/hooks.json` registers those two hooks.
+- `internal/api/api.go` enforces process-level `ReadOnly`; ordinary tool calls do
+  not carry a verified native session/turn authorization identity.
+- `internal/api/sync.go` accepts a timeout, not a current-task authorization lease.
+  The synchronizer already serializes bank writers, validates merges, refuses
+  interactive credentials and retains conservative cancellation/delivery receipts.
+- `docs/synchronization.md` and the memory skill describe explicit agent-requested
+  sync. That is the supported fallback, not a deterministic lifecycle safety net.
+
+The [official Codex hooks reference](https://learn.chatgpt.com/docs/hooks), checked
+2026-09-15, documents PreCompact, UserPromptSubmit, Interrupt and SessionEnd.
+SessionEnd is advisory, command-only and limited to three seconds; switching
+threads does not immediately end a session. Hook events provide session identity,
+and selected events provide turn identity. Permission mode is not a user's
+task-specific memory preference. Transcript format is unstable, and tool-hook
+coverage is not a complete enforcement boundary. Native event ordering, steering,
+cancellation and unsupported-version behavior still need synthetic verification.
+
+## Assumptions
+
+Ordinary confirmed learning and its authorized delivery remain enabled; no magic
+phrase should be necessary. Current prohibitions take precedence over an older
+authorization. A lifecycle callback is an opportunity, not consent. Synced files
+do not retroactively update evidence already loaded into the model's context.
+
+Machine-local coordination metadata may be needed, but it must be distinguished
+from user memory and from a blanket claim of zero filesystem writes. Its consent,
+storage, lifetime and cleanup are unresolved; do not quietly redefine read-only.
+
+## Unknowns to resolve first
+
+1. Can native events and the MCP connection be bound to an unambiguous current
+   session/turn, including steering while a tool is active and subagents sharing
+   a parent session? Do not use cwd, a caller-supplied thread string alone or a
+   previously observed permission mode as authorization.
+2. Can every new prompt invalidate earlier permission before a delayed checkpoint
+   starts? What happens when invalidation itself fails, hooks are disabled or a
+   resume occurs? A stale allow file must not become authorization by default.
+3. Where can coordination state live without leaking prompts into the signet or
+   violating a no-write scope? Can the lifecycle event prove freshness without
+   depending on arbitrary transcript parsing?
+4. How much useful work fits within an exit budget after lock acquisition and
+   process cleanup? The sync API currently accepts whole-second budgets from
+   1–30; using the full three seconds leaves no exit-hook cleanup margin.
+5. Does the installed native version actually deliver the required events for
+   interactive, exec, resumed, compacted and interrupted sessions? No minimum
+   version is selected from documentation alone.
+
+## Competing options
+
+| Option | Benefit | Main limitation |
+| --- | --- | --- |
+| Existing agent-requested sync | Simple; agent interprets current direction | Model can omit delivery |
+| Unconditional lifecycle sync | Deterministic invocation | Violates current prohibitions; rejected |
+| Per-turn authorized lifecycle checkpoints | Retries pending work at useful boundaries | Requires proven freshness/invalidation and failure behavior |
+| Explicit write-and-deliver operation | Removes a separate post-save tool call | Does not recover unsaved knowledge or later pending delivery; must allow save-without-sync |
+| Native prompt/transcript keyword classifier | Superficially automatic | Quotes, languages and scope changes make permission inference unreliable; rejected |
+| Background daemon | Independent retry opportunities | Outlives task intent and adds an unnecessary service/authorization problem; not selected |
+
+## Provisional decision
+
+Investigate bounded write-triggered delivery and per-turn checkpoint authorization
+side by side. Do not start by registering more events that directly invoke sync.
+Unknown, revoked, stale or unverifiable state must skip network and bank mutation.
+Startup/resume remain read-only until current authorization can be established.
+Failure of a checkpoint should preserve pending state, not block ordinary recall
+or spin up another model turn to force a retry.
+
+The semantic choice still belongs to the agent: interpreting current direction
+cannot honestly be advertised as deterministic merely because an executor checks
+a structured flag. The engineering objective is deterministic validation and
+bounded execution *after* a valid current authorization, with that boundary
+visible in the product contract.
+
+## Success and stop signals
+
+Probe only a disposable native profile/fixture in the designated test workspace.
+Initially record bounded event names, opaque session/turn identities and ordering;
+do not save prompt bodies, transcript contents or provider credentials. Use a local
+remote for later delivery checks and retain before/after inventories.
+
+Require ordinary authorized delivery, no-new-memory explicit consolidation,
+prohibited tasks with prior pending work, a new prohibition during active work,
+stale events, disabled/failed hooks, resume/crash, concurrent sessions, offline
+failure, timeout and later recovery. Reuse existing lock/conflict tests rather
+than inventing a second Git transport. Trigger text in quotes, tools and foundlings
+must not count as direct consolidation intent.
+
+If suppression cannot be enforced for a proposed lifecycle path, defer that path
+with a supported agent-driven fallback. Do not weaken current prohibitions or
+claim that successful invocation proves delivery. No observed event is not proof
+of unsupported behavior without checking its trigger and native configuration.
+
+## Candidate outcome map
+
+These are candidates, not approved implementation issues.
+
+- **O1 — Current-task authorization and native event evidence:** investigate
+  first; establish identity, invalidation, suppression, timeout and unsupported
+  behavior. Dependency for any automatic lifecycle transport.
+- **O2 — Authorized delivery checkpoints:** conditional on O1; select only
+  events that satisfy it. Keep local durability, attempted delivery, verified
+  delivery and semantic agreement distinct; no implicit conflict resolution.
+- **O3 — Explicit consolidation delivery:** sharpen the direct-user flow to
+  finish with one bounded attempt even without new facts, while avoiding filler
+  writes. Investigate whether this small skill-only outcome can ship separately.
+- **O4 — Write-triggered transport:** compare combined operation versus retained
+  separate tools; select only if it measurably improves reliability without
+  forcing network work on authorized local-only saves.
+
+## Privacy and evidence handling
+
+Public evidence uses synthetic names and local remotes. Native source logs stay
+private until sanitized; do not publish paths, transcripts or account policy.
+Authorization state is operational metadata, never a portable remembered fact.
+
+## Decision Spotlight
+
+The gap is not the list of available hooks. It is whether a later callback can
+prove that the user's current task still permits synchronization. Preserve the
+working memory experience while establishing that missing contract.
+
+## Gate 1
+
+ADR 0003 authorizes exact-head contributor engineering self-review, not a claim
+that incomplete discovery is approved. Keep this PR draft until the bounded probes
+resolve or explicitly defer the unknowns; then record the reviewed decision and
+materialize only selected outcomes. No user action is needed for this discovery.
