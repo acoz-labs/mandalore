@@ -1,7 +1,8 @@
 # Explicit consolidation delivery
 
-- **Status:** Draft
+- **Status:** Final
 - **Issue:** #61
+- **Planning PR:** #62
 - **Repository basis:** 30bbbd4d84c918f8b33fb81123dfd660442046e5
 - **Execution envelope:** implementation
 
