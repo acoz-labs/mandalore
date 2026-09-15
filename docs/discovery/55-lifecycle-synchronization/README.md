@@ -1,10 +1,10 @@
 # Discovery: reliable delivery without overriding the current task
 
-- **Status:** Draft
+- **Status:** Final for O3; O1/O2/O4 require follow-up discovery
 - **Discovery issue:** #55
 - **Repository basis:** 0e4329e28e1aaa70f605d4c67ce502171cf0de4b
-- **Recommended decision:** follow-up with bounded native probes
-- **Gate 1:** evidence incomplete; no implementation decision yet
+- **Recommended decision:** approve O3 delivery; retain O1/O2/O4 as unresolved follow-up
+- **Gate 1:** exact-head contributor review required under ADR 0003
 - **Confidence:** Medium on constraints, Low on safe lifecycle authorization
 - **Private evidence:** none
 
@@ -100,7 +100,22 @@ storage, lifetime and cleanup are unresolved; do not quietly redefine read-only.
 | Native prompt/transcript keyword classifier | Superficially automatic | Quotes, languages and scope changes make permission inference unreliable; rejected |
 | Background daemon | Independent retry opportunities | Outlives task intent and adds an unnecessary service/authorization problem; not selected |
 
-## Provisional decision
+## Selected decision and retained investigation
+
+Select **O3** for independent delivery: a direct user request to consolidate
+finishes with one bounded synchronization attempt when the task permits it,
+whether or not new facts/journal entries were warranted. Do not create filler
+memory to trigger synchronization. Existing `memory_sync` already supports this;
+its timeout, cancellation and no-empty-checkpoint behavior are tested. This is a
+small skill/usage-contract correction, not a new protocol or lifecycle executor.
+Native behavioral acceptance must cover direct, quoted and prohibited uses and
+real pending delivery without new memory content.
+
+O3 does **not** satisfy the automatic lifecycle safety-net outcome. O1/O2/O4 remain
+explicit follow-up discovery in the roadmap; they are not canceled, declared
+complete or replaced by an easier successful test. Keep #55 open as their working
+discovery tracker after O3 is materialized. The current permission contract stays
+in effect while the product question about earlier saved data is discussed.
 
 Investigate bounded write-triggered delivery and per-turn checkpoint authorization
 side by side. Do not start by registering more events that directly invoke sync.
@@ -136,7 +151,8 @@ of unsupported behavior without checking its trigger and native configuration.
 
 ## Candidate outcome map
 
-These are candidates, not approved implementation issues.
+Only O3 is selected for delivery by this decision. Other outcomes remain
+unresolved and may not activate network-capable hooks based on this approval.
 
 - **O1 — Current-task authorization and native event evidence:** investigate
   first; establish identity, invalidation, suppression, timeout and unsupported
@@ -144,9 +160,14 @@ These are candidates, not approved implementation issues.
 - **O2 — Authorized delivery checkpoints:** conditional on O1; select only
   events that satisfy it. Keep local durability, attempted delivery, verified
   delivery and semantic agreement distinct; no implicit conflict resolution.
-- **O3 — Explicit consolidation delivery:** sharpen the direct-user flow to
+- **O3 — Explicit consolidation delivery (selected):** sharpen the direct-user flow to
   finish with one bounded attempt even without new facts, while avoiding filler
-  writes. Investigate whether this small skill-only outcome can ship separately.
+  writes. Implement and verify independently; no dependency on O1. Acceptance:
+  real pending local commit delivered without new memory records/journals;
+  direct consolidation with useful new facts preserves normal learning;
+  quoted/retrieved phrases do not trigger delivery; explicit no-sync and existing
+  read-only/no-save contract suppress it; failures retain honest pending receipts
+  without repeated writes or retry loops. No graphical interface change.
 - **O4 — Write-triggered transport:** compare combined operation versus retained
   separate tools; select only if it measurably improves reliability without
   forcing network work on authorized local-only saves.
@@ -165,7 +186,10 @@ working memory experience while establishing that missing contract.
 
 ## Gate 1
 
-ADR 0003 authorizes exact-head contributor engineering self-review, not a claim
-that incomplete discovery is approved. Keep this PR draft until the bounded probes
-resolve or explicitly defer the unknowns; then record the reviewed decision and
-materialize only selected outcomes. No user action is needed for this discovery.
+ADR 0003 authorizes exact-head contributor engineering self-review. Record the
+reviewed head and passing CI, merge this scoped O3 decision, then materialize O3
+with immutable provenance and its own proportional solution plan. O1/O2/O4 stay
+open under #55 and require further evidence/decision before implementation. Promote
+O3's durable contract during its implementation; retain the unresolved discovery
+pack until the remaining outcomes are decided. No lifecycle authorization or
+new-candidate release acceptance is implied by this partial outcome selection.
