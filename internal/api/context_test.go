@@ -96,6 +96,11 @@ func TestNativeContextWarningsDoNotEchoCorruptContent(t *testing.T) {
 		t.Fatal(err)
 	}
 	before := inlineInventory(t, a.service.Root())
+	orientation := a.Call(context.Background(), "memory_context", []byte(`{}`))
+	orientationBytes, _ := json.Marshal(orientation)
+	if !orientation.OK || strings.Contains(string(orientationBytes), "warning") || strings.Contains(string(orientationBytes), "CORRUPTION_CANARY") {
+		t.Fatal("orientation-only attachment unexpectedly scanned records", string(orientationBytes))
+	}
 	text, warning := contextText(t, a, "Example")
 	if warning == "" || strings.Contains(text+warning, "CORRUPTION_CANARY") {
 		t.Fatal("raw error leakage or missing warning")

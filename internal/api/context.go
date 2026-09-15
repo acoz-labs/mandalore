@@ -8,12 +8,15 @@ import (
 )
 
 type NativeContextInput struct {
-	Prompt string `json:"prompt,omitempty" jsonschema:"Current user prompt for local recall; truncated to 2048 UTF-8 bytes. No transcript, writes or synchronization."`
+	Prompt *string `json:"prompt,omitempty" jsonschema:"Omit for orientation only; supply a prompt (including empty) for local recall truncated to 2048 UTF-8 bytes. No transcript, writes or synchronization."`
 }
 
 var nativeContext = []Operation{
 	operation("memory_context", "Read a bounded native lifecycle context packet: orientation, bank-wide evidence and scope routing. CLI-only; no writes, network, transcript reads or automatic foundling scan.", true, func(_ context.Context, s *memory.Service, in NativeContextInput) (memorycontext.Packet, error) {
-		return memorycontext.Build(s, in.Prompt, true, memorycontext.Orientation), nil
+		if in.Prompt == nil {
+			return memorycontext.Build(s, "", false, memorycontext.Orientation), nil
+		}
+		return memorycontext.Build(s, *in.Prompt, true, memorycontext.Orientation), nil
 	}),
 }
 

@@ -308,6 +308,7 @@ uses the same decoder and methods as the human commands and MCP tools.
 | `memory_recall`, `memory_scopes`, `memory_history` | `memory recall`, `scopes`, `history` | Bound signet only |
 | `memory_journal`, `memory_inspect` | `memory journal`, `inspect` | Bound signet only |
 | `memory_context` | `call memory_context` with JSON `prompt` | Not exposed; read-only native lifecycle packet |
+| `pi_package_inspect` | `call pi_package_inspect` with `{}` | Not exposed; unbound embedded-package metadata |
 | `memory_remember`, `memory_journal_append` | `memory remember`, `journal-append` | Bound signet only |
 | `memory_git_init`, `memory_checkpoint`, `memory_sync`, `memory_sync_status` | `memory git-init`, `checkpoint`, `sync`, `sync-status` | Bound signet only |
 | `foundling_list`, `foundling_inspect`, `foundling_search`, `foundling_read`, `foundling_promote` | `foundling list`, `inspect`, `search`, `read`, `promote` | Bound signet only |
@@ -394,6 +395,9 @@ automatically scans foundlings, and does not save or synchronize even for an
 explicit consolidation cue. Read failures return a compact warning without raw
 file contents. Native adapters must preserve their host prompt and separately
 honor connection read-only settings; a packet is not authorization to mutate.
+Omitting `prompt` returns orientation only after opening the guarded binding,
+without scanning records; an explicitly supplied empty prompt performs local
+bank-wide recall. Attachment validation is not a whole-bank health check.
 
 ## Binding and provenance
 

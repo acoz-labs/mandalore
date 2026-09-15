@@ -168,7 +168,11 @@ var operations = []Operation{
 }
 
 func Catalog() []Operation {
-	return append(append(append(append(append(append(append(append(append([]Operation(nil), operations...), administration...), synchronization...), connections...), migrations...), foundlingOperations...), releases...), saveAndDelivery...), nativeContext...)
+	var result []Operation
+	for _, group := range [][]Operation{operations, administration, synchronization, connections, migrations, foundlingOperations, releases, saveAndDelivery, nativeContext, piAdministration} {
+		result = append(result, group...)
+	}
+	return result
 }
 
 type API struct {

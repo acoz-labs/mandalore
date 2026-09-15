@@ -1,6 +1,6 @@
 # Development
 
-Run `mise exec go@1.26.4 -- bin/ci` from the repository root. It checks the managed
+Run `mise exec -- bin/ci` from the repository root. It checks the managed
 solution-plan contract, shell syntax, documentation, public fixture hygiene,
 workflow runner configuration, formatting, module integrity, race-enabled tests,
 vet, and engine/CLI builds for macOS/Linux on amd64/arm64. Native execution is only
@@ -11,6 +11,14 @@ use the supported host fallback `bin/ci` and report the route actually verified.
 Go is pinned to 1.26.4 in mise, the module toolchain, CI and the development
 container. The module language baseline is Go 1.26.0. CI rejects a different
 active toolchain; do not install or use an unrecorded latest runtime.
+
+The dependency-free Pi extension is authored as JavaScript; Node 24.1.0 is pinned
+in mise, CI and the development container for its builtin test runner, matching
+the initial inspected Pi 0.85.1 engineering baseline. There is no npm install,
+transpiler or runtime package download. Run `mise exec -- node --test
+plugins/pi/test/*.test.mjs` for focused adapter tests. Node is a native Pi/test
+prerequisite, not a dependency of the standalone Go memory engine or release
+payload builder. A test pin is not a claim that other native versions are tested.
 
 Use synthetic banks and disposable project workspaces. Native integration tests
 may inherit existing native resources and authentication with explicit local
