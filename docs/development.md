@@ -49,6 +49,13 @@ does not change the product's timeout or retry contract. Keep original failures
 and controlled reproductions in review evidence; a passing retry alone is not a
 root-cause analysis or independent acceptance of a candidate.
 
+Combined save-and-sync cancellation also waits for a complete PID line, not just
+the marker file's existence: shell redirection creates that file before writing
+its contents. `TestSaveAndSyncCancellationWaitsForCompleteFetchMarker` deliberately
+widens that empty-file window and verifies the durable save, cancelled fetch and
+stopped child. Run it alongside `TestSaveAndSyncCancellationDuringFetchKeepsReceipt`
+with `-race -count=20` after changing the cancellation fixture or observer.
+
 ## Local distribution candidates
 
 From a clean committed repository, run:

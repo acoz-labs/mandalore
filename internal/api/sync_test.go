@@ -146,8 +146,13 @@ func cancellationFixture(t *testing.T, startup string) (*API, string, string) {
 	quote := func(value string) string { return "'" + strings.ReplaceAll(value, "'", "'\\''") + "'" }
 	first, fetch := filepath.Join(bin, "first-git"), filepath.Join(bin, "fetch-git")
 	delay := ""
+	fetchDelay := ""
 	switch startup {
 	case "normal":
+	case "slow-marker":
+		// Creating a redirection target is observable before printf writes its
+		// PID. Widen that real window to verify readers await complete evidence.
+		fetchDelay = ": > " + quote(fetch) + "\nsleep 0.2\n"
 	case "slow":
 		delay = "sleep 2\n" // Deliberately exceeds the old whole-operation budget.
 	case "blocked":
@@ -156,7 +161,7 @@ func cancellationFixture(t *testing.T, startup string) (*API, string, string) {
 		t.Fatal("unknown cancellation fixture startup")
 	}
 	script := "#!/bin/sh\nset -eu\nif [ ! -e " + quote(first) + " ]; then\nprintf '%s\\n' \"$$\" > " + quote(first) + "\n" + delay + "fi\n" +
-		"for arg in \"$@\"; do\nif [ \"$arg\" = ls-remote ]; then\nprintf '%s\\n' \"$$\" > " + quote(fetch) + "\nexec sleep 30\nfi\ndone\nexec " + quote(real) + " \"$@\"\n"
+		"for arg in \"$@\"; do\nif [ \"$arg\" = ls-remote ]; then\n" + fetchDelay + "printf '%s\\n' \"$$\" > " + quote(fetch) + "\nexec sleep 30\nfi\ndone\nexec " + quote(real) + " \"$@\"\n"
 	if err := os.WriteFile(filepath.Join(bin, "git"), []byte(script), 0700); err != nil {
 		t.Fatal(err)
 	}
