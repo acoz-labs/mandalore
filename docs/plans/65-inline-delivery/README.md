@@ -1,7 +1,8 @@
 # Save locally and attempt delivery in one call
 
-- **Status:** Draft
+- **Status:** Final
 - **Issue:** #65
+- **Planning PR:** #66
 - **Repository basis:** 2bb2436487f5e285e61051d4c346862f520bc5ab
 - **Execution envelope:** implementation
 
