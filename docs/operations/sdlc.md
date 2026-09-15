@@ -6,7 +6,7 @@ For the current MVP effort, the [self-review authorization](../decisions/0001-mv
 supersedes separate engineering reviewer/product sign-off and planning-merge
 prerequisites in this standard. It does not waive checks or release acceptance.
 
-For the one retained MVP candidate, the explicitly authorized
+For the two exact retained MVP candidate pairs listed in the policy, the explicitly authorized
 [owner-acceptance exception](../decisions/0002-mvp-owner-acceptance.md) permits
 personally confirmed owner review despite matching PR authorship. Configure
 `MVP_ACCEPTANCE_OWNER` and the normal `ACCEPTANCE_ACTORS`, then select the
