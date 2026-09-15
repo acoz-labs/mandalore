@@ -6,6 +6,11 @@ For the current MVP effort, the [self-review authorization](../decisions/0001-mv
 supersedes separate engineering reviewer/product sign-off and planning-merge
 prerequisites in this standard. It does not waive checks or release acceptance.
 
+The owner [extended engineering self-review to the approved post-1.0 roadmap](../decisions/0003-post-1-roadmap-self-review.md).
+Use exact-head contributor self-review for the enumerated discovery, planning and
+implementation outcomes. Acceptance, release and live-installation gates remain
+unchanged; this is not independent approval or new-candidate acceptance.
+
 For the two exact retained MVP candidate pairs listed in the policy, the explicitly authorized
 [owner-acceptance exception](../decisions/0002-mvp-owner-acceptance.md) permits
 personally confirmed owner review despite matching PR authorship. Configure

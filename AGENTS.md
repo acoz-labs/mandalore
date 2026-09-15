@@ -38,6 +38,15 @@ automation remains separate from engineering self-review.
 
 Keep the durable rationale in `docs/decisions/0001-mvp-self-review.md`.
 
+The owner has extended this engineering self-review and ordinary-decision
+authorization to the approved post-1.0 roadmap: #52/#19, #56, #55, #57, #13,
+#54, #16, #15 and #14. It covers discovery, solution planning and implementation
+within those outcomes, including exact-head self-review and reviewed merges after
+required checks. Record the scope in
+`docs/decisions/0003-post-1-roadmap-self-review.md`. Acceptance, public release,
+live installation, privacy and data boundaries remain unchanged; the following
+MVP candidate-specific acceptance exception does not extend to new candidates.
+
 The owner subsequently authorized personally performed owner acceptance for the
 exact retained MVP candidate despite matching implementation-account authorship.
 Follow `docs/decisions/0002-mvp-owner-acceptance.md` and its fail-closed workflow
