@@ -20,6 +20,10 @@ memory skill. Explain that the complete envelope, not only `.result`, is the uni
 to render. Supply one small code-mode example with conservative fallback in a
 linked skill reference if the full example is too costly for the startup budget.
 Do not introduce a new package, JavaScript runtime dependency, daemon or tool.
+Keep always-loaded guidance short (at most 120 added words per instruction
+surface); load detailed fallback examples only when needed. Measure added
+instruction/example cost as well as response savings so a large selector does
+not become a new context problem.
 
 Selection is conditional on the known Mandalore wire contract and equivalent text.
 Unknown wrapper fields/content, annotations carrying distinct information,
