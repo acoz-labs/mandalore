@@ -17,7 +17,14 @@ import (
 
 func inlineGit(t *testing.T, args ...string) string {
 	t.Helper()
-	out, err := exec.Command("git", args...).CombinedOutput()
+	cmd := exec.Command("git", args...)
+	for _, value := range os.Environ() {
+		if !strings.HasPrefix(value, "GIT_") {
+			cmd.Env = append(cmd.Env, value)
+		}
+	}
+	cmd.Env = append(cmd.Env, "GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_NOSYSTEM=1", "GIT_TERMINAL_PROMPT=0")
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("synthetic Git fixture: %v: %s", err, out)
 	}
