@@ -159,20 +159,8 @@ var operations = []Operation{
 	operation("memory_journal", "Search recent semantic journal entries, not authoritative current facts or raw transcripts.", true, func(_ context.Context, s *memory.Service, in JournalInput) (memory.Page[memory.JournalEntry], error) {
 		return s.JournalPage(in.Query, number(in.Limit, 5))
 	}),
-	operation("memory_remember", "Store a confirmed fact, preference, decision, procedure, project-state, entity, commitment or research-claim. Basis: user-direction, observation, inference or import. Recall before adding duplicates; corrections name record_id and predecessor revision IDs. Never store secrets.", false, func(_ context.Context, s *memory.Service, in memory.Write) (Receipt, error) {
-		r, err := s.Remember(in)
-		if err != nil {
-			return Receipt{}, err
-		}
-		return Receipt{SignetID: s.ID(), ID: r.ID, RecordID: r.RecordID, DurableLocally: true, Synchronization: "not-requested"}, nil
-	}),
-	operation("memory_journal_append", "Append a concise account of actual work and decisions, not transcripts or secrets. Do not journal a read-only task.", false, func(_ context.Context, s *memory.Service, in JournalWrite) (Receipt, error) {
-		r, err := s.AppendJournal(in.Kind, in.Summary)
-		if err != nil {
-			return Receipt{}, err
-		}
-		return Receipt{SignetID: s.ID(), ID: r.ID, DurableLocally: true, Synchronization: "not-requested"}, nil
-	}),
+	operation("memory_remember", "Store a confirmed fact, preference, decision, procedure, project-state, entity, commitment or research-claim. Basis: user-direction, observation, inference or import. Recall before adding duplicates; corrections name record_id and predecessor revision IDs. Never store secrets.", false, remember),
+	operation("memory_journal_append", "Append a concise account of actual work and decisions, not transcripts or secrets. Do not journal a read-only task.", false, appendJournal),
 	operation("memory_inspect", "Read-only signet structure validation; no remote, credentials, native plugin or model-behavior checks.", true, func(_ context.Context, s *memory.Service, _ struct{}) (Inspection, error) {
 		err := s.Validate()
 		return Inspection{SignetID: s.ID(), Root: s.Root(), Healthy: err == nil, Notice: "Read-only structure checks only; no synchronization, authentication or native integration verification."}, err
@@ -180,7 +168,7 @@ var operations = []Operation{
 }
 
 func Catalog() []Operation {
-	return append(append(append(append(append(append(append([]Operation(nil), operations...), administration...), synchronization...), connections...), migrations...), foundlingOperations...), releases...)
+	return append(append(append(append(append(append(append(append([]Operation(nil), operations...), administration...), synchronization...), connections...), migrations...), foundlingOperations...), releases...), saveAndDelivery...)
 }
 
 type API struct {
@@ -208,83 +196,7 @@ func (a *API) Call(ctx context.Context, name string, data []byte) Envelope {
 		}
 		v, err := op.invoke(ctx, a.service, data)
 		if err != nil {
-			var release *releaseFailure
-			if errors.As(err, &release) {
-				code := "release.failed"
-				if errors.Is(err, distribution.ErrNoRelease) {
-					code = "release.unavailable"
-				}
-				if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-					code = "operation.cancelled"
-				}
-				mayWrite := release.result != nil && release.result.DestinationChanged
-				out := Failure(code, release.Error(), mayWrite)
-				out.Error.ReleaseResult = release.result
-				if release.result != nil && release.result.Pending != "" {
-					out.Error.InspectBeforeRetry = true
-				}
-				return out
-			}
-			var reference *foundlingFailure
-			if errors.As(err, &reference) {
-				return foundlingFailureEnvelope(reference)
-			}
-			var migration *migrationFailure
-			if errors.As(err, &migration) {
-				code := "migration.failed"
-				if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-					code = "operation.cancelled"
-				}
-				mayWrite := migration.result != nil && migration.result.Phase != "preflight"
-				out := Failure(code, migration.Error(), mayWrite)
-				out.Error.MigrationResult = migration.result
-				return out
-			}
-			var connection *connectionFailure
-			if errors.As(err, &connection) {
-				code := "connection.failed"
-				if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-					code = "operation.cancelled"
-				}
-				out := Failure(code, connection.Error(), connection.result != nil)
-				out.Error.ConnectionResult, out.Error.ConnectionReport = connection.result, connection.report
-				return out
-			}
-			var stopped *signetsync.Failure
-			if errors.As(err, &stopped) && !errors.Is(err, memory.ErrWriterBusy) {
-				code := "sync.failed"
-				if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-					code = "operation.cancelled"
-				}
-				out := Failure(code, stopped.Error(), true)
-				out.Error.SyncStatus = &stopped.Status
-				return out
-			}
-			switch {
-			case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
-				return Failure("operation.cancelled", "Operation cancelled before execution.", false)
-			case errors.Is(err, memory.ErrWriterBusy):
-				out := Failure("store.busy", "Another writer holds the signet lock; retry after it finishes.", false)
-				out.Error.Retryable = true
-				return out
-			case errors.Is(err, memory.ErrIdentityChanged):
-				return Failure("binding.invalid", "The signet identity changed; inspect and explicitly rebind.", false)
-			case errors.Is(err, strictjson.ErrInvalid):
-				return Failure("input.invalid", strictjson.ErrInvalid.Error(), false)
-			}
-			var pathError *fs.PathError
-			var linkError *os.LinkError
-			var systemError syscall.Errno
-			if errors.As(err, &pathError) || errors.As(err, &linkError) || errors.As(err, &systemError) {
-				return Failure("operation.io", "Filesystem operation failed; inspect the selected signet before retrying a write.", !op.ReadOnly)
-			}
-			// Only recheck on failure: successful reads/writes already validate
-			// their relevant records. Do not blame malformed stored data on the
-			// caller or expose record bodies through validation diagnostics.
-			if op.RequiresBinding && a.service.Validate() != nil {
-				return Failure("store.invalid", "Selected signet failed structural validation; inspect its files and history before retrying.", !op.ReadOnly)
-			}
-			return Failure("input.invalid", "Memory validation failed; inspect the input schema and selected signet structure.", false)
+			return a.failure(op, err)
 		}
 		// Reads can report cancellation after completing. Published writes return
 		// their receipt; cancellation does not roll them back.
@@ -299,4 +211,85 @@ func (a *API) Call(ctx context.Context, name string, data []byte) Envelope {
 		return envelope
 	}
 	return Failure("operation.unknown", "Unknown operation; inspect the operation catalog.", false)
+}
+
+// failure is shared by standalone operations and delivery after a durable save.
+func (a *API) failure(op Operation, err error) Envelope {
+	var release *releaseFailure
+	if errors.As(err, &release) {
+		code := "release.failed"
+		if errors.Is(err, distribution.ErrNoRelease) {
+			code = "release.unavailable"
+		}
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			code = "operation.cancelled"
+		}
+		mayWrite := release.result != nil && release.result.DestinationChanged
+		out := Failure(code, release.Error(), mayWrite)
+		out.Error.ReleaseResult = release.result
+		if release.result != nil && release.result.Pending != "" {
+			out.Error.InspectBeforeRetry = true
+		}
+		return out
+	}
+	var reference *foundlingFailure
+	if errors.As(err, &reference) {
+		return foundlingFailureEnvelope(reference)
+	}
+	var migration *migrationFailure
+	if errors.As(err, &migration) {
+		code := "migration.failed"
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			code = "operation.cancelled"
+		}
+		mayWrite := migration.result != nil && migration.result.Phase != "preflight"
+		out := Failure(code, migration.Error(), mayWrite)
+		out.Error.MigrationResult = migration.result
+		return out
+	}
+	var connection *connectionFailure
+	if errors.As(err, &connection) {
+		code := "connection.failed"
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			code = "operation.cancelled"
+		}
+		out := Failure(code, connection.Error(), connection.result != nil)
+		out.Error.ConnectionResult, out.Error.ConnectionReport = connection.result, connection.report
+		return out
+	}
+	var stopped *signetsync.Failure
+	if errors.As(err, &stopped) && !errors.Is(err, memory.ErrWriterBusy) {
+		code := "sync.failed"
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			code = "operation.cancelled"
+		}
+		out := Failure(code, stopped.Error(), true)
+		out.Error.SyncStatus = &stopped.Status
+		return out
+	}
+	switch {
+	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
+		return Failure("operation.cancelled", "Operation cancelled before execution.", false)
+	case errors.Is(err, memory.ErrWriterBusy):
+		out := Failure("store.busy", "Another writer holds the signet lock; retry after it finishes.", false)
+		out.Error.Retryable = true
+		return out
+	case errors.Is(err, memory.ErrIdentityChanged):
+		return Failure("binding.invalid", "The signet identity changed; inspect and explicitly rebind.", false)
+	case errors.Is(err, strictjson.ErrInvalid):
+		return Failure("input.invalid", strictjson.ErrInvalid.Error(), false)
+	}
+	var pathError *fs.PathError
+	var linkError *os.LinkError
+	var systemError syscall.Errno
+	if errors.As(err, &pathError) || errors.As(err, &linkError) || errors.As(err, &systemError) {
+		return Failure("operation.io", "Filesystem operation failed; inspect the selected signet before retrying a write.", !op.ReadOnly)
+	}
+	// Only recheck on failure: successful reads/writes already validate
+	// their relevant records. Do not blame malformed stored data on the
+	// caller or expose record bodies through validation diagnostics.
+	if op.RequiresBinding && a.service.Validate() != nil {
+		return Failure("store.invalid", "Selected signet failed structural validation; inspect its files and history before retrying.", !op.ReadOnly)
+	}
+	return Failure("input.invalid", "Memory validation failed; inspect the input schema and selected signet structure.", false)
 }

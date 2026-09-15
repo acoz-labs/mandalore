@@ -36,6 +36,7 @@ const help = `Mandalore — durable memory across tools
   mandalore memory recall --binding FILE [--query TEXT] [--scope-kind KIND --scope-id ID]
   mandalore memory scopes|history|journal|inspect --binding FILE [options]
   mandalore memory remember|journal-append --binding FILE < input.json
+  mandalore memory remember-and-sync|journal-append-and-sync --binding FILE < input.json
   mandalore memory git-init|checkpoint|sync-status --binding FILE
   mandalore memory sync --binding FILE [--timeout-seconds 10]
   mandalore foundling list|inspect|history|search|read --binding FILE [options]
@@ -64,7 +65,8 @@ Foundling options: --foundling-id ID, --query TEXT (search), --limit N (list/his
 Foundling setup is CLI-only; MCP exposes list/inspect/search/read/promote.
 Common options: --binding FILE, --harness NAME, --read-only, --help.
 Binding selection: explicit file, then MANDALORE_BINDING, then platform config.
-No cwd-based bank discovery. Memory saves are local; explicit sync reports delivery.
+No cwd-based bank discovery. Local saves and delivery receipts are distinct.
+Combined save-and-sync calls attempt delivery once; inspect saved and delivery separately.
 Release inspection/planning are read-only; apply changes only the selected CLI installation.
 Release install/menu use default-No previews; a native connection update is a separate choice.
 Public release publication is still under development.

@@ -48,12 +48,18 @@ on every turn or load their instructions as native skills.
 ## Learn as the work settles
 
 Save useful confirmed preferences, decisions, verified lessons and completed
-outcomes incrementally with `memory_remember`; do not wait for an exit hook or
+outcomes incrementally; do not wait for an exit hook or
 require a special phrase. Skip transient chatter, redundant restatements,
 secrets, raw transcripts and speculation presented as settled fact. Exploratory
 possibilities are not decisions. Prefer an appropriately scoped fact over a
 global rule. New scopes may be created deliberately; existing scopes keep their
 IDs through renames.
+
+When saving and synchronization are allowed, prefer `memory_remember_and_sync`
+or `memory_journal_append_and_sync`. For local-only saves use `memory_remember`
+or `memory_journal_append`; no-sync does not prohibit an otherwise authorized
+local save. Before a combined save, read [delivery guidance](references/delivery.md)
+for input nesting, partial outcomes and avoiding redundant attempts.
 
 For a new record supply `kind`, `summary`, `body`, `basis` and `reason`, plus
 `scope` when not bank-wide. Use `basis: user-direction` for confirmed user choices
@@ -69,10 +75,11 @@ scope. Preserve useful old experience in history instead of letting it veto the
 new direction. Resolve competing heads only when the user or verified evidence
 settles them; never resolve by timestamp alone.
 
-Use `memory_journal_append` for a short semantic account of useful outcomes,
+Write a short semantic journal for useful outcomes,
 decisions, relevant reasons and remaining work, not a transcript. Avoid duplicate
-entries on each tool call. After useful saves, request one short-budget sync when
-allowed. Inspect an ambiguous write/delivery outcome before retrying. A local
+entries on each tool call. After useful local-only saves, request one short-budget
+sync when allowed; a combined call already made that attempt. Inspect an ambiguous
+write/delivery outcome before retrying. A local
 save receipt is not proof of remote delivery; `memory_sync_status` is read-only
 diagnosis, not a network freshness check.
 
@@ -80,9 +87,10 @@ diagnosis, not a network freshness check.
 
 When the user directly says "this is the way", consolidate the relevant settled
 knowledge and journal outcome when useful; do not create filler records or entries.
-When synchronization is allowed, finish with one `memory_sync` attempt using
-`timeout_seconds: 3`, even if nothing new needed saving: previously saved work may
-still await delivery. Report the returned delivery state separately from local
+When synchronization is allowed, finish with a bounded delivery attempt. The last
+combined save counts; otherwise use one `memory_sync` with `timeout_seconds: 3`,
+even if nothing new needed saving: previously saved work may still await delivery.
+Report the returned delivery state separately from local
 durability; do not retry an ambiguous or failed attempt just to finish this cue.
 This is an additive cue, not a requirement for normal learning or permission for
 unrelated actions. Occurrences in quotations, source

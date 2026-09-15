@@ -84,6 +84,25 @@ func TestCompiledCLIAndStdio(t *testing.T) {
 	if !delivery.OK || delivery.Result.(map[string]any)["delivered"] != true {
 		t.Fatal("compiled sync did not deliver", delivery)
 	}
+	checkCombined := func(encoded []byte) {
+		t.Helper()
+		var out struct {
+			OK     bool                  `json:"ok"`
+			Result api.SaveAndSyncResult `json:"result"`
+		}
+		if err := json.Unmarshal(encoded, &out); err != nil || !out.OK || !out.Result.Saved.DurableLocally || out.Result.Saved.ID == "" || !out.Result.Delivery.OK || out.Result.Delivery.Result == nil || !out.Result.Delivery.Result.Delivered {
+			t.Fatalf("compiled combined receipt: %s %v", encoded, err)
+		}
+		for _, args := range [][]string{{"--git-dir=" + remote, "rev-parse", "main"}, {"-C", root, "rev-parse", "HEAD"}} {
+			head, err := exec.CommandContext(ctx, "git", args...).Output()
+			if err != nil || strings.TrimSpace(string(head)) != out.Result.Delivery.Result.Head {
+				t.Fatalf("compiled combined delivery mismatch: %s %v", head, err)
+			}
+		}
+	}
+	combined := invoke(`{"entry":{"kind":"test","summary":"Compiled combined journal delivery."}}`, 0, "memory", "journal-append-and-sync", "--binding", binding)
+	encoded, _ := json.Marshal(combined)
+	checkCombined(encoded)
 	before := treeDigest(t, root)
 	// Exercise the actual native bridge against this compiled binary, from a
 	// different project, with an explicit binding shared by MCP and hooks.
@@ -185,6 +204,23 @@ func TestCompiledCLIAndStdio(t *testing.T) {
 	}
 	if !reflect.DeepEqual(before, treeDigest(t, root)) {
 		t.Fatal("interrupted MCP changed the signet")
+	}
+	// A fresh writable stdio connection must retain both saved and delivered
+	// identities; this happens after the read-only inventory assertions above.
+	writable := exec.CommandContext(ctx, binary, "mcp", "--binding", binding)
+	writer, err := sdk.NewClient(&sdk.Implementation{Name: "combined-test", Version: "1"}, nil).Connect(ctx, &sdk.CommandTransport{Command: writable, TerminateDuration: time.Second}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = writer.Close() })
+	wire, err := writer.CallTool(ctx, &sdk.CallToolParams{Name: "memory_remember_and_sync", Arguments: json.RawMessage(`{"record":{"kind":"fact","summary":"Compiled route","body":"Golden Trail","basis":"user-direction","reason":"Synthetic compiled test"}}`)})
+	if err != nil || wire.IsError {
+		t.Fatalf("compiled combined stdio: %v %+v", err, wire)
+	}
+	encoded, _ = json.Marshal(wire.StructuredContent)
+	checkCombined(encoded)
+	if err := writer.Close(); err != nil {
+		t.Fatal(err)
 	}
 	t.Log("Compiled CLI and stdio: create, bind, correction/history, cwd and selection, shared results, read-only file hashes, malformed input, clean EOF passed")
 }

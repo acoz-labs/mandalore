@@ -90,7 +90,9 @@ behavior and the distinction between payload bytes and native token counters.
 Hooks never write, sync, parse transcripts, invoke another model or execute user
 scripts. The skill handles relevant confirmed learning and semantic journaling
 incrementally, not only at exit. It can request a three-second sync before
-cross-machine recall and after useful saves when permitted by the task. Read-only
+cross-machine recall and after useful saves when permitted by the task. Explicit
+network-capable save-and-sync companions avoid a separate post-save request;
+existing local-only operations remain available for no-sync tasks. Read-only
 or no-save tasks forbid journaling/checkpointing/sync too. Local save and remote
 delivery are separate receipts; conflicted history is not current guidance.
 
