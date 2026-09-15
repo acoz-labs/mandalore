@@ -9,6 +9,21 @@ described in [synchronization](synchronization.md). Exact-candidate/release
 acceptance and publication are recorded for [v1.0.0](releases/1.0.0.md).
 No live migration is implied.
 
+## MCP result presentation
+
+MCP returns the same complete envelope in `structuredContent` and a JSON text
+block for client compatibility. `isError` agrees with the envelope's `ok` flag.
+Keep both wire representations. In code-mode orchestration, the memory skill
+guides the agent to print one equivalent envelope while preserving errors,
+provenance, conflicts and continuation metadata. Text-only, distinct content,
+unknown metadata and uncertain equivalence fall back intact. This is scoped
+presentation guidance, not a global renderer or a change to memory semantics.
+Do not retry an operation merely to render its receipt differently.
+
+The [synthetic presentation checks](evidence/mcp-rendering/README.md) distinguish
+wire compatibility and selector behavior from still-required native acceptance.
+Published v1.0.0 has not been modified by this development change.
+
 `mandalore version` is read-only and does not need a signet binding. It reports
 the runtime version, source commit (empty for an unstamped development build),
 actual Go version, OS/architecture, protocol and hook compatibility, supported
