@@ -1,0 +1,20 @@
+{
+  "source": "06bf8c370d3b262e9177061ccce08f62685bef91",
+  "runtime_sha256": "4ba013a1fe9f554fd6fc332dd72c5b911c24d9d2ca38d6395894de2277d815af",
+  "package_sha256": "96282e6d08ce6df1e0388dbe05e944b6341d439e4fd916568549ddf0a1cf683f",
+  "environment": {"os": "darwin", "arch": "arm64", "node": "24.1.0", "pi": "0.85.1"},
+  "native_install": "passed",
+  "installed_package_memory_tools": 18,
+  "native_tools_preserved": true,
+  "administration_excluded": true,
+  "native_validator_and_callbacks": "passed",
+  "saved_and_superseded": true,
+  "history_revisions": 2,
+  "pi_provenance": true,
+  "context_bytes": 2011,
+  "native_prompt_preserved": true,
+  "context_did_not_write": true,
+  "native_removal": "passed",
+  "model_requested": false,
+  "product_acceptance": "not-performed"
+}

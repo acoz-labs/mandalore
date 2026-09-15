@@ -78,7 +78,10 @@ tag, native connection or signet is created. `VERSION` declares the intended
 release version; unstamped development binaries continue to report `0.0.0-dev`.
 
 The builder exports the exact commit, refuses unsafe archive entries, stamps
-the native plugin in that private export and compiles all four supported targets.
+the Codex plugin and embedded Pi package in that private export and compiles all
+four supported targets. Pi's separate `pi_package_inspect` metadata carries its
+package identity; the generic version response and eight-file inventory stay
+unchanged.
 Go 1.26.4, disabled CGO, trimpath, isolated build/module caches, readonly module
 resolution and the public Go module proxy/checksum database are explicit. Ambient
 Go workspace/configuration and provider tokens are not passed to those children.

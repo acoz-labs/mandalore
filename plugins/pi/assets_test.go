@@ -24,7 +24,7 @@ func TestEmbeddedPackageIdentity(t *testing.T) {
 	if info.Name != "mandalore" || info.Version == "" || info.HarnessProtocol != 1 || info.SHA256 != hex.EncodeToString(digest[:]) || info.FileCount != len(files) {
 		t.Fatal("unbound package identity", info)
 	}
-	for _, name := range []string{"index.js", "extension.js", "transport.js", "connection.js", "package.json"} {
+	for _, name := range []string{"index.js", "extension.js", "transport.js", "connection.js", "package.json", "skills/this-is-the-way/SKILL.md", "skills/the-armorer/SKILL.md"} {
 		if len(files[name]) == 0 {
 			t.Fatal("missing native package entry", name)
 		}

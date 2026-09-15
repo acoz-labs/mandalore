@@ -58,10 +58,14 @@ func Inspect() (Info, error) {
 	}
 	var manifest struct {
 		Name, Version string
-		Pi            struct{ Extensions []string }
+		Pi            struct{ Extensions, Skills []string }
 	}
 	if err := json.Unmarshal(content["package.json"], &manifest); err != nil || manifest.Name != "mandalore" || manifest.Version == "" || len(manifest.Version) > 128 || len(manifest.Pi.Extensions) != 1 || manifest.Pi.Extensions[0] != "./index.js" || len(content["index.js"]) == 0 {
 		return Info{}, errors.New("invalid embedded Pi package manifest or entrypoint")
+	}
+	if len(manifest.Pi.Skills) != 1 || manifest.Pi.Skills[0] != "./skills" ||
+		len(content["skills/this-is-the-way/SKILL.md"]) == 0 || len(content["skills/the-armorer/SKILL.md"]) == 0 {
+		return Info{}, errors.New("invalid embedded Pi skill inventory")
 	}
 	raw, err := json.Marshal(content)
 	if err != nil {

@@ -2,7 +2,7 @@
 
 Development integration for issue #13, after accepted Codex MVP #10. The native
 package is not yet a released or accepted connection workflow. Installation,
-recovery, skills and native model verification remain part of that issue.
+recovery and native model verification remain part of that issue.
 
 The dependency-free JavaScript extension discovers the retained runtime's typed
 catalog and exposes its bound memory operations as native Pi tools. Every call
@@ -28,3 +28,14 @@ Tests include a compiled Go backend as well as controlled child processes and a
 native-API double. These layers do not establish real Pi loading, model behavior
 or candidate acceptance; native evidence must identify its actual versions and
 source/artifact identity. Initial inspected contract: Pi 0.85.1 with Node 24.1.0.
+
+The package supplies `this-is-the-way` and `the-armorer` through native skill
+discovery and `/skill:NAME`. Names/descriptions are discovered first; bodies and
+linked references are read when useful. Foundling and delivery reference bytes
+are tested for parity with Codex; Codex-only MCP rendering instructions are not
+included. The Armorer's Pi connection operations are still being implemented;
+absence must not cause a fallback to Codex installation operations.
+
+The release builder stamps Pi's package version in its isolated source export
+before compilation. Pi stays embedded in the CLI: no separate npm dependency,
+extra release asset or format-1 manifest/version-response change is introduced.
