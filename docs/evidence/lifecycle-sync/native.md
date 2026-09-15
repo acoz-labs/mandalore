@@ -93,3 +93,61 @@ Automatic compaction, failed/disabled invalidation hooks, concurrent sessions,
 subagents, hard process crash and the real Git timeout/delivery matrix remain
 unverified here. Existing synchronization tests do not prove this lifecycle
 authorization contract. No release or installed Mandalore runtime was changed.
+
+## Follow-up: can the transcript establish a fresh prompt generation?
+
+A second, fresh synthetic session on the same native version used a separately
+reviewed command hook. It read at most the trailing 2 MiB of the native transcript
+and retained only event metadata, byte count, latest user-message timestamp and
+SHA-256 digests. The native `response_item` / `message` / `user` shape selected
+the latest user entry; `turn_context` supplied a comparison turn ID. No transcript
+body, prompt text, tool arguments or workstation path was retained by the probe.
+This parser is an investigative instrument, not proposed product code or a stable
+native interface. Partial trailing lines were excluded and read/parse failures
+would be recorded as unavailable. All observed reads were below the bound.
+
+The operator reviewed and trusted the exact nine session-local handlers, with
+two-second budgets. Existing native hooks were also present: the same isolation
+limitation applies. No Mandalore tool was called. Tasks were a constant answer,
+one `sleep 20`, a queued prohibition, manual compaction and normal exit.
+
+| Event | Native turn | Latest user entry visible in transcript |
+| --- | --- | --- |
+| First UserPromptSubmit | A | Earlier setup context, not current prompt |
+| First Stop | A | First prompt |
+| Sleep request UserPromptSubmit | B | First prompt, not sleep request |
+| PreToolUse | B | Sleep request |
+| PostToolUse | B | Sleep request, not queued prohibition |
+| Queued prohibition UserPromptSubmit | B | Still the sleep request |
+| Stop after acknowledging prohibition | B | New prohibition |
+| PreCompact / PostCompact | C | New prohibition; transcript turn remains B |
+| SessionEnd | absent | New prohibition; transcript turn remains B |
+
+The queued instruction was submitted while the sleep was running. PostToolUse
+read the previous prompt at 19:50:59.554 UTC. The new prompt's own hook ran at
+19:50:59.624 UTC and still saw that previous transcript entry. The new user entry
+was timestamped 19:50:59.650 UTC; Stop saw it at 19:51:05.279 UTC. Every observed
+UserPromptSubmit had a mismatch between its prompt digest and the latest user
+entry in the transcript. The native model acknowledged the prohibition; no extra
+tool, save or synchronization was performed. The process exited normally.
+
+This reproduces the old-prompt window with transcript evidence. Reading the
+transcript does not repair the post-tool freshness problem. Stop seeing the
+current prompt in this case is encouraging but not proof of a fail-closed
+authorization protocol across disabled/failed hooks, subagents, crash/resume,
+truncated transcripts or native upgrades. No claim that all lifecycle approaches
+are impossible follows from this result. Prompt-generation identity remains
+unresolved; no permission-cache implementation is selected.
+
+## Inline-delivery comparison basis
+
+The successful new-learning case in the [consolidation matrix](consolidation.md)
+used separate native code-mode requests for save and sync, not one batched code
+cell. The saved receipt reached model context at 19:40:30.127 UTC; the model
+requested sync at 19:40:32.858 UTC, a 2.731-second interval. This is one observed
+decision/round-trip gap, not a latency benchmark or an observed lost delivery.
+Both operations ultimately succeeded. A combined save-and-deliver operation
+could remove that second model decision after dispatch, but cannot promise
+delivery through cancellation, offline state or a save the model never requested.
+Native operation selection, schema/context cost and suppression still require
+before/after verification before claiming the proposed improvement.

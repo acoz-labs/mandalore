@@ -1,9 +1,9 @@
 # Discovery: reliable delivery without overriding the current task
 
-- **Status:** Final for O3; O1/O2/O4 require follow-up discovery
+- **Status:** Final for O3 and O4; O1/O2 require follow-up discovery
 - **Discovery issue:** #55
-- **Repository basis:** 0e4329e28e1aaa70f605d4c67ce502171cf0de4b
-- **Recommended decision:** approve O3 delivery; retain O1/O2/O4 as unresolved follow-up
+- **Repository basis:** 3ffe69bdd26b5021a90b20f0f364b7d36abfb69e
+- **Recommended decision:** retain O3 and select bounded inline delivery O4; retain O1/O2 as unresolved follow-up
 - **Gate 1:** exact-head contributor review required under ADR 0003
 - **Confidence:** Medium on constraints, Low on safe lifecycle authorization
 - **Private evidence:** none
@@ -55,6 +55,10 @@ interruption in Codex 0.154.0. It changes the design: queued steering reused a
 turn ID, and its prompt hook ran after the preceding PostToolUse. SessionEnd had
 no turn ID and resume preserved session identity. A session/turn allow cache
 and a post-tool callback cannot by themselves enforce current task intent.
+The follow-up transcript probe also found that all observed UserPromptSubmit
+callbacks still saw the earlier user entry in the transcript. PostToolUse saw
+that earlier entry before the queued prompt was processed. Stop saw the new
+entry in this example, but no failure-safe authorization protocol was established.
 The probe also exposed native configuration/isolation discrepancies; it is not
 plugin or sandbox acceptance and does not establish a supported minimum version.
 
@@ -111,14 +115,14 @@ small skill/usage-contract correction, not a new protocol or lifecycle executor.
 Native behavioral acceptance must cover direct, quoted and prohibited uses and
 real pending delivery without new memory content.
 
-O3 does **not** satisfy the automatic lifecycle safety-net outcome. O1/O2/O4 remain
+O3 does **not** satisfy the automatic lifecycle safety-net outcome. O1/O2 remain
 explicit follow-up discovery in the roadmap; they are not canceled, declared
 complete or replaced by an easier successful test. Keep #55 open as their working
-discovery tracker after O3 is materialized. The current permission contract stays
+discovery tracker after selected delivery outcomes are materialized. The current permission contract stays
 in effect while the product question about earlier saved data is discussed.
 
-Investigate bounded write-triggered delivery and per-turn checkpoint authorization
-side by side. Do not start by registering more events that directly invoke sync.
+Implement and measure bounded write-triggered delivery while investigating
+per-turn checkpoint authorization. Do not register events that directly invoke sync.
 Unknown, revoked, stale or unverifiable state must skip network and bank mutation.
 Startup/resume remain read-only until current authorization can be established.
 Failure of a checkpoint should preserve pending state, not block ordinary recall
@@ -151,7 +155,7 @@ of unsupported behavior without checking its trigger and native configuration.
 
 ## Candidate outcome map
 
-Only O3 is selected for delivery by this decision. Other outcomes remain
+O3 and O4 are selected for delivery by this decision. O1/O2 remain
 unresolved and may not activate network-capable hooks based on this approval.
 
 - **O1 — Current-task authorization and native event evidence:** investigate
@@ -168,9 +172,10 @@ unresolved and may not activate network-capable hooks based on this approval.
   quoted/retrieved phrases do not trigger delivery; explicit no-sync and existing
   read-only/no-save contract suppress it; failures retain honest pending receipts
   without repeated writes or retry loops. No graphical interface change.
-- **O4 — Write-triggered transport:** compare combined operation versus retained
-  separate tools; select only if it measurably improves reliability without
-  forcing network work on authorized local-only saves.
+- **O4 — Write-triggered transport (selected):** add explicit network-capable
+  companion save-and-deliver operations while retaining the unchanged local-only
+  tools. The follow-up decision below defines boundaries and measured acceptance;
+  return to design if native selection/operation-count benefit is not established.
 
 ## Privacy and evidence handling
 
@@ -187,9 +192,64 @@ working memory experience while establishing that missing contract.
 ## Gate 1
 
 ADR 0003 authorizes exact-head contributor engineering self-review. Record the
-reviewed head and passing CI, merge this scoped O3 decision, then materialize O3
-with immutable provenance and its own proportional solution plan. O1/O2/O4 stay
-open under #55 and require further evidence/decision before implementation. Promote
-O3's durable contract during its implementation; retain the unresolved discovery
+reviewed head and passing CI, merge this scoped O4 follow-up decision, then
+materialize O4 with immutable provenance and its own proportional solution plan.
+O1/O2 stay open under #55 and require further evidence/decision before implementation.
+Promote selected delivery contracts during implementation; retain the unresolved discovery
 pack until the remaining outcomes are decided. No lifecycle authorization or
 new-candidate release acceptance is implied by this partial outcome selection.
+
+## O4 follow-up decision: combine an authorized save and bounded delivery
+
+Select two explicit network-capable companion operations: remember-and-sync and
+journal-append-and-sync. Keep the existing remember/journal operations local-only,
+with unchanged names, defaults, schemas and network annotations. The agent chooses
+the combined operation only when both learning and synchronization are allowed;
+local-only saves remain the path for a no-sync task. Read-only/no-save still
+prohibits both choices. This is an operation-level decision, not permission cached
+for a future lifecycle callback. No background worker, lease file, transcript
+parser, new native trust policy or automatic Git setup is selected.
+
+The existing native learning case required two model requests with a measured
+2.731-second interval between saved receipt and sync request. Combining operations
+removes that second model decision after dispatch. It does not ensure the model
+chooses the operation or save knowledge it never identified. The expected benefit
+must be verified with ordinary-learning prompts, not only explicit consolidation.
+
+Alternatives considered:
+
+- Adding optional network behavior to existing save tools changes their advertised
+  local-only boundary even when the option is omitted. Reject that compatibility
+  and permission-policy change.
+- A generic batch/tool-dispatch operation saves a name but introduces arbitrary
+  operation composition and partial multi-write semantics. Reject unnecessary scope.
+- Two narrow companions add discovery/schema context. Measure and disclose that
+  cost; load their detailed guidance only for combined delivery. Do not add every
+  save schema to startup hooks or duplicate the underlying memory/Git engines.
+- Keeping separate tools remains the compatible fallback and is preferred if
+  native tests do not establish a useful operation-count/decision-gap improvement.
+
+The combined call saves locally first, then makes at most one short-budget sync
+attempt, default three seconds. Validate the complete request before saving.
+After a successful save, preserve its record/event identity and durable-local
+receipt even if synchronization is unavailable, conflicted, cancelled or cannot
+start. Report delivery separately; a delivery failure must not invite resubmitting
+the save or hide it behind a generic failure. Cancelled/lost transport can still
+prevent receipt delivery, so existing inspect-before-retry guidance remains.
+There is no transaction or rollback across local publication and Git/network work.
+Reuse existing bound-service, lock, Git validation and cancellation machinery.
+
+Native acceptance must establish ordinary unprompted selection, one combined
+operation versus separate save/sync, correct new knowledge/journal outcomes,
+local-only selection under no-sync, no writes under read-only/no-save, and honest
+offline/pending results without duplicate saves. Deterministic API tests cover
+invalid input before publication, cancellation before/after save, lock contention,
+concurrent writes, conflict receipts, selected-bank isolation and no implicit setup.
+Compare generated schemas and model-visible context instead of hiding new-tool
+overhead. If these checks fail, return O4 to design rather than weakening boundaries.
+
+O4 is independent of O1/O2 and does not complete their lifecycle outcome. Keep
+#55 open for that investigation; materialize O4 as a bounded delivery child after
+exact-head review and merge of this follow-up decision. O3 is implemented by #61 /
+PR #63 and awaits a newly nominated artifact's acceptance/release. No personal
+installation or public release is authorized by this decision.
