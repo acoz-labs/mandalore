@@ -31,9 +31,29 @@ is also the push target; a separate push URL is not followed silently.
 
 Equivalent bound tools are `memory_git_init`, `memory_checkpoint`, `memory_sync`
 and read-only `memory_sync_status`. `mandalore call` accepts their cataloged JSON
-inputs. MCP marks only `memory_sync` as network-capable. Read-only mode refuses
-all three mutations before execution. Native hooks/plugins are not installed by
+inputs. MCP marks `memory_sync` and the two explicit save-and-sync companions as
+network-capable; existing local-only tools retain their annotations. Read-only
+mode refuses all mutations before execution. Native hooks/plugins are not installed by
 these commands.
+
+## Save-triggered delivery
+
+When both learning and delivery are allowed, `memory_remember_and_sync` or
+`memory_journal_append_and_sync` saves locally and makes at most one bounded
+delivery attempt through this same synchronizer. Their default delivery budget
+is three seconds, separate from local publication time. They reacquire the normal
+writer lock, preserve exact binding identity, and do not initialize Git or choose
+a remote. The [interface contract](interface.md#save-with-bounded-delivery)
+describes input nesting and the separate saved/delivery envelopes.
+
+Offline, busy, cancelled and conflicted delivery does not roll back or conceal
+the saved record/event. Report the actual receipt, retain its identity, and do not
+resubmit the save. Later authorized recovery uses standalone sync, after inspecting
+an ambiguous result. Current no-sync chooses the existing local-only tools;
+read-only/no-save prohibits both paths. The agent's semantic permission decision
+is not made deterministic by combining operations. Once dispatched, the combined
+operation removes a separate post-save model request; it cannot guarantee network
+delivery, recover unrecorded knowledge or authorize a later lifecycle callback.
 
 ## What happens
 
@@ -123,7 +143,8 @@ its owner is alive. Installation recovery guidance belongs to #7.
 ## Passive integration and verification
 
 A direct user `this is the way` asks the agent to consolidate warranted learning
-and finish with one short-budget sync attempt when permitted. This includes
+and finish with a short-budget delivery attempt when permitted. A final combined
+save counts; do not add a redundant sync. Otherwise use standalone sync, including
 already-pending delivery when no new record or journal entry is useful; do not
 manufacture content to cause a sync. Quoted, discussed or retrieved occurrences
 are not requests. Current read-only/no-save/no-sync directions still take

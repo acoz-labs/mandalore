@@ -9,6 +9,40 @@ described in [synchronization](synchronization.md). Exact-candidate/release
 acceptance and publication are recorded for [v1.0.0](releases/1.0.0.md).
 No live migration is implied.
 
+## Save with bounded delivery
+
+`memory_remember` and `memory_journal_append` remain local-only, with unchanged
+inputs and annotations. New network-capable companions are
+`memory_remember_and_sync` and `memory_journal_append_and_sync`. CLI equivalents:
+
+```sh
+mandalore memory remember-and-sync --binding /example/binding.json < record-and-delivery.json
+mandalore memory journal-append-and-sync --binding /example/binding.json < entry-and-delivery.json
+```
+
+Inputs nest the existing knowledge fields under `record` or journal fields under
+`entry`. Optional `timeout_seconds` bounds the delivery stage only: default 3,
+range 1–30. The operation catalog supplies authoritative schemas. Invalid shape,
+timeout or memory content is refused before publication; failed saves do not sync.
+Both companions are non-idempotent mutations. Read-only connections refuse them.
+
+On a successful local save the result contains `saved` and a typed `delivery`
+envelope. Outer `ok: true` (and CLI exit zero) means the save completed, **not**
+that delivery succeeded. `saved` retains signet/record/event identity and local
+durability; its synchronization field summarizes the delivery state. Inspect
+`delivery.result.delivered`, state, exact heads and conflicts, or `delivery.error`.
+`delivery.ok: true` can still mean pending or local-only. A conflict can be
+delivered without being semantically resolved. A failed delivery retains the
+successful save and sanitized error/phase evidence rather than turning it into
+an apparently failed write. Never repeat a save just to retry delivery.
+
+No transaction spans both stages. Another writer can act between them; ordinary
+sync validates and may deliver other valid pending work too. A cancelled/lost
+response may hide a save or completed push: inspect before retrying. No Git setup,
+credential enrollment, rollback, tight retry or background worker is implicit.
+Use local-only tools for no-sync tasks, and neither type under no-save/read-only.
+See [delivery semantics](synchronization.md#save-triggered-delivery).
+
 ## MCP result presentation
 
 MCP returns the same complete envelope in `structuredContent` and a JSON text
