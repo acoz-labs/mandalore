@@ -3,8 +3,8 @@
 ## Current state
 
 Delivery profile: **artifact**. There is no staging service or hosted production
-application. GitHub Releases will distribute the CLI and native plugins. No
-Mandalore runtime or release is published yet.
+application. GitHub Releases distribute the CLI and native plugin package.
+[v1.0.0](releases/1.0.0.md) is published from the owner-accepted retained bytes.
 
 The product now has a pinned [local candidate builder](development.md#local-distribution-candidates),
 checksummed platform/plugin assets, a compatibility manifest and read-only release
@@ -22,8 +22,9 @@ artifact finalizer verifies the published product before updating its ledger.
 The retained-candidate promotion workflow is integrated. Actual
 [installer/recovery recordings](evidence/distribution/recovery/README.md) and
 [fresh native candidate sessions](evidence/distribution/native-candidate.md) provide
-source-bound contributor evidence. Hosted candidate/nomination execution and
-independent exact-candidate acceptance remain separate from that local evidence.
+source-bound contributor evidence. The release record distinguishes subsequent
+hosted retention/nomination, scoped owner acceptance, actual publication and
+post-publication verification from those earlier local engineering results.
 
 The repository-specific publisher extends the template's nomination, acceptance
 and ledger workflows; the shared template is unchanged. Workflow YAML and local
@@ -48,8 +49,8 @@ Repository creation does not authorize a release. `VERSION` declares the intende
 SemVer release, initially 1.0.0, with tag `vVERSION`. Candidate identity additionally
 binds the exact commit and manifest digest; a shared version label is insufficient.
 Current asset names and compatibility fields are defined by the v1 manifest.
-Promotion commands are implemented but not yet accepted against a real hosted
-candidate. Never treat old
+The first same-byte publication used the guarded local promoter after explicit
+owner authorization; no Actions credential was provisioned. Never treat old
 My Friday releases as compatible Mandalore updates just because they contain Go.
 
 ## Configuration and recovery
@@ -70,8 +71,10 @@ this administration read. The workflow now defines an optional
 with repository Administration:read. The command supports the same explicit
 environment variable. It is used only for the policy GET, not release/upload APIs
 or child authority-check processes. If absent, the publisher tries the explicit
-release token and refuses if the setting cannot be read. No actual secret/token,
-acceptance actor or repository setting has been configured automatically.
+release token and refuses if the setting cannot be read. The publisher itself
+does not configure secrets, actors or repository policy. For v1.0.0, the owner
+explicitly authorized enabling immutability and local publication. Acceptance
+actors were deliberately configured through the recorded MVP acceptance policy.
 
 This additional optional binding is a documented deviation from the earlier
 no-new-secret assumption, required by GitHub's policy-read permission contract.

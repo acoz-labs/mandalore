@@ -62,15 +62,15 @@ completed phase and retained paths; inspect before retrying, not assumed rollbac
 `--state-dir DIR`, `--native-home DIR` and `--native-binary FILE` select an explicit
 installation/profile. `--binary FILE` sets the local artifact offered by the menu.
 Codex is required only for native journeys, not opening the menu or memory setup.
-Exact-candidate acceptance remains #10.
+Exact-candidate acceptance is recorded in [the v1.0.0 release record](releases/1.0.0.md).
 No assistant launcher, capability framework or live predecessor import is added.
 
 ## CLI installation and updates
 
 **CLI · Install, update or select a retained runtime** offers the latest published
 stable release, a specific version, an explicit local candidate, or a retained
-manifest SHA-256. No release is currently published; an unavailable release is
-reported without changing the machine. This journey is also available directly
+manifest SHA-256. An unavailable release is reported without changing the machine.
+The first published version is [1.0.0](releases/1.0.0.md). This journey is also available directly
 as `mandalore release install`, including `--plain` and optional `--prefix DIR`.
 
 The preview shows source and content identities, compatibility, destination,

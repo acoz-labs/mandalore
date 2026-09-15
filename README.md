@@ -9,14 +9,15 @@ engine, CLI, MCP server and thin native harness plugins.
 ## Status
 
 This is the memory-only successor to [My Friday](https://github.com/acoz-labs/my-friday).
-The repository contains the memory engine, a development CLI/local MCP server,
-explicit Git synchronization, a development Codex plugin with read-only lifecycle
+The repository contains the memory engine, a CLI/local MCP server,
+explicit Git synchronization, a Codex plugin with read-only lifecycle
 hooks and memory/administration skills, guided setup/local-artifact update/inspection/repair, explicit
 memory-only migration, foundling consultation/selective promotion, retrieval
 evaluation and synthetic regression tests. Versioned candidate builds, guided
 CLI installation/update and guarded same-byte release tooling are implemented.
-Independent exact-candidate acceptance and the first public release remain.
-No Mandalore release has been published.
+[Mandalore v1.0.0](https://github.com/acoz-labs/mandalore/releases/tag/v1.0.0)
+is published from the exact owner-accepted retained candidate. See the
+[release record](docs/releases/1.0.0.md) for provenance, verification and limits.
 
 Codex is the first integration. Pi follows accepted Codex support, then Claude
 Code follows Pi. Prior prototype evidence informs the port; it does not certify
@@ -67,13 +68,35 @@ review, exact-candidate acceptance and GitHub Releases. The current MVP permits
 [engineering self-review](docs/decisions/0001-mvp-self-review.md), not fabricated
 independent acceptance. See [SDLC](docs/operations/sdlc.md).
 
+## Install
+
+Download the bootstrap from the versioned release, inspect it, then run it:
+
+```sh
+curl -fL -o mandalore-install.sh https://github.com/acoz-labs/mandalore/releases/download/v1.0.0/install.sh
+less mandalore-install.sh
+sh mandalore-install.sh 1.0.0
+```
+
+The bootstrap requires curl 8.4+ and `shasum` or `sha256sum`. It checks the platform
+binary against the official release checksums, then opens a default-No installation
+preview. This trusts the official release, not an independent signing authority.
+Choose a user-owned prefix; the installer prints the full launcher path and does
+not edit PATH. Run that launcher with `menu` for signet setup and Codex connection.
+CLI installation and a native connection are separately confirmed. No credential,
+shell change, old-memory import or migration is implicit.
+
+Public release discovery uses GitHub's anonymous API quota. If it is exhausted,
+wait for the reset before retrying; the CLI does not borrow your GitHub credentials.
+See the [release record](docs/releases/1.0.0.md) for the verified manual-download
+alternative and the distinction between published and local-candidate installation.
+
 For prerelease evaluation, use a reviewed local candidate from the
 [pinned builder](docs/development.md#local-distribution-candidates), then run its
 platform executable with `release install --candidate /absolute/candidate-dir`.
 The installer previews its destination and defaults to No. CLI installation and
 connecting a chosen signet to Codex require separate confirmation; no shell,
-credential or memory migration is implicit. There is no published version to
-download until the release prerequisites are met.
+credential or memory migration is implicit.
 
 Independent community project; not affiliated with or endorsed by Lucasfilm or
 Disney. The theme is naming and prose; no official artwork is bundled.
