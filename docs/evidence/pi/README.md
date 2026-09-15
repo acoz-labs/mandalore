@@ -2,9 +2,9 @@
 
 This records development verification, not independent product acceptance,
 publication or personal activation. Issue #13 / implementation PR #72 remains
-in progress. Owned installation/recovery and the full native model/candidate
-matrix must still be completed. Skills and release-stamping engineering evidence
-is recorded below; it is not completion of that matrix.
+in progress. The guided menu and full native model/candidate matrix must still
+be completed. Owned CLI installation/recovery, skills and release-stamping
+engineering evidence are recorded below; they do not complete that matrix.
 
 ## Native package and callback probe
 
@@ -102,3 +102,45 @@ while exiting zero. The retained probe was corrected to inspect its explicit
 semantic success result, not just exit status or a shell completion marker.
 Future owned installation must copy embedded bytes directly, not reconstruct
 manifests from parsed JSON. These are engineering findings, not acceptance.
+
+## Owned connection workflow
+
+Source `a4c143574744b771b12e138a3b940493895a4c41` adds the owned Pi connection
+engine and typed/human CLI. Source-stamped development executable SHA-256:
+`7edd53debd8b8375246db0b2f1ea39f6ddd012e8720f012ac596763c956bf63e`.
+Embedded Pi package SHA-256:
+`d12d46064bad1f1f406e0f204d18fa4a69de53df63e42530fd6a0457a4de785f`.
+Package version is `0.0.0-dev`; this executable is not a release candidate or
+the previously tested distribution slice. Full pinned host CI passed, with
+Docker unavailable. Sixteen new Go tests (including parameterized cases) cover
+settings inventory, plans, ownership, apply/partial results, doctor/repair and
+typed/human parity. The existing 19 Node tests still pass.
+
+On native Pi 0.85.1 / Node 24.1.0 / macOS arm64, the exact executable performed
+initial planning without state creation, actual installation, idempotent repeat,
+Armorer inspection, native discovery of 18 tools/two skills, enforced read-only
+refusal, update, intentional missing-file detection, and repair into a fresh
+retained generation. The test verified unrelated local-package resource filters,
+theme and a native-profile sentinel, and a complete synthetic-bank file snapshot.
+The missing old file stayed missing: recovery did not rewrite that generation.
+It removed only the selected synthetic registration afterward.
+
+A second isolated profile used an explicitly selected wrapper that delegated
+ordinary operations to real Pi. After native removal during an update, it paused
+the new install before delegation and emitted its PID. The observer required a
+complete PID line and verified that process was live, then interrupted the
+Mandalore CLI with SIGINT. The returned error preserved `install-started`,
+uncertain native effects and the earlier completed-removal receipt. The old
+registration was actually absent; the paused child was reaped. After removing
+the fixture's pause condition, a fresh repair preview restored a healthy native
+registration. Both retained generations and the unchanged bank were verified.
+No model request, real account authentication or live connection change occurred.
+See the [semantic result](owned-workflow-result.json).
+
+The first cancellation observer incorrectly escaped its newline matcher and
+timed out despite the complete PID marker. Cleanup stopped the child and retained
+the inactive profile/partial receipt. The observer was corrected and the whole
+scenario repeated in a new fixture; the failed observation was not counted as a
+pass and did not justify changing runtime cancellation behavior. This evidence
+does not replace real model/GUI acceptance, selected-runtime menu delegation,
+the broader native event matrix, or immutable-candidate acceptance.
