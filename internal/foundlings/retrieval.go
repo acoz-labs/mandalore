@@ -36,8 +36,8 @@ type Excerpt struct {
 	Origin     memory.ExternalOrigin `json:"origin"`
 	Unreviewed bool                  `json:"unreviewed"`
 	Text       string                `json:"text"`
-	Offset     int                   `json:"offset" jsonschema:"UTF-8 byte position of this excerpt in its document, not a search-result rank."`
-	NextOffset *int                  `json:"next_offset,omitempty" jsonschema:"Next unread byte in this document; use with foundling_read. Absence does not imply earlier bytes were included."`
+	Offset     int                   `json:"offset" jsonschema:"Document UTF-8 byte position, not a result rank."`
+	NextOffset *int                  `json:"next_offset,omitempty" jsonschema:"Next byte for foundling_read; earlier text may still be omitted."`
 	TotalBytes int                   `json:"total_bytes"`
 	Complete   bool                  `json:"complete"`
 	Truncated  bool                  `json:"truncated"`
@@ -58,8 +58,8 @@ type SearchResult struct {
 	Items          []Excerpt `json:"items"`
 	MatchingCount  int       `json:"matching_count"`
 	RegistrationID string    `json:"registration_revision_id"`
-	Offset         int       `json:"offset" jsonschema:"First document rank on this page, not a content-byte position."`
-	NextOffset     *int      `json:"next_offset,omitempty" jsonschema:"Continue the same query at this document rank with registration_revision_id. Separate from each excerpt's byte continuation."`
+	Offset         int       `json:"offset" jsonschema:"First document rank on this page."`
+	NextOffset     *int      `json:"next_offset,omitempty" jsonschema:"Next document rank; keep query and registration_revision_id. Not an excerpt byte offset."`
 	Truncated      bool      `json:"truncated"`
 	Notice         string    `json:"notice"`
 }

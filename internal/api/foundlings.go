@@ -21,19 +21,19 @@ type FoundlingHistoryInput struct {
 }
 type FoundlingSearchInput struct {
 	FoundlingID    string `json:"foundling_id"`
-	RegistrationID string `json:"registration_revision_id,omitempty" jsonschema:"Exact revision returned by search; required for a nonzero document offset. Keep the query unchanged when continuing."`
+	RegistrationID string `json:"registration_revision_id,omitempty" jsonschema:"Search revision; required above offset zero. Continue the same query."`
 	Query          string `json:"query" jsonschema:"Required nonempty query: 1–16 whitespace-separated literal terms; maximum 1024 UTF-8 bytes. Case-insensitive substring matches, no stemming. Broaden terms after no matches; unlike memory_recall, empty query is invalid."`
 	Limit          *int   `json:"limit,omitempty" jsonschema:"Default 3; range 1–10. Byte budget can return fewer."`
-	Offset         int    `json:"offset,omitempty" jsonschema:"Document-rank offset, not a byte offset; use result.next_offset with its exact registration and unchanged query."`
-	ExcerptBytes   *int   `json:"excerpt_bytes,omitempty" jsonschema:"Initial preview content bytes: default 512; range 128–1024. Incomplete previews require deliberate reading before drawing conclusions."`
-	BudgetBytes    *int   `json:"budget_bytes,omitempty" jsonschema:"Serialized search-result budget including provenance: default 8192; range 2048–32768. Does not bound a whole task or outer transport envelope."`
+	Offset         int    `json:"offset,omitempty" jsonschema:"Document rank: use result.next_offset, not an excerpt's byte offset."`
+	ExcerptBytes   *int   `json:"excerpt_bytes,omitempty" jsonschema:"Preview bytes: default 512; range 128–1024. Not complete evidence."`
+	BudgetBytes    *int   `json:"budget_bytes,omitempty" jsonschema:"Result bytes including metadata: default 8192; range 2048–32768. Outer envelope is additional."`
 }
 type FoundlingReadInput struct {
 	FoundlingID    string `json:"foundling_id"`
 	RegistrationID string `json:"registration_revision_id"`
 	Locator        string `json:"relative_locator"`
 	Offset         int    `json:"offset,omitempty"`
-	Limit          *int   `json:"limit_bytes,omitempty" jsonschema:"Default 1024; range 1–8192. UTF-8 byte range; continue from the excerpt's next_offset to avoid repeating text. Use larger explicit reads for needed context or full-document review."`
+	Limit          *int   `json:"limit_bytes,omitempty" jsonschema:"UTF-8 bytes: default 1024; range 1–8192. Continue from excerpt.next_offset or expand as needed."`
 }
 type FoundlingPreviewInput struct {
 	Source memory.FoundlingSource `json:"source"`
