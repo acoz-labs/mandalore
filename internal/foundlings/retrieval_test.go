@@ -169,10 +169,13 @@ func TestSearchOrderingLimitsAndMultibyteReadContinuation(t *testing.T) {
 	if _, err := m.Connect(context.Background(), r.FoundlingID, r.ID, root, ""); err != nil {
 		t.Fatal(err)
 	}
-	in := SearchInput{FoundlingID: r.FoundlingID, Query: "NEEDLE", Limit: 10}
+	// Retain the previous explicit large page while smaller defaults are tested
+	// separately. The byte budget may otherwise fit fewer than the count limit.
+	budget, preview := 32768, 1024
+	in := SearchInput{FoundlingID: r.FoundlingID, Query: "NEEDLE", Limit: 10, BudgetBytes: &budget, ExcerptBytes: &preview}
 	a, err := m.Search(context.Background(), in)
 	if err != nil || a.MatchingCount != 12 || len(a.Items) != 10 || !a.Truncated {
-		t.Fatal(a, err)
+		t.Fatalf("large page: items=%d matches=%d truncated=%v err=%v", len(a.Items), a.MatchingCount, a.Truncated, err)
 	}
 	b, err := m.Search(context.Background(), in)
 	if err != nil || !reflect.DeepEqual(a, b) {
