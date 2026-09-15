@@ -32,16 +32,13 @@ sequence and scope; issue creation is not implementation or acceptance.
 
 Repository foundations, engine/schema, shared interface, synchronization, Codex
 integration, managed setup and explicit memory-only migration are implemented.
-Foundling consultation/promotion (#12) is engineering-merged with synthetic menu/native
-evidence. Retrieval measurements and bounded fixes (#9) have synthetic scale,
-freshness and native learning/continuity evidence and are engineering-merged.
-Distribution (#11) has implementation and synthetic build/installer/native evidence;
-its engineering reconciliation precedes actual hosted candidate nomination and
-immutable-candidate acceptance (#10), then foundation reconciliation (#1).
-Foundlings belongs before real-memory adoption, not merely
-an optional post-MVP improvement. Engineering merges are not release acceptance.
-Codex acceptance precedes Pi; Pi acceptance precedes Claude Code. Release-bearing
-issues stay open through independent acceptance and verified GitHub publication.
+Foundlings (#12), retrieval (#9), distribution (#11) and The Armorer (#45) are
+included in the owner-accepted [v1.0.0 release](releases/1.0.0.md). Publication
+preserved the exact retained bytes. The release record and linked issues separate
+the owner's verdict, public verification and remaining delivery-ledger work.
+Foundlings belongs before real-memory adoption, not merely an optional post-MVP
+improvement. Codex acceptance precedes Pi; Pi acceptance precedes Claude Code.
+Engineering merges alone are not release acceptance.
 
 The public [Mandalore board](https://github.com/orgs/acoz-labs/projects/35) contains
 the original 16 successor issues. Template fields/views and item status were verified;

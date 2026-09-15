@@ -128,11 +128,11 @@ corruption and changed receipts are rejected. This format's eight bounded payloa
 do not require ZIP64. Expired/deleted/replaced artifacts require new inspection and,
 where identity changes, fresh nomination—not pretending a rebuild is accepted.
 
-The Actions pipeline still requires a real default-branch candidate run and its
-own hosted verification after merge. Local HTTP/ZIP fixtures and a live negative
-provenance check are not successful hosted candidate retention or nomination.
-The guarded promotion/finalizer path is implemented below; real hosted execution
-and final #11/#10 acceptance remain incomplete.
+The Actions pipeline requires a real default-branch candidate run and its own
+hosted verification after merge. Local HTTP/ZIP fixtures and negative provenance
+checks are not successful hosted retention or nomination. The subsequent
+[v1.0.0 record](releases/1.0.0.md) links actual retention, nomination, owner
+acceptance and same-byte publication evidence.
 
 Primary contracts: [GitHub artifact metadata](https://docs.github.com/en/rest/actions/artifacts?apiVersion=2026-03-10),
 [workflow-run metadata](https://docs.github.com/en/rest/actions/workflow-runs?apiVersion=2026-03-10),
@@ -179,8 +179,8 @@ corruption, cancellation, changed local files/links and remote tags/assets, poli
 changes, bounded malformed discovery and credential/redirect isolation. Payloads
 are inert fixtures, not native candidate acceptance or a successful hosted release.
 The read-only verifier, guarded transport-to-publisher command and artifact ledger
-integration are implemented. Real hosted verification remains pending. No actual
-credential or repository policy is configured by these tests.
+integration are implemented. [v1.0.0](releases/1.0.0.md) records subsequent actual
+publication; no credential or repository policy is configured by these tests.
 
 ## Guarded retained-candidate promotion
 
@@ -228,9 +228,10 @@ After a promotion attempt, the workflow retains transport, byte-verification and
 publication/ledger evidence for 90 days without overwriting previous receipts.
 Machine-local staging paths are removed. Missing/truncated process output produces
 an explicitly unconfirmed recovery record, not a fabricated successful publication.
-Only a successful finalizer sets `ledger-complete`. These fixtures and source-level
-workflow checks do not establish successful real Actions promotion or independent
-product acceptance; neither has occurred.
+Only a successful finalizer sets `ledger-complete`. Fixtures and source-level
+workflow checks do not establish real Actions promotion or product acceptance.
+See the [v1.0.0 record](releases/1.0.0.md) for the actual accepted candidate and
+publication path; a local promotion is not a hosted-workflow execution.
 
 ## Published verification and artifact finalization
 
@@ -282,9 +283,9 @@ versions do not enforce the size limit during unknown-length transfers.
 See [curl's size-limit contract](https://curl.se/docs/manpage.html#--max-filesize).
 The manual alternative is downloading and verifying the platform binary yourself.
 Release discovery, planning, explicit plan/apply, the interactive install journey
-and selected native handoff are implemented. Actual hosted promotion and final candidate
-acceptance remain incomplete; do not present an engineering candidate as a released
-installer.
+and selected native handoff are implemented. [v1.0.0](releases/1.0.0.md) is the
+first published, owner-accepted installer. Other engineering candidates must not
+be presented as accepted releases merely because their version label matches.
 
 Synthetic bootstrap tests substitute download/host commands and never contact a
 provider. Run `go test ./internal/distribution ./internal/install ./cmd/mandalore`

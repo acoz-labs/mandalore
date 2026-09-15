@@ -6,7 +6,8 @@ or synchronize implicitly. CLI-only connection operations install the native
 plugin after explicit approval; they are not memory MCP tools. The
 [guided menu](setup.md) delegates to these same operations. Explicit Git work is
 described in [synchronization](synchronization.md). Exact-candidate/release
-acceptance remains outstanding. No live migration is implied.
+acceptance and publication are recorded for [v1.0.0](releases/1.0.0.md).
+No live migration is implied.
 
 `mandalore version` is read-only and does not need a signet binding. It reports
 the runtime version, source commit (empty for an unstamped development build),
@@ -28,8 +29,8 @@ The first command checks all files in an explicitly selected local candidate,
 without executing them or contacting a provider. The second checks the official
 latest stable release when one exists. Use `--version VERSION` for an explicit
 published version, including a prerelease. `--candidate` and `--version` are
-mutually exclusive. No release is currently published, so official inspection
-honestly reports `release.unavailable`, not a fabricated update.
+mutually exclusive. An absent selected release reports `release.unavailable`,
+not a fabricated update. Public [v1.0.0](releases/1.0.0.md) is available.
 
 Agents can use the equivalent typed `release_inspect` operation with
 `{"candidate":"/example/candidate"}` or `{"version":"1.0.0"}` as structured
@@ -172,7 +173,7 @@ explicit local candidates and retained runtimes. Without `--prefix`, it asks for
 user-owned destination, defaulting to the user's `.local` directory. It never edits
 PATH or shell configuration. `--read-only` refuses the journey before reading input;
 use inspect/plan instead. EOF, Back and cancellation stop subsequent steps without
-undoing an installation already completed. No release is currently published.
+undoing an installation already completed.
 
 After CLI verification, keeping native connections unchanged is the default. An
 optional Codex handoff asks for the selected binding, native executable/profile
