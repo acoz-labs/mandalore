@@ -43,8 +43,8 @@ func TestCorruptStoreIsNotAnInputError(t *testing.T) {
 func TestCatalogAndSharedCalls(t *testing.T) {
 	a := fixture(t)
 	catalog := Catalog()
-	if len(catalog) != 34 {
-		t.Fatalf("expected 34 implemented operations, got %d", len(catalog))
+	if len(catalog) != 35 {
+		t.Fatalf("expected 35 implemented operations, got %d", len(catalog))
 	}
 	for _, op := range catalog {
 		if op.InputSchema == nil || op.OutputSchema == nil {

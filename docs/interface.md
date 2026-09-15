@@ -307,6 +307,7 @@ uses the same decoder and methods as the human commands and MCP tools.
 | `migration_preflight`, `migration_apply` | `migration preflight`, `migration apply` | Not exposed |
 | `memory_recall`, `memory_scopes`, `memory_history` | `memory recall`, `scopes`, `history` | Bound signet only |
 | `memory_journal`, `memory_inspect` | `memory journal`, `inspect` | Bound signet only |
+| `memory_context` | `call memory_context` with JSON `prompt` | Not exposed; read-only native lifecycle packet |
 | `memory_remember`, `memory_journal_append` | `memory remember`, `journal-append` | Bound signet only |
 | `memory_git_init`, `memory_checkpoint`, `memory_sync`, `memory_sync_status` | `memory git-init`, `checkpoint`, `sync`, `sync-status` | Bound signet only |
 | `foundling_list`, `foundling_inspect`, `foundling_search`, `foundling_read`, `foundling_promote` | `foundling list`, `inspect`, `search`, `read`, `promote` | Bound signet only |
@@ -385,6 +386,15 @@ MCP server retains one binding; changing its local file requires restarting the
 server. Reads load current local records; no persistent model context is refreshed
 merely by updating those records.
 
+`memory_context` assembles fresh local orientation, up to three bank-wide recall
+hits within 4096 result bytes, and five routing scopes. It truncates its prompt
+query to 2048 UTF-8 bytes and caps the encoded packet at 16383 bytes. The packet
+labels retrieved data as untrusted evidence, never reads native transcripts or
+automatically scans foundlings, and does not save or synchronize even for an
+explicit consolidation cue. Read failures return a compact warning without raw
+file contents. Native adapters must preserve their host prompt and separately
+honor connection read-only settings; a packet is not authorization to mutate.
+
 ## Binding and provenance
 
 Selection is explicit `--binding`, then absolute `MANDALORE_BINDING`, then
@@ -399,6 +409,17 @@ symlink ancestors. Creation refuses existing destinations. Reads reject unknown
 fields/versions and changed bank identity. Labels and actors are user-supplied;
 hostnames are not discovered. Harness attribution comes from `--harness` (default
 `cli`, or `mcp` for the server), not from automatic native-session detection.
+
+Short-lived bound CLI callers can also pass `--binding-sha256 SHA256 --signet-id ID`
+to pin a connection between invocations. Both nonempty values are required; the
+digest is lowercase SHA-256 of the complete binding file. The runtime hashes the
+same bounded bytes it decodes, checks the expected signet before opening it, and
+retains normal root-identity validation. Replacing a binding with another valid
+binding therefore cannot silently redirect a guarded call. Malformed or
+inapplicable guards are `input.invalid`; mismatches are `binding.invalid`, before
+reading mutation input or performing writes/network operations. Unbound setup
+operations refuse these guards. Existing unguarded selection is unchanged.
+Digests pin identity, not publisher trust or a sandbox against a hostile local user.
 
 Create and bind are deliberately separate. Create writes a bootstrap device;
 each new binding enrolls a fresh opaque device ID, including another binding on

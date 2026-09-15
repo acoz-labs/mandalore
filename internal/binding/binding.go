@@ -1,6 +1,8 @@
 package binding
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"io"
@@ -20,6 +22,31 @@ type Binding struct {
 	Root     string `json:"root"`
 	DeviceID string `json:"device_id"`
 	Actor    string `json:"actor"`
+}
+
+// Guard pins an explicitly selected connection across short-lived CLI calls.
+// An empty guard preserves legacy selection. A populated guard requires both
+// the exact binding bytes and the expected signet identity, not just the path.
+type Guard struct {
+	SHA256   string
+	SignetID string
+}
+
+func (g Guard) Validate() error {
+	if g == (Guard{}) {
+		return nil
+	}
+	digest, err := hex.DecodeString(g.SHA256)
+	if err != nil || len(digest) != sha256.Size || g.SHA256 != strings.ToLower(g.SHA256) {
+		return errors.New("binding guard requires a lowercase SHA-256 digest")
+	}
+	id := g.SignetID
+	if len(id) < 3 || len(id) > 128 || id[0] < 'a' || id[0] > 'z' || strings.IndexFunc(id, func(r rune) bool {
+		return !(r >= 'a' && r <= 'z' || r >= '0' && r <= '9' || r == '-')
+	}) >= 0 {
+		return errors.New("binding guard requires the expected signet ID")
+	}
+	return nil
 }
 
 func DefaultPath() (string, error) {
@@ -151,6 +178,16 @@ func Bind(root, path, label, actor string) (Binding, error) {
 }
 
 func Open(path, harness string) (*memory.Service, error) {
+	return OpenGuarded(path, harness, Guard{})
+}
+
+// OpenGuarded hashes the same bounded bytes it decodes. Re-reading the binding
+// separately for the guard would allow a replacement to change the selected bank
+// between validation and open. This is not a sandbox against a hostile local user.
+func OpenGuarded(path, harness string, guard Guard) (*memory.Service, error) {
+	if err := guard.Validate(); err != nil {
+		return nil, err
+	}
 	info, err := os.Lstat(path)
 	if err != nil {
 		return nil, err
@@ -167,12 +204,21 @@ func Open(path, harness string) (*memory.Service, error) {
 	if err != nil {
 		return nil, err
 	}
+	if guard != (Guard{}) {
+		digest := sha256.Sum256(data)
+		if hex.EncodeToString(digest[:]) != guard.SHA256 {
+			return nil, errors.New("binding bytes changed; inspect and explicitly reconnect the intended signet")
+		}
+	}
 	var b Binding
 	if err := strictjson.Decode(data, &b, 16384); err != nil {
 		return nil, err
 	}
 	if b.Version != 1 || !filepath.IsAbs(b.Root) || !textWithin(harness, 64) {
 		return nil, errors.New("invalid binding version, root, or harness")
+	}
+	if guard != (Guard{}) && b.SignetID != guard.SignetID {
+		return nil, errors.New("binding guard signet differs; select the intended signet explicitly")
 	}
 	if err := validateLocation(b.Root, path); err != nil {
 		return nil, err
