@@ -1,8 +1,8 @@
 # Extend exact-candidate owner review
 
-- **Status:** Draft
+- **Status:** Final
 - **Issue:** #48
-- **Planning PR:** Pending
+- **Planning PR:** #49
 - **Repository basis:** f899cf6a2a255f3b6b35dcd778c672f799c65eb2
 - **Execution envelope:** implementation
 
