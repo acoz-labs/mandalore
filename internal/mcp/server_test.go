@@ -37,7 +37,7 @@ func TestMCPUsesSharedContractAndRejectsDuplicates(t *testing.T) {
 	}
 	defer client.Close()
 	list, err := client.ListTools(ctx, nil)
-	if err != nil || len(list.Tools) != 16 {
+	if err != nil || len(list.Tools) != 18 {
 		t.Fatal(list, err)
 	}
 	for _, tool := range list.Tools {
@@ -47,7 +47,8 @@ func TestMCPUsesSharedContractAndRejectsDuplicates(t *testing.T) {
 		if tool.Name == "signet_create" || tool.Name == "release_inspect" || tool.Name == "release_plan" || tool.Name == "release_apply" || tool.Name == "foundling_register" || tool.Name == "foundling_connect" || tool.Name == "foundling_disconnect" || tool.Name == "foundling_preview" || tool.Name == "foundling_history" {
 			t.Fatal("cross-bank admin exposed")
 		}
-		if tool.Annotations == nil || tool.Annotations.OpenWorldHint == nil || *tool.Annotations.OpenWorldHint != (tool.Name == "memory_sync") {
+		network := tool.Name == "memory_sync" || tool.Name == "memory_remember_and_sync" || tool.Name == "memory_journal_append_and_sync"
+		if tool.Annotations == nil || tool.Annotations.OpenWorldHint == nil || *tool.Annotations.OpenWorldHint != network {
 			t.Fatal("incorrect network annotation", tool.Name)
 		}
 		data, err := json.Marshal(tool.OutputSchema)
@@ -75,6 +76,12 @@ func TestMCPUsesSharedContractAndRejectsDuplicates(t *testing.T) {
 		if tool.Name == "memory_journal_append" {
 			input = []byte(`{"kind":"session","summary":"Schema fixture"}`)
 		}
+		if tool.Name == "memory_remember_and_sync" {
+			input = []byte(`{"record":{"kind":"fact","summary":"Combined schema fixture","body":"Birch Loop","basis":"user-direction","reason":"Confirmed"}}`)
+		}
+		if tool.Name == "memory_journal_append_and_sync" {
+			input = []byte(`{"entry":{"kind":"session","summary":"Combined schema fixture"}}`)
+		}
 		out := a.Call(ctx, tool.Name, input)
 		data, _ = json.Marshal(out)
 		var generic any
@@ -83,6 +90,29 @@ func TestMCPUsesSharedContractAndRejectsDuplicates(t *testing.T) {
 		}
 		if err := resolved.Validate(generic); err != nil {
 			t.Fatalf("%s result violates schema: %v", tool.Name, err)
+		}
+		if tool.Name == "memory_remember_and_sync" || tool.Name == "memory_journal_append_and_sync" {
+			wire, err := client.CallTool(ctx, &sdk.CallToolParams{Name: tool.Name, Arguments: json.RawMessage(input)})
+			if err != nil || wire.IsError {
+				t.Fatalf("combined SDK call: %v %+v", err, wire)
+			}
+			b, err := json.Marshal(wire.StructuredContent)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var decoded struct {
+				OK     bool                  `json:"ok"`
+				Result api.SaveAndSyncResult `json:"result"`
+			}
+			if err := json.Unmarshal(b, &decoded); err != nil || !decoded.OK || !decoded.Result.Saved.DurableLocally || decoded.Result.Saved.ID == "" {
+				t.Fatalf("lost combined SDK receipt: %s %v", b, err)
+			}
+			if err := json.Unmarshal(b, &generic); err != nil {
+				t.Fatal(err)
+			}
+			if err := resolved.Validate(generic); err != nil {
+				t.Fatalf("combined wire schema: %v", err)
+			}
 		}
 	}
 	if _, err := client.CallTool(ctx, &sdk.CallToolParams{Name: "release_inspect", Arguments: json.RawMessage(`{"candidate":"/synthetic/unavailable"}`)}); err == nil {
