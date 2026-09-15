@@ -162,6 +162,34 @@ func TestProgressiveFoundlingInitialDefaults(t *testing.T) {
 	}
 }
 
+func TestProgressiveFoundlingRegistrationChangesInvalidateContinuation(t *testing.T) {
+	for _, state := range []string{"active", "disconnected"} {
+		t.Run(state, func(t *testing.T) {
+			a, _, id, revision := progressiveFixture(t)
+			input := map[string]any{"foundling_id": id, "query": "InventoryMarker"}
+			out := foundlingCall(t, a, "foundling_search", input)
+			if !out.OK {
+				t.Fatal(out.Error)
+			}
+			p := out.Result.(foundlings.SearchResult)
+			r, err := a.service.Foundling(id)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = a.service.WriteFoundling(memory.FoundlingWrite{FoundlingID: id, Name: r.Name, Description: r.Description, Source: *r.Source, Pin: *r.Pin, State: state, Supersedes: []string{revision}, Reason: "Explicit synthetic registration change between pages"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			input["offset"], input["registration_revision_id"] = *p.NextOffset, revision
+			before := inlineInventory(t, a.service.Root())
+			out = foundlingCall(t, a, "foundling_search", input)
+			if out.OK || out.Error.Code != "foundling.changed" || out.Error.WriteMayHaveOccurred || !reflect.DeepEqual(before, inlineInventory(t, a.service.Root())) {
+				t.Fatal("registration transition failed closed continuation", out.Error)
+			}
+		})
+	}
+}
+
 func TestProgressiveFoundlingPinnedPagination(t *testing.T) {
 	a, _, id, revision := progressiveFixture(t)
 	type page struct {

@@ -326,14 +326,8 @@ func (m *menu) inspectFoundling() error {
 			if err != nil {
 				return err
 			}
-			result := m.call("foundling_search", api.FoundlingSearchInput{FoundlingID: r.FoundlingID, Query: query}, true)
-			if !result.OK {
-				return m.outcome("Reference search", result)
-			}
-			p := result.Result.(foundlings.SearchResult)
-			m.block(console.Block{Title: "Reference search", Body: p.Notice, Fields: []console.Field{{Label: "Matching documents", Value: strconv.Itoa(p.MatchingCount)}, {Label: "Results omitted", Value: strconv.FormatBool(p.Truncated)}}})
-			for _, e := range p.Items {
-				m.showReferenceExcerpt(e)
+			if err := m.searchFoundling(r, query); err != nil {
+				return err
 			}
 		} else {
 			locator, err := m.input("Exact relative document locator", "")
@@ -348,12 +342,63 @@ func (m *menu) inspectFoundling() error {
 			if err != nil {
 				return errors.New("byte offset must be an integer")
 			}
-			result := m.call("foundling_read", api.FoundlingReadInput{FoundlingID: r.FoundlingID, RegistrationID: r.HeadIDs[0], Locator: locator, Offset: offset}, true)
+			bytesText, err := m.input("Read content bytes (1–8192)", strconv.Itoa(foundlings.DefaultReadBytes))
+			if err != nil {
+				return err
+			}
+			limit, err := strconv.Atoi(bytesText)
+			if err != nil || limit < 1 || limit > 8192 {
+				return errors.New("read content bytes must be an integer from 1 to 8192")
+			}
+			result := m.call("foundling_read", api.FoundlingReadInput{FoundlingID: r.FoundlingID, RegistrationID: r.HeadIDs[0], Locator: locator, Offset: offset, Limit: &limit}, true)
 			if !result.OK {
 				return m.outcome("Reference read", result)
 			}
 			m.showReferenceExcerpt(result.Result.(foundlings.Excerpt))
 		}
+	}
+}
+
+func (m *menu) searchFoundling(r memory.FoundlingSummary, query string) error {
+	budget := foundlings.DefaultSearchBudgetBytes
+	in := api.FoundlingSearchInput{FoundlingID: r.FoundlingID, RegistrationID: r.HeadIDs[0], Query: query, BudgetBytes: &budget}
+	for {
+		result := m.call("foundling_search", in, true)
+		if !result.OK {
+			if result.Error.Code != "foundling.budget" || budget >= 32768 {
+				return m.outcome("Reference search", result)
+			}
+			m.block(console.Block{Title: "Search page needs a larger budget", Body: result.Error.Message, Tone: console.Warning})
+			n, err := m.selectItem("Search budget", []string{"Retry this page with a 32768-byte budget", "Back"}, 1)
+			if errors.Is(err, console.ErrBack) || (err == nil && n == 1) {
+				return nil
+			}
+			if err != nil {
+				return err
+			}
+			budget = 32768
+			continue
+		}
+		p := result.Result.(foundlings.SearchResult)
+		shown := "0"
+		if len(p.Items) > 0 {
+			shown = fmt.Sprintf("%d–%d", p.Offset+1, p.Offset+len(p.Items))
+		}
+		m.block(console.Block{Title: "Reference search", Body: p.Notice, Fields: []console.Field{{Label: "Matching documents", Value: strconv.Itoa(p.MatchingCount)}, {Label: "Displayed documents", Value: shown}, {Label: "Results outside this page", Value: strconv.FormatBool(p.Truncated)}}})
+		for _, e := range p.Items {
+			m.showReferenceExcerpt(e)
+		}
+		if p.NextOffset == nil {
+			return nil // Reference actions already offers Back on the final page.
+		}
+		n, err := m.selectItem("Search results", []string{"Next page", "Back"}, 1)
+		if errors.Is(err, console.ErrBack) || (err == nil && n == 1) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		in.Offset, in.RegistrationID = *p.NextOffset, p.RegistrationID
 	}
 }
 

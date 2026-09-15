@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -16,6 +17,48 @@ import (
 type bindingSwapWriter struct {
 	buffer    bytes.Buffer
 	onConfirm func()
+}
+
+type searchBoundaryWriter struct {
+	buffer bytes.Buffer
+	onPage func()
+}
+
+func (w *searchBoundaryWriter) String() string { return w.buffer.String() }
+
+func (w *searchBoundaryWriter) Write(p []byte) (int, error) {
+	n, err := w.buffer.Write(p)
+	if w.onPage != nil && strings.Contains(w.String(), "Search results") {
+		f := w.onPage
+		w.onPage = nil
+		f()
+	}
+	return n, err
+}
+
+func TestFoundlingMenuStaleNextPageDoesNotOfferBudgetRetry(t *testing.T) {
+	s, bind, root := foundlingMenuFixture(t)
+	for i := 0; i < 4; i++ {
+		if err := os.WriteFile(filepath.Join(root, fmt.Sprintf("page-%d.md", i)), []byte("PageMarker historical note."), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if out, code := menuTrial(t, registerMenuScript(root, "2")+"6\n10\n", "--binding", bind); code != 0 {
+		t.Fatal(code, out)
+	}
+	before := treeDigest(t, s.Root())
+	out := &searchBoundaryWriter{onPage: func() {
+		if err := os.WriteFile(filepath.Join(root, "page-3.md"), []byte("CHANGED-CONTENT-CANARY"), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}}
+	code := run(context.Background(), []string{"menu", "--plain", "--binding", bind}, strings.NewReader("8\n4\n1\n1\nPageMarker\n1\n10\n"), out, out)
+	if code != 1 || out.onPage != nil || !strings.Contains(out.String(), "reference content or identity changed") || strings.Contains(out.String(), "32768-byte") || strings.Contains(out.String(), "CHANGED-CONTENT-CANARY") {
+		t.Fatal("stale next page was not refused without budget retry", code, out.String())
+	}
+	if !reflect.DeepEqual(before, treeDigest(t, s.Root())) {
+		t.Fatal("stale page caused a signet change")
+	}
 }
 
 func (w *bindingSwapWriter) String() string { return w.buffer.String() }
@@ -83,6 +126,65 @@ func foundlingMenuFixture(t *testing.T) (*memory.Service, string, string) {
 		t.Fatal(err)
 	}
 	return s, bind, reference
+}
+
+func TestFoundlingMenuProgressivePagesAndExpandedRead(t *testing.T) {
+	s, bind, root := foundlingMenuFixture(t)
+	for i := 0; i < 12; i++ {
+		text := fmt.Sprintf("PageMarker document %02d. ", i) + strings.Repeat("Historical context. ", 80) + fmt.Sprintf("END-NOTE-%02d", i)
+		if err := os.WriteFile(filepath.Join(root, fmt.Sprintf("page-%02d.md", i)), []byte(text), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if out, code := menuTrial(t, registerMenuScript(root, "2")+"6\n10\n", "--binding", bind); code != 0 {
+		t.Fatal(code, out)
+	}
+	before, sourceBefore := treeDigest(t, s.Root()), treeDigest(t, root)
+	// Three Next selections reach the fourth page; complete-page Back returns
+	// through the ordinary reference actions. Then explicitly expand a read.
+	out, code := menuTrial(t, "8\n4\n1\n1\nPageMarker\n1\n1\n1\n2\npage-11.md\n0\n8192\n4\n6\n10\n", "--binding", bind)
+	if code != 0 || !strings.Contains(out, "page-11.md") || !strings.Contains(out, "END-NOTE-11") || strings.Count(out, "Next page") != 3 || !strings.Contains(out, "Read content bytes") {
+		t.Fatal("progressive page/read journey failed", code, out)
+	}
+	if !reflect.DeepEqual(before, treeDigest(t, s.Root())) || !reflect.DeepEqual(sourceBefore, treeDigest(t, root)) {
+		t.Fatal("menu retrieval wrote source or signet")
+	}
+	for _, size := range []string{"", "8193", "bad", ":back"} {
+		out, code := menuTrial(t, "8\n4\n1\n2\npage-11.md\n0\n"+size+"\n4\n6\n10\n", "--binding", bind)
+		if strings.Contains(out, "END-NOTE-11") || (size == "" && code != 0) || ((size == "8193" || size == "bad") && code != 1) {
+			t.Fatal("read default/validation/cancellation failed", size, code, out)
+		}
+		if !reflect.DeepEqual(before, treeDigest(t, s.Root())) {
+			t.Fatal("read validation/cancellation wrote state")
+		}
+	}
+}
+
+func TestFoundlingMenuBudgetRecoveryIsExplicit(t *testing.T) {
+	for _, choice := range []string{"", "1", ":back"} {
+		s, bind, root := foundlingMenuFixture(t)
+		dir := root
+		for i := 0; i < 4; i++ {
+			dir = filepath.Join(dir, strings.Repeat("<", 180))
+		}
+		if err := os.MkdirAll(dir, 0700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, "heavy.md"), []byte("HeavyMarker TOKEN-HEAVY "+strings.Repeat("\x01", 1024)), 0600); err != nil {
+			t.Fatal(err)
+		}
+		if out, code := menuTrial(t, registerMenuScript(root, "2")+"6\n10\n", "--binding", bind); code != 0 {
+			t.Fatal(code, out)
+		}
+		before := treeDigest(t, s.Root())
+		out, code := menuTrial(t, "8\n4\n1\n1\nHeavyMarker\n"+choice+"\n4\n6\n10\n", "--binding", bind)
+		if code != 0 || !strings.Contains(out, "32768") || (strings.Contains(out, "TOKEN-HEAVY") != (choice == "1")) {
+			t.Fatal("budget recovery did not respect explicit choice", choice, code, out)
+		}
+		if !reflect.DeepEqual(before, treeDigest(t, s.Root())) {
+			t.Fatal("budget recovery changed signet")
+		}
+	}
 }
 
 func registerMenuScript(root, consent string) string {

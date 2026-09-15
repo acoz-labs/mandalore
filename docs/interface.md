@@ -352,13 +352,20 @@ Concurrent metadata writes can produce visible conflicting heads; a receipt is
 evidence of the appended revision, not an enduring availability guarantee.
 
 The human read commands support `--foundling-id`, `--query` (search), `--limit`
-(list/history/search), `--offset` (list/history/read), and `--registration-id`,
-`--locator`, `--limit-bytes` (read). Setup mutations, preview and promotion accept
-JSON on stdin; use the catalog for exact schemas. Search defaults to five results
-(range 1–10); read defaults to 4096 bytes (range 1–8192).
+(list/history/search), `--offset` (list/history/search/read), `--registration-id`
+(search/read), `--excerpt-bytes` and `--budget-bytes` (search), and `--locator`,
+`--limit-bytes` (read). Setup mutations, preview and promotion accept JSON on stdin;
+use the catalog for exact schemas. Search defaults to three results (range 1–10),
+512-byte previews (128–1024) and an 8192-byte serialized-result budget (2048–32768).
+Read defaults to 1024 content bytes (range 1–8192).
 Search queries require 1–16 nonempty literal terms, at most 1024 UTF-8 bytes;
 matching is case-insensitive substring matching without stemming. Invalid queries
 return `input.invalid`, not a suggestion to inspect or repair the source.
+Search-result offsets are document ranks; continuing above zero requires the exact
+returned registration revision and the same query. Each excerpt's offsets instead
+select UTF-8 bytes within its file. New pagination fields are additive; existing
+explicit read sizes remain supported. A `foundling.budget` error asks for a larger
+supported result budget for that same page, not source repair or a blind retry.
 Promotion supplies exact foundling/registration/locator/file-SHA fields and a normal `write`, without its
 `external_origin`: verified provenance is generated. Optional original author/date
 are distinct from current incorporation authorship. Read-only rejects every mutation.
@@ -410,6 +417,7 @@ signet does **not** initialize Git in this slice; its receipt says so explicitly
 | `binding.invalid`, `store.invalid` | 1 | Inspect selected configuration/data; no automatic repair |
 | `operation.io`, `output.invalid` | 1 | Inspect I/O/output failure and any possible partial write |
 | `sync.failed` | 1 | Inspect the returned sync phase/head and local/remote history before retrying |
+| `foundling.budget` | 1 | First remaining search item cannot fit; explicitly increase the result budget, preserving query/registration/offset; not evidence of absence |
 | `foundling.changed`, `foundling.unavailable`, `foundling.connection`, `foundling.failed` | 1 | Inspect the selected source/registration/connection and any partial setup result; no automatic repair or promotion |
 
 Errors include `retryable`, `write_may_have_occurred` and `inspect_before_retry`.
