@@ -1,9 +1,9 @@
 # Pi integration
 
 Development integration for issue #13, after accepted Codex MVP #10. The native
-package is not yet a released or accepted connection workflow. CLI installation
-and recovery are implemented; guided menu routing and the full native model
-verification matrix remain part of that issue.
+package is not yet a released or accepted connection workflow. Typed CLI and
+guided menu installation/recovery are implemented; the full native model and
+exact-head rendered verification matrix remain part of that issue.
 
 The dependency-free JavaScript extension discovers the retained runtime's typed
 catalog and exposes its bound memory operations as native Pi tools. Every call
@@ -42,6 +42,23 @@ before compilation. Pi stays embedded in the CLI: no separate npm dependency,
 extra release asset or format-1 manifest/version-response change is introduced.
 
 ## Explicit development connection
+
+In `mandalore menu`, choose **Connection**, then **Pi**. Review the trusted
+runtime, binding, native profile, installation state and memory access mode.
+Preview executes that selected runtime's read-only planning operation so a newer
+artifact supplies its own embedded Pi package; it does not register the package.
+Applying has a separate default-No confirmation. The release installer likewise
+offers Pi as an optional, separately confirmed connection after CLI installation;
+declining leaves native connections unchanged.
+
+The Armorer's inspection and repair journeys also offer a harness choice.
+Repair uses the intact runtime identified by the owned receipt, preserving the
+binding and enforced access mode even when the menu executable is newer. It
+creates a fresh generation instead of rewriting the old one. Missing ownership,
+changed bindings or edited files require inspection, not silent adoption.
+Cancellation gives the selected runtime a bounded chance to stop/reap its native
+child and return a partial receipt. Inspect that receipt before retrying; a
+completed CLI installation is separate from a failed native connection.
 
 Use the trusted selected Mandalore executable to preview and apply its own
 embedded package. Pi and its Node runtime must already be installed; this does

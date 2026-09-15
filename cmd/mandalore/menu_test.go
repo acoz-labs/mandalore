@@ -174,7 +174,7 @@ func TestMenuConnectionPreviewDoesNotRunArtifact(t *testing.T) {
 		t.Fatal(err)
 	}
 	state, native := filepath.Join(dir, "state"), filepath.Join(dir, "native")
-	out, code := menuTrial(t, "5\n\n\n10\n", "--binding", path, "--binary", binary, "--native-binary", binary, "--state-dir", state, "--native-home", native)
+	out, code := menuTrial(t, "5\n1\n\n\n10\n", "--binding", path, "--binary", binary, "--native-binary", binary, "--state-dir", state, "--native-home", native)
 	if code != 0 || !strings.Contains(out, "Review Codex connection") || !strings.Contains(out, "Native profile") || !strings.Contains(out, "Runtime SHA256") {
 		t.Fatal(code, out)
 	}
