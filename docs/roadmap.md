@@ -35,7 +35,7 @@ integration, managed setup and explicit memory-only migration are implemented.
 Foundlings (#12), retrieval (#9), distribution (#11) and The Armorer (#45) are
 included in the owner-accepted [v1.0.0 release](releases/1.0.0.md). Publication
 preserved the exact retained bytes. The release record and linked issues separate
-the owner's verdict, public verification and remaining delivery-ledger work.
+the owner's verdict, public verification and completed delivery ledger.
 Foundlings belongs before real-memory adoption, not merely an optional post-MVP
 improvement. Codex acceptance precedes Pi; Pi acceptance precedes Claude Code.
 Engineering merges alone are not release acceptance.
