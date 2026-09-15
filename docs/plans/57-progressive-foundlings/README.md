@@ -1,8 +1,8 @@
 # Progressive foundling retrieval
 
-- **Status:** Draft
+- **Status:** Final
 - **Issue:** #57
-- **Planning PR:** Pending
+- **Planning PR:** #68
 - **Repository basis:** b7de9f440a46dcc1e15729e2a1f36633730e73d0
 - **Execution envelope:** implementation
 

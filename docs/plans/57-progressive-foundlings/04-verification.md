@@ -16,7 +16,8 @@
    new search inputs, budget errors and serialized provenance/continuations.
    Read-only calls succeed and do not mutate. Exact source identity, pin, SHA,
    locator and registration remain sufficient for existing verified promotion.
-4. Menu tests exercise default search, Next/Back, unavailable/stale continuation,
+4. Menu tests exercise default search, Next/Back, explicit larger-budget retry and
+   decline (without retrying other errors), unavailable/stale continuation,
    default and explicit 8192-byte read, invalid byte count and cancellation.
    Capture and inspect actual synthetic terminal recordings of the changed flows,
    using existing keyboard/no-color/narrow-width patterns. No screen-reader or

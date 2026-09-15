@@ -57,7 +57,9 @@ selection, explicit expansion, both continuation kinds and no-repeat guidance.
 Do not copy full schemas into startup hooks. Preserve all attribution fields for
 provenance-preserving promotion. The menu holds the selected query/registration
 through result paging and uses existing block/select/input helpers; errors never
-silently switch the selected source. Read prompts accept explicit content bytes.
+silently switch the selected source. Only a recognized too-small-budget error may
+offer an explicit larger-budget retry of the same page, defaulting to Back.
+Read prompts accept explicit content bytes.
 
 ## Failure and authorization
 

@@ -48,6 +48,9 @@ labels. After a search page, offer Next page only when one exists, otherwise Bac
 no silent eager paging. Continuation pins the registration/query. Add a read-byte
 count input, default 1024, so a human can explicitly expand to 8192 rather than
 being trapped in many small reads. Existing offset/locator fields remain.
+If the first result cannot fit the default serialized budget, offer an explicit
+retry at 32768 bytes or Back (default). Do not trap the human workflow on a
+metadata-heavy source or silently retry a different class of failure.
 No new visual system, graphical surface, background fetch or focus changes.
 
 This is the product-design choice before implementation. Exact-head self-review
