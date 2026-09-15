@@ -54,6 +54,8 @@ read-only/no-save prohibits both paths. The agent's semantic permission decision
 is not made deterministic by combining operations. Once dispatched, the combined
 operation removes a separate post-save model request; it cannot guarantee network
 delivery, recover unrecorded knowledge or authorize a later lifecycle callback.
+See [native selection and measured context tradeoff](evidence/lifecycle-sync/inline-delivery.md)
+for contributor evidence and remaining acceptance limits.
 
 ## What happens
 
