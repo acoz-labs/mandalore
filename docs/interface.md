@@ -21,7 +21,8 @@ presentation guidance, not a global renderer or a change to memory semantics.
 Do not retry an operation merely to render its receipt differently.
 
 The [synthetic presentation checks](evidence/mcp-rendering/README.md) distinguish
-wire compatibility and selector behavior from still-required native acceptance.
+wire compatibility, selector behavior and observed native engineering runs from
+still-required exact-candidate product acceptance.
 Published v1.0.0 has not been modified by this development change.
 
 `mandalore version` is read-only and does not need a signet binding. It reports

@@ -40,11 +40,25 @@ evaluate it together with `selector-checks.js` in code mode, and call
 tests must exercise the maintained example. The Go checks run in normal CI;
 the JavaScript example check is a separately performed diagnostic.
 
-## Remaining evidence
+## Native engineering evidence and remaining acceptance
 
-Fresh isolated native sessions must still demonstrate automatic use of the
-guidance, correct recall and historical citation, unchanged no-write fixtures,
-and before/after model-visible cost including added instructions/example code.
-The existing personal session and connection were not replaced for this test.
+The [native comparison](native.md) records four fresh baseline/candidate sessions
+and a candidate error/recovery session. The candidate selected complete envelopes
+without a presentation-specific user prompt, preserved correct recall and
+historical citations, and left fixture hashes unchanged. Instructions and helper
+cost are included; reduced final context did not consistently reduce aggregate
+input tokens. These are contributor observations, not product acceptance.
+
+Coverage is deliberately layered: the SDK test exercises actual success/error
+wire results; native runs exercise current/history, truncated foundling excerpts
+and error recovery; synthetic selector cases cover conflicting heads, pending
+delivery and unexpected wrappers. The latter are not claims of native conflict
+resolution or real remote-delivery acceptance. No Git remote was configured for
+the native fixture. This is narrower than repeating every wire scenario in the
+plan; the shared envelope contract and existing service tests remain unchanged.
+
+The existing personal session and connection were not replaced for these tests.
 No claim is made that all clients preserve object serialization order, optimize
 results, or avoid future compaction. Safe fallback may retain duplication.
+New artifact nomination, exact-candidate acceptance and release remain required;
+the native development executable was not stamped as a release candidate.

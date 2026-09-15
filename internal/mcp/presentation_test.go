@@ -41,13 +41,14 @@ func TestPresentationWireCompatibility(t *testing.T) {
 	for _, tc := range []struct {
 		name, args string
 		readOnly   bool
+		wantOK     bool
 	}{
-		{"memory_remember", `{"kind":"fact","summary":"Fictional project","body":"Silver Heron; previously Copper Finch. A < B & C. Café.\nQuoted: \"yes\".","basis":"user-direction","reason":"Synthetic fixture"}`, false},
-		{"memory_recall", `{}`, false},
-		{"memory_recall", `{"limit":-1}`, false},
-		{"memory_scopes", `{}`, false},
-		{"foundling_list", `{}`, false},
-		{"memory_remember", `{}`, true},
+		{"memory_remember", `{"kind":"fact","summary":"Fictional project","body":"Silver Heron; previously Copper Finch. A < B & C. Café.\nQuoted: \"yes\".","basis":"user-direction","reason":"Synthetic fixture"}`, false, true},
+		{"memory_recall", `{}`, false, true},
+		{"memory_recall", `{"limit":-1}`, false, false},
+		{"memory_scopes", `{}`, false, true},
+		{"foundling_list", `{}`, false, true},
+		{"memory_remember", `{}`, true, false},
 	} {
 		a.ReadOnly = tc.readOnly
 		r, err := client.CallTool(ctx, &sdk.CallToolParams{Name: tc.name, Arguments: json.RawMessage(tc.args)})
@@ -96,6 +97,9 @@ func TestPresentationWireCompatibility(t *testing.T) {
 		}
 		if r.IsError == envelope.OK {
 			t.Fatalf("%s: inconsistent error state", tc.name)
+		}
+		if envelope.OK != tc.wantOK {
+			t.Fatalf("%s (%s): ok=%t, want %t", tc.name, tc.args, envelope.OK, tc.wantOK)
 		}
 		wrapper, err := json.Marshal(r)
 		if err != nil {
