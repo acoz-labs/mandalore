@@ -1,10 +1,10 @@
 # Solution Design: Faithful MCP result presentation
 
-- **Status:** Draft
+- **Status:** Final
 - **Issue:** #56
 - **Planning PR:** #58
 - **Repository basis:** d50d89a986c7fc8ceb4270fd202cceaa726de8ae
-- **Execution envelope:** Pending
+- **Execution envelope:** implementation
 
 ## Decision
 
@@ -15,10 +15,10 @@ behavior with synthetic native evidence before claiming an improvement.
 
 ## Needs Attention
 
-The roadmap is authorized, but the repository's engineering self-review exception
-names only the original MVP. Independent maintainer review/final product approval
-is required unless the owner explicitly extends that exception. Proposed envelope:
-`implementation`; no personal plugin update or public release is authorized here.
+The owner explicitly extended engineering self-review to this roadmap; see
+[the recorded authority](../../decisions/0003-post-1-roadmap-self-review.md).
+The envelope is `implementation`; no personal plugin update or public release
+is authorized here.
 Native acceptance still needs an available designated test pane and an isolated
 synthetic connection. Do not interrupt an unrelated active conversation.
 
@@ -42,6 +42,7 @@ synthetic connection. Do not interrupt an unrelated active conversation.
 
 ## Final Gate
 
-Draft pending the review authority above and approval of the exact planning head.
-Passing CI is not approval. The implementation must not begin by treating this
-draft or an issue status as authority.
+The owner's roadmap extension permits a recorded exact-head contributor review
+to satisfy the engineering planning gate. Required CI remains a merge prerequisite;
+native evidence and exact-candidate acceptance remain implementation/release work.
+The PR records the reviewed head; no independent approval is claimed.
