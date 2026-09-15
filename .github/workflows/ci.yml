@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -16,6 +17,7 @@ jobs:
   ci:
     name: ci
     runs-on: ${{ vars.CI_RUNNER }}
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
@@ -45,3 +47,49 @@ jobs:
 
       - name: Run project checks
         run: bin/ci
+
+  retained-platform:
+    name: retained-${{ matrix.os }}-${{ matrix.arch }}
+    needs: ci
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.head_ref == 'verification/f899-acceptance'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: linux
+            arch: amd64
+          - os: linux
+            arch: arm64
+          - os: darwin
+            arch: amd64
+    runs-on: ${{ matrix.os == 'linux' && (matrix.arch == 'arm64' && vars.CI_RUNNER_LINUX_ARM64 || vars.CI_RUNNER) || vars.CI_RUNNER_MACOS_AMD64 }}
+    timeout-minutes: 15
+    steps:
+      - name: Checkout verification scripts
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Set up pinned Go for trusted transport verifier
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: '1.26.4'
+          cache: true
+      - name: Verify and execute exact retained platform binary
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE_OS: ${{ matrix.os }}
+          CANDIDATE_ARCH: ${{ matrix.arch }}
+        run: bash verification/retained-candidate/prepare.sh "$CANDIDATE_OS" "$CANDIDATE_ARCH"
+
+      - name: Retain native platform execution evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: retained-${{ matrix.os }}-${{ matrix.arch }}-evidence-${{ github.sha }}-${{ github.run_attempt }}
+          path: retained-platform-evidence/
+          archive: true
+          retention-days: 90
+          if-no-files-found: error
+          overwrite: false
