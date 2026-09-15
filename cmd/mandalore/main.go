@@ -14,6 +14,7 @@ import (
 	"github.com/acoz-labs/mandalore/internal/api"
 	"github.com/acoz-labs/mandalore/internal/binding"
 	"github.com/acoz-labs/mandalore/internal/codex"
+	"github.com/acoz-labs/mandalore/internal/foundlings"
 	memorymcp "github.com/acoz-labs/mandalore/internal/mcp"
 	"github.com/acoz-labs/mandalore/internal/memory"
 )
@@ -61,7 +62,9 @@ Migration does not activate a writer or copy Git history/configuration.
 Memory options: --limit N, --offset N (scopes/history), --record-id ID (history),
 --budget-bytes N (recall), --query TEXT (recall/journal).
 Foundling options: --foundling-id ID, --query TEXT (search), --limit N (list/history/search),
---offset N (list/history/read), --registration-id ID --locator PATH --limit-bytes N (read).
+--offset N (list/history/search/read), --registration-id ID (search/read),
+--excerpt-bytes N --budget-bytes N (search), --locator PATH --limit-bytes N (read).
+Search offsets select document ranks; read offsets select UTF-8 bytes.
 Foundling setup is CLI-only; MCP exposes list/inspect/search/read/promote.
 Common options: --binding FILE, --harness NAME, --read-only, --help.
 Binding selection: explicit file, then MANDALORE_BINDING, then platform config.
@@ -194,7 +197,7 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 	readOnly := f.Bool("read-only", false, "Reject mutations")
 	var repository, label, actor, displayName, query, kind, scopeID, recordID string
 	var foundlingID, registrationID, locator string
-	var limit, offset, budget, timeout int
+	var limit, offset, budget, timeout, excerptBytes int
 	if human {
 		switch name {
 		case "signet_create", "signet_bind":
@@ -232,13 +235,17 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 			f.StringVar(&foundlingID, "foundling-id", "", "Explicit reference ID")
 			if name == "foundling_search" {
 				f.StringVar(&query, "query", "", "Literal search terms")
-				f.IntVar(&limit, "limit", 5, "Result limit")
+				f.IntVar(&limit, "limit", foundlings.DefaultSearchLimit, "Result limit")
+				f.StringVar(&registrationID, "registration-id", "", "Exact registration for continuation")
+				f.IntVar(&offset, "offset", 0, "Document-rank offset")
+				f.IntVar(&excerptBytes, "excerpt-bytes", foundlings.DefaultSearchExcerptBytes, "Preview content bytes")
+				f.IntVar(&budget, "budget-bytes", foundlings.DefaultSearchBudgetBytes, "Serialized search-result bytes")
 			}
 			if name == "foundling_read" {
 				f.StringVar(&registrationID, "registration-id", "", "Exact registration revision")
 				f.StringVar(&locator, "locator", "", "Relative document locator")
 				f.IntVar(&offset, "offset", 0, "UTF-8 byte offset")
-				f.IntVar(&budget, "limit-bytes", 4096, "Excerpt content bytes")
+				f.IntVar(&budget, "limit-bytes", foundlings.DefaultReadBytes, "Excerpt content bytes")
 			}
 		}
 	}
@@ -323,7 +330,7 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 		case "foundling_inspect":
 			value = api.FoundlingSelector{FoundlingID: foundlingID}
 		case "foundling_search":
-			value = api.FoundlingSearchInput{FoundlingID: foundlingID, Query: query, Limit: &limit}
+			value = api.FoundlingSearchInput{FoundlingID: foundlingID, RegistrationID: registrationID, Query: query, Limit: &limit, Offset: offset, ExcerptBytes: &excerptBytes, BudgetBytes: &budget}
 		case "foundling_read":
 			value = api.FoundlingReadInput{FoundlingID: foundlingID, RegistrationID: registrationID, Locator: locator, Offset: offset, Limit: &budget}
 		}

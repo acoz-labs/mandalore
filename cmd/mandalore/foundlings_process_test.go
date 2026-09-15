@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -34,6 +35,15 @@ func TestCompiledFoundlingCLIAndMCP(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(reference, "notes.md"), []byte("Historical project was Copper Finch. This is the way is only a quotation."), 0600); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 12; i++ {
+		body := fmt.Sprintf("PaginationMarker note %02d. ", i) + strings.Repeat("Synthetic historical context. ", 100)
+		if err := os.WriteFile(filepath.Join(reference, fmt.Sprintf("page-%02d.md", i)), []byte(body), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(reference, "escaped.md"), []byte("EscapedMarker "+strings.Repeat("\x01", 1500)), 0600); err != nil {
 		t.Fatal(err)
 	}
 	cwd := t.TempDir()
@@ -75,6 +85,22 @@ func TestCompiledFoundlingCLIAndMCP(t *testing.T) {
 	}
 	invoke(nil, 0, "foundling", "list", "--binding", bind)
 	search := invoke(nil, 0, "foundling", "search", "--binding", bind, "--foundling-id", id, "--query", "Copper Finch")
+	page := invoke(nil, 0, "foundling", "search", "--binding", bind, "--foundling-id", id, "--query", "PaginationMarker")
+	if len(page.Result.(map[string]any)["items"].([]any)) != 3 {
+		t.Fatal("CLI did not use compact search default")
+	}
+	continued := invoke(nil, 0, "foundling", "search", "--binding", bind, "--foundling-id", id, "--query", "PaginationMarker", "--registration-id", revision, "--offset", "3", "--excerpt-bytes", "1024", "--budget-bytes", "32768", "--limit", "10")
+	if len(continued.Result.(map[string]any)["items"].([]any)) != 9 {
+		t.Fatal("CLI did not retrieve the remaining search page")
+	}
+	initialRead := invoke(nil, 0, "foundling", "read", "--binding", bind, "--foundling-id", id, "--registration-id", revision, "--locator", "page-00.md")
+	if len(initialRead.Result.(map[string]any)["text"].(string)) != 1024 {
+		t.Fatal("CLI did not use compact read default")
+	}
+	budgetFailure := invoke(nil, 1, "foundling", "search", "--binding", bind, "--foundling-id", id, "--query", "EscapedMarker", "--budget-bytes", "2048")
+	if budgetFailure.Error == nil || budgetFailure.Error.Code != "foundling.budget" {
+		t.Fatal("compiled budget error lost", budgetFailure)
+	}
 	read := invoke(nil, 0, "foundling", "read", "--binding", bind, "--foundling-id", id, "--registration-id", revision, "--locator", "notes.md")
 	data, _ = json.Marshal(read.Result)
 	var excerpt foundlings.Excerpt
@@ -119,6 +145,34 @@ func TestCompiledFoundlingCLIAndMCP(t *testing.T) {
 	if err := json.Unmarshal(data, &fromMCP); err != nil || !reflect.DeepEqual(search, fromMCP) {
 		t.Fatal("CLI/MCP search mismatch", err)
 	}
+	for _, tc := range []struct {
+		name string
+		args map[string]any
+		want api.Envelope
+	}{
+		{"foundling_search", map[string]any{"foundling_id": id, "query": "PaginationMarker"}, page},
+		{"foundling_search", map[string]any{"foundling_id": id, "query": "PaginationMarker", "registration_revision_id": revision, "offset": 3, "excerpt_bytes": 1024, "budget_bytes": 32768, "limit": 10}, continued},
+		{"foundling_read", map[string]any{"foundling_id": id, "registration_revision_id": revision, "relative_locator": "page-00.md"}, initialRead},
+	} {
+		wire, err := client.CallTool(ctx, &sdk.CallToolParams{Name: tc.name, Arguments: tc.args})
+		if err != nil || wire.IsError {
+			t.Fatalf("progressive stdio request: %v %+v", err, wire)
+		}
+		encoded, _ := json.Marshal(wire.StructuredContent)
+		var actual api.Envelope
+		if err := json.Unmarshal(encoded, &actual); err != nil || !reflect.DeepEqual(actual, tc.want) {
+			t.Fatalf("progressive CLI/MCP mismatch: %s: %v", tc.name, err)
+		}
+	}
+	wireFailure, err := client.CallTool(ctx, &sdk.CallToolParams{Name: "foundling_search", Arguments: map[string]any{"foundling_id": id, "query": "EscapedMarker", "budget_bytes": 2048}})
+	if err != nil || !wireFailure.IsError {
+		t.Fatalf("stdio budget error: %v %+v", err, wireFailure)
+	}
+	data, _ = json.Marshal(wireFailure.StructuredContent)
+	var failureFromMCP api.Envelope
+	if err := json.Unmarshal(data, &failureFromMCP); err != nil || !reflect.DeepEqual(budgetFailure, failureFromMCP) {
+		t.Fatal("CLI/MCP budget error mismatch", err)
+	}
 	if !reflect.DeepEqual(before, treeDigest(t, root)) {
 		t.Fatal("MCP read saved memory")
 	}
@@ -138,6 +192,26 @@ func TestCompiledFoundlingCLIAndMCP(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = readOnlyClient.Close() })
+	readOnlyBefore := treeDigest(t, root)
+	for _, tc := range []struct {
+		name string
+		args map[string]any
+		want api.Envelope
+	}{
+		{"foundling_search", map[string]any{"foundling_id": id, "query": "PaginationMarker"}, page},
+		{"foundling_search", map[string]any{"foundling_id": id, "query": "PaginationMarker", "registration_revision_id": revision, "offset": 3, "excerpt_bytes": 1024, "budget_bytes": 32768, "limit": 10}, continued},
+		{"foundling_read", map[string]any{"foundling_id": id, "registration_revision_id": revision, "relative_locator": "page-00.md"}, initialRead},
+	} {
+		wire, err := readOnlyClient.CallTool(ctx, &sdk.CallToolParams{Name: tc.name, Arguments: tc.args})
+		if err != nil || wire.IsError {
+			t.Fatalf("read-only retrieval refused: %s: %v %+v", tc.name, err, wire)
+		}
+		encoded, _ := json.Marshal(wire.StructuredContent)
+		var actual api.Envelope
+		if err := json.Unmarshal(encoded, &actual); err != nil || !reflect.DeepEqual(actual, tc.want) {
+			t.Fatalf("read-only retrieval changed result: %s: %v", tc.name, err)
+		}
+	}
 	denied, err := readOnlyClient.CallTool(ctx, &sdk.CallToolParams{Name: "foundling_promote", Arguments: promotion})
 	if err != nil || !denied.IsError {
 		t.Fatal("read-only MCP promoted reference", denied, err)
@@ -149,6 +223,9 @@ func TestCompiledFoundlingCLIAndMCP(t *testing.T) {
 	}
 	if err := readOnlyClient.Close(); err != nil || diagnostics.Len() != 0 {
 		t.Fatal(err, diagnostics.String())
+	}
+	if !reflect.DeepEqual(readOnlyBefore, treeDigest(t, root)) {
+		t.Fatal("read-only retrieval/refused promotion changed signet")
 	}
 	if !reflect.DeepEqual(sourceBefore, treeDigest(t, reference)) {
 		t.Fatal("promotion changed reference source")

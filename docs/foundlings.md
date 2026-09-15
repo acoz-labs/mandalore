@@ -121,19 +121,51 @@ matches case-insensitively and ranks documents by the number of distinct matchin
 terms, then relative path. A match on any term is sufficient. It does not interpret
 query text as regular expressions, run source instructions or search ordinary memory.
 
-Search returns at most ten deterministic excerpts, each up to 1024 content bytes,
-near the first match, with a 32 KiB serialized result budget. The full matching
-document count and truncation flag distinguish omitted results from no matches.
-Individual excerpts can themselves omit parts of a document, independently of
-whether the result list was truncated. No index or semantic ranking is claimed.
+Search starts with three deterministic previews, each up to 512 content bytes,
+near the first match, within an 8192-byte serialized-result budget including all
+provenance and continuation metadata. Explicit `limit` supports 1–10 documents,
+`excerpt_bytes` supports 128–1024 content bytes and `budget_bytes` supports
+2048–32768 serialized bytes. The byte budget can return fewer than the count
+limit; the outer API/MCP envelope is additional. These are per-request bounds,
+not a cap on the user's requested review scope. No index or semantic ranking
+is claimed, and every continuation performs fresh source verification.
+
+Result `offset` and optional `next_offset` count **document ranks**. Continue with
+the same query, returned next offset and exact `registration_revision_id`; an
+offset above zero requires that revision. A supplied revision is checked at any
+offset. Source/registration changes refuse continuation rather than mixing pins.
+`matching_count` covers the whole query; `truncated` means matching documents are
+outside this page, including earlier pages. No next offset means there are no
+later matching documents, not that every file or passage was included.
+
+Each returned excerpt has its own **byte** offset/continuation. A complete result
+page can still contain incomplete document excerpts. If the first remaining item
+cannot fit its provenance and requested text into the result budget, search returns
+`foundling.budget`, not an empty page or a nonadvancing continuation. Deliberately
+increase the budget within the supported range to retrieve that evidence; do not
+interpret a budget error or clipped/omitted results as proof of absence.
 
 Reading requires an exact registration revision, eligible relative locator and
-explicit byte range of 1–8192 bytes. Excerpts never split UTF-8 characters and
+byte range of 1–8192 bytes, default 1024. Excerpts never split UTF-8 characters and
 include a next offset when more bytes remain. JSON-encoding expansion can shorten
 an excerpt to keep its serialized representation within 32 KiB. Every excerpt
 includes its actual file SHA-256, portable source/pin, registration revision,
 relative locator, byte offset, total document size, completeness/truncation and
 an explicit unreviewed-reference notice. A short excerpt is not a complete claim.
+
+Use already-returned text when it has the needed evidence. For later passages,
+continue from the excerpt's next byte offset; request an earlier range if that
+context is necessary. For deliberate full-document or deeper review, use larger
+explicit reads and continue until the requested scope is covered. Do not blindly
+reread the same range to change presentation. Later qualifications, negations and
+current memory can change a historical passage's meaning. Smaller defaults do not
+authorize a hidden reduction of the user's scope or stale-data reuse.
+
+The guided menu shows displayed document ranks and offers Next page only when
+later matches remain. Back is the default; the final page returns to ordinary
+reference actions. A recognized budget error offers an explicit 32768-byte retry,
+default Back; other failures are not retried. Reading asks for content bytes as
+well as locator and byte offset, supporting both compact and explicit larger reads.
 
 Promotion takes that exact registration/locator/hash and an independently authored
 normal memory write. It generates the citation from the verified connection; a
