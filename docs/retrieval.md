@@ -94,6 +94,28 @@ Run suites sequentially for comparable host evidence, not concurrently.
 
 ## Native context and follow-up
 
+### Progressive historical references
+
+Foundling search starts with three 512-byte previews within an 8192-byte
+serialized-result budget, including provenance. Default reads return up to 1024
+content bytes. These are initial defaults, not a whole-task ceiling: explicit
+search budgets reach 32768 bytes and reads reach 8192 content bytes per call.
+Follow result `next_offset` for more documents using the same query and exact
+registration; an excerpt's `next_offset` instead continues UTF-8 bytes within
+that document. Every call revalidates the selected source. A result-budget
+failure is actionable, not an empty/no-match result. Full contracts and human
+menu behavior are in [foundlings](foundlings.md).
+
+The [progressive retrieval evaluation](evidence/foundlings-progressive/README.md)
+separates returned source ranges, response bytes and native context. A matched
+ordinary task retained all decisive evidence while removing 2048 repeated source
+bytes. The first candidate's extra guidance nevertheless increased final context;
+shorter guidance produced a modest reduction in a subsequent run. Neither smaller
+packets nor a single native observation establishes a general token/latency win.
+Explicit deep review, later conclusions and pinned traversal remain available.
+No ranking change, index, persistent retrieval cache, automatic summary or limit
+on a user's deliberate exhaustive scan is introduced.
+
 The [MCP presentation comparison](evidence/mcp-rendering/native.md) addresses
 duplicate compatibility envelopes, not retrieval algorithms. In four synthetic
 Codex runs, candidate guidance removed eight duplicate representations per run

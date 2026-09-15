@@ -1,0 +1,871 @@
+[
+  {
+    "case": "baseline",
+    "tools": [
+      "foundling_list",
+      "memory_scopes",
+      "memory_recall",
+      "foundling_inspect",
+      "memory_history",
+      "foundling_search",
+      "foundling_read",
+      "foundling_read"
+    ],
+    "foundlingEnvelopeBytes": 18786,
+    "coverage": {
+      "textBytes": 11951,
+      "uniqueBytes": 9903,
+      "duplicateBytes": 2048,
+      "documents": [
+        {
+          "name": "01-quartz-routing.md",
+          "total": 6285,
+          "covered": 6285,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              1024
+            ],
+            [
+              0,
+              6285
+            ]
+          ]
+        },
+        {
+          "name": "02-retention.md",
+          "total": 3305,
+          "covered": 3305,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              1024
+            ],
+            [
+              0,
+              3305
+            ]
+          ]
+        },
+        {
+          "name": "03-escalation.md",
+          "total": 313,
+          "covered": 313,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              313
+            ]
+          ]
+        }
+      ]
+    },
+    "modelRequests": 7,
+    "codeCalls": 6,
+    "toolOutputTextBytes": 78819,
+    "finalInput": 34057,
+    "aggregateInput": 192557,
+    "cachedInput": 140416
+  },
+  {
+    "case": "candidate",
+    "tools": [
+      "foundling_list",
+      "memory_scopes",
+      "memory_recall",
+      "foundling_inspect",
+      "memory_history",
+      "foundling_search",
+      "foundling_read",
+      "foundling_read"
+    ],
+    "foundlingEnvelopeBytes": 16820,
+    "coverage": {
+      "textBytes": 9903,
+      "uniqueBytes": 9903,
+      "duplicateBytes": 0,
+      "documents": [
+        {
+          "name": "01-quartz-routing.md",
+          "total": 6285,
+          "covered": 6285,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              512
+            ],
+            [
+              512,
+              6285
+            ]
+          ]
+        },
+        {
+          "name": "02-retention.md",
+          "total": 3305,
+          "covered": 3305,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              512
+            ],
+            [
+              512,
+              3305
+            ]
+          ]
+        },
+        {
+          "name": "03-escalation.md",
+          "total": 313,
+          "covered": 313,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              313
+            ]
+          ]
+        }
+      ]
+    },
+    "modelRequests": 7,
+    "codeCalls": 6,
+    "toolOutputTextBytes": 79102,
+    "finalInput": 34263,
+    "aggregateInput": 194357,
+    "cachedInput": 170880
+  },
+  {
+    "case": "refined",
+    "tools": [
+      "foundling_list",
+      "memory_scopes",
+      "memory_recall",
+      "foundling_inspect",
+      "memory_history",
+      "foundling_search",
+      "foundling_read",
+      "foundling_read"
+    ],
+    "foundlingEnvelopeBytes": 16816,
+    "coverage": {
+      "textBytes": 9903,
+      "uniqueBytes": 9903,
+      "duplicateBytes": 0,
+      "documents": [
+        {
+          "name": "01-quartz-routing.md",
+          "total": 6285,
+          "covered": 6285,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              512
+            ],
+            [
+              512,
+              6285
+            ]
+          ]
+        },
+        {
+          "name": "02-retention.md",
+          "total": 3305,
+          "covered": 3305,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              512
+            ],
+            [
+              512,
+              3305
+            ]
+          ]
+        },
+        {
+          "name": "03-escalation.md",
+          "total": 313,
+          "covered": 313,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              313
+            ]
+          ]
+        }
+      ]
+    },
+    "modelRequests": 7,
+    "codeCalls": 6,
+    "toolOutputTextBytes": 77946,
+    "finalInput": 33790,
+    "aggregateInput": 192552,
+    "cachedInput": 142080
+  },
+  {
+    "case": "candidate-late",
+    "tools": [
+      "foundling_list",
+      "foundling_inspect",
+      "foundling_search",
+      "foundling_read",
+      "foundling_read"
+    ],
+    "foundlingEnvelopeBytes": 18188,
+    "coverage": {
+      "textBytes": 12828,
+      "uniqueBytes": 12828,
+      "duplicateBytes": 0,
+      "documents": [
+        {
+          "name": "04-late-passage.md",
+          "total": 12828,
+          "covered": 12828,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              512
+            ],
+            [
+              512,
+              8704
+            ],
+            [
+              8704,
+              12828
+            ]
+          ]
+        }
+      ]
+    },
+    "modelRequests": 7,
+    "codeCalls": 6,
+    "toolOutputTextBytes": 51306,
+    "finalInput": 26936,
+    "aggregateInput": 155554,
+    "cachedInput": 139520
+  },
+  {
+    "case": "refined-late",
+    "tools": [
+      "foundling_list",
+      "foundling_inspect",
+      "foundling_search",
+      "foundling_read",
+      "foundling_read"
+    ],
+    "foundlingEnvelopeBytes": 19496,
+    "coverage": {
+      "textBytes": 13340,
+      "uniqueBytes": 13340,
+      "duplicateBytes": 0,
+      "documents": [
+        {
+          "name": "04-late-passage.md",
+          "total": 12828,
+          "covered": 12828,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              512
+            ],
+            [
+              512,
+              8704
+            ],
+            [
+              8704,
+              12828
+            ]
+          ]
+        },
+        {
+          "name": "01-quartz-routing.md",
+          "total": 6285,
+          "covered": 512,
+          "complete": false,
+          "ranges": [
+            [
+              157,
+              669
+            ]
+          ]
+        }
+      ]
+    },
+    "modelRequests": 8,
+    "codeCalls": 7,
+    "toolOutputTextBytes": 74048,
+    "finalInput": 32730,
+    "aggregateInput": 218035,
+    "cachedInput": 193024
+  },
+  {
+    "case": "candidate-page",
+    "tools": [
+      "foundling_list",
+      "foundling_inspect",
+      "foundling_search",
+      "foundling_search"
+    ],
+    "foundlingEnvelopeBytes": 13864,
+    "coverage": {
+      "textBytes": 1432,
+      "uniqueBytes": 1432,
+      "duplicateBytes": 0,
+      "documents": [
+        {
+          "name": "page-00.md",
+          "total": 122,
+          "covered": 122,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              122
+            ]
+          ]
+        },
+        {
+          "name": "page-01.md",
+          "total": 122,
+          "covered": 122,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              122
+            ]
+          ]
+        },
+        {
+          "name": "page-02.md",
+          "total": 122,
+          "covered": 122,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              122
+            ]
+          ]
+        },
+        {
+          "name": "page-03.md",
+          "total": 122,
+          "covered": 122,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              122
+            ]
+          ]
+        },
+        {
+          "name": "page-04.md",
+          "total": 122,
+          "covered": 122,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              122
+            ]
+          ]
+        },
+        {
+          "name": "page-05.md",
+          "total": 122,
+          "covered": 122,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              122
+            ]
+          ]
+        },
+        {
+          "name": "page-06.md",
+          "total": 122,
+          "covered": 122,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              122
+            ]
+          ]
+        },
+        {
+          "name": "page-07.md",
+          "total": 122,
+          "covered": 122,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              122
+            ]
+          ]
+        },
+        {
+          "name": "page-08.md",
+          "total": 122,
+          "covered": 122,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              122
+            ]
+          ]
+        },
+        {
+          "name": "page-09.md",
+          "total": 122,
+          "covered": 122,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              122
+            ]
+          ]
+        },
+        {
+          "name": "page-10.md",
+          "total": 124,
+          "covered": 124,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              124
+            ]
+          ]
+        },
+        {
+          "name": "page-11.md",
+          "total": 88,
+          "covered": 88,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              88
+            ]
+          ]
+        }
+      ]
+    },
+    "modelRequests": 7,
+    "codeCalls": 6,
+    "toolOutputTextBytes": 71166,
+    "finalInput": 33350,
+    "aggregateInput": 192710,
+    "cachedInput": 170240
+  },
+  {
+    "case": "refined-page",
+    "tools": [
+      "foundling_list",
+      "foundling_inspect",
+      "foundling_search",
+      "foundling_search"
+    ],
+    "foundlingEnvelopeBytes": 13858,
+    "coverage": {
+      "textBytes": 1432,
+      "uniqueBytes": 1432,
+      "duplicateBytes": 0,
+      "documents": [
+        {
+          "name": "page-00.md",
+          "total": 122,
+          "covered": 122,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              122
+            ]
+          ]
+        },
+        {
+          "name": "page-01.md",
+          "total": 122,
+          "covered": 122,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              122
+            ]
+          ]
+        },
+        {
+          "name": "page-02.md",
+          "total": 122,
+          "covered": 122,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              122
+            ]
+          ]
+        },
+        {
+          "name": "page-03.md",
+          "total": 122,
+          "covered": 122,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              122
+            ]
+          ]
+        },
+        {
+          "name": "page-04.md",
+          "total": 122,
+          "covered": 122,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              122
+            ]
+          ]
+        },
+        {
+          "name": "page-05.md",
+          "total": 122,
+          "covered": 122,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              122
+            ]
+          ]
+        },
+        {
+          "name": "page-06.md",
+          "total": 122,
+          "covered": 122,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              122
+            ]
+          ]
+        },
+        {
+          "name": "page-07.md",
+          "total": 122,
+          "covered": 122,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              122
+            ]
+          ]
+        },
+        {
+          "name": "page-08.md",
+          "total": 122,
+          "covered": 122,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              122
+            ]
+          ]
+        },
+        {
+          "name": "page-09.md",
+          "total": 122,
+          "covered": 122,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              122
+            ]
+          ]
+        },
+        {
+          "name": "page-10.md",
+          "total": 124,
+          "covered": 124,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              124
+            ]
+          ]
+        },
+        {
+          "name": "page-11.md",
+          "total": 88,
+          "covered": 88,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              88
+            ]
+          ]
+        }
+      ]
+    },
+    "modelRequests": 7,
+    "codeCalls": 6,
+    "toolOutputTextBytes": 71583,
+    "finalInput": 33240,
+    "aggregateInput": 190518,
+    "cachedInput": 168320
+  },
+  {
+    "case": "candidate-deep",
+    "tools": [
+      "foundling_list",
+      "foundling_inspect",
+      "foundling_search",
+      "foundling_read",
+      "foundling_read",
+      "foundling_read"
+    ],
+    "foundlingEnvelopeBytes": 20317,
+    "coverage": {
+      "textBytes": 13340,
+      "uniqueBytes": 13340,
+      "duplicateBytes": 0,
+      "documents": [
+        {
+          "name": "04-late-passage.md",
+          "total": 12828,
+          "covered": 12828,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              512
+            ],
+            [
+              512,
+              8704
+            ],
+            [
+              8704,
+              12828
+            ],
+            [
+              12828,
+              12828
+            ]
+          ]
+        },
+        {
+          "name": "01-quartz-routing.md",
+          "total": 6285,
+          "covered": 512,
+          "complete": false,
+          "ranges": [
+            [
+              157,
+              669
+            ]
+          ]
+        }
+      ]
+    },
+    "modelRequests": 10,
+    "codeCalls": 9,
+    "toolOutputTextBytes": 83970,
+    "finalInput": 34870,
+    "aggregateInput": 289434,
+    "cachedInput": 264832
+  },
+  {
+    "case": "refined-deep",
+    "tools": [
+      "foundling_list",
+      "foundling_inspect",
+      "foundling_search",
+      "foundling_read",
+      "foundling_read",
+      "foundling_read"
+    ],
+    "foundlingEnvelopeBytes": 19517,
+    "coverage": {
+      "textBytes": 13340,
+      "uniqueBytes": 12828,
+      "duplicateBytes": 512,
+      "documents": [
+        {
+          "name": "04-late-passage.md",
+          "total": 12828,
+          "covered": 12828,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              512
+            ],
+            [
+              0,
+              8192
+            ],
+            [
+              8192,
+              12828
+            ],
+            [
+              12828,
+              12828
+            ]
+          ]
+        }
+      ]
+    },
+    "modelRequests": 9,
+    "codeCalls": 8,
+    "toolOutputTextBytes": 79635,
+    "finalInput": 34596,
+    "aggregateInput": 261905,
+    "cachedInput": 237952
+  },
+  {
+    "case": "candidate-stale",
+    "tools": [
+      "foundling_list",
+      "memory_scopes",
+      "memory_recall",
+      "foundling_inspect"
+    ],
+    "foundlingEnvelopeBytes": 2423,
+    "coverage": {
+      "textBytes": 0,
+      "uniqueBytes": 0,
+      "duplicateBytes": 0,
+      "documents": []
+    },
+    "modelRequests": 5,
+    "codeCalls": 4,
+    "toolOutputTextBytes": 63575,
+    "finalInput": 30520,
+    "aggregateInput": 128057,
+    "cachedInput": 100864
+  },
+  {
+    "case": "refined-stale",
+    "tools": [
+      "foundling_list",
+      "memory_scopes",
+      "memory_recall",
+      "foundling_inspect"
+    ],
+    "foundlingEnvelopeBytes": 2419,
+    "coverage": {
+      "textBytes": 0,
+      "uniqueBytes": 0,
+      "duplicateBytes": 0,
+      "documents": []
+    },
+    "modelRequests": 5,
+    "codeCalls": 4,
+    "toolOutputTextBytes": 61051,
+    "finalInput": 29898,
+    "aggregateInput": 126133,
+    "cachedInput": 104576
+  },
+  {
+    "case": "candidate-quoted",
+    "tools": [
+      "foundling_list",
+      "foundling_inspect",
+      "foundling_search"
+    ],
+    "foundlingEnvelopeBytes": 3943,
+    "coverage": {
+      "textBytes": 347,
+      "uniqueBytes": 347,
+      "duplicateBytes": 0,
+      "documents": [
+        {
+          "name": "quoted.md",
+          "total": 347,
+          "covered": 347,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              347
+            ]
+          ]
+        }
+      ]
+    },
+    "modelRequests": 6,
+    "codeCalls": 5,
+    "toolOutputTextBytes": 37534,
+    "finalInput": 24181,
+    "aggregateInput": 127465,
+    "cachedInput": 111360
+  },
+  {
+    "case": "refined-quoted",
+    "tools": [
+      "foundling_list",
+      "foundling_inspect",
+      "foundling_search"
+    ],
+    "foundlingEnvelopeBytes": 3939,
+    "coverage": {
+      "textBytes": 347,
+      "uniqueBytes": 347,
+      "duplicateBytes": 0,
+      "documents": [
+        {
+          "name": "quoted.md",
+          "total": 347,
+          "covered": 347,
+          "complete": true,
+          "ranges": [
+            [
+              0,
+              347
+            ]
+          ]
+        }
+      ]
+    },
+    "modelRequests": 5,
+    "codeCalls": 4,
+    "toolOutputTextBytes": 59881,
+    "finalInput": 29513,
+    "aggregateInput": 124751,
+    "cachedInput": 106624
+  }
+]
