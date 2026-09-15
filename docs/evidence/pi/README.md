@@ -6,6 +6,10 @@ in progress. The full native model/candidate and exact-head rendered matrix must
 still be completed. Guided menu/owned installation/recovery, skills and release-
 stamping engineering evidence are recorded below; they do not complete that matrix.
 
+The [native lifecycle and model baseline](lifecycle-model-baseline.md) records
+actual Pi RPC transitions (with a disabled-extension control), an immutable
+engineering build and the first Codex model recall against its synthetic bank.
+
 ## Native package and callback probe
 
 Tested source: `06bf8c370d3b262e9177061ccce08f62685bef91`.

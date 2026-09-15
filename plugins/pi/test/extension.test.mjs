@@ -67,6 +67,25 @@ test('unavailable or colliding attachment does not replace tools or expose raw e
   }
 });
 
+test('repeated native session-start notifications replace connections without duplicate tools or writes', async () => {
+  // Observed in Pi 0.85.1 RPC new/resume/fork, including a control with no
+  // Mandalore extension: the host rebinds the replacement session twice.
+  const f = fixture();
+  const reasons = ['startup', 'reload', 'new', 'new', 'resume', 'resume', 'fork', 'fork'];
+  for (const reason of reasons) {
+    await f.handlers.get('session_start')({reason}, f.ctx);
+    assert.equal(f.tools.size, 2);
+    assert.equal(f.warnings.length, 0);
+    assert.equal(f.calls.length, 0);
+  }
+  assert.equal(f.closes(), reasons.length - 1);
+  const result = await f.tools.get('memory_recall').execute('after-fork', {}, f.ctx.signal);
+  assert.equal(JSON.parse(result.content[0].text).ok, true);
+  assert.deepEqual(f.calls.map(call => call.name), ['memory_recall']);
+  await f.handlers.get('session_shutdown')({reason: 'quit'}, f.ctx);
+  assert.equal(f.closes(), reasons.length);
+});
+
 test('enforced read-only notice and complete transport errors retain their meaning', async () => {
   const f = fixture({readOnly: true});
   await f.handlers.get('session_start')({reason: 'startup'}, f.ctx);
