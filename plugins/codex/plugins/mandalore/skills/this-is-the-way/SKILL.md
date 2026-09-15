@@ -31,6 +31,12 @@ bytes); expand when omissions or the task justify more. Use `memory_history`
 for provenance, superseded decisions or conflicting current heads. Conflicting
 heads are unresolved evidence, not interchangeable current guidance.
 
+In code mode, avoid printing both compatibility copies of a Mandalore result.
+Use [the code-mode result guidance](references/code-mode.md) when handling raw
+MCP wrappers. Preserve one complete envelope, including errors and provenance;
+unexpected or distinct content must fall back intact. Clients that already
+present one representation need no extra wrapper.
+
 ## Consult historical references when relevant
 
 For linked old notes, imported-system experience or a gap in current knowledge,

@@ -94,6 +94,16 @@ Run suites sequentially for comparable host evidence, not concurrently.
 
 ## Native context and follow-up
 
+The [MCP presentation comparison](evidence/mcp-rendering/native.md) addresses
+duplicate compatibility envelopes, not retrieval algorithms. In four synthetic
+Codex runs, candidate guidance removed eight duplicate representations per run
+and retained correct answers, historical attribution and truncation notices.
+Final-request input context was about 5% smaller. Aggregate input usage varied:
+one candidate run used an extra orchestration round and increased aggregate
+input, while its replicate did not. Added reference/code cost is included in the
+reported context and byte counts. These observations are not universal cost,
+latency or compaction guarantees. Unknown results safely remain verbose.
+
 Schema sizes, tool response bytes, hook text, requested context ceilings and
 native aggregate token counters are distinct. Prior foundling tests observed
 a 16000-byte recall request for two records. An earlier report of a redundant
