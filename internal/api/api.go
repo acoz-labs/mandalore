@@ -168,7 +168,7 @@ var operations = []Operation{
 }
 
 func Catalog() []Operation {
-	return append(append(append(append(append(append(append(append([]Operation(nil), operations...), administration...), synchronization...), connections...), migrations...), foundlingOperations...), releases...), saveAndDelivery...)
+	return append(append(append(append(append(append(append(append(append([]Operation(nil), operations...), administration...), synchronization...), connections...), migrations...), foundlingOperations...), releases...), saveAndDelivery...), nativeContext...)
 }
 
 type API struct {
