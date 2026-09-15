@@ -54,6 +54,9 @@ const help = `Mandalore — durable memory across tools
   mandalore migration apply --writers-stopped < reviewed-preflight.json
 
 Profile options: --state-dir DIR, --native-home DIR, --native-binary FILE.
+Connection harness: --harness codex|pi (default codex).
+Pi plan --memory-read-only enforces read-only memory in the installed connection;
+--read-only instead prohibits mutations by this CLI invocation.
 Connection plan/armorer/doctor/repair preview do not activate a connection.
 Migration preflight accepts optional --legacy-binding FILE and explicit
 --native-home DIR --native-binary FILE for native inventory. No implicit defaults.
@@ -73,7 +76,7 @@ No cwd-based bank discovery. Local saves and delivery receipts are distinct.
 Combined save-and-sync calls attempt delivery once; inspect saved and delivery separately.
 Release inspection/planning are read-only; apply changes only the selected CLI installation.
 Release install/menu use default-No previews; a native connection update is a separate choice.
-Public release publication is still under development.
+Publication uses separate maintainer acceptance/release gates; local builds are not releases.
 `
 
 func main() {

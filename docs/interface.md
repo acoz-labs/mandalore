@@ -296,6 +296,17 @@ name remains `connection_doctor` to preserve existing automation. Repair remains
 `connection_repair_plan` followed by `connection_apply`, not an effect of
 inspection. No administrative tools are added to memory MCP.
 
+Pi uses `connection ... --harness pi` and the CLI-only typed operations
+`pi_connection_plan`, `pi_connection_apply`, `pi_connection_doctor` and
+`pi_connection_repair_plan`. The omitted harness remains Codex. Pi plans include
+explicit profile/runtime/binding paths, byte identities, selected signet,
+read-only memory choice, native settings observation and previous ownership.
+Apply errors preserve `pi_connection_result`; diagnostic failures preserve
+`pi_connection_report`. The apply receipt names its retained attempt and last
+phase, distinguishing uncertain native effects from completed verification.
+Interrupted or changed plans require inspection and a fresh recovery preview,
+not automatic retries. See the [Pi guide](../plugins/pi/README.md).
+
 `mandalore operations` lists versioned input/result JSON schemas, read/write and
 idempotency annotations, `requires_binding` and `cli_only` visibility.
 `mandalore call OPERATION --binding FILE < input.json`
@@ -309,6 +320,7 @@ uses the same decoder and methods as the human commands and MCP tools.
 | `memory_journal`, `memory_inspect` | `memory journal`, `inspect` | Bound signet only |
 | `memory_context` | `call memory_context` with JSON `prompt` | Not exposed; read-only native lifecycle packet |
 | `pi_package_inspect` | `call pi_package_inspect` with `{}` | Not exposed; unbound embedded-package metadata |
+| `pi_connection_plan`, `pi_connection_apply`, `pi_connection_doctor`, `pi_connection_repair_plan` | `connection plan/apply/armorer/repair --harness pi` | Not exposed; explicit native administration |
 | `memory_remember`, `memory_journal_append` | `memory remember`, `journal-append` | Bound signet only |
 | `memory_git_init`, `memory_checkpoint`, `memory_sync`, `memory_sync_status` | `memory git-init`, `checkpoint`, `sync`, `sync-status` | Bound signet only |
 | `foundling_list`, `foundling_inspect`, `foundling_search`, `foundling_read`, `foundling_promote` | `foundling list`, `inspect`, `search`, `read`, `promote` | Bound signet only |

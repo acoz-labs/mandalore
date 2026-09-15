@@ -34,11 +34,13 @@ type MemoryError struct {
 }
 type Error struct {
 	MemoryError
-	FoundlingResult  *FoundlingMutationResult    `json:"foundling_result,omitempty"`
-	ConnectionResult *install.Result             `json:"connection_result,omitempty"`
-	ConnectionReport *install.Report             `json:"connection_report,omitempty"`
-	MigrationResult  *migration.Result           `json:"migration_result,omitempty"`
-	ReleaseResult    *distribution.InstallResult `json:"release_result,omitempty"`
+	FoundlingResult    *FoundlingMutationResult    `json:"foundling_result,omitempty"`
+	ConnectionResult   *install.Result             `json:"connection_result,omitempty"`
+	ConnectionReport   *install.Report             `json:"connection_report,omitempty"`
+	PiConnectionResult *install.PiResult           `json:"pi_connection_result,omitempty"`
+	PiConnectionReport *install.PiReport           `json:"pi_connection_report,omitempty"`
+	MigrationResult    *migration.Result           `json:"migration_result,omitempty"`
+	ReleaseResult      *distribution.InstallResult `json:"release_result,omitempty"`
 }
 type Envelope struct {
 	ProtocolVersion int    `json:"protocol_version"`
@@ -249,6 +251,16 @@ func (a *API) failure(op Operation, err error) Envelope {
 		mayWrite := migration.result != nil && migration.result.Phase != "preflight"
 		out := Failure(code, migration.Error(), mayWrite)
 		out.Error.MigrationResult = migration.result
+		return out
+	}
+	var piConnection *piConnectionFailure
+	if errors.As(err, &piConnection) {
+		code := "connection.failed"
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			code = "operation.cancelled"
+		}
+		out := Failure(code, piConnection.Error(), piConnection.result != nil)
+		out.Error.PiConnectionResult, out.Error.PiConnectionReport = piConnection.result, piConnection.report
 		return out
 	}
 	var connection *connectionFailure

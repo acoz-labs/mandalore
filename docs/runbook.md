@@ -1,10 +1,10 @@
 # Runbook
 
-Mandalore remains an unreleased development runtime. Explicit synthetic native
-installation is described in the [setup guide](setup.md) and
-[Codex guide](../plugins/codex/README.md); do
-not present it as a released installer or accepted production upgrade. Archiving
-My Friday neither migrates nor removes existing pinned installations.
+The Codex-first [v1.0.0 release](releases/1.0.0.md) is published. Subsequent
+development builds, including the Pi work, are not accepted production upgrades.
+See the [setup guide](setup.md), [Codex guide](../plugins/codex/README.md) and
+[Pi development guide](../plugins/pi/README.md) for the respective boundaries.
+Archiving My Friday neither migrates nor removes existing pinned installations.
 
 ## Project operations
 

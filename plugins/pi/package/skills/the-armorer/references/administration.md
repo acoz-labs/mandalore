@@ -6,7 +6,7 @@ input; its result is a protocol envelope. Do not pass an entire result envelope
 where a raw plan is required. Human plan/apply commands can also accept their
 documented envelopes. Quote paths and pass prose as data, not shell interpolation.
 
-These Pi connection operations belong to the in-development Pi adapter. If the
+These Pi connection operations require a runtime that advertises them. If the
 selected runtime lacks them, report the unsupported operation; never substitute
 the Codex connection operations or hand-edit native settings.
 
@@ -15,7 +15,7 @@ the Codex connection operations or hand-edit native settings.
 The human command is `connection armorer --harness pi`; `connection doctor --harness pi` is its compatible
 alias. The stable typed name remains `pi_connection_doctor`. Supply the selected
 `state_dir`, `native_home` and `native_binary`; add CLI `--read-only`. Read both
-successful reports and an error's `connection_report` rather than discarding a
+successful reports and an error's `pi_connection_report` rather than discarding a
 nonzero exit status. Missing state must remain a diagnosis, not implicit setup.
 
 For direct bound CLI calls, pass `--harness pi`, the selected `--binding`, and
@@ -35,6 +35,14 @@ Repair creates a new retained generation; it does not erase history or repair
 provider authentication. Keep the current session until work is safely handed
 off; explain when a fresh session and native extension review are needed.
 
+An apply error can carry `pi_connection_result` with its retained `attempt`, last
+phase and `native_effects_uncertain`. Inspect those receipts and current profile
+before retrying. An interrupted update can have removed the old registration;
+absence is not evidence that nothing changed. Use the intact generation's repair
+preview to reconnect, preserving prior generations. Do not rewrite receipts or
+resubmit a stale plan. Repair requires that generation's retained runtime/package;
+choosing new package bytes is a separately requested connection update.
+
 ## Set up a signet and native connection
 
 Distinguish a new signet from an existing local clone. Ask for that choice when
@@ -50,6 +58,11 @@ then use `pi_connection_apply` for an authorized installation. Preserve existing
 credentials, native skills, tool selection and unrelated connections. The native
 profile is selected by `PI_CODING_AGENT_DIR`; do not copy another profile or change
 the global shell. A fresh session is needed to load the installed skills and extension.
+
+The plan's `read_only` selects enforced memory access for the new Pi connection.
+Preserve it during repair; change it only as an explicit connection choice. Human
+preview uses `--memory-read-only` for this setting. The common CLI `--read-only`
+instead prevents the current administrative command from applying changes.
 
 Mandalore does not provision private Git repositories or credentials. If remote
 setup is requested, use the user's approved native Git/account workflow as a
