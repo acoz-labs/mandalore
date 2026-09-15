@@ -1,0 +1,213 @@
+{
+  "source": "f899cf6a2a255f3b6b35dcd778c672f799c65eb2",
+  "manifest_sha256": "c2f5a340d0e665c81e01bc26add4c0dfe8ba27faac87b83a3fd81aff254f56ea",
+  "verdict": "pending-owner-verdict",
+  "issues": [
+    {
+      "issue": 2,
+      "implementationPRs": [
+        20
+      ],
+      "latestNominationMatches": true,
+      "nominationURL": "https://github.com/acoz-labs/mandalore/issues/2#issuecomment-5669531236",
+      "implementations": [
+        {
+          "pr": 20,
+          "merged": true,
+          "contained": true,
+          "merge": "dc6add6ef854f39de900cc0599bffacd8f598e11"
+        }
+      ]
+    },
+    {
+      "issue": 3,
+      "implementationPRs": [
+        20,
+        22
+      ],
+      "latestNominationMatches": true,
+      "nominationURL": "https://github.com/acoz-labs/mandalore/issues/3#issuecomment-5669531959",
+      "implementations": [
+        {
+          "pr": 20,
+          "merged": true,
+          "contained": true,
+          "merge": "dc6add6ef854f39de900cc0599bffacd8f598e11"
+        },
+        {
+          "pr": 22,
+          "merged": true,
+          "contained": true,
+          "merge": "d1f78b2b4139b394d5c12536bc5e74a6fda4042b"
+        }
+      ]
+    },
+    {
+      "issue": 4,
+      "implementationPRs": [
+        22,
+        24
+      ],
+      "latestNominationMatches": true,
+      "nominationURL": "https://github.com/acoz-labs/mandalore/issues/4#issuecomment-5669532760",
+      "implementations": [
+        {
+          "pr": 22,
+          "merged": true,
+          "contained": true,
+          "merge": "d1f78b2b4139b394d5c12536bc5e74a6fda4042b"
+        },
+        {
+          "pr": 24,
+          "merged": true,
+          "contained": true,
+          "merge": "a0f53601abebb2dd46fab2b15f1ca426d14a391f"
+        }
+      ]
+    },
+    {
+      "issue": 5,
+      "implementationPRs": [
+        24
+      ],
+      "latestNominationMatches": true,
+      "nominationURL": "https://github.com/acoz-labs/mandalore/issues/5#issuecomment-5669533528",
+      "implementations": [
+        {
+          "pr": 24,
+          "merged": true,
+          "contained": true,
+          "merge": "a0f53601abebb2dd46fab2b15f1ca426d14a391f"
+        }
+      ]
+    },
+    {
+      "issue": 6,
+      "implementationPRs": [
+        26
+      ],
+      "latestNominationMatches": true,
+      "nominationURL": "https://github.com/acoz-labs/mandalore/issues/6#issuecomment-5669534220",
+      "implementations": [
+        {
+          "pr": 26,
+          "merged": true,
+          "contained": true,
+          "merge": "5c55bbdd8b50b21d610274f9d7479417ca967671"
+        }
+      ]
+    },
+    {
+      "issue": 7,
+      "implementationPRs": [
+        28
+      ],
+      "latestNominationMatches": true,
+      "nominationURL": "https://github.com/acoz-labs/mandalore/issues/7#issuecomment-5669535109",
+      "implementations": [
+        {
+          "pr": 28,
+          "merged": true,
+          "contained": true,
+          "merge": "3cebe0b51a1f28aef91e3df3d793826243265123"
+        }
+      ]
+    },
+    {
+      "issue": 8,
+      "implementationPRs": [
+        30
+      ],
+      "latestNominationMatches": true,
+      "nominationURL": "https://github.com/acoz-labs/mandalore/issues/8#issuecomment-5669535843",
+      "implementations": [
+        {
+          "pr": 30,
+          "merged": true,
+          "contained": true,
+          "merge": "ad621e58ba65eaf2cfcb66a73b3801ff4ccebb8d"
+        }
+      ]
+    },
+    {
+      "issue": 9,
+      "implementationPRs": [
+        34
+      ],
+      "latestNominationMatches": true,
+      "nominationURL": "https://github.com/acoz-labs/mandalore/issues/9#issuecomment-5669536479",
+      "implementations": [
+        {
+          "pr": 34,
+          "merged": true,
+          "contained": true,
+          "merge": "680e352898c8bcaf8b14c16b721ea51441296c0b"
+        }
+      ]
+    },
+    {
+      "issue": 10,
+      "implementationPRs": [
+        38
+      ],
+      "latestNominationMatches": true,
+      "nominationURL": "https://github.com/acoz-labs/mandalore/issues/10#issuecomment-5669537013",
+      "implementations": [
+        {
+          "pr": 38,
+          "merged": true,
+          "contained": true,
+          "merge": "5b3c7b275bb4bbb058bebdd7153f4b76bbceb59f"
+        }
+      ]
+    },
+    {
+      "issue": 11,
+      "implementationPRs": [
+        36
+      ],
+      "latestNominationMatches": true,
+      "nominationURL": "https://github.com/acoz-labs/mandalore/issues/11#issuecomment-5669537814",
+      "implementations": [
+        {
+          "pr": 36,
+          "merged": true,
+          "contained": true,
+          "merge": "0fe7e0e1eb175943995b0d0d5e54130ff65b074e"
+        }
+      ]
+    },
+    {
+      "issue": 12,
+      "implementationPRs": [
+        32
+      ],
+      "latestNominationMatches": true,
+      "nominationURL": "https://github.com/acoz-labs/mandalore/issues/12#issuecomment-5669538542",
+      "implementations": [
+        {
+          "pr": 32,
+          "merged": true,
+          "contained": true,
+          "merge": "b283e7cc8890d0c2f1da33c649614d25da09aba4"
+        }
+      ]
+    },
+    {
+      "issue": 45,
+      "implementationPRs": [
+        47
+      ],
+      "latestNominationMatches": true,
+      "nominationURL": "https://github.com/acoz-labs/mandalore/issues/45#issuecomment-5669539146",
+      "implementations": [
+        {
+          "pr": 47,
+          "merged": true,
+          "contained": true,
+          "merge": "f899cf6a2a255f3b6b35dcd778c672f799c65eb2"
+        }
+      ]
+    }
+  ]
+}

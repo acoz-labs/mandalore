@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "os": "linux",
+  "arch": "amd64",
+  "binary_sha256": "74817349099318fc557b4db17b0bf4a69413caf833fe218032320c40d333a719",
+  "source_commit": "f899cf6a2a255f3b6b35dcd778c672f799c65eb2",
+  "manifest_sha256": "c2f5a340d0e665c81e01bc26add4c0dfe8ba27faac87b83a3fd81aff254f56ea",
+  "native_agent": false,
+  "model_used": false,
+  "checks": [
+    "actual retained binary version",
+    "same-record correction/history",
+    "MCP stdio and read-only hash window",
+    "local Git delivery and fresh-clone recall",
+    "owned CLI install and exact launcher identity",
+    "synthetic migration and original snapshot",
+    "exact historical JSON number",
+    "unrelated cwd unchanged"
+  ]
+}
