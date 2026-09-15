@@ -2,9 +2,9 @@
 
 This records development verification, not independent product acceptance,
 publication or personal activation. Issue #13 / implementation PR #72 remains
-in progress. The guided menu and full native model/candidate matrix must still
-be completed. Owned CLI installation/recovery, skills and release-stamping
-engineering evidence are recorded below; they do not complete that matrix.
+in progress. The full native model/candidate and exact-head rendered matrix must
+still be completed. Guided menu/owned installation/recovery, skills and release-
+stamping engineering evidence are recorded below; they do not complete that matrix.
 
 ## Native package and callback probe
 
@@ -144,3 +144,51 @@ scenario repeated in a new fixture; the failed observation was not counted as a
 pass and did not justify changing runtime cancellation behavior. This evidence
 does not replace real model/GUI acceptance, selected-runtime menu delegation,
 the broader native event matrix, or immutable-candidate acceptance.
+
+## Guided menu and selected-runtime delegation
+
+Source `a43fae481d118c5b7fe3d0ab26361d0593f06180` adds harness selection to
+connection/Armorer journeys and a separately confirmed Pi handoff after CLI
+installation. It separates Pi defaults from Codex, displays enforced read-only
+mode and partial phase receipts, and delegates planning/apply to the selected
+runtime. Repair executes the intact runtime identified by the owned receipt,
+not the menu's potentially newer embedded package.
+
+Full pinned host CI passed, including 19 Node tests, Go race tests, vet and four
+target builds. Docker remained unavailable. Ten additional race-enabled repeats
+verified delegated cancellation with a live child, partial output preservation,
+child reaping and owned-repair identity/access-mode refusal cases. Menu tests
+cover back, default-No, EOF/incomplete consent, invisible output, partial native
+failure, separate release/native success, release identity/version mismatches,
+and independent profile selection. The first inspection test expected a long
+path on one output line; correcting its assertion to account for actual wrapping
+resolved the failure without changing the product renderer or weakening the
+profile/no-effects checks. Full validation then passed again at the named commit.
+
+The source-stamped menu executable has SHA-256
+`6d4f9fc08a7ceef9d755fb1ca065d83cd97d39b875b6412f03de58561cd00ca0`.
+In a fresh disposable macOS arm64 fixture, it drove real Pi 0.85.1 / Node 24.1.0
+through the plain menu. The explicitly selected source executable was the older
+`a4c1435` owned-workflow build identified above, proving that the menu did not
+substitute its own executable. Back/default-No left installation state absent
+and native settings byte-identical. Confirmed install, read-only mode, healthy
+inspection, intentional missing-file detection, and fresh-generation repair all
+passed. Recovery selected the previous generation's retained runtime, preserved
+its access mode/binding and left the old missing file untouched. Unrelated
+relative-package filters and theme remained intact; a complete synthetic signet
+snapshot was unchanged. See the [semantic result](guided-menu-result.json).
+
+An earlier development build also exercised the rendered Armorer journey in the
+dedicated terminal pane using vim and arrow navigation, default text entry and
+normal exit. Inspection clearly distinguished structural passes from untested
+login/live tools/remote freshness/context. This smoke recording is retained
+locally, not offered as the final exact-head rendered evidence matrix. No model
+request, live personal activation, authentication change or publication occurred.
+
+Engineering self-review of this source checked default-No/no-output/no-effects
+paths, selected-runtime and retained-repair identity, cancellation/receipt
+handling, Codex regression behavior, and release handoff without interpreting
+the format-1 Codex hash as Pi's package hash. No unresolved slice-level finding
+remains. This is contributor self-review, not independent acceptance. Final PR
+reconciliation, full rendered/model verification and hosted checks for this
+source remain required; local CI is not hosted CI or release authority.
