@@ -1,8 +1,8 @@
 # Solution Design: native Pi memory integration
 
-- **Status:** Draft
+- **Status:** Final
 - **Issue:** #13
-- **Planning PR:** Pending
+- **Planning PR:** #70
 - **Repository basis:** 594399caf97c7496faf9a3c5ebc0640e8831ed5d
 - **Execution envelope:** implementation
 
