@@ -4,9 +4,17 @@ set -euo pipefail
 
 [[ "$#" == 5 ]] || exit 1
 [[ "$1" == acoz-labs/mandalore ]] || exit 1
-[[ "$2" == 5b3c7b275bb4bbb058bebdd7153f4b76bbceb59f ]] || exit 1
-case "$3" in 2|3|4|5|6|7|8|9|10|11|12) ;; *) exit 1 ;; esac
-[[ "$4" == mandalore:5b3c7b275bb4bbb058bebdd7153f4b76bbceb59f:sha256:c46743709dcd02b106c4e6d35cf58247486537e0212603eb7e369ecdfa1bd237 ]] || exit 1
+case "$2" in
+  5b3c7b275bb4bbb058bebdd7153f4b76bbceb59f)
+    case "$3" in 2|3|4|5|6|7|8|9|10|11|12) ;; *) exit 1 ;; esac
+    [[ "$4" == mandalore:5b3c7b275bb4bbb058bebdd7153f4b76bbceb59f:sha256:c46743709dcd02b106c4e6d35cf58247486537e0212603eb7e369ecdfa1bd237 ]] || exit 1
+    ;;
+  f899cf6a2a255f3b6b35dcd778c672f799c65eb2)
+    case "$3" in 2|3|4|5|6|7|8|9|10|11|12|45) ;; *) exit 1 ;; esac
+    [[ "$4" == mandalore:f899cf6a2a255f3b6b35dcd778c672f799c65eb2:sha256:c2f5a340d0e665c81e01bc26add4c0dfe8ba27faac87b83a3fd81aff254f56ea ]] || exit 1
+    ;;
+  *) exit 1 ;;
+esac
 [[ "${MVP_OWNER_REVIEW_CONFIRMED:-}" == true ]] || exit 1
 [[ -n "${MVP_ACCEPTANCE_OWNER:-}" && -n "$5" ]] || exit 1
 owner="$(printf '%s' "$MVP_ACCEPTANCE_OWNER" | tr '[:upper:]' '[:lower:]')"

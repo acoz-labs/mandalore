@@ -10,11 +10,15 @@ it is not an acceptance verdict or permission for agent self-acceptance.
 ## Exact scope
 
 - Repository: `acoz-labs/mandalore`.
-- Source: `5b3c7b275bb4bbb058bebdd7153f4b76bbceb59f`.
-- Artifact: `mandalore:5b3c7b275bb4bbb058bebdd7153f4b76bbceb59f:sha256:c46743709dcd02b106c4e6d35cf58247486537e0212603eb7e369ecdfa1bd237`.
-- Existing nominated delivery issues #2–#12, including #10's distribution and
-  foundling prerequisites. Foundation #1 is already closed. Control issue #42
-  must not be added to the old product candidate's implementation set.
+- Original source: `5b3c7b275bb4bbb058bebdd7153f4b76bbceb59f`.
+- Original artifact: `mandalore:5b3c7b275bb4bbb058bebdd7153f4b76bbceb59f:sha256:c46743709dcd02b106c4e6d35cf58247486537e0212603eb7e369ecdfa1bd237`.
+- Original pair: nominated delivery issues #2–#12 only, including #10's
+  distribution and foundling prerequisites.
+- Replacement source: `f899cf6a2a255f3b6b35dcd778c672f799c65eb2`.
+- Replacement artifact: `mandalore:f899cf6a2a255f3b6b35dcd778c672f799c65eb2:sha256:c2f5a340d0e665c81e01bc26add4c0dfe8ba27faac87b83a3fd81aff254f56ea`.
+- Replacement pair: nominated delivery issues #2–#12 and #45 (The Armorer).
+  Source/artifact pairs cannot be mixed. Foundation #1 is already closed.
+  Maintainer-control issues #42 and #48 are outside both product candidate sets.
 - Workflow actor must match repository variable `MVP_ACCEPTANCE_OWNER` and also
   belong to the normal `ACCEPTANCE_ACTORS` allowlist. No private actor name is
   embedded in public code.
@@ -24,6 +28,20 @@ it is not an acceptance verdict or permission for agent self-acceptance.
 The fail-closed `bin/mvp-owner-acceptance` predicate is shared by both candidate
 and linked-implementation author checks. Any mismatched selector retains normal
 refusal. Independent reviewers keep the existing path without owner confirmation.
+
+## Superseding scope extension — 2026-09-14
+
+After personally driving the replacement candidate's Armorer health, repair
+preview/application and fresh-session recall walkthrough, the owner explicitly
+authorized extending the exception to that exact candidate and #45. Issue #48
+records the extension; it does not reinterpret previous "done" messages as an
+acceptance verdict. The original pair remains eligible only for its original
+issues. The added pair does not authorize future builds, ancestry-based matching,
+agent self-acceptance or publication. No acceptance was recorded by this change.
+
+The [sanitized walkthrough observations](https://github.com/acoz-labs/mandalore/blob/06f2dede753ec4065941017033cdbcafd1ba68c9/docs/evidence/armorer/retained-candidate.md)
+distinguish the actual checks from retained historical evidence and their limits.
+They are not a substitute for issue-specific acceptance evidence or owner verdict.
 
 ## Review, recording and release
 
