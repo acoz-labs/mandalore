@@ -49,6 +49,15 @@ cancellation and unsupported-version behavior still need synthetic verification.
 
 ## Assumptions
 
+The [native lifecycle probe](../../evidence/lifecycle-sync/native.md) now verifies
+startup, prompts, manual compaction, queued steering, normal exit, resume and
+interruption in Codex 0.154.0. It changes the design: queued steering reused a
+turn ID, and its prompt hook ran after the preceding PostToolUse. SessionEnd had
+no turn ID and resume preserved session identity. A session/turn allow cache
+and a post-tool callback cannot by themselves enforce current task intent.
+The probe also exposed native configuration/isolation discrepancies; it is not
+plugin or sandbox acceptance and does not establish a supported minimum version.
+
 Ordinary confirmed learning and its authorized delivery remain enabled; no magic
 phrase should be necessary. Current prohibitions take precedence over an older
 authorization. A lifecycle callback is an opportunity, not consent. Synced files
@@ -63,10 +72,13 @@ storage, lifetime and cleanup are unresolved; do not quietly redefine read-only.
 1. Can native events and the MCP connection be bound to an unambiguous current
    session/turn, including steering while a tool is active and subagents sharing
    a parent session? Do not use cwd, a caller-supplied thread string alone or a
-   previously observed permission mode as authorization.
+   previously observed permission mode as authorization. Native evidence now
+   rules out turn ID alone: distinguish each prompt generation, including steering.
 2. Can every new prompt invalidate earlier permission before a delayed checkpoint
    starts? What happens when invalidation itself fails, hooks are disabled or a
    resume occurs? A stale allow file must not become authorization by default.
+   PostToolUse preceding a queued prompt is a reproduced counterexample to the
+   naive design, not a hypothetical edge case.
 3. Where can coordination state live without leaking prompts into the signet or
    violating a no-write scope? Can the lifecycle event prove freshness without
    depending on arbitrary transcript parsing?
