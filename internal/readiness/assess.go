@@ -186,7 +186,7 @@ func Assess(ctx context.Context, in Input) (Report, error) {
 	stamp, _ := ctx.Value(buildKey{}).(buildIdentity)
 	r := Report{SchemaVersion: 1, Complete: true, Harness: in.Harness, Selection: selection, Declarations: catalog, Components: []Component{},
 		Toolkit:  Toolkit{Platform: Platform{runtime.GOOS, runtime.GOARCH}, Version: stamp.version, SourceCommit: stamp.source, Package: pkg},
-		Untested: []string{"native version and wrapper/interpreter target", "Git feature support and remote delivery", "Node version requirement", "native registration, full package/cache and active-session loading", "provider authentication, hook trust and live model behavior", "memory record graph and foundling content", "physical CPU/translation and loaded-image identity"},
+		Untested: []string{"native version and wrapper/interpreter target", "Git feature support and remote delivery", "native registration, full package/cache and active-session loading", "provider authentication, hook trust and live model behavior", "memory record graph and foundling content", "physical CPU/translation and loaded-image identity"},
 		Notice:   "Non-executing assessment-time snapshot, not a readiness lease. Support, observed setup and recorded scenario evidence are independent. On-disk fingerprints do not attest loaded programs. No installation, repair, authentication, memory writes or synchronization performed.",
 	}
 	add := func(c Component) { r.Components = append(r.Components, c); r.Complete = r.Complete && c.Complete }
@@ -221,6 +221,7 @@ func Assess(ctx context.Context, in Input) (Report, error) {
 	applyEvidence(&native, catalog, Observation{Platform: r.Toolkit.Platform, ProcessSource: stamp.source, Identities: Identities{RuntimeSHA256: r.Toolkit.OnDisk.SHA256, PackageSHA256: pkg.SHA256, NativeSHA256: digest.SHA256}}, in.Harness)
 	add(native)
 	if in.Harness == "pi" {
+		r.Untested = append(r.Untested, "Node version requirement")
 		add(dependencyComponent("node"))
 	}
 	add(directoryComponent("native-profile", selection.NativeHome.Path))

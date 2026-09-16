@@ -95,6 +95,10 @@ func resolveSelection(in Input) (Selection, error) {
 	return s, nil
 }
 
+// ResolveSelection previews the same bounded defaults used by Assess without
+// reading binding, receipt or memory metadata. It never creates selected paths.
+func ResolveSelection(in Input) (Selection, error) { return resolveSelection(in) }
+
 // Non-executing, bounded PATH lookup. Relative entries (including cwd) are not
 // trusted installation defaults. Excessive PATH input yields unknown, not a
 // false claim that a dependency is absent.

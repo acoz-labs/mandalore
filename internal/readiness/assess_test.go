@@ -94,3 +94,18 @@ func TestNextActionDoesNotSendMissingConnectionStraightToNativeExecution(t *test
 		t.Fatal("missing profile skipped setup review", got)
 	}
 }
+
+func TestUntestedRequirementsStayHarnessSpecific(t *testing.T) {
+	in := assessmentInput(t)
+	for _, harness := range []string{"codex", "pi"} {
+		in.Harness = harness
+		r, err := Assess(context.Background(), in)
+		if err != nil {
+			t.Fatal(err)
+		}
+		hasNode := strings.Contains(strings.Join(r.Untested, " "), "Node version")
+		if hasNode != (harness == "pi") {
+			t.Fatal("Node requirement attached to wrong harness", harness, r.Untested)
+		}
+	}
+}

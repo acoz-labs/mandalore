@@ -125,13 +125,60 @@ classification test distinguishes a known matching artifact target, a known
 incompatible target and unknown artifact architecture. Current-head validation
 is recorded in the implementation PR; earlier passing CI is not a substitute.
 
+## Assessment menu and boundary follow-through
+
+Added the Armorer assessment/inspection submenu, shared default selection with
+single-field editing, compact independent component results, explicit details and
+prompt views, and a default-No native handoff. Both the direct inspection entry
+and report handoff disclose the selected program/profile and possible native
+log/cache effects. A failed native check leaves the earlier assessment snapshot
+unchanged and does not retry or repair it.
+
+Plain-menu tests cover missing setup without writes, explicit-only prompt display,
+single-field edits and clearing the retained root, correcting invalid selection
+without leaving the journey, Back, both harnesses' native disclosure, default-No,
+incomplete affirmative input, explicit dispatch and native failure without retry.
+A failing-first cancellation test found that an already-cancelled report rendered
+a completed summary before reading the next action. The report now checks context
+before rendering; the regression requires no output after pre-cancellation.
+
+A development preview in the dedicated terminal test pane exercised the actual
+80-column, 32-row inner PTY (the host viewport was larger): Vim navigation to the
+Armorer, missing Codex setup, optional prompt display, arrow navigation to the
+native disclosure, its default-No response, Back and Exit. The selected missing
+state/profile/binding remained absent. This was an uncommitted development build,
+not final-head or candidate acceptance evidence. It exposed a harness-specific
+wording defect: the Codex report listed an untested Node requirement. A new test
+failed for Codex, then passed after moving that requirement into the Pi branch.
+Exact-head recordings and the full rendered matrix remain pending.
+
+The compiled boundary test now inventories every fixture path before and after
+each harness assessment, including bytes, modes, modification times and empty
+directories. Marker-writing native/Git/Node programs remain unexecuted. A local
+instrumented proxy/provider endpoint counts TCP connections, including failed
+requests; neither assessment contacts it. This observes configured endpoints,
+not arbitrary direct sockets or system-wide network activity. The child receives
+explicit selected paths and does not override the user's home directory.
+
+Additional Pi retained tests allowlist the exact receipt/runtime reads and their
+budgets, work without a staged package tree, and reject changed profile, binding,
+native bytes and malformed receipt before following a runtime. These supplement
+the shared ownership decoder tests; they do not claim installed-package health.
+
+Both packaged Armorer skills now distinguish assessment from executing native
+inspection and route detailed interpretation to their administration references.
+The two skill validators and Codex plugin validator pass in an isolated PyYAML
+6.0.2 environment. No marketplace, live plugin, authentication or personal
+connection is changed by this source update. Focused race tests pass; full and
+hosted validation for the committed slice is recorded in PR #87.
+
 ## Limits
 
 - Reads can affect OS access-time/cache bookkeeping; no product state is written.
 - Cancellation is checked between reads; it is not a hard kernel/filesystem
   deadline or a sandbox against a hostile local user.
-- Full fixture inventories, no-network transport probes, broader adversarial
-  coverage, menu/prompt rendering and exact-head native rendered evidence remain
-  subsequent implementation work. The overall feature/PR remains draft.
+- Broader adversarial coverage and exact-head native rendered evidence remain
+  subsequent implementation work. The development preview and configured-network
+  instrumentation above have explicit limits. The overall feature/PR remains draft.
 - Pi's historical native evidence is engineering-only. This work does not
   promote it to acceptance or modify the immutable 1.0.0 artifacts.
