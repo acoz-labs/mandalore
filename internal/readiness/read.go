@@ -3,6 +3,7 @@
 package readiness
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"io"
@@ -24,91 +25,123 @@ var (
 // Cancellation is checked between reads; it cannot interrupt a blocked kernel
 // filesystem operation and does not launch a goroutine that could outlive it.
 func readMetadata(ctx context.Context, path string, limit int64) ([]byte, error) {
-	if err := ctx.Err(); err != nil {
+	if limit < 1 || limit > 4<<20 {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		return nil, errMetadataLimit
+	}
+	var data bytes.Buffer
+	if _, _, err := scanRegular(ctx, path, limit, false, &data); err != nil {
 		return nil, err
 	}
-	if limit < 1 || limit > 4<<20 {
-		return nil, errMetadataLimit
+	return data.Bytes(), nil
+}
+
+// scanRegular streams a stable regular file into a bounded consumer. The
+// consumer's partial state must be discarded on error. Only explicit executable
+// selection may resolve symlinks; managed metadata must name the real file.
+func scanRegular(ctx context.Context, path string, limit int64, allowRedirect bool, output io.Writer) (string, os.FileInfo, error) {
+	if err := ctx.Err(); err != nil {
+		return "", nil, err
+	}
+	if limit < 1 || limit > 512<<20 {
+		return "", nil, errMetadataLimit
 	}
 	if !filepath.IsAbs(path) || len(path) > 4096 || strings.IndexFunc(path, unicode.IsControl) >= 0 {
-		return nil, errMetadataUnsafe
+		return "", nil, errMetadataUnsafe
 	}
 	path = filepath.Clean(path)
+	selected := path
 	resolved, err := filepath.EvalSymlinks(path)
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
-	if resolved != path {
-		return nil, errMetadataUnsafe
+	if (!allowRedirect && resolved != path) || len(resolved) > 4096 || strings.IndexFunc(resolved, unicode.IsControl) >= 0 {
+		return "", nil, errMetadataUnsafe
 	}
+	path = resolved
 	before, err := os.Lstat(path)
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 	if !before.Mode().IsRegular() {
-		return nil, errMetadataUnsafe
+		return "", nil, errMetadataUnsafe
 	}
 	if before.Size() > limit {
-		return nil, errMetadataLimit
+		return "", nil, errMetadataLimit
 	}
 	if err := ctx.Err(); err != nil {
-		return nil, err
+		return "", nil, err
 	}
 	// Supported targets are Darwin/Linux. Nonblocking + no-follow protects the
 	// final component from being substituted with a blocking FIFO or symlink.
 	fd, err := syscall.Open(path, syscall.O_RDONLY|syscall.O_CLOEXEC|syscall.O_NONBLOCK|syscall.O_NOFOLLOW, 0)
 	if err != nil {
 		if errors.Is(err, syscall.ELOOP) {
-			return nil, errMetadataUnsafe
+			return "", nil, errMetadataUnsafe
 		}
-		return nil, err
+		return "", nil, err
 	}
 	f := os.NewFile(uintptr(fd), path)
 	defer f.Close()
 	opened, err := f.Stat()
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 	if !opened.Mode().IsRegular() {
-		return nil, errMetadataUnsafe
+		return "", nil, errMetadataUnsafe
 	}
 	if !sameMetadata(before, opened) {
-		return nil, errMetadataChanged
+		return "", nil, errMetadataChanged
 	}
 	reader := io.LimitReader(f, limit+1)
 	buffer := make([]byte, 32<<10)
-	data := make([]byte, 0, min(opened.Size(), limit))
+	var total int64
 	for {
 		if err := ctx.Err(); err != nil {
-			return nil, err
+			return "", nil, err
 		}
 		n, err := reader.Read(buffer)
-		data = append(data, buffer[:n]...)
-		if int64(len(data)) > limit {
-			return nil, errMetadataLimit
+		total += int64(n)
+		if total > limit {
+			return "", nil, errMetadataLimit
+		}
+		if n > 0 {
+			written, writeErr := output.Write(buffer[:n])
+			if writeErr != nil {
+				return "", nil, writeErr
+			}
+			if written != n {
+				return "", nil, io.ErrShortWrite
+			}
 		}
 		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
-			return nil, err
+			return "", nil, err
 		}
 	}
 	if err := ctx.Err(); err != nil {
-		return nil, err
+		return "", nil, err
 	}
 	after, err := f.Stat()
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 	current, err := os.Lstat(path)
-	if err != nil || !sameMetadata(opened, after) || !sameMetadata(after, current) || int64(len(data)) != after.Size() {
-		return nil, errMetadataChanged
+	if err != nil || !sameMetadata(opened, after) || !sameMetadata(after, current) || total != after.Size() {
+		return "", nil, errMetadataChanged
+	}
+	finalPath, err := filepath.EvalSymlinks(selected)
+	if err != nil || finalPath != path {
+		return "", nil, errMetadataChanged
 	}
 	if err := ctx.Err(); err != nil {
-		return nil, err
+		return "", nil, err
 	}
-	return data, nil
+	return path, after, nil
 }
 
 func sameMetadata(a, b os.FileInfo) bool {
