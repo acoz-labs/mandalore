@@ -1,0 +1,35 @@
+{
+  "native_version": "0.85.1",
+  "classification": "discovery-counterexample-not-product-acceptance",
+  "events": [
+    {
+      "event": "session_start"
+    },
+    {
+      "event": "input",
+      "source": "rpc",
+      "streaming": null
+    },
+    {
+      "event": "session_shutdown"
+    }
+  ],
+  "ordinary_prompt_input_count": 1,
+  "direct_steer_additional_input_events": 0,
+  "direct_follow_up_additional_input_events": 0,
+  "pending_after_steer": 1,
+  "pending_after_follow_up": 2,
+  "pending_after_clear": 0,
+  "cleared_steering": 1,
+  "cleared_follow_up": 1,
+  "stderr_bytes": 0,
+  "exit": {
+    "code": 0,
+    "signal": null
+  },
+  "limitations": [
+    "Idle native RPC queue acceptance, not model-active steering order or interactive UI evidence.",
+    "No Mandalore extension, signet or provider prompt; ordinary prompt was handled by observer.",
+    "No conclusion that all lifecycle authorization approaches are impossible."
+  ]
+}
