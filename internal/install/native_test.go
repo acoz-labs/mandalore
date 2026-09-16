@@ -184,6 +184,28 @@ func TestInventoryErrorsNameFailedOperation(t *testing.T) {
 	}
 }
 
+func TestApplyNativeInventoryFailureRetainsPreparedHome(t *testing.T) {
+	p, err := Prepare(fixture(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := &fakeNative{plan: p, fail: "plugin marketplace list"}
+	result, err := apply(context.Background(), p, f.run, noProbe)
+	if err == nil || !strings.Contains(err.Error(), "plugin marketplace list --json") ||
+		result.Installed || result.Phase != "preflight" || !strings.Contains(result.Notice, "preserved") {
+		t.Fatal("incorrect partial receipt", result, err)
+	}
+	entries, err := os.ReadDir(p.NativeHome)
+	if err != nil || len(entries) != 0 {
+		t.Fatal("empty prepared profile not retained", entries, err)
+	}
+	for _, path := range []string{p.Runtime, p.Root, filepath.Join(p.StateDir, ".install-lock")} {
+		if _, err := os.Lstat(path); !os.IsNotExist(err) {
+			t.Fatal("unexpected retained staging or lock", path, err)
+		}
+	}
+}
+
 func TestApplyNativeSuccessIdempotenceAndPartialRetry(t *testing.T) {
 	p, err := Prepare(fixture(t))
 	if err != nil {
