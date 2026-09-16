@@ -1,8 +1,8 @@
 # Solution Design: Prepare presentation before the first result
 
-- **Status:** Draft
+- **Status:** Final
 - **Issue:** #56
-- **Planning PR:** Pending
+- **Planning PR:** #91
 - **Repository basis:** 6f9bb5e4d3b79a1c5cf4947b428dcd5b31da0a41
 - **Execution envelope:** implementation
 
