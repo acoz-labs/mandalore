@@ -2,7 +2,7 @@
 
 - Status: Ready for exact-head engineering self-review under ADR 0003
 - Issue: #93, discovered during #88 human acceptance
-- Planning PR: Pending
+- Planning PR: #94
 - Repository basis: bb16a57eb16dcd5e3da1386d6eb72c64169be6b5
 - Execution envelope: implementation
 
