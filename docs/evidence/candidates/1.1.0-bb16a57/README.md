@@ -171,7 +171,14 @@ review, changed-source refusal and inert quoted instructions behaved correctly.
 All fixtures were unchanged. One empty EOF read remains; this comparison does
 not show overall context savings or erase the earlier 512-byte repeated preview.
 
-This remains a partial engineering checkpoint. Rendered retrieval and remaining
+The [retrieval terminal checkpoint](retrieval-ui/README.md) repeats the original
+four rendered journeys using the retained executable: color paging/full reads,
+24-column plain/no-color validation and Back, metadata-budget refusal/explicit
+expansion, and changed-source Next refusal. Fixture effects and terminal
+restoration are verified; a mistaken controller Back-target expectation is
+retained separately from application behavior.
+
+This remains a partial engineering checkpoint. Remaining
 lifecycle/rendering/failure scenarios must still be reconciled against the full
 original candidate guide. Earlier-head evidence is a baseline, not exact-candidate acceptance.
 Both retrieval inefficiencies remain explicit observed limitations.

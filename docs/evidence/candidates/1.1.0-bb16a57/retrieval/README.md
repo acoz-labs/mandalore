@@ -100,9 +100,10 @@ valid. Zero overlap in this fresh ordinary case does not overturn it, and the
 fresh EOF call confirms continuation guidance is not deterministic. The original
 pre-candidate measurements and worse runs remain separate historical baselines.
 
-Next, repeat the rendered search/pagination/read, metadata-budget recovery and
-changed-source journeys with this exact candidate and reconcile the full original
-candidate guide. Do not close #57, declare a clean efficiency pass, infer native
+The subsequently completed [terminal matrix](../retrieval-ui/README.md) repeats
+rendered search/pagination/read, metadata-budget recovery and changed-source
+journeys with this exact candidate. Reconcile the full original candidate
+guide next. Do not close #57, declare a clean efficiency pass, infer native
 Linux support, or turn engineering self-review into a product acceptance verdict.
 
 The receipt SHA-256 is

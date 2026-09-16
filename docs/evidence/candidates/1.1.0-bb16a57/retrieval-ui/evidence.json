@@ -1,0 +1,108 @@
+{
+  "source": "bb16a57eb16dcd5e3da1386d6eb72c64169be6b5",
+  "manifest_sha256": "ab4af42cee70495b66f4a64b3d754dc0e83d50c789ac1d8b6c4a419e7ffcb986",
+  "runtime_sha256": "0679b27eaefddb842ec54e03d966dc8369b39c63842bd7ddd74e2f058505c37e",
+  "platform": "darwin/arm64",
+  "terminal": "Herdr",
+  "locale": "English",
+  "classification": "contributor-rendered-judgment-not-human-acceptance",
+  "cases": [
+    {
+      "case": "color",
+      "application_exit": 0,
+      "terminal_modes_and_dimensions_restored": true,
+      "inventory_unchanged": true,
+      "recording_sha256": "dcfe5c789e97e3643bfdea534a3f85cf7189fc1a823fca95dac44dc3ea516d51",
+      "file": "color.recording",
+      "bytes": 36062,
+      "columns": 80,
+      "rows": 40,
+      "plain": false,
+      "no_color": false,
+      "pin": {
+        "algorithm": "sha256",
+        "value": "6646dc92ab5a39c30998c00d561b32184f0748bb9d1285ddda34c5daa90368f6"
+      },
+      "recording_framing_valid": true,
+      "rendered_fields_verified": true,
+      "synthetic_paths_only": true
+    },
+    {
+      "case": "plain",
+      "application_exit": 1,
+      "terminal_modes_and_dimensions_restored": true,
+      "inventory_unchanged": true,
+      "recording_sha256": "9de0bb39e2c79aefdabafc81c19e254d9a7d018ae91050f326ccb7fa05b03063",
+      "file": "plain.recording",
+      "bytes": 26247,
+      "columns": 24,
+      "rows": 40,
+      "plain": true,
+      "no_color": true,
+      "pin": {
+        "algorithm": "sha256",
+        "value": "6646dc92ab5a39c30998c00d561b32184f0748bb9d1285ddda34c5daa90368f6"
+      },
+      "recording_framing_valid": true,
+      "rendered_fields_verified": true,
+      "synthetic_paths_only": true
+    },
+    {
+      "case": "budget",
+      "application_exit": 0,
+      "terminal_modes_and_dimensions_restored": true,
+      "inventory_unchanged": true,
+      "recording_sha256": "af692aa2a486a6bf9edd04e234d684edd35bb84e1fe40663ecf0ba68d707762f",
+      "file": "budget.recording",
+      "bytes": 11656,
+      "columns": 80,
+      "rows": 40,
+      "plain": false,
+      "no_color": true,
+      "pin": {
+        "algorithm": "sha256",
+        "value": "32defb28e947d3af016cc172053404812b733df61bc4932f88428d1562d36d1c"
+      },
+      "recording_framing_valid": true,
+      "rendered_fields_verified": true,
+      "synthetic_paths_only": true
+    },
+    {
+      "case": "stale",
+      "application_exit": 1,
+      "terminal_modes_and_dimensions_restored": true,
+      "inventory_unchanged": true,
+      "recording_sha256": "fbde2eb6c21025520e85675ff80d23c300b856b82f945f964e05e8f14f08c388",
+      "file": "stale.recording",
+      "bytes": 8421,
+      "columns": 80,
+      "rows": 40,
+      "plain": false,
+      "no_color": true,
+      "pin": {
+        "algorithm": "sha256",
+        "value": "6646dc92ab5a39c30998c00d561b32184f0748bb9d1285ddda34c5daa90368f6"
+      },
+      "recording_framing_valid": true,
+      "rendered_fields_verified": true,
+      "synthetic_paths_only": true
+    }
+  ],
+  "controlled_effects": {
+    "stale_source_file_added_after_first_page": true,
+    "source_root_mtime_changed_by_controller": true,
+    "existing_source_files_unchanged": true,
+    "all_signets_and_bindings_unchanged": true
+  },
+  "findings": [
+    "Plain read :back returns to the Foundlings menu. Controller expected main menu, stopped on assertion, then continued the same recording from observed state.",
+    "Initial immediate screen read after color exit was blank; same pane was reread and verified complete, not restarted.",
+    "Narrow values wrap without disappearing; no copyability guarantee for wrapped commands."
+  ],
+  "limitations": [
+    "Synthetic temporary paths retained; no user/home/auth/private-memory data.",
+    "No screen-reader, alternate locale/font, native Linux or independent human acceptance.",
+    "Recordings preserve original bytes; replay in disposable terminal because terminal queries can cause replies.",
+    "Application exit1 in plain/stale is expected refusal, not a crash."
+  ]
+}
