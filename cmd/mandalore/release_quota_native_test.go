@@ -39,6 +39,12 @@ func TestReleaseQuotaNativePresentation(t *testing.T) {
 			v := original(name, value)
 			p := v.Result.(distribution.InstallPlan)
 			p.Candidate = ""
+			p.Prefix = "/synthetic/quota-prefix"
+			p.Launcher = p.Prefix + "/bin/mandalore"
+			p.Runtime = "/synthetic/new"
+			if scenario == "partial" {
+				p.Observed.LauncherTarget = "/synthetic/old"
+			}
 			p.Source.Kind = "github-release"
 			p.Source.Published = &distribution.ReleaseView{URL: "https://github.com/acoz-labs/mandalore/releases/tag/v1.0.0", Manifest: p.Source.Manifest}
 			return api.Success(p)
@@ -61,7 +67,7 @@ func TestReleaseQuotaNativePresentation(t *testing.T) {
 		if scenario == "partial" {
 			// Composition coverage only: production release reads occur before
 			// activation. This does not assert a real post-activation quota call.
-			v.Error.ReleaseResult = &distribution.InstallResult{Phase: "launcher-activated", Pending: "/synthetic/pending.json", PreviousRuntime: "/synthetic/old", Runtime: "/synthetic/new", Connections: "unchanged", DestinationChanged: true}
+			v.Error.ReleaseResult = &distribution.InstallResult{Phase: "launcher-activated", Prefix: "/synthetic/quota-prefix", Launcher: "/synthetic/quota-prefix/bin/mandalore", Pending: "/synthetic/pending.json", PreviousRuntime: "/synthetic/old", Runtime: "/synthetic/new", Connections: "unchanged", DestinationChanged: true}
 		}
 		return v
 	}
