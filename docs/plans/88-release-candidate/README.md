@@ -1,8 +1,8 @@
 # Solution Design: 1.1.0 candidate preparation
 
-- **Status:** Draft
+- **Status:** Final
 - **Issue:** #88
-- **Planning PR:** Pending
+- **Planning PR:** #89
 - **Repository basis:** 55b1e89c6e8f9c18d5fa6814274df3e87d3db240
 - **Execution envelope:** through-staging
 
