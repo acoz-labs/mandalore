@@ -48,7 +48,7 @@ Only selected engineering authority applies; retain independent candidate gates.
 ## Explicit Non-Goals And YAGNI Boundary
 
 No automatic install, native settings rewrite, authentication, credential copying,
-signet read/write, synchronization, agent launch, telemetry, universal registry,
+remembered-content reads or signet writes, synchronization, agent launch, telemetry, universal registry,
 package management or private capability adaptation. No expanded memory catalog.
 
 ## Exceptions That Reopen Design

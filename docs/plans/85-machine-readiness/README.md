@@ -1,6 +1,6 @@
 # Solution Design: inspect memory integration readiness
 
-- **Status:** Draft
+- **Status:** Final
 - **Issue:** #85
 - **Planning PR:** #86
 - **Repository basis:** b28224827e0749ac4b27cd2fee807526ccf9ecc6
@@ -21,10 +21,11 @@ publication are separate. The shipped 1.0.0 artifacts remain immutable.
 
 No unresolved product or technical choice remains. Product-design self-review
 of head `2d8fbe0f241e134bd2d3c4eb15729c485270639a` is recorded in PR #86.
-The completed solution still requires exact-final-head engineering review and
-passing checks before this draft becomes Final. Native rendered implementation
-evidence and new-candidate product acceptance are later gates, not blockers to
-the selected implementation envelope.
+Solution self-review of `d7f5f8573524609443497743e8b19446603a3d94` is also
+recorded in PR #86; its metadata-read wording finding is resolved. Review of this
+final status-change head and required checks remain merge prerequisites. Native
+rendered implementation evidence and new-candidate product acceptance are later
+gates, not blockers to the selected implementation envelope.
 
 ## Decision Spotlight
 
@@ -47,7 +48,6 @@ the selected implementation envelope.
 ## Final Gate
 
 Product direction, bounded static inspection, shared schemas and verification
-are specified. Record exact-head solution self-review under ADR 0003, then mark
-Final and review that status-change head before implementation/merge. Required
-checks must pass before merge. The envelope is implementation only, not live
-activation, Pi acceptance or release.
+are specified and reviewed under ADR 0003. Record self-review of this final head
+before implementation and passing required checks before merge. The envelope is
+implementation only, not live activation, Pi acceptance or release.

@@ -88,8 +88,8 @@ identities. When static observation cannot establish them, show historical
 evidence and the missing match. Script/shim bytes do not prove interpreter or
 target version. Catalog-known artifact platforms differing from the process are
 incompatible selections, not applicable host evidence. No script evaluation,
-package traversal or version command fills
-that gap. A mismatch is historical, not broken; no evidence is not unsupported.
+package traversal or version command fills that gap. A mismatch is historical,
+not broken; no evidence is not unsupported.
 
 Do not embed the executable's own final hash into itself. Post-build evidence is
 a separate receipt that a later reviewed catalog may describe. Tests supply
