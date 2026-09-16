@@ -1,0 +1,65 @@
+{
+  "case": "cue-nosync",
+  "completed": true,
+  "runtime_sha256": "25a980f7c59cfd7b1fb511a4caa0c6fe6ee738006ffbc96a31440e4741dbc93a",
+  "skill_sha256": "48ccb1c93c68e6f5af355629d753e7fd72e4757644b399af489ec09c751cbcf1",
+  "mcp_enabled": true,
+  "mcp_readonly": false,
+  "binding_and_skill_unchanged": true,
+  "elapsed_seconds": 8.621,
+  "heads": {
+    "local": "b19c35183ae545f85d15c2add96809d16a620db0",
+    "remote": "a0340edca8d513c920018c11f56a9d8dc3274e33"
+  },
+  "prompt": "This is the way, but do not synchronize anything for this task, including any previously pending work. There is no new knowledge or useful journal entry to add.\n",
+  "prompt_sha256": "b07f987d80a7ba7653dbb63336e44b46aae3e0951c21bfd666d797420b4583d6",
+  "tools": [],
+  "writes": [],
+  "save_requests": 0,
+  "standalone_sync_requests": 0,
+  "pre_save_sync_requests": 0,
+  "added_records": 0,
+  "added_journals": 0,
+  "existing_semantic_files_unchanged": true,
+  "no_cli_fallback": true,
+  "negative_full_inventory_unchanged": true,
+  "observer_prestart_metadata_differences": [],
+  "heads_before": {
+    "local": "b19c35183ae545f85d15c2add96809d16a620db0",
+    "remote": "a0340edca8d513c920018c11f56a9d8dc3274e33"
+  },
+  "heads_after": {
+    "local": "b19c35183ae545f85d15c2add96809d16a620db0",
+    "remote": "a0340edca8d513c920018c11f56a9d8dc3274e33"
+  },
+  "saved": null,
+  "delivery": null,
+  "all_memory_envelope_bytes": 0,
+  "all_tool_output_text_bytes": 6831,
+  "tool_code_bytes": 108,
+  "code_calls": 1,
+  "model_requests": 2,
+  "last_request_usage": {
+    "input_tokens": 16885,
+    "cached_input_tokens": 12160,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 23,
+    "reasoning_output_tokens": 0,
+    "total_tokens": 16908
+  },
+  "aggregate_usage": {
+    "input_tokens": 32276,
+    "cached_input_tokens": 24320,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 94,
+    "reasoning_output_tokens": 0
+  },
+  "representation": {
+    "completed_memory_calls": 0,
+    "complete_printed_envelopes": 0,
+    "remaining_printed_envelopes": 0,
+    "raw_wrapper_occurrences": 0,
+    "selector_read_before_first_memory": null
+  },
+  "answer": "Understood. Nothing was saved, journaled, or synchronized. Previously pending work remains untouched."
+}

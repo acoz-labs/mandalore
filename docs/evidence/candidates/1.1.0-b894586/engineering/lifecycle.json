@@ -1,0 +1,81 @@
+{
+  "source": "b89458617b49d2eb0a8686dcd75c26aa7ea6f6ba",
+  "identity": "mandalore:b89458617b49d2eb0a8686dcd75c26aa7ea6f6ba:sha256:7995f820a7182a95b828851afce12bacea7108f82afac9369d307a43d961f45a",
+  "control": false,
+  "reasons": [
+    "startup",
+    "reload",
+    "new",
+    "new",
+    "resume",
+    "resume",
+    "fork",
+    "fork"
+  ],
+  "inventories": [
+    {
+      "event": "inventory",
+      "memory_tools": 18,
+      "unique_tools": true,
+      "native_read": true,
+      "native_bash": true,
+      "skills": [
+        "skill:the-armorer",
+        "skill:this-is-the-way"
+      ],
+      "context_entries": 0
+    },
+    {
+      "event": "inventory",
+      "memory_tools": 18,
+      "unique_tools": true,
+      "native_read": true,
+      "native_bash": true,
+      "skills": [
+        "skill:the-armorer",
+        "skill:this-is-the-way"
+      ],
+      "context_entries": 0
+    },
+    {
+      "event": "inventory",
+      "memory_tools": 18,
+      "unique_tools": true,
+      "native_read": true,
+      "native_bash": true,
+      "skills": [
+        "skill:the-armorer",
+        "skill:this-is-the-way"
+      ],
+      "context_entries": 0
+    },
+    {
+      "event": "inventory",
+      "memory_tools": 18,
+      "unique_tools": true,
+      "native_read": true,
+      "native_bash": true,
+      "skills": [
+        "skill:the-armorer",
+        "skill:this-is-the-way"
+      ],
+      "context_entries": 0
+    },
+    {
+      "event": "inventory",
+      "memory_tools": 18,
+      "unique_tools": true,
+      "native_read": true,
+      "native_bash": true,
+      "skills": [
+        "skill:the-armorer",
+        "skill:this-is-the-way"
+      ],
+      "context_entries": 0
+    }
+  ],
+  "shutdowns": 5,
+  "model_requested": false,
+  "synthetic_session_fixture": true,
+  "bank_snapshots_unchanged": true
+}

@@ -1,0 +1,65 @@
+{
+  "case": "cue-readonly",
+  "completed": true,
+  "runtime_sha256": "25a980f7c59cfd7b1fb511a4caa0c6fe6ee738006ffbc96a31440e4741dbc93a",
+  "skill_sha256": "48ccb1c93c68e6f5af355629d753e7fd72e4757644b399af489ec09c751cbcf1",
+  "mcp_enabled": true,
+  "mcp_readonly": false,
+  "binding_and_skill_unchanged": true,
+  "elapsed_seconds": 10.774,
+  "heads": {
+    "local": "da0f30c55d6a0935fca6367bf2de7fc4194fe4a0",
+    "remote": "5511b22a0476b75c42b2edd18024ece52da9c697"
+  },
+  "prompt": "This is the way. This task is read-only: do not save, journal, checkpoint, repair or modify anything, including earlier pending work.\n",
+  "prompt_sha256": "ec9af4d7ce3e7953b602586ac06aa9dafca396c99e3a182ba605f9ae2a1f7b54",
+  "tools": [],
+  "writes": [],
+  "save_requests": 0,
+  "standalone_sync_requests": 0,
+  "pre_save_sync_requests": 0,
+  "added_records": 0,
+  "added_journals": 0,
+  "existing_semantic_files_unchanged": true,
+  "no_cli_fallback": true,
+  "negative_full_inventory_unchanged": true,
+  "observer_prestart_metadata_differences": [],
+  "heads_before": {
+    "local": "da0f30c55d6a0935fca6367bf2de7fc4194fe4a0",
+    "remote": "5511b22a0476b75c42b2edd18024ece52da9c697"
+  },
+  "heads_after": {
+    "local": "da0f30c55d6a0935fca6367bf2de7fc4194fe4a0",
+    "remote": "5511b22a0476b75c42b2edd18024ece52da9c697"
+  },
+  "saved": null,
+  "delivery": null,
+  "all_memory_envelope_bytes": 0,
+  "all_tool_output_text_bytes": 40154,
+  "tool_code_bytes": 203,
+  "code_calls": 1,
+  "model_requests": 2,
+  "last_request_usage": {
+    "input_tokens": 23856,
+    "cached_input_tokens": 15232,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 54,
+    "reasoning_output_tokens": 22,
+    "total_tokens": 23910
+  },
+  "aggregate_usage": {
+    "input_tokens": 39244,
+    "cached_input_tokens": 27392,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 154,
+    "reasoning_output_tokens": 22
+  },
+  "representation": {
+    "completed_memory_calls": 0,
+    "complete_printed_envelopes": 0,
+    "remaining_printed_envelopes": 0,
+    "raw_wrapper_occurrences": 0,
+    "selector_read_before_first_memory": null
+  },
+  "answer": "Understood. Nothing was saved, journaled, checkpointed, synchronized, repaired, or modified. Earlier pending work remains untouched."
+}

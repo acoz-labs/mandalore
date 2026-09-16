@@ -1,0 +1,82 @@
+{
+  "source": "b89458617b49d2eb0a8686dcd75c26aa7ea6f6ba",
+  "runtime_sha256": "25a980f7c59cfd7b1fb511a4caa0c6fe6ee738006ffbc96a31440e4741dbc93a",
+  "cases": [
+    {
+      "case": "stale-codex",
+      "complete": false,
+      "components": [
+        {
+          "id": "memory-runtime",
+          "support": "supported",
+          "setup": "present",
+          "evidence": "historical",
+          "code": "on-disk-bytes-measured",
+          "complete": true
+        },
+        {
+          "id": "git-sync",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "dependency-present-version-untested",
+          "complete": true
+        },
+        {
+          "id": "codex",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "historical",
+          "code": "on-disk-bytes-measured",
+          "complete": true
+        },
+        {
+          "id": "native-profile",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "directory-present",
+          "complete": true
+        },
+        {
+          "id": "installation-state",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "directory-present",
+          "complete": true
+        },
+        {
+          "id": "binding",
+          "support": "unknown",
+          "setup": "verified-static",
+          "evidence": "none",
+          "code": "binding-metadata-consistent",
+          "complete": true
+        },
+        {
+          "id": "retained-runtime",
+          "support": "unknown",
+          "setup": "inconsistent",
+          "evidence": "none",
+          "code": "retained-selection-changed",
+          "complete": false
+        }
+      ],
+      "next_action": {
+        "code": "inspect-selection",
+        "summary": "Inspect the selected paths and incomplete findings before considering changes."
+      },
+      "prompt": "Help me assess Mandalore's codex memory connection. Some observations were incomplete. Inspect the selected paths and incomplete findings before considering changes. Confirm the intended harness and signet binding with me, then recheck current state. Treat this as an assessment-time snapshot, not permission to install, repair, access credentials, synchronize or change configuration. Use current task authorization for any follow-up. Historical artifact/scenario evidence does not prove this live session works; unknown evidence alone is not a reason to repair or upgrade. Keep ordinary learning behavior unchanged.",
+      "full_inventory_unchanged": true
+    }
+  ],
+  "native_or_dependency_execution_observed": false,
+  "node_trap_absent": true,
+  "missing_paths_remain_absent": true,
+  "limitations": [
+    "static metadata checks, not native login or live memory behavior",
+    "no system-wide network isolation claim",
+    "known foreign 1.0.0 Linux bytes are a classification fixture only and were never executed"
+  ]
+}

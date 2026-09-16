@@ -6,6 +6,16 @@ an issue-level approval or authority to update an existing installation.
 
 ## Follow-up: acceptance authority resolved
 
+**Later engineering result:** fresh retained-byte testing found plain-menu
+cancellation and direct-cue intent failures, now tracked as
+[#99](https://github.com/acoz-labs/mandalore/issues/99) and
+[#100](https://github.com/acoz-labs/mandalore/issues/100). See the
+[complete follow-up and counterexamples](engineering/README.md).
+This candidate is not ready for product sign-off or publication. The table below
+is the earlier audit snapshot; the follow-up records what was actually refreshed,
+what failed and which remaining rendered matrices were stopped. No verdict or
+candidate authority transfers to a future correction.
+
 After this audit the owner explicitly authorized the narrowly scoped personally
 performed same-account review extension. [Control issue #96](https://github.com/acoz-labs/mandalore/issues/96)
 and reviewed [PR #98](https://github.com/acoz-labs/mandalore/pull/98), merged as
@@ -27,7 +37,8 @@ product implementation sets. No rebuild, nomination, publication or live update.
 
 ## Verified current state
 
-- Source: `b89458617b49d2eb0a8686dcd75c26aa7ea6f6ba`; still the live main head.
+- Product source: `b89458617b49d2eb0a8686dcd75c26aa7ea6f6ba`; the later control
+  commits described above are on main without changing these retained bytes.
 - Manifest SHA-256: `7995f820a7182a95b828851afce12bacea7108f82afac9369d307a43d961f45a`.
 - [Build](https://github.com/acoz-labs/mandalore/actions/runs/35105578901),
   [CI](https://github.com/acoz-labs/mandalore/actions/runs/35105564763),

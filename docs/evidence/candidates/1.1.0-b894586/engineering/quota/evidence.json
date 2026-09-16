@@ -1,0 +1,148 @@
+{
+  "source": "b89458617b49d2eb0a8686dcd75c26aa7ea6f6ba",
+  "method": "Fresh source-bound test executables; production renderer with synthetic API responses, not retained release bytes or live quota acceptance.",
+  "environment": {
+    "os": "Darwin",
+    "architecture": "arm64",
+    "go": "1.26.4",
+    "terminal": "Herdr",
+    "locale": "English"
+  },
+  "drivers": {
+    "menu.test": "cab71e5d623a7ec6b8134ea71b1d26b001132e8ce69f4e6d66a47f0e1bfabcd2",
+    "distribution.test": "7af6381fd90ea7405bd18bb6e1f479077354221c082b1a5f1a18656491e16dda"
+  },
+  "recordings": [
+    {
+      "name": "timing.recording",
+      "sha256": "d7e108285c17ad2d4e203a7c2c3c4f65867cf2117f50122bf0c12517cbf8420c",
+      "bytes": 1068,
+      "columns": 80,
+      "rows": 30,
+      "mode": "color",
+      "semantic_checks": [
+        "Wait at least 60 seconds",
+        "2026-09-17T00:00:00Z",
+        "availability afterward is not guaranteed",
+        "No automatic retry"
+      ],
+      "input_bytes": 0,
+      "pass": true
+    },
+    {
+      "name": "unknown-narrow.recording",
+      "sha256": "db9acae8a59c0cd573a3e9f870d14f32f9fba124c5b667497c8ab51f1abe771a",
+      "bytes": 871,
+      "columns": 32,
+      "rows": 30,
+      "mode": "plain",
+      "semantic_checks": [
+        "Retry timing is unavailable",
+        "No automatic retry"
+      ],
+      "input_bytes": 0,
+      "pass": true
+    },
+    {
+      "name": "ordinary-nocolor.recording",
+      "sha256": "5aebc9bb4798dbe0d19e1d29ff596dc3f8d45acdd4c171133400cb63e0f7dba5",
+      "bytes": 642,
+      "columns": 80,
+      "rows": 30,
+      "mode": "nocolor",
+      "semantic_checks": [
+        "release request was refused"
+      ],
+      "input_bytes": 0,
+      "pass": true
+    },
+    {
+      "name": "partial.recording",
+      "sha256": "9ddbc54ae3cebc015019fce2d409678617fa8aa6a8242b477bd7cd2bdfa376c0",
+      "bytes": 4096,
+      "columns": 80,
+      "rows": 30,
+      "mode": "color",
+      "semantic_checks": [
+        "launcher-activated",
+        "Installation complete: false",
+        "/synthetic/old",
+        "/synthetic/new",
+        "/synthetic/pending.json",
+        "Changes may have occurred",
+        "No automatic rollback"
+      ],
+      "input_bytes": 4,
+      "pass": true
+    },
+    {
+      "name": "partial-narrow.recording",
+      "sha256": "79e7092c2ca566eb7ed854f31d2fcd3ceab72cf2d7d8e0761bd8802e21688282",
+      "bytes": 3713,
+      "columns": 32,
+      "rows": 30,
+      "mode": "plain",
+      "semantic_checks": [
+        "launcher-activated",
+        "Installation complete: false",
+        "/synthetic/old",
+        "/synthetic/new",
+        "/synthetic/pending.json",
+        "Changes may have occurred",
+        "No automatic rollback"
+      ],
+      "input_bytes": 2,
+      "pass": true
+    },
+    {
+      "name": "default-no.recording",
+      "sha256": "14284e9f4ae5d0c7317e24dafec30e2f7a1fd11fad67356f35d81a2f17b441db",
+      "bytes": 2505,
+      "columns": 80,
+      "rows": 30,
+      "mode": "color",
+      "semantic_checks": [
+        "No apply was invoked."
+      ],
+      "input_bytes": 1,
+      "pass": true
+    },
+    {
+      "name": "back.recording",
+      "sha256": "b6e7d18759d6fc6fbccb82973c373285ca4705be82cff786775e19dece9f7991",
+      "bytes": 2418,
+      "columns": 80,
+      "rows": 30,
+      "mode": "color",
+      "semantic_checks": [
+        "No apply was invoked."
+      ],
+      "input_bytes": 1,
+      "pass": true
+    },
+    {
+      "name": "effect-checks-cwd.recording",
+      "sha256": "7db07a5dd64bbe75099daed701284212efd7237a6bbe7f0e785891c1f1a4dbc6",
+      "bytes": 28295,
+      "columns": 80,
+      "rows": 30,
+      "mode": "nocolor",
+      "semantic_checks": [
+        "plan=4 apply=9 total=13 replay=0",
+        "requests=13 distinct_assets=8",
+        "TestReleaseRateLimitExplicitRetryPreservesPriorRuntime/update=false",
+        "TestReleaseRateLimitExplicitRetryPreservesPriorRuntime/update=true",
+        "TestBootstrapVerifiedHandoffAndRefusals"
+      ],
+      "input_bytes": 0,
+      "pass": true
+    }
+  ],
+  "limits": [
+    "No human acceptance, real quota exhaustion, system trust or personal installation changes.",
+    "Partial receipt is synthetic composition, not a post-activation network observation.",
+    "Distribution effects use fixture transport and inert executable verification.",
+    "32-column recovery commands wrap; #77 remains separate.",
+    "No approved visual baseline, screen reader, alternate locale or other-platform native evidence."
+  ]
+}

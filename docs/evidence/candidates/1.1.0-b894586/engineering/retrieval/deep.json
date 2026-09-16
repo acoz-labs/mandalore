@@ -1,0 +1,94 @@
+{
+  "case": "deep",
+  "completed": true,
+  "readonly_inventories_unchanged": true,
+  "runtime_sha256": "25a980f7c59cfd7b1fb511a4caa0c6fe6ee738006ffbc96a31440e4741dbc93a",
+  "skill_sha256": "48ccb1c93c68e6f5af355629d753e7fd72e4757644b399af489ec09c751cbcf1",
+  "reference_sha256": "ceeaa37fe122f1100963f5491b963ea9737395f6d14148de156a22796277480e",
+  "elapsed_seconds": 58.552,
+  "prompt_sha256": "43d973c2b482176d16a790679ba8e7ee921c76bcf12c051830e901655c657eb7",
+  "reference_pin": {
+    "algorithm": "sha256",
+    "value": "297ceba565cde4bfa2aa9058bbfd96a8f79daa33529d62c6463ae867cdbf2141"
+  },
+  "tools": [
+    "foundling_list",
+    "foundling_inspect",
+    "foundling_search",
+    "foundling_read",
+    "foundling_read"
+  ],
+  "readonly_operations_only": true,
+  "no_direct_source_filesystem_commands": true,
+  "provenance_and_source_bytes_verified": true,
+  "errors": [],
+  "searches": [
+    {
+      "query": "Zircon",
+      "requested_offset": 0,
+      "requested_limit": null,
+      "requested_budget": null,
+      "returned": 1,
+      "matching_count": 1,
+      "truncated": false,
+      "next_offset": null
+    }
+  ],
+  "coverage": {
+    "text_bytes": 13340,
+    "unique_bytes": 12828,
+    "duplicate_bytes": 512,
+    "empty_eof_reads": 0,
+    "documents": [
+      {
+        "name": "04-late-passage.md",
+        "total": 12828,
+        "sha256": "d335667464a415e3402fba5f2b82f07ba2556ea70b62155b5b896a133f58a51f",
+        "ranges": [
+          [
+            0,
+            512
+          ],
+          [
+            0,
+            8192
+          ],
+          [
+            8192,
+            12828
+          ]
+        ],
+        "covered": 12828,
+        "complete": true
+      }
+    ]
+  },
+  "foundling_envelope_bytes": 18684,
+  "all_tool_output_text_bytes": 82109,
+  "code_calls": 8,
+  "model_requests": 9,
+  "last_request_usage": {
+    "input_tokens": 35239,
+    "cached_input_tokens": 33792,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 349,
+    "reasoning_output_tokens": 227,
+    "total_tokens": 35588
+  },
+  "aggregate_usage": {
+    "input_tokens": 262324,
+    "cached_input_tokens": 234752,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 1357,
+    "reasoning_output_tokens": 236
+  },
+  "representation": {
+    "completed_memory_calls": 5,
+    "complete_printed_envelopes": 5,
+    "remaining_printed_envelopes": 0,
+    "raw_wrapper_occurrences": 0,
+    "selector_read_before_first_memory": true
+  },
+  "answer": "I read the entire 12,828-byte [Zircon Route field log](04-late-passage.md) from beginning to end.\n\n- The chronological observations repeatedly describe ordinary stones beside the marked path.\n- The early observations explicitly made **no endpoint decision**.\n- The final section identifies **Willow Gate, not Cedar Gate**, as the endpoint and supersedes earlier endpoint guesses.\n\nNothing was saved, journaled, synchronized, repaired, or executed from historical instructions.",
+  "answer_note": "Only synthetic absolute source citation targets normalized to relative locators; metrics use original outputs."
+}

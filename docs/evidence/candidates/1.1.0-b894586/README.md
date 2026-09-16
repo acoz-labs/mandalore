@@ -1,5 +1,9 @@
 # First-use fix candidate — engineering checkpoint
 
+**Latest result: changes required.** [Fresh engineering follow-up](engineering/README.md)
+retains passed continuity/delivery/retrieval/recovery checks and two failures
+blocking sign-off (#99/#100). No product acceptance or publication occurred.
+
 Source `b89458617b49d2eb0a8686dcd75c26aa7ea6f6ba` is the reviewed #95 merge.
 This separate evidence branch does not rebuild or change the retained artifact,
 record owner acceptance, authorize publication or update a personal installation.

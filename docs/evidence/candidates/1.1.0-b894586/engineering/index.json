@@ -1,0 +1,308 @@
+{
+  "identity": "mandalore:b89458617b49d2eb0a8686dcd75c26aa7ea6f6ba:sha256:7995f820a7182a95b828851afce12bacea7108f82afac9369d307a43d961f45a",
+  "verdict": "changes-required-engineering-not-product-acceptance",
+  "findings": [
+    {
+      "issue": 99,
+      "plain_prompt_ctrl_c_blocked": true,
+      "direct_terminal_confirmation": true,
+      "extra_enter_released_exit130": true,
+      "readiness_fixture_unchanged": true
+    },
+    {
+      "issue": 100,
+      "missed_pending_delivery": true,
+      "full_fixture_unchanged": true,
+      "missing_connection_answer_also_omitted_explanation": true
+    }
+  ],
+  "files": [
+    {
+      "file": "packages.json",
+      "sha256": "9a05ae705632d260a74c3bcf456ce776cb0a58e01509ccbdd9c856cf3088eb53",
+      "bytes": 1235
+    },
+    {
+      "file": "initial-native.json",
+      "sha256": "a65702640061da9a2ad14d69c7883edc7e925654105d628d6d01164527466aa8",
+      "bytes": 3954
+    },
+    {
+      "file": "continuity.json",
+      "sha256": "a9718973a40bca3e5b4e839c2f88cb43b4eb89587a7b33d8c23768c249ec77d6",
+      "bytes": 3431
+    },
+    {
+      "file": "rendering.json",
+      "sha256": "b05dc953880c2b6b13a06023289fc410c91a7fe1d2f45f8341aacbfe7e14fe07",
+      "bytes": 16862
+    },
+    {
+      "file": "delivery.json",
+      "sha256": "6369cea2ec7d49ca29299e9ceac2ff698d3a6fb0682c05e551eba48bae23ef4a",
+      "bytes": 1986
+    },
+    {
+      "file": "lifecycle.json",
+      "sha256": "91b37b4f68d1863c307020b8eef20718f25393da9505f752e3a7a60b7d2b62d8",
+      "bytes": 1803
+    },
+    {
+      "file": "lifecycle-control.json",
+      "sha256": "b0c7e6dbbd49023fa6eacc6f095c6dcc0b28db528faa19f5e5a06c97ecf65fd6",
+      "bytes": 1457
+    },
+    {
+      "file": "native-delivery.json",
+      "sha256": "6f39c4e1f736a77df1efcecdb5a2d573d721825df978f843586280d1804ca130",
+      "bytes": 19655
+    },
+    {
+      "file": "native-boundaries.json",
+      "sha256": "8b58a4dcf0673927e072ae0dbfd5d7f2f1b03c7bea33613dcf8eeaa51c9e7c5d",
+      "bytes": 7222
+    },
+    {
+      "file": "live-refresh.json",
+      "sha256": "b52d02397396bd241c3e66a8f4e69a21fedff20abbe47030d3dcb53a79f5be65",
+      "bytes": 682
+    },
+    {
+      "file": "retrieval/cli.json",
+      "sha256": "9b1fc64b1973e5d598175c9a0981d77bf54e886e445d98df999ab5cf962edff6",
+      "bytes": 7157
+    },
+    {
+      "file": "quota/evidence.json",
+      "sha256": "f17f1e645d9545168f78503495e8352f1b9cb393f6e095d9d0882524cd29121b",
+      "bytes": 4484
+    },
+    {
+      "file": "upgrade/evidence.json",
+      "sha256": "8345a82558e7fd996422824da5725e0334898ec46516c40ff4d61b3d23299e32",
+      "bytes": 7724
+    },
+    {
+      "file": "retrieval/ordinary.json",
+      "sha256": "f6270ca110f03d9011e112a550198dc8ef4c3b83ba128a9f05f496d9ef4d7aad",
+      "bytes": 4614
+    },
+    {
+      "file": "retrieval/late.json",
+      "sha256": "62d557527864807c14b5bc20b0d46e52c5084b95e9f9d6c18161222d2630a717",
+      "bytes": 3120
+    },
+    {
+      "file": "retrieval/page.json",
+      "sha256": "ffc79851e5a4a65c81ca8399c1eba4babf8aa3511dc46df11f19ba0d4d3bd7fb",
+      "bytes": 6080
+    },
+    {
+      "file": "retrieval/deep.json",
+      "sha256": "04ae204f98ba2921ba0a1666fdbbb5b1102de324aea7b25b8f801589de210739",
+      "bytes": 3063
+    },
+    {
+      "file": "retrieval/stale.json",
+      "sha256": "1f003180c365fab2be1e6279666f30b33185cef9888e498fdc47ccedba67e72e",
+      "bytes": 2260
+    },
+    {
+      "file": "retrieval/quoted.json",
+      "sha256": "e5834784928b3d79ac784fcc1e2b33a83abc97abeadb5165dcbfcb149e02a6dd",
+      "bytes": 2899
+    },
+    {
+      "file": "retrieval/controlled-baseline.json",
+      "sha256": "d042eced300607128398a147f92644f0ddd6b5480d8b574f4582dc22c395bf52",
+      "bytes": 4699
+    },
+    {
+      "file": "delivery-model/ordinary.json",
+      "sha256": "e305e5385e6ae02232f986d6063dd20a89019801acc0df295affdf89cf5b96c1",
+      "bytes": 3149
+    },
+    {
+      "file": "delivery-model/baseline-record.json",
+      "sha256": "2ef0718deec5720318119cf64c05e9e04f967076e21f3ca95ed88a2982c78c55",
+      "bytes": 3156
+    },
+    {
+      "file": "delivery-model/journal.json",
+      "sha256": "97f5cd0e26ba64aae9c917a81cdb2a6ea717b30321df7c2adcb48641d64485ed",
+      "bytes": 3196
+    },
+    {
+      "file": "delivery-model/cue-learning.json",
+      "sha256": "1d553b894ac890d0800caf4066112bc9c03a4d16b78c027feebe01567d91fe36",
+      "bytes": 3239
+    },
+    {
+      "file": "delivery-model/cue-nosync.json",
+      "sha256": "d623dba578b467c9e0e9af9903b185b6b0136468a269e38ed76e43822843859f",
+      "bytes": 2241
+    },
+    {
+      "file": "delivery-model/cue-readonly.json",
+      "sha256": "f993963ebc2c387bf36b0233cf1f7cf167d58d82c3e984573296cc6de5d4821f",
+      "bytes": 2252
+    },
+    {
+      "file": "delivery-model/missing.json",
+      "sha256": "08829bc6b23d6e3bff648f4f49fca7804a91a99d5ecfccf3c2e57fbd9ddc3dad",
+      "bytes": 2126
+    },
+    {
+      "file": "delivery-model/ordinary-offline.json",
+      "sha256": "12cd867654a598c0464e285fdc70dd1f7f6ee6ac5a84dc677de461108f78dbc9",
+      "bytes": 3026
+    },
+    {
+      "file": "quota/timing.recording",
+      "sha256": "d7e108285c17ad2d4e203a7c2c3c4f65867cf2117f50122bf0c12517cbf8420c",
+      "bytes": 1068
+    },
+    {
+      "file": "quota/unknown-narrow.recording",
+      "sha256": "db9acae8a59c0cd573a3e9f870d14f32f9fba124c5b667497c8ab51f1abe771a",
+      "bytes": 871
+    },
+    {
+      "file": "quota/ordinary-nocolor.recording",
+      "sha256": "5aebc9bb4798dbe0d19e1d29ff596dc3f8d45acdd4c171133400cb63e0f7dba5",
+      "bytes": 642
+    },
+    {
+      "file": "quota/partial.recording",
+      "sha256": "9ddbc54ae3cebc015019fce2d409678617fa8aa6a8242b477bd7cd2bdfa376c0",
+      "bytes": 4096
+    },
+    {
+      "file": "quota/partial-narrow.recording",
+      "sha256": "79e7092c2ca566eb7ed854f31d2fcd3ceab72cf2d7d8e0761bd8802e21688282",
+      "bytes": 3713
+    },
+    {
+      "file": "quota/default-no.recording",
+      "sha256": "14284e9f4ae5d0c7317e24dafec30e2f7a1fd11fad67356f35d81a2f17b441db",
+      "bytes": 2505
+    },
+    {
+      "file": "quota/back.recording",
+      "sha256": "b6e7d18759d6fc6fbccb82973c373285ca4705be82cff786775e19dece9f7991",
+      "bytes": 2418
+    },
+    {
+      "file": "quota/effect-checks-cwd.recording",
+      "sha256": "7db07a5dd64bbe75099daed701284212efd7237a6bbe7f0e785891c1f1a4dbc6",
+      "bytes": 28295
+    },
+    {
+      "file": "upgrade/rollback-declined.recording",
+      "sha256": "61553e06c2a4b54ff8838845410b0a0adf0efd453d1544526a2afcfdf924563a",
+      "bytes": 2803
+    },
+    {
+      "file": "upgrade/rollback-applied.recording",
+      "sha256": "2876a1a6b12ca3231c3b00e32053f46a35469006181fa931fc90cc8edb19b0d6",
+      "bytes": 4112
+    },
+    {
+      "file": "readiness/static-initial.json",
+      "sha256": "274d963856e695f92bdf2b0121704ff27a0cf6b946366fc04b5631e43fe0f3df",
+      "bytes": 26045
+    },
+    {
+      "file": "readiness/static-stale.json",
+      "sha256": "10fd3eecf4984b8db09d16394a7e99bbae0b9081d24ab19a6bfaf30c3157e64e",
+      "bytes": 3013
+    },
+    {
+      "file": "readiness/stale-native.recording",
+      "sha256": "3537bcff61886b2bbbdcbba7c6250d24e99625ec5394f9fe560034e2bf631761",
+      "bytes": 23412
+    },
+    {
+      "file": "readiness/stale-native.json",
+      "sha256": "9a19784b7debeb2d0b35974b4b567a8f93429ff824e861cfd8071787cb192f7a",
+      "bytes": 228
+    },
+    {
+      "file": "readiness/codex-canonical.recording",
+      "sha256": "999fcb057aacc95ba378fc86ccadf798f17fe932c005171a0d521e28ea5dbadc",
+      "bytes": 24263
+    },
+    {
+      "file": "readiness/codex-canonical.json",
+      "sha256": "a3bf0f5868216c4e7635f9486911881203e05b2dfdb6ea3f759e1ebb8e037afb",
+      "bytes": 233
+    },
+    {
+      "file": "readiness/pi-plain.recording",
+      "sha256": "23603b3accadec9158e9cb3e2c8893f7682a522ef62b70699e9c38589b9833eb",
+      "bytes": 22108
+    },
+    {
+      "file": "readiness/pi-plain.json",
+      "sha256": "26ab9af2bd3bdf93e9a2fb7ce1fc194f3fcc444c4680a9581e8dd4199bc8d25b",
+      "bytes": 212
+    },
+    {
+      "file": "readiness/missing-narrow.recording",
+      "sha256": "85787363ce0d47eaa00b0502256916232ceb6a222646aa2f5f6f00022f89ca00",
+      "bytes": 14806
+    },
+    {
+      "file": "readiness/missing-narrow.json",
+      "sha256": "b1931a413c8046f6ad8d84fa03287ed37d42669c0649341bd34ac6e11b50dd04",
+      "bytes": 208
+    },
+    {
+      "file": "readiness/malformed-eof.recording",
+      "sha256": "c191b230a3337933310822c22a7cd92a54ec80520ce963584e29704508247ceb",
+      "bytes": 14822
+    },
+    {
+      "file": "readiness/malformed-eof.json",
+      "sha256": "e3e6481a89c5d2981c5e6ad01ef99ca57035f50bf0ab8e70759c99c6e98a1db3",
+      "bytes": 206
+    },
+    {
+      "file": "readiness/alias-color.recording",
+      "sha256": "8dc25dcef105ae76d4c8f4ce2cec33ae8223d30ef6e227da489d39158438dd8b",
+      "bytes": 19006
+    },
+    {
+      "file": "readiness/alias-color.json",
+      "sha256": "cbba95d363541ce11891d75808a1afdde3d743f76c64c16133444fc18f1e1625",
+      "bytes": 206
+    },
+    {
+      "file": "failures/plain-cancel-timeout.recording",
+      "sha256": "8db8dd2586e8389d8cfb0fc6207756b66c541d3c3630ab9ec8153bb60785160b",
+      "bytes": 19418
+    },
+    {
+      "file": "failures/plain-cancel-timeout.json",
+      "sha256": "5e6a7460c239cded7a6ea9fe09145408d9be1ab5640470d5389984bc89118983",
+      "bytes": 196
+    },
+    {
+      "file": "failures/plain-cancel-direct.recording",
+      "sha256": "84237719501c13033d7811aafc597bcf53607c2ed05df9138c337f85959de665",
+      "bytes": 929
+    }
+  ],
+  "controller_findings": [
+    "Initial quota capture had no real input TTY and did not execute a test; original failure retained privately before a real-PTY controller was used.",
+    "Retrieval CLI verifier corrected stale-error exit classification and legacy baseline argument shape, without rerunning model conversations.",
+    "One full-document model review and the separate historical rendering case each repeated a 512-byte preview; neither counterexample is removed.",
+    "The color retrieval-menu controller matched a collapsed prior selection as the next prompt and timed out at page three. Preserve that recording privately as controller failure, not product acceptance; remaining old-candidate menu work was stopped after product failures were confirmed.",
+    "Restoring the intentionally changed disposable Codex wrapper preceded configured readiness checks. Its original stale report remains retained."
+  ],
+  "limits": [
+    "Not all original rendered matrices completed on this rejected candidate. Pi installation/display and remaining retrieval-menu recordings are still unrefreshed.",
+    "No product acceptance, release, personal activation, copied credentials or new-candidate owner exception.",
+    "Human setup/recall already accepted remains scoped to its original observation; no repeat requested."
+  ]
+}

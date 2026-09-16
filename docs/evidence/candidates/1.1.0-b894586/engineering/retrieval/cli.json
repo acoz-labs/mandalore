@@ -1,0 +1,303 @@
+{
+  "source": "b89458617b49d2eb0a8686dcd75c26aa7ea6f6ba",
+  "manifest_sha256": "7995f820a7182a95b828851afce12bacea7108f82afac9369d307a43d961f45a",
+  "method": "Retained CLI with scripted selection/expansion, not model-selected retrieval",
+  "results": [
+    {
+      "case": "ordinary-initial-search",
+      "envelope_bytes": 4100,
+      "text_bytes": 1337,
+      "source_runtime_sha256": "25a980f7c59cfd7b1fb511a4caa0c6fe6ee738006ffbc96a31440e4741dbc93a"
+    },
+    {
+      "case": "ordinary",
+      "read_only_inventory_unchanged": true,
+      "provenance_and_source_bytes_verified": true,
+      "coverage": [
+        {
+          "locator": "01-quartz-routing.md",
+          "bytes": 6285,
+          "reads": 2,
+          "duplicate_bytes": 0,
+          "empty_eof_reads": 0
+        },
+        {
+          "locator": "02-retention.md",
+          "bytes": 3305,
+          "reads": 2,
+          "duplicate_bytes": 0,
+          "empty_eof_reads": 0
+        },
+        {
+          "locator": "03-escalation.md",
+          "bytes": 313,
+          "reads": 1,
+          "duplicate_bytes": 0,
+          "empty_eof_reads": 0
+        }
+      ],
+      "calls": [
+        {
+          "op": "foundling_search",
+          "bytes": 4100,
+          "ok": true
+        },
+        {
+          "op": "foundling_read",
+          "bytes": 6684,
+          "ok": true
+        },
+        {
+          "op": "foundling_read",
+          "bytes": 3623,
+          "ok": true
+        },
+        {
+          "op": "memory_recall",
+          "bytes": 838,
+          "ok": true
+        }
+      ]
+    },
+    {
+      "case": "late",
+      "read_only_inventory_unchanged": true,
+      "provenance_and_source_bytes_verified": true,
+      "coverage": [
+        {
+          "locator": "04-late-passage.md",
+          "bytes": 12828,
+          "reads": 3,
+          "duplicate_bytes": 0,
+          "empty_eof_reads": 0
+        }
+      ],
+      "calls": [
+        {
+          "op": "foundling_read",
+          "bytes": 1866,
+          "ok": true
+        },
+        {
+          "op": "foundling_read",
+          "bytes": 9086,
+          "ok": true
+        },
+        {
+          "op": "foundling_read",
+          "bytes": 4456,
+          "ok": true
+        }
+      ]
+    },
+    {
+      "case": "page",
+      "read_only_inventory_unchanged": true,
+      "provenance_and_source_bytes_verified": true,
+      "coverage": [
+        {
+          "locator": "page-00.md",
+          "bytes": 122,
+          "reads": 1,
+          "duplicate_bytes": 0,
+          "empty_eof_reads": 0
+        },
+        {
+          "locator": "page-01.md",
+          "bytes": 122,
+          "reads": 1,
+          "duplicate_bytes": 0,
+          "empty_eof_reads": 0
+        },
+        {
+          "locator": "page-02.md",
+          "bytes": 122,
+          "reads": 1,
+          "duplicate_bytes": 0,
+          "empty_eof_reads": 0
+        },
+        {
+          "locator": "page-03.md",
+          "bytes": 122,
+          "reads": 1,
+          "duplicate_bytes": 0,
+          "empty_eof_reads": 0
+        },
+        {
+          "locator": "page-04.md",
+          "bytes": 122,
+          "reads": 1,
+          "duplicate_bytes": 0,
+          "empty_eof_reads": 0
+        },
+        {
+          "locator": "page-05.md",
+          "bytes": 122,
+          "reads": 1,
+          "duplicate_bytes": 0,
+          "empty_eof_reads": 0
+        },
+        {
+          "locator": "page-06.md",
+          "bytes": 122,
+          "reads": 1,
+          "duplicate_bytes": 0,
+          "empty_eof_reads": 0
+        },
+        {
+          "locator": "page-07.md",
+          "bytes": 122,
+          "reads": 1,
+          "duplicate_bytes": 0,
+          "empty_eof_reads": 0
+        },
+        {
+          "locator": "page-08.md",
+          "bytes": 122,
+          "reads": 1,
+          "duplicate_bytes": 0,
+          "empty_eof_reads": 0
+        },
+        {
+          "locator": "page-09.md",
+          "bytes": 122,
+          "reads": 1,
+          "duplicate_bytes": 0,
+          "empty_eof_reads": 0
+        },
+        {
+          "locator": "page-10.md",
+          "bytes": 124,
+          "reads": 1,
+          "duplicate_bytes": 0,
+          "empty_eof_reads": 0
+        },
+        {
+          "locator": "page-11.md",
+          "bytes": 88,
+          "reads": 1,
+          "duplicate_bytes": 0,
+          "empty_eof_reads": 0
+        }
+      ],
+      "calls": [
+        {
+          "op": "foundling_search",
+          "bytes": 3080,
+          "ok": true
+        },
+        {
+          "op": "foundling_search",
+          "bytes": 3080,
+          "ok": true
+        },
+        {
+          "op": "foundling_search",
+          "bytes": 3080,
+          "ok": true
+        },
+        {
+          "op": "foundling_search",
+          "bytes": 3031,
+          "ok": true
+        }
+      ]
+    },
+    {
+      "case": "deep",
+      "read_only_inventory_unchanged": true,
+      "provenance_and_source_bytes_verified": true,
+      "coverage": [
+        {
+          "locator": "04-late-passage.md",
+          "bytes": 12828,
+          "reads": 3,
+          "duplicate_bytes": 0,
+          "empty_eof_reads": 0
+        }
+      ],
+      "calls": [
+        {
+          "op": "foundling_read",
+          "bytes": 1866,
+          "ok": true
+        },
+        {
+          "op": "foundling_read",
+          "bytes": 9086,
+          "ok": true
+        },
+        {
+          "op": "foundling_read",
+          "bytes": 4456,
+          "ok": true
+        }
+      ]
+    },
+    {
+      "case": "stale",
+      "read_only_inventory_unchanged": true,
+      "provenance_and_source_bytes_verified": true,
+      "coverage": [],
+      "calls": [
+        {
+          "op": "foundling_search",
+          "bytes": 258,
+          "ok": false,
+          "code": "foundling.changed"
+        }
+      ]
+    },
+    {
+      "case": "quoted",
+      "read_only_inventory_unchanged": true,
+      "provenance_and_source_bytes_verified": true,
+      "coverage": [
+        {
+          "locator": "quoted.md",
+          "bytes": 347,
+          "reads": 1,
+          "duplicate_bytes": 0,
+          "empty_eof_reads": 0
+        }
+      ],
+      "calls": [
+        {
+          "op": "foundling_read",
+          "bytes": 1157,
+          "ok": true
+        }
+      ]
+    },
+    {
+      "case": "controlled-baseline-initial-search",
+      "envelope_bytes": 5052,
+      "text_bytes": 2361,
+      "source_runtime_sha256": "2bd32e805df3d58bfc83a69f30836be3e8322b4da0cd97146a6b97c0e7acdd5e"
+    },
+    {
+      "case": "controlled-baseline",
+      "read_only_inventory_unchanged": true,
+      "provenance_and_source_bytes_verified": true,
+      "coverage": [],
+      "calls": [
+        {
+          "op": "foundling_search",
+          "bytes": 5052,
+          "ok": true
+        }
+      ]
+    }
+  ],
+  "initial_search_comparison": {
+    "old_envelope": 5052,
+    "new_envelope": 4100,
+    "old_text": 2361,
+    "new_text": 1337
+  },
+  "limits": [
+    "No new native model-token comparison; previous model inefficiencies remain disclosed.",
+    "Scripted continuation shows API support, not guaranteed agent selection.",
+    "No execution of quoted source commands or incidental learning."
+  ]
+}

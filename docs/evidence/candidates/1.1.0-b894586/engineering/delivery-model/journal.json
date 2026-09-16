@@ -1,0 +1,90 @@
+{
+  "case": "journal",
+  "completed": true,
+  "runtime_sha256": "25a980f7c59cfd7b1fb511a4caa0c6fe6ee738006ffbc96a31440e4741dbc93a",
+  "skill_sha256": "48ccb1c93c68e6f5af355629d753e7fd72e4757644b399af489ec09c751cbcf1",
+  "mcp_enabled": true,
+  "mcp_readonly": false,
+  "binding_and_skill_unchanged": true,
+  "elapsed_seconds": 26.559,
+  "heads": {
+    "local": "5bcbf9bacf87905bc3998d530bd6e37c5f20a97d",
+    "remote": "5bcbf9bacf87905bc3998d530bd6e37c5f20a97d"
+  },
+  "prompt": "Record a short journal entry: today's fictional route-planning session settled on Birch Loop. There are no additional knowledge records to create.\n",
+  "prompt_sha256": "0ff05502e68f48da39e18affbcceaf8d47197c6e6b4fdd8ed53ebdb31d241bd7",
+  "tools": [
+    "memory_journal_append_and_sync"
+  ],
+  "writes": [
+    "memory_journal_append_and_sync"
+  ],
+  "save_requests": 1,
+  "standalone_sync_requests": 0,
+  "pre_save_sync_requests": 0,
+  "added_records": 0,
+  "added_journals": 1,
+  "existing_semantic_files_unchanged": true,
+  "no_cli_fallback": true,
+  "negative_full_inventory_unchanged": null,
+  "observer_prestart_metadata_differences": [],
+  "heads_before": {
+    "local": "148c0378fe6f79a519faac26c87a2134fb827414",
+    "remote": "cb1f792d41b7f8a7d6f647fade28646f1ad78707"
+  },
+  "heads_after": {
+    "local": "5bcbf9bacf87905bc3998d530bd6e37c5f20a97d",
+    "remote": "5bcbf9bacf87905bc3998d530bd6e37c5f20a97d"
+  },
+  "saved": {
+    "signet_id": "signet-b44ab55f1452d8422edf87d33754132f",
+    "id": "event-ff8f1efbc8688e1e8ef540ac2226f47a",
+    "durable_locally": true,
+    "synchronization": "synchronized"
+  },
+  "delivery": {
+    "protocol_version": 1,
+    "ok": true,
+    "result": {
+      "signet_id": "signet-b44ab55f1452d8422edf87d33754132f",
+      "state": "synchronized",
+      "phase": "complete",
+      "head": "5bcbf9bacf87905bc3998d530bd6e37c5f20a97d",
+      "remote_head": "5bcbf9bacf87905bc3998d530bd6e37c5f20a97d",
+      "remote_id": "9706ac8e934541cc607113eca09b3a251d08f3b218ce52ef3dc2eb807a4fd275",
+      "checked_at": "2026-09-16T19:12:02.277642Z",
+      "checkpointed": true,
+      "delivered": true,
+      "semantic_conflicts": 0,
+      "notice": "This head was delivered at checked_at; the remote may advance afterward. Already-read model context is not refreshed."
+    }
+  },
+  "all_memory_envelope_bytes": 778,
+  "all_tool_output_text_bytes": 42611,
+  "tool_code_bytes": 1726,
+  "code_calls": 3,
+  "model_requests": 4,
+  "last_request_usage": {
+    "input_tokens": 24968,
+    "cached_input_tokens": 24064,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 27,
+    "reasoning_output_tokens": 0,
+    "total_tokens": 24995
+  },
+  "aggregate_usage": {
+    "input_tokens": 87707,
+    "cached_input_tokens": 74368,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 589,
+    "reasoning_output_tokens": 16
+  },
+  "representation": {
+    "completed_memory_calls": 1,
+    "complete_printed_envelopes": 1,
+    "remaining_printed_envelopes": 0,
+    "raw_wrapper_occurrences": 0,
+    "selector_read_before_first_memory": true
+  },
+  "answer": "Recorded and synced: “Today's fictional route-planning session settled on Birch Loop.”\n\nNo additional knowledge records were created."
+}

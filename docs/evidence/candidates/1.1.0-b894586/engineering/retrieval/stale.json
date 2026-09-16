@@ -1,0 +1,60 @@
+{
+  "case": "stale",
+  "completed": true,
+  "readonly_inventories_unchanged": true,
+  "runtime_sha256": "25a980f7c59cfd7b1fb511a4caa0c6fe6ee738006ffbc96a31440e4741dbc93a",
+  "skill_sha256": "48ccb1c93c68e6f5af355629d753e7fd72e4757644b399af489ec09c751cbcf1",
+  "reference_sha256": "ceeaa37fe122f1100963f5491b963ea9737395f6d14148de156a22796277480e",
+  "elapsed_seconds": 38.231,
+  "prompt_sha256": "dbf8f6babfd61c7d09ea92a97d97a34845ea810ebc2cf3b0b2c6f64c0ef585a9",
+  "reference_pin": {
+    "algorithm": "sha256",
+    "value": "297ceba565cde4bfa2aa9058bbfd96a8f79daa33529d62c6463ae867cdbf2141"
+  },
+  "tools": [
+    "foundling_list",
+    "memory_scopes",
+    "memory_recall",
+    "foundling_inspect"
+  ],
+  "readonly_operations_only": true,
+  "no_direct_source_filesystem_commands": true,
+  "provenance_and_source_bytes_verified": true,
+  "errors": [],
+  "searches": [],
+  "coverage": {
+    "text_bytes": 0,
+    "unique_bytes": 0,
+    "duplicate_bytes": 0,
+    "empty_eof_reads": 0,
+    "documents": []
+  },
+  "foundling_envelope_bytes": 2403,
+  "all_tool_output_text_bytes": 62497,
+  "code_calls": 4,
+  "model_requests": 5,
+  "last_request_usage": {
+    "input_tokens": 30297,
+    "cached_input_tokens": 29184,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 129,
+    "reasoning_output_tokens": 54,
+    "total_tokens": 30426
+  },
+  "aggregate_usage": {
+    "input_tokens": 127440,
+    "cached_input_tokens": 108672,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 865,
+    "reasoning_output_tokens": 54
+  },
+  "representation": {
+    "completed_memory_calls": 4,
+    "complete_printed_envelopes": 4,
+    "remaining_printed_envelopes": 0,
+    "raw_wrapper_occurrences": 0,
+    "selector_read_before_first_memory": true
+  },
+  "answer": "I couldn’t verify the historical decision about automatic deletion. The “Historical project notes” source has changed since its registered snapshot, so it isn’t usable as verified historical evidence. Available memory contains no audit-deletion decision.\n\nI made only read-only calls; nothing was saved, journaled, synchronized, repaired, reconnected, or repinned.",
+  "answer_note": "Only synthetic absolute source citation targets normalized to relative locators; metrics use original outputs."
+}

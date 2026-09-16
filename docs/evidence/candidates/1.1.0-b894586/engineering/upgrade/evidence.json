@@ -1,0 +1,206 @@
+{
+  "method": "Actual published and retained candidate executables, owned synthetic destinations, native Codex registration and checksum/inventory checks. Not human acceptance.",
+  "environment": {
+    "os": "darwin",
+    "arch": "arm64",
+    "codex": "0.154.0",
+    "node": "24.1.0"
+  },
+  "published": {
+    "source": "f899cf6a2a255f3b6b35dcd778c672f799c65eb2",
+    "manifest": "c2f5a340d0e665c81e01bc26add4c0dfe8ba27faac87b83a3fd81aff254f56ea",
+    "binary": "bcc1b7fdf9e72ccb2bbd734d798c16f3aa5b96de757846711a4e5afe6eb00f93",
+    "all_eight_assets_verified": true
+  },
+  "candidate": {
+    "source": "b89458617b49d2eb0a8686dcd75c26aa7ea6f6ba",
+    "manifest": "7995f820a7182a95b828851afce12bacea7108f82afac9369d307a43d961f45a",
+    "binary": "25a980f7c59cfd7b1fb511a4caa0c6fe6ee738006ffbc96a31440e4741dbc93a",
+    "all_six_manifest_assets_verified": true,
+    "version": {
+      "arch": "arm64",
+      "codex_hook_protocol": 1,
+      "go_version": "go1.26.4",
+      "name": "mandalore",
+      "os": "darwin",
+      "plugin_sha256": "8a97ef3ad31a16f08dc1726b1db08500d3bca549478fbc592c124b2715186eed",
+      "plugin_version": "1.1.0",
+      "protocol_version": 1,
+      "signet_read_versions": [
+        1
+      ],
+      "signet_write_versions": [
+        1
+      ],
+      "source_commit": "b89458617b49d2eb0a8686dcd75c26aa7ea6f6ba",
+      "version": "1.1.0"
+    }
+  },
+  "cli": {
+    "initial_install": true,
+    "partial": {
+      "phase": "pending-recorded",
+      "plan_sha256": "c829878ff97e2819f7fae6345f80bd44d8c93d254f3b9081a2278ea64ab78946",
+      "old_launcher_preserved": true,
+      "native_unchanged": true,
+      "write_may_have_occurred": true,
+      "inspect_before_retry": true
+    },
+    "same_plan_recovery": true,
+    "replay_no_changes": true,
+    "retained_rollback_and_reupgrade": true,
+    "pending_cleared": true,
+    "original_generation_preserved": true
+  },
+  "codex": {
+    "old_version": "1.0.0",
+    "new_version": "1.1.0",
+    "old_package": "f181df926b28a2114eacd8ea908df71a0c223722d7e53ec9c689b050c341d250",
+    "new_package": "8a97ef3ad31a16f08dc1726b1db08500d3bca549478fbc592c124b2715186eed",
+    "old_runtime_sha256": "bcc1b7fdf9e72ccb2bbd734d798c16f3aa5b96de757846711a4e5afe6eb00f93",
+    "new_runtime_sha256": "25a980f7c59cfd7b1fb511a4caa0c6fe6ee738006ffbc96a31440e4741dbc93a",
+    "same_binding": true,
+    "same_signet": true,
+    "old_generation_preserved": true,
+    "requires_fresh_session": true,
+    "checks": [
+      {
+        "name": "state-path",
+        "status": "pass",
+        "detail": "Passed"
+      },
+      {
+        "name": "native-home",
+        "status": "pass",
+        "detail": "Passed"
+      },
+      {
+        "name": "native-binary",
+        "status": "pass",
+        "detail": "Passed"
+      },
+      {
+        "name": "native-inventory",
+        "status": "pass",
+        "detail": "Passed"
+      },
+      {
+        "name": "connection-receipt",
+        "status": "pass",
+        "detail": "Passed"
+      },
+      {
+        "name": "bundle-integrity",
+        "status": "pass",
+        "detail": "Passed"
+      },
+      {
+        "name": "cache-integrity",
+        "status": "pass",
+        "detail": "Passed"
+      },
+      {
+        "name": "runtime-integrity",
+        "status": "pass",
+        "detail": "Passed"
+      },
+      {
+        "name": "native-executable-identity",
+        "status": "pass",
+        "detail": "Passed"
+      },
+      {
+        "name": "signet-binding",
+        "status": "pass",
+        "detail": "Passed"
+      },
+      {
+        "name": "binding-integrity",
+        "status": "pass",
+        "detail": "Passed"
+      },
+      {
+        "name": "native-plugin",
+        "status": "pass",
+        "detail": "Passed"
+      },
+      {
+        "name": "native-login",
+        "status": "not-tested",
+        "detail": "Native account authentication was not exercised."
+      },
+      {
+        "name": "hook-trust",
+        "status": "not-tested",
+        "detail": "Review the exact hooks through the native agent UI."
+      },
+      {
+        "name": "live-mcp",
+        "status": "not-tested",
+        "detail": "Check MCP startup in a fresh native session."
+      },
+      {
+        "name": "remote-freshness",
+        "status": "not-tested",
+        "detail": "Local receipts do not prove network freshness; explicitly synchronize when allowed."
+      },
+      {
+        "name": "active-context",
+        "status": "not-tested",
+        "detail": "Existing sessions may retain earlier instructions or bindings; start a fresh session after a change."
+      }
+    ]
+  },
+  "preservation": {
+    "protected_snapshot_sha256": "43ca995558155d70edd03fcdf9f4551a754f7a7e6669f1850123709a0e0d476f",
+    "protected_entry_count": 32,
+    "signet_binding_auth_sentinel_session_sentinel_unrelated_file_unchanged": true,
+    "native_not_changed_by_cli_rollback_or_reupgrade": true
+  },
+  "recordings": [
+    {
+      "name": "rollback-declined.recording",
+      "sha256": "61553e06c2a4b54ff8838845410b0a0adf0efd453d1544526a2afcfdf924563a",
+      "bytes": 2803,
+      "rows": 32,
+      "columns": 80,
+      "mode": "color"
+    },
+    {
+      "name": "rollback-applied.recording",
+      "sha256": "2876a1a6b12ca3231c3b00e32053f46a35469006181fa931fc90cc8edb19b0d6",
+      "bytes": 4112,
+      "rows": 32,
+      "columns": 32,
+      "mode": "plain-no-color"
+    }
+  ],
+  "private_receipt_sha256": {
+    "v1-cli-plan": "904960e97fca382d1fdff0db9aca51d3740c0bac3abfdc281eea9fe71ca5002a",
+    "v1-cli-apply": "9a49d8d02bb172fadfe7f24410a8ee69884dae7650222d934de1ae3bacc9dd4f",
+    "v1-codex-plan": "58ed7b1a3c68a829253b053ab53df7337769860d2af59a477b8b769ada4e60ad",
+    "v1-codex-apply": "351dbb62da9fcd64bd7f49c725b68f53740673786b3de401c9f81221f0641563",
+    "v1-codex-doctor": "780fe52f9c22e8c0537542ce4fb9ffec93c0aa8bb8eedb32e722d2be0939629d",
+    "upgrade-plan": "319c28894ea9753949e24d2402305bf82e7830aff2fcea4365a6d0a75b1a2016",
+    "partial": "987d6c1f9edee7f5b9b6b0bcc91c907170dc8fb5eaa92fa612d21f0f44d49cc1",
+    "pending-copy": "bca695f2295dd7c42e0f3f128412a95ef76c9f3bafe690d6602def9aca3b0886",
+    "recovery": "da9a489eabe1d51f63d23597fb0878a4e04edad942eec50059757fdd0bf3db25",
+    "replay": "cbce30b39657438b8909be1461b39839f8d34ee7ff9cb6dba7813498c2420a4f",
+    "installed-version": "ee20e640775cb9f9baea1c65dc36a0b31eb9ff0df9507777800b1e12cf8b29da",
+    "v11-codex-plan": "b3b04992e4eb0e0a6522ba0dd20cc9cc3ae51fe6642005c9428fd38d105ba516",
+    "v11-codex-apply": "955c8d396dfbed7933859fd25706e5f2071a6fdbf83a977cd3af7d0e13cf9f8d",
+    "v11-codex-doctor": "9ac1668b7fa0d78a19a179716808696cd27ccc5d6b3570b89b888aafd920cd26",
+    "rollback-plan": "6ac9e89c8da5030ca345016fbaf6d1901d38b2a084c29fe12d1aea78ea86f20d",
+    "menu-rollback-observation": "a8f084439f4ed19918b1b41ae26072933d1c5aeb407282249d881f102e1501a8",
+    "menu-reupgrade-plan": "8a9c6f89d043fd7c76d37dcc23a1db6701b7e62da11fea232a86a3ee7a310abe",
+    "menu-reupgrade-apply": "19fe24a5e3968bcf5e472155e0195beb8ec7091b90c00b89a7bb28b639d46b02"
+  },
+  "controller_findings": [],
+  "limits": [
+    "No provider authentication, hook trust, fresh-session MCP, hosted sync or live user activation tested in these synthetic profiles.",
+    "Previously downloaded published assets reused and reverified against pinned publication receipt; installer source was then local-candidate, not a live release API apply.",
+    "Failure/recovery ran the original published 1.0 executable; rollback rendering/application ran actual retained 1.1 bytes.",
+    "No Pi upgrade is implied: published 1.0 has no Pi connection operations. Fresh Pi install/update/repair matrix remains separate.",
+    "No native other-platform, screen reader, alternate locale or human acceptance claim."
+  ]
+}

@@ -1,0 +1,143 @@
+{
+  "source": "b89458617b49d2eb0a8686dcd75c26aa7ea6f6ba",
+  "identity": "mandalore:b89458617b49d2eb0a8686dcd75c26aa7ea6f6ba:sha256:7995f820a7182a95b828851afce12bacea7108f82afac9369d307a43d961f45a",
+  "runtime": {
+    "arch": "arm64",
+    "codex_hook_protocol": 1,
+    "go_version": "go1.26.4",
+    "name": "mandalore",
+    "os": "darwin",
+    "plugin_sha256": "8a97ef3ad31a16f08dc1726b1db08500d3bca549478fbc592c124b2715186eed",
+    "plugin_version": "1.1.0",
+    "protocol_version": 1,
+    "signet_read_versions": [
+      1
+    ],
+    "signet_write_versions": [
+      1
+    ],
+    "source_commit": "b89458617b49d2eb0a8686dcd75c26aa7ea6f6ba",
+    "version": "1.1.0"
+  },
+  "pi_package": {
+    "name": "mandalore",
+    "version": "1.1.0",
+    "sha256": "013dcc492565ba180abd59eb50e3a6fbea2cd8ba045ccf067e17d51a050e7fda",
+    "harness_protocol_version": 1,
+    "file_count": 10
+  },
+  "native": {
+    "codex": "codex-cli 0.154.0",
+    "pi": "0.85.1"
+  },
+  "model": "gpt-6-astra",
+  "reasoning": "high",
+  "scenarios": [
+    {
+      "harness": "pi",
+      "case": "recall-a",
+      "answer": "We settled on **Thursday** for Cedar Orbit releases.",
+      "calls": [
+        "memory_recall"
+      ],
+      "read_only_fixtures_unchanged": true,
+      "presentation": [
+        {
+          "operation": "memory_recall",
+          "text_blocks": 1,
+          "envelope_bytes": 725,
+          "details_keys": [
+            "ok",
+            "operation"
+          ]
+        }
+      ]
+    },
+    {
+      "harness": "pi",
+      "case": "recall-b",
+      "answer": "We settled on **Saturday** for Cedar Orbit releases.",
+      "calls": [
+        "memory_recall"
+      ],
+      "read_only_fixtures_unchanged": true,
+      "presentation": [
+        {
+          "operation": "memory_recall",
+          "text_blocks": 1,
+          "envelope_bytes": 725,
+          "details_keys": [
+            "ok",
+            "operation"
+          ]
+        }
+      ]
+    },
+    {
+      "harness": "pi",
+      "case": "learn-a",
+      "answer": "Confirmed: Cedar Orbit’s release day is now Friday, replacing Thursday. Saved and synchronized.",
+      "calls": [
+        "memory_recall",
+        "memory_remember_and_sync"
+      ],
+      "read_only_fixtures_unchanged": false,
+      "presentation": [
+        {
+          "operation": "memory_recall",
+          "text_blocks": 1,
+          "envelope_bytes": 725,
+          "details_keys": [
+            "ok",
+            "operation"
+          ]
+        },
+        {
+          "operation": "memory_remember_and_sync",
+          "text_blocks": 1,
+          "envelope_bytes": 835,
+          "details_keys": [
+            "ok",
+            "operation"
+          ]
+        }
+      ]
+    },
+    {
+      "harness": "codex",
+      "case": "fresh-cross-harness-recall",
+      "answer": "We settled on **Friday** for Cedar Orbit’s release day; it was previously **Thursday**.",
+      "calls": [
+        "memory_scopes",
+        "memory_recall",
+        "memory_history"
+      ],
+      "read_only_fixtures_unchanged": true,
+      "model_visible_rendering_attested": false
+    }
+  ],
+  "learning": {
+    "record_id": "record-92494349496e55697eeead726a0fc399",
+    "revisions": 2,
+    "supersedes": [
+      "revision-354b6e20fb2fc9e843387f4fca47e1c8"
+    ],
+    "harness": "pi",
+    "stable_device": true,
+    "local_head": "36908818a38bf2257573589bc54598372cca1aa7",
+    "remote_head": "36908818a38bf2257573589bc54598372cca1aa7",
+    "delivered": true,
+    "semantic_conflicts": 0,
+    "standalone_sync_before_save": 0,
+    "standalone_sync_after_save": 0,
+    "total_memory_operations": 2,
+    "two_operation_minimum_observed": true
+  },
+  "limitations": [
+    "initial candidate engineering checks only; no human acceptance",
+    "operation counts describe this actual turn, not a guaranteed minimum",
+    "not Codex model-visible duplication evidence",
+    "not lifecycle automatic synchronization",
+    "no other-platform native claim"
+  ]
+}

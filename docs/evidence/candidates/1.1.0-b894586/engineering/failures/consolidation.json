@@ -1,0 +1,14 @@
+{
+  "case": "direct-cue-no-new-content-unavailable-origin",
+  "passed": false,
+  "issue": 100,
+  "prompt": "There is no new knowledge or useful journal entry to add from this conversation. This is the way.\n",
+  "answer": "Understood. No knowledge or journal entry added, and no synchronization performed.",
+  "memory_calls": 0,
+  "expected_one_delivery_attempt": true,
+  "full_fixture_unchanged": true,
+  "local_head": "fc55b72bf7bb3e173cd9b6c7422a69912f06bc39",
+  "remote_head": "216d79915bb0ca93db40e34722b00a38bb689a2c",
+  "skill_was_read": true,
+  "raw_session_sha256": "fe290eb38628985ac73975f7affe87fc44440237e61e8fd705f36efd22e7d1be"
+}
