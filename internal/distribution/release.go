@@ -119,14 +119,20 @@ func (c *ReleaseClient) get(ctx context.Context, address, accept string, limit i
 		if ctx.Err() != nil {
 			return 0, ctx.Err()
 		}
-		return 0, errors.New("release request failed, timed out or followed an untrusted redirect; no installation occurred")
+		return 0, errors.New("release request failed, timed out or followed an untrusted redirect")
 	}
 	defer r.Body.Close()
+	if err := ctx.Err(); err != nil {
+		return 0, err
+	}
 	if r.StatusCode == http.StatusNotFound {
 		return 0, ErrNoRelease
 	}
 	if r.StatusCode != http.StatusOK {
-		return 0, errors.New("release request was refused or rate-limited; no installation occurred")
+		if quota := releaseRateLimit(r.StatusCode, r.Header, time.Now()); quota != nil {
+			return 0, quota
+		}
+		return 0, errors.New("release request was refused")
 	}
 	if r.ContentLength > limit {
 		return 0, errors.New("release response exceeds its size limit")

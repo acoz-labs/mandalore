@@ -48,6 +48,7 @@ while [ "$#" -gt 0 ]; do
   url=$1
   shift
 done
+printf '%s\n' "$url" >> "$TEST_FIXTURES/requests"
 case "$url" in
   https://github.com/acoz-labs/mandalore/releases/download/v1.0.0/SHA256SUMS) cp "$TEST_FIXTURES/sums" "$output";;
   https://github.com/acoz-labs/mandalore/releases/download/v1.0.0/mandalore_1.0.0_linux_arm64) cp "$TEST_FIXTURES/payload" "$output";;
@@ -79,6 +80,10 @@ else printf '200\n'; fi
 				args, err := os.ReadFile(filepath.Join(root, "executed"))
 				if err != nil || string(args) != "release\ninstall\n--version\n1.0.0\n" {
 					t.Fatalf("wrong handoff: %q %v", args, err)
+				}
+				requests, err := os.ReadFile(filepath.Join(root, "requests"))
+				if err != nil || len(strings.Fields(string(requests))) != 2 {
+					t.Fatal("bootstrap must account for its two independent asset downloads", err, string(requests))
 				}
 			} else {
 				if err == nil {
