@@ -12,6 +12,9 @@ engineering build and the first Codex model recall against its synthetic bank.
 The [delivery and live-refresh checks](delivery-refresh.md) cover compatible
 concurrent writes, unresolved semantic conflicts, partial-save cancellation,
 explicit recovery and an actual already-open Pi model seeing superseded memory.
+The [rendered menu checkpoint](menu/README.md) retains actual color-terminal
+preview/default-No, confirmed install and Armorer inspection recordings, including
+the initial clarity finding and its failing-first fix.
 
 ## Native package and callback probe
 
