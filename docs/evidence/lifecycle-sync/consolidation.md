@@ -1,5 +1,23 @@
 # Explicit consolidation delivery
 
+## Intent clarification after candidate verification
+
+The #100 follow-up distinguishes absence of useful new content from an explicit
+task restriction. Saying there is nothing new to remember or journal does not
+itself mean read-only/no-save/no-sync. On a direct cue, make the permitted bounded
+delivery attempt without filler; a missing connection is a limitation to report,
+not an implicit successful completion. No-journal alone prohibits journaling,
+not an otherwise authorized delivery attempt. Explicit read-only/no-save/no-sync
+restrictions remain unchanged and take priority.
+
+This is shared Codex/Pi guidance, not a deterministic hook or permission parser.
+The retained 1.1 counterexample and its unchanged pending work are preserved in
+[the engineering failure receipt](https://github.com/acoz-labs/mandalore/blob/d4e80dedf68e5fd430c7eec5eee7eba413773bb8/docs/evidence/candidates/1.1.0-b894586/engineering/failures/consolidation.json).
+Historical passing observations below are not acceptance of this clarification;
+fresh native verification is tracked in #100. No package is activated implicitly.
+
+## Original implementation evidence
+
 Contributor engineering evidence, 2026-09-15, for #61 / PR #63, selected outcome
 O3 of #55 / discovery PR #60. Planning PR #62 reviewed
 `4d2355ddde26c270e7256edd7759941014781f35`, merged as
