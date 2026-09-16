@@ -13,6 +13,7 @@ import (
 	"github.com/acoz-labs/mandalore/internal/install"
 	"github.com/acoz-labs/mandalore/internal/memory"
 	"github.com/acoz-labs/mandalore/internal/migration"
+	"github.com/acoz-labs/mandalore/internal/readiness"
 	"github.com/acoz-labs/mandalore/internal/strictjson"
 	signetsync "github.com/acoz-labs/mandalore/internal/sync"
 	"github.com/google/jsonschema-go/jsonschema"
@@ -172,7 +173,7 @@ var operations = []Operation{
 
 func Catalog() []Operation {
 	var result []Operation
-	for _, group := range [][]Operation{operations, administration, synchronization, connections, migrations, foundlingOperations, releases, saveAndDelivery, nativeContext, piAdministration} {
+	for _, group := range [][]Operation{operations, administration, synchronization, connections, migrations, foundlingOperations, releases, saveAndDelivery, nativeContext, piAdministration, readinessOperations} {
 		result = append(result, group...)
 	}
 	return result
@@ -293,6 +294,10 @@ func (a *API) failure(op Operation, err error) Envelope {
 		return out
 	}
 	switch {
+	case errors.Is(err, readiness.ErrCatalogInvalid):
+		return Failure("readiness.invalid", readiness.ErrCatalogInvalid.Error(), false)
+	case errors.Is(err, readiness.ErrSelection):
+		return Failure("input.invalid", readiness.ErrSelection.Error(), false)
 	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
 		return Failure("operation.cancelled", "Operation cancelled before execution.", false)
 	case errors.Is(err, memory.ErrWriterBusy):

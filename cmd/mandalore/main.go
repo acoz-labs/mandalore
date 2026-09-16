@@ -17,6 +17,7 @@ import (
 	"github.com/acoz-labs/mandalore/internal/foundlings"
 	memorymcp "github.com/acoz-labs/mandalore/internal/mcp"
 	"github.com/acoz-labs/mandalore/internal/memory"
+	"github.com/acoz-labs/mandalore/internal/readiness"
 )
 
 var version = "0.0.0-dev"
@@ -47,6 +48,7 @@ const help = `Mandalore — durable memory across tools
   mandalore codex-memory-hook [--binding FILE]   Read-only native lifecycle JSON
   mandalore connection plan [--binary FILE] [--binding FILE] [profile options]
   mandalore connection apply < approved-plan.json
+  mandalore connection assess --harness codex|pi [profile options] [--binding FILE] [--connection-root DIR] [--prompt]
   mandalore connection armorer [profile options]  The Armorer: read-only inspection
   mandalore connection doctor [profile options]   Compatibility alias
   mandalore connection repair --connection-root DIR [--apply]
@@ -54,10 +56,11 @@ const help = `Mandalore — durable memory across tools
   mandalore migration apply --writers-stopped < reviewed-preflight.json
 
 Profile options: --state-dir DIR, --native-home DIR, --native-binary FILE.
-Connection harness: --harness codex|pi (default codex).
+Connection harness: --harness codex|pi (required for assess; otherwise default codex).
 Pi plan --memory-read-only enforces read-only memory in the installed connection;
 --read-only instead prohibits mutations by this CLI invocation.
 Connection plan/armorer/doctor/repair preview do not activate a connection.
+Connection assess never executes programs or changes state; --prompt only adds guidance.
 Migration preflight accepts optional --legacy-binding FILE and explicit
 --native-home DIR --native-binary FILE for native inventory. No implicit defaults.
 Migration does not activate a writer or copy Git history/configuration.
@@ -98,6 +101,7 @@ func bad(out io.Writer, message string) int {
 }
 
 func run(ctx context.Context, args []string, input io.Reader, out, errout io.Writer) int {
+	ctx = readiness.WithBuild(ctx, version, sourceCommit)
 	if len(args) > 0 && args[0] == "release" {
 		return runRelease(ctx, args[1:], input, out)
 	}

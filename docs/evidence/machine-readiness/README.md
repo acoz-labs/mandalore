@@ -52,8 +52,8 @@ original selected path fixes that case. The test remains in the suite.
 After this fix, `go test -race -count=3 ./internal/readiness`,
 `go vet ./internal/readiness` and `git diff --check` passed using the pinned host
 toolchain. These are component checks, not full CI or native acceptance. The
-public `connection_assess` API tests remain intentionally red until the shared
-assessor is implemented; the PR must remain draft.
+At that checkpoint, the public `connection_assess` API tests remained
+intentionally red until the shared assessor was implemented.
 
 ## Binding metadata projection
 
@@ -80,15 +80,58 @@ retains that regression check.
 After the fix, the readiness, memory and binding packages all passed
 `go test -race -count=1` and `go vet`. The readiness package also cross-built for
 Darwin/Linux on amd64/arm64. These package builds do not establish native behavior
-on those platforms. Full API, retained-connection and rendered validation remain.
+on those platforms. API, retained-connection and rendered validation were still
+pending at that checkpoint.
+
+## Retained selection and shared assessment
+
+Extracted existing Codex/Pi ownership decoders into pure byte validators and
+added a narrow projection. Synthetic nonexistent-path tests establish that
+projection needs no profile, package, runtime or bank to exist. Foreign
+harness/root/state/profile/native/binding selections and malformed/oversized
+receipts return no followable runtime path. Existing installer race tests pass.
+
+The readiness observer now reads the selected receipt and fingerprints only its
+owned runtime after matching the operator's native/binding selection. Tests
+cover changed runtime bytes, altered runtime paths, stale binding/native bytes,
+foreign selection and an unselected root. Successful static verification names
+only runtime/selection consistency; missing package files do not become proof of
+package or active native registration health.
+
+Implemented shared `connection_assess`, human `connection assess`, explicit
+harness selection, bounded non-executing defaults, independent report dimensions,
+trusted internal process stamps and fixed-text optional follow-up guidance. The
+previously red API tests now pass. CLI/shared-call reports match for both harnesses.
+Invalid flags, untrusted JSON identity fields, duplicate JSON and cancellation
+are rejected with the expected protocol/exit semantics. The memory MCP surface
+remains separate: this new operation is CLI-only and needs no bound service.
+
+A compiled CLI test places marker-writing Codex, Pi, Git and Node executables on
+PATH. Both harness assessments return successful JSON without triggering them or
+creating the selected state/profile/binding. Invalid proxy endpoints are present;
+this does not by itself prove every possible network path is blocked. Stronger
+transport/network instrumentation and complete fixture inventories remain work.
+
+The first full `mise exec -- bin/ci` run passed: Pi adapter tests, all Go race
+tests, vet, public-content checks and four target builds. Docker's daemon was
+unavailable, so the documented pinned host-toolchain fallback was used.
+
+Subsequent self-review added failing-first regressions for three intermediate
+defects: silently skipping a relative PATH entry, following a retained runtime
+when the selected native file lost executable permission, and recommending native
+verification before reviewing a missing profile. Fixes preserve unknown PATH
+selection, stop before the retained read and suggest connection review. A separate
+classification test distinguishes a known matching artifact target, a known
+incompatible target and unknown artifact architecture. Current-head validation
+is recorded in the implementation PR; earlier passing CI is not a substitute.
 
 ## Limits
 
 - Reads can affect OS access-time/cache bookkeeping; no product state is written.
 - Cancellation is checked between reads; it is not a hard kernel/filesystem
   deadline or a sandbox against a hostile local user.
-- Full fixture inventories, no-network transport probes, retained-receipt
-  projections, shared CLI/menu behavior and exact-head rendered evidence remain
-  subsequent implementation work.
+- Full fixture inventories, no-network transport probes, broader adversarial
+  coverage, menu/prompt rendering and exact-head native rendered evidence remain
+  subsequent implementation work. The overall feature/PR remains draft.
 - Pi's historical native evidence is engineering-only. This work does not
   promote it to acceptance or modify the immutable 1.0.0 artifacts.

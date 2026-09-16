@@ -121,3 +121,12 @@ func TestReadinessDoesNotRunSelectedNativeExecutable(t *testing.T) {
 		t.Fatal("assessment changed the selected fixture")
 	}
 }
+
+func TestReadinessRejectsUntrustedIdentityAndMalformedInput(t *testing.T) {
+	for _, raw := range []string{`{}`, `{"harness":"pi","platform":"linux"}`, `{"harness":"pi","source_commit":"fake"}`, `{"harness":"codex","evidence":[]}`, `{"harness":"pi","include_prompt":null}`, `{"harness":"pi","binding":"relative"}`, `{"harness":"pi","harness":"codex"}`} {
+		out := New(nil, true).Call(context.Background(), "connection_assess", []byte(raw))
+		if out.OK || out.Error.Code != "input.invalid" || out.Error.WriteMayHaveOccurred || out.Result != nil {
+			t.Fatal("untrusted input accepted", raw, out)
+		}
+	}
+}

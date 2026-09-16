@@ -87,8 +87,11 @@ func unwrapConnectionPlan[P any](raw []byte) ([]byte, error) {
 }
 
 func runConnection(ctx context.Context, args []string, input io.Reader, out io.Writer) int {
+	if len(args) > 0 && args[0] == "assess" {
+		return runAssessment(ctx, args[1:], out)
+	}
 	if len(args) == 0 {
-		return bad(out, "Choose connection plan, apply, armorer or repair; doctor remains an alias. Use --help.")
+		return bad(out, "Choose connection assess, plan, apply, armorer or repair; doctor remains an alias. Use --help.")
 	}
 	if args[0] == "--help" || args[0] == "-h" {
 		_, err := io.WriteString(out, help)

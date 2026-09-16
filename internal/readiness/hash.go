@@ -9,10 +9,10 @@ import (
 // fileDigest identifies observed on-disk bytes, not a loaded image, publisher,
 // script interpreter or launcher target version. No program is executed.
 type fileDigest struct {
-	Path       string
-	SHA256     string
-	Size       int64
-	Executable bool
+	Path       string `json:"path"`
+	SHA256     string `json:"sha256"`
+	Size       int64  `json:"size"`
+	Executable bool   `json:"executable"`
 }
 
 func hashFile(ctx context.Context, path string, limit int64, allowRedirect bool) (fileDigest, error) {

@@ -18,6 +18,7 @@ import (
 // No names, actor labels, device labels, remembered content or raw errors leave
 // this projection. Complete is observation completeness, not store health.
 type metadataObservation struct {
+	signetID string
 	Setup    string `json:"setup"`
 	Code     string `json:"code"`
 	Complete bool   `json:"complete"`
@@ -126,5 +127,5 @@ func inspectBinding(ctx context.Context, path, harness string, read metadataRead
 	if err := ctx.Err(); err != nil {
 		return metadataObservation{}, err
 	}
-	return metadataObservation{Setup: "verified-static", Code: "binding-metadata-consistent", Complete: true, SHA256: hex.EncodeToString(sum[:])}, nil
+	return metadataObservation{signetID: b.SignetID, Setup: "verified-static", Code: "binding-metadata-consistent", Complete: true, SHA256: hex.EncodeToString(sum[:])}, nil
 }
