@@ -1,0 +1,990 @@
+{
+  "classification": "engineering-native-observation-not-product-acceptance",
+  "source": "bb16a57eb16dcd5e3da1386d6eb72c64169be6b5",
+  "manifest_sha256": "ab4af42cee70495b66f4a64b3d754dc0e83d50c789ac1d8b6c4a419e7ffcb986",
+  "native": {
+    "os": "macOS",
+    "arch": "arm64",
+    "codex": "0.154.0",
+    "model": "gpt-6-astra",
+    "reasoning": "high",
+    "node": "24.1.0",
+    "code_mode": true
+  },
+  "comparison": {
+    "same_prompt": true,
+    "baseline_save_and_sync_in_separate_code_batches": true,
+    "candidate_single_combined_request": true,
+    "total_model_requests": {
+      "baseline": 6,
+      "candidate": 6
+    },
+    "baseline_source_association": "e829a6c7e11e04eb4901583fff8735f63855abd5",
+    "baseline_source_attested_by_executable": false
+  },
+  "metadata": {
+    "candidate_runtime": {
+      "protocol_version": 1,
+      "ok": true,
+      "result": {
+        "arch": "arm64",
+        "codex_hook_protocol": 1,
+        "go_version": "go1.26.4",
+        "name": "mandalore",
+        "os": "darwin",
+        "plugin_sha256": "8a97ef3ad31a16f08dc1726b1db08500d3bca549478fbc592c124b2715186eed",
+        "plugin_version": "1.1.0",
+        "protocol_version": 1,
+        "signet_read_versions": [
+          1
+        ],
+        "signet_write_versions": [
+          1
+        ],
+        "source_commit": "bb16a57eb16dcd5e3da1386d6eb72c64169be6b5",
+        "version": "1.1.0"
+      }
+    },
+    "baseline_runtime": {
+      "protocol_version": 1,
+      "ok": true,
+      "result": {
+        "arch": "arm64",
+        "codex_hook_protocol": 1,
+        "go_version": "go1.26.4",
+        "name": "mandalore",
+        "os": "darwin",
+        "plugin_sha256": "24678456045e478d870f4f88d7b75ae2c7b3c7b44920741657b3ecd55646c126",
+        "plugin_version": "0.0.0-dev",
+        "protocol_version": 1,
+        "signet_read_versions": [
+          1
+        ],
+        "signet_write_versions": [
+          1
+        ],
+        "source_commit": "",
+        "version": "0.0.0-dev"
+      }
+    },
+    "local_operation_contracts_identical": [
+      "memory_remember",
+      "memory_journal_append"
+    ],
+    "catalog_bytes": {
+      "baseline": 60837,
+      "candidate": 85452
+    },
+    "catalog_count": {
+      "baseline": 32,
+      "candidate": 41
+    },
+    "companions": [
+      {
+        "name": "memory_remember_and_sync",
+        "input_schema_bytes": 1631,
+        "output_schema_bytes": 1949,
+        "operation_bytes": 4050,
+        "annotations": {
+          "read_only": false,
+          "network": true
+        }
+      },
+      {
+        "name": "memory_journal_append_and_sync",
+        "input_schema_bytes": 431,
+        "output_schema_bytes": 1949,
+        "operation_bytes": 2872,
+        "annotations": {
+          "read_only": false,
+          "network": true
+        }
+      }
+    ]
+  },
+  "observer_control": {
+    "mechanism": "Git status after initial snapshot can refresh optional index metadata before native launch",
+    "cases": [
+      {
+        "case": "default",
+        "model_or_mcp_request": false,
+        "git_status_clean": true,
+        "differences": [
+          {
+            "path": ".git",
+            "before": {
+              "type": "directory",
+              "mode": 493,
+              "mtime": 1789545411581.2668
+            },
+            "after": {
+              "type": "directory",
+              "mode": 493,
+              "mtime": 1789545411625.1357
+            }
+          },
+          {
+            "path": ".git/index",
+            "before": {
+              "type": "file",
+              "mode": 420,
+              "mtime": 1789545411437.1587,
+              "size": 1820,
+              "sha256": "2ab335e5145e30f5646943b945eb2315eff24ea44926843a19b78dd9fd491205"
+            },
+            "after": {
+              "type": "file",
+              "mode": 420,
+              "mtime": 1789545411624.9756,
+              "size": 1820,
+              "sha256": "2ab335e5145e30f5646943b945eb2315eff24ea44926843a19b78dd9fd491205"
+            }
+          }
+        ]
+      },
+      {
+        "case": "optional-locks-disabled",
+        "model_or_mcp_request": false,
+        "git_status_clean": true,
+        "differences": []
+      }
+    ]
+  },
+  "cases": [
+    {
+      "case": "ordinary",
+      "completed": true,
+      "runtime_sha256": "0679b27eaefddb842ec54e03d966dc8369b39c63842bd7ddd74e2f058505c37e",
+      "skill_sha256": "48ccb1c93c68e6f5af355629d753e7fd72e4757644b399af489ec09c751cbcf1",
+      "mcp_enabled": true,
+      "mcp_readonly": false,
+      "binding_and_skill_unchanged": true,
+      "elapsed_seconds": 35.877,
+      "heads": {
+        "local": "bbcdf1d1729874b800b9ca9deea68d74e5715461",
+        "remote": "bbcdf1d1729874b800b9ca9deea68d74e5715461"
+      },
+      "prompt": "For future reference, my fictional hiking route is Birch Loop.\n",
+      "prompt_sha256": "c3360cf50c3295e5cd432d40918bce6ea794031996f27b196e5023a4ad175e6e",
+      "tools": [
+        "memory_recall",
+        "memory_recall",
+        "memory_remember_and_sync"
+      ],
+      "writes": [
+        "memory_remember_and_sync"
+      ],
+      "save_requests": 1,
+      "standalone_sync_requests": 0,
+      "pre_save_sync_requests": 0,
+      "added_records": 1,
+      "added_journals": 0,
+      "existing_semantic_files_unchanged": true,
+      "no_cli_fallback": true,
+      "negative_full_inventory_unchanged": null,
+      "heads_before": {
+        "local": "a6005c9e10832b463bc97cd08c7d280e7cb0cb1d",
+        "remote": "911d12349351582bf8e6eae55c7c0236509cd38d"
+      },
+      "heads_after": {
+        "local": "bbcdf1d1729874b800b9ca9deea68d74e5715461",
+        "remote": "bbcdf1d1729874b800b9ca9deea68d74e5715461"
+      },
+      "saved": {
+        "signet_id": "signet-31ec6c2c341e9d086a3ecf57eba727f6",
+        "id": "revision-7451f8ee50f95cd3e2dd34a3bd17ed88",
+        "record_id": "record-66f10b02fa1a9af0527a21cc4c9e6632",
+        "durable_locally": true,
+        "synchronization": "synchronized"
+      },
+      "delivery": {
+        "protocol_version": 1,
+        "ok": true,
+        "result": {
+          "signet_id": "signet-31ec6c2c341e9d086a3ecf57eba727f6",
+          "state": "synchronized",
+          "phase": "complete",
+          "head": "bbcdf1d1729874b800b9ca9deea68d74e5715461",
+          "remote_head": "bbcdf1d1729874b800b9ca9deea68d74e5715461",
+          "remote_id": "6a08182244327505304d32a976c741ebc6c1d206c6611895742429519e9dc431",
+          "checked_at": "2026-09-16T07:52:33.295989Z",
+          "checkpointed": true,
+          "delivered": true,
+          "semantic_conflicts": 0,
+          "notice": "This head was delivered at checked_at; the remote may advance afterward. Already-read model context is not refreshed."
+        }
+      },
+      "all_memory_envelope_bytes": 1937,
+      "all_tool_output_text_bytes": 50735,
+      "tool_code_bytes": 2004,
+      "code_calls": 5,
+      "model_requests": 6,
+      "last_request_usage": {
+        "input_tokens": 27725,
+        "cached_input_tokens": 27136,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 18,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 27743
+      },
+      "aggregate_usage": {
+        "input_tokens": 148406,
+        "cached_input_tokens": 131840,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 660,
+        "reasoning_output_tokens": 10
+      },
+      "representation": {
+        "completed_memory_calls": 3,
+        "complete_printed_envelopes": 3,
+        "remaining_printed_envelopes": 0,
+        "raw_wrapper_occurrences": 0,
+        "selector_read_before_first_memory": true
+      },
+      "answer": "Remembered: your fictional hiking route is **Birch Loop**.",
+      "delivery_budgets": [
+        {
+          "operation": "memory_remember_and_sync",
+          "seconds": 3,
+          "explicit": true
+        }
+      ],
+      "private_analysis_sha256": "dafce9f911ab9b47751825ea2a52d00d9147d872947b66195073dc7c7a2e5e89"
+    },
+    {
+      "case": "baseline-record",
+      "completed": true,
+      "runtime_sha256": "b0f972e94b122b37fd14ddf4799ba20a8fe3dada88418fdd7ca50303c9d82327",
+      "skill_sha256": "7a830a6b14543d50ff3107767cb62d587c908d7a978515ca3146d959042b2ab6",
+      "mcp_enabled": true,
+      "mcp_readonly": false,
+      "binding_and_skill_unchanged": true,
+      "elapsed_seconds": 27.851,
+      "heads": {
+        "local": "7d0c251ef407f1f0ca9c5e02dc2e6c52014c146b",
+        "remote": "7d0c251ef407f1f0ca9c5e02dc2e6c52014c146b"
+      },
+      "prompt": "For future reference, my fictional hiking route is Birch Loop.\n",
+      "prompt_sha256": "c3360cf50c3295e5cd432d40918bce6ea794031996f27b196e5023a4ad175e6e",
+      "tools": [
+        "memory_recall",
+        "memory_recall",
+        "memory_remember",
+        "memory_sync"
+      ],
+      "writes": [
+        "memory_remember",
+        "memory_sync"
+      ],
+      "save_requests": 1,
+      "standalone_sync_requests": 1,
+      "pre_save_sync_requests": 0,
+      "added_records": 1,
+      "added_journals": 0,
+      "existing_semantic_files_unchanged": true,
+      "no_cli_fallback": true,
+      "negative_full_inventory_unchanged": null,
+      "heads_before": {
+        "local": "ad14a194efef46616434914bcc0397abcf4fb263",
+        "remote": "3cf084fbfb17803e14d0dcf3b52df54072f21620"
+      },
+      "heads_after": {
+        "local": "7d0c251ef407f1f0ca9c5e02dc2e6c52014c146b",
+        "remote": "7d0c251ef407f1f0ca9c5e02dc2e6c52014c146b"
+      },
+      "saved": {
+        "signet_id": "signet-0d7f4fa746e146371ee47f892ab34346",
+        "id": "revision-6935b4b224fc7295182221dd08ba6f8e",
+        "record_id": "record-e5966c40de39a91865381d50ba16d6fe",
+        "durable_locally": true,
+        "synchronization": "not-requested"
+      },
+      "delivery": {
+        "protocol_version": 1,
+        "ok": true,
+        "result": {
+          "signet_id": "signet-0d7f4fa746e146371ee47f892ab34346",
+          "state": "synchronized",
+          "phase": "complete",
+          "head": "7d0c251ef407f1f0ca9c5e02dc2e6c52014c146b",
+          "remote_head": "7d0c251ef407f1f0ca9c5e02dc2e6c52014c146b",
+          "remote_id": "b7048c5b8ddd7d5d03f6097869bb7aa6c7b8a77c44004223fc6f1cec0603055c",
+          "checked_at": "2026-09-16T07:53:01.154005Z",
+          "checkpointed": true,
+          "delivered": true,
+          "semantic_conflicts": 0,
+          "notice": "This head was delivered at checked_at; the remote may advance afterward. Already-read model context is not refreshed."
+        }
+      },
+      "all_memory_envelope_bytes": 1916,
+      "all_tool_output_text_bytes": 45407,
+      "tool_code_bytes": 1235,
+      "code_calls": 5,
+      "model_requests": 6,
+      "last_request_usage": {
+        "input_tokens": 26111,
+        "cached_input_tokens": 25600,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 20,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 26131
+      },
+      "aggregate_usage": {
+        "input_tokens": 142420,
+        "cached_input_tokens": 127488,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 443,
+        "reasoning_output_tokens": 14
+      },
+      "representation": {
+        "completed_memory_calls": 4,
+        "complete_printed_envelopes": 4,
+        "remaining_printed_envelopes": 1,
+        "raw_wrapper_occurrences": 1,
+        "selector_read_before_first_memory": true
+      },
+      "answer": "Saved for future reference: your fictional hiking route is **Birch Loop**.",
+      "delivery_budgets": [
+        {
+          "operation": "memory_sync",
+          "seconds": 3,
+          "explicit": true
+        }
+      ],
+      "private_analysis_sha256": "eff2c8137cc2878db3f0e5401dc8642a52e6aceb2c54dff215f11ec6bed93880"
+    },
+    {
+      "case": "journal",
+      "completed": true,
+      "runtime_sha256": "0679b27eaefddb842ec54e03d966dc8369b39c63842bd7ddd74e2f058505c37e",
+      "skill_sha256": "48ccb1c93c68e6f5af355629d753e7fd72e4757644b399af489ec09c751cbcf1",
+      "mcp_enabled": true,
+      "mcp_readonly": false,
+      "binding_and_skill_unchanged": true,
+      "elapsed_seconds": 26.234,
+      "heads": {
+        "local": "aa3a8d5021a2cc4f9ed2762dc92663714e5d99b8",
+        "remote": "aa3a8d5021a2cc4f9ed2762dc92663714e5d99b8"
+      },
+      "prompt": "Record a short journal entry: today's fictional route-planning session settled on Birch Loop. There are no additional knowledge records to create.\n",
+      "prompt_sha256": "0ff05502e68f48da39e18affbcceaf8d47197c6e6b4fdd8ed53ebdb31d241bd7",
+      "tools": [
+        "memory_journal_append_and_sync"
+      ],
+      "writes": [
+        "memory_journal_append_and_sync"
+      ],
+      "save_requests": 1,
+      "standalone_sync_requests": 0,
+      "pre_save_sync_requests": 0,
+      "added_records": 0,
+      "added_journals": 1,
+      "existing_semantic_files_unchanged": true,
+      "no_cli_fallback": true,
+      "negative_full_inventory_unchanged": null,
+      "heads_before": {
+        "local": "c7128d0be0aa11e40edf92477fc527e8e6779bd3",
+        "remote": "1f4669a9781b7e0f629fb84e6f4efdc5f9ba9364"
+      },
+      "heads_after": {
+        "local": "aa3a8d5021a2cc4f9ed2762dc92663714e5d99b8",
+        "remote": "aa3a8d5021a2cc4f9ed2762dc92663714e5d99b8"
+      },
+      "saved": {
+        "signet_id": "signet-4b2095bcb56cd1bf73be966c3a403258",
+        "id": "event-3ad9491d1154ae5f4e3eacda1ff6b797",
+        "durable_locally": true,
+        "synchronization": "synchronized"
+      },
+      "delivery": {
+        "protocol_version": 1,
+        "ok": true,
+        "result": {
+          "signet_id": "signet-4b2095bcb56cd1bf73be966c3a403258",
+          "state": "synchronized",
+          "phase": "complete",
+          "head": "aa3a8d5021a2cc4f9ed2762dc92663714e5d99b8",
+          "remote_head": "aa3a8d5021a2cc4f9ed2762dc92663714e5d99b8",
+          "remote_id": "3a6d731e8b1f9c0eae0fc458712e49405b0918e5e2e7b3c75d19824e9d821be8",
+          "checked_at": "2026-09-16T07:53:27.130076Z",
+          "checkpointed": true,
+          "delivered": true,
+          "semantic_conflicts": 0,
+          "notice": "This head was delivered at checked_at; the remote may advance afterward. Already-read model context is not refreshed."
+        }
+      },
+      "all_memory_envelope_bytes": 778,
+      "all_tool_output_text_bytes": 45557,
+      "tool_code_bytes": 1726,
+      "code_calls": 3,
+      "model_requests": 4,
+      "last_request_usage": {
+        "input_tokens": 25704,
+        "cached_input_tokens": 24832,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 27,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 25731
+      },
+      "aggregate_usage": {
+        "input_tokens": 89910,
+        "cached_input_tokens": 55040,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 570,
+        "reasoning_output_tokens": 0
+      },
+      "representation": {
+        "completed_memory_calls": 1,
+        "complete_printed_envelopes": 1,
+        "remaining_printed_envelopes": 0,
+        "raw_wrapper_occurrences": 0,
+        "selector_read_before_first_memory": true
+      },
+      "answer": "Saved and synced: “Today's fictional route-planning session settled on Birch Loop.”\n\nNo additional knowledge records were created.",
+      "delivery_budgets": [
+        {
+          "operation": "memory_journal_append_and_sync",
+          "seconds": 3,
+          "explicit": true
+        }
+      ],
+      "private_analysis_sha256": "aec573921279795c48def899f1d341ea79a64c800e09b2a51d3fb7f3ff8ddbbd"
+    },
+    {
+      "case": "cue-learning",
+      "completed": true,
+      "runtime_sha256": "0679b27eaefddb842ec54e03d966dc8369b39c63842bd7ddd74e2f058505c37e",
+      "skill_sha256": "48ccb1c93c68e6f5af355629d753e7fd72e4757644b399af489ec09c751cbcf1",
+      "mcp_enabled": true,
+      "mcp_readonly": false,
+      "binding_and_skill_unchanged": true,
+      "elapsed_seconds": 30.732,
+      "heads": {
+        "local": "bab350aa5aa5a51bf77cca324193e89a25df12a5",
+        "remote": "bab350aa5aa5a51bf77cca324193e89a25df12a5"
+      },
+      "prompt": "Please remember that my fictional hiking route is Birch Loop. There is no useful journal entry to add. This is the way.\n",
+      "prompt_sha256": "053710fec1a0706b2896caead8bae98d6584117f794e8aa0723125852be9f278",
+      "tools": [
+        "memory_recall",
+        "memory_remember_and_sync"
+      ],
+      "writes": [
+        "memory_remember_and_sync"
+      ],
+      "save_requests": 1,
+      "standalone_sync_requests": 0,
+      "pre_save_sync_requests": 0,
+      "added_records": 1,
+      "added_journals": 0,
+      "existing_semantic_files_unchanged": true,
+      "no_cli_fallback": true,
+      "negative_full_inventory_unchanged": null,
+      "heads_before": {
+        "local": "545bdb6de0664adb79a195fc9a3597ca4303dff5",
+        "remote": "ee28febb3201575ea83c073cc2f4cb185b828a09"
+      },
+      "heads_after": {
+        "local": "bab350aa5aa5a51bf77cca324193e89a25df12a5",
+        "remote": "bab350aa5aa5a51bf77cca324193e89a25df12a5"
+      },
+      "saved": {
+        "signet_id": "signet-57227ba9082c5f06c36273238b8e3c51",
+        "id": "revision-fa30884de4ebbcab3b044e1e5eb0f8db",
+        "record_id": "record-e5027fb666eb5b0d0bed0a66f6ef3e80",
+        "durable_locally": true,
+        "synchronization": "synchronized"
+      },
+      "delivery": {
+        "protocol_version": 1,
+        "ok": true,
+        "result": {
+          "signet_id": "signet-57227ba9082c5f06c36273238b8e3c51",
+          "state": "synchronized",
+          "phase": "complete",
+          "head": "bab350aa5aa5a51bf77cca324193e89a25df12a5",
+          "remote_head": "bab350aa5aa5a51bf77cca324193e89a25df12a5",
+          "remote_id": "290429fa671f56acbe1141f5762f7e7766989da6ca04fd48fd45c061b70040cd",
+          "checked_at": "2026-09-16T07:53:56.441522Z",
+          "checkpointed": true,
+          "delivered": true,
+          "semantic_conflicts": 0,
+          "notice": "This head was delivered at checked_at; the remote may advance afterward. Already-read model context is not refreshed."
+        }
+      },
+      "all_memory_envelope_bytes": 1587,
+      "all_tool_output_text_bytes": 46250,
+      "tool_code_bytes": 1769,
+      "code_calls": 4,
+      "model_requests": 5,
+      "last_request_usage": {
+        "input_tokens": 26396,
+        "cached_input_tokens": 25856,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 29,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 26425
+      },
+      "aggregate_usage": {
+        "input_tokens": 117437,
+        "cached_input_tokens": 98304,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 589,
+        "reasoning_output_tokens": 0
+      },
+      "representation": {
+        "completed_memory_calls": 2,
+        "complete_printed_envelopes": 2,
+        "remaining_printed_envelopes": 0,
+        "raw_wrapper_occurrences": 0,
+        "selector_read_before_first_memory": true
+      },
+      "answer": "Remembered: your fictional hiking route is **Birch Loop**. Saved locally and synced successfully. No journal entry added.",
+      "delivery_budgets": [
+        {
+          "operation": "memory_remember_and_sync",
+          "seconds": 3,
+          "explicit": true
+        }
+      ],
+      "private_analysis_sha256": "f5900f96c210f3ace13a29a61bcddb413ccc193fb3bbbad0afdae29f73cc8bce"
+    },
+    {
+      "case": "cue-nosync",
+      "completed": true,
+      "runtime_sha256": "0679b27eaefddb842ec54e03d966dc8369b39c63842bd7ddd74e2f058505c37e",
+      "skill_sha256": "48ccb1c93c68e6f5af355629d753e7fd72e4757644b399af489ec09c751cbcf1",
+      "mcp_enabled": true,
+      "mcp_readonly": false,
+      "binding_and_skill_unchanged": true,
+      "elapsed_seconds": 10.831,
+      "heads": {
+        "local": "220eb61f0978ec65f38773282ecf347d66733bb4",
+        "remote": "453d538ef0770538026ef58c66ccf14dafe84e4b"
+      },
+      "prompt": "This is the way, but do not synchronize anything for this task, including any previously pending work. There is no new knowledge or useful journal entry to add.\n",
+      "prompt_sha256": "b07f987d80a7ba7653dbb63336e44b46aae3e0951c21bfd666d797420b4583d6",
+      "tools": [],
+      "writes": [],
+      "save_requests": 0,
+      "standalone_sync_requests": 0,
+      "pre_save_sync_requests": 0,
+      "added_records": 0,
+      "added_journals": 0,
+      "existing_semantic_files_unchanged": true,
+      "no_cli_fallback": true,
+      "negative_full_inventory_unchanged": false,
+      "observer_prestart_metadata_differences": [
+        {
+          "path": ".git",
+          "before_mtime": 1789545114994.2512,
+          "observed_after_mtime": 1789545115067.7786,
+          "predates_native_start": true,
+          "bytes_type_mode_unchanged": true
+        },
+        {
+          "path": ".git/index",
+          "before_mtime": 1789545114849.9055,
+          "observed_after_mtime": 1789545115067.5894,
+          "predates_native_start": true,
+          "bytes_type_mode_unchanged": true
+        }
+      ],
+      "heads_before": {
+        "local": "220eb61f0978ec65f38773282ecf347d66733bb4",
+        "remote": "453d538ef0770538026ef58c66ccf14dafe84e4b"
+      },
+      "heads_after": {
+        "local": "220eb61f0978ec65f38773282ecf347d66733bb4",
+        "remote": "453d538ef0770538026ef58c66ccf14dafe84e4b"
+      },
+      "saved": null,
+      "delivery": null,
+      "all_memory_envelope_bytes": 0,
+      "all_tool_output_text_bytes": 6612,
+      "tool_code_bytes": 128,
+      "code_calls": 1,
+      "model_requests": 2,
+      "last_request_usage": {
+        "input_tokens": 16799,
+        "cached_input_tokens": 15232,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 25,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 16824
+      },
+      "aggregate_usage": {
+        "input_tokens": 32184,
+        "cached_input_tokens": 27392,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 105,
+        "reasoning_output_tokens": 0
+      },
+      "representation": {
+        "completed_memory_calls": 0,
+        "complete_printed_envelopes": 0,
+        "remaining_printed_envelopes": 0,
+        "raw_wrapper_occurrences": 0,
+        "selector_read_before_first_memory": null
+      },
+      "answer": "Understood. Nothing was synchronized, including pending work, and no knowledge records or journal entries were added.",
+      "delivery_budgets": [],
+      "private_analysis_sha256": "94d88c54be5258c65cf2c199df91067f7884eafcbdfce6505bbd938e7a9fd450"
+    },
+    {
+      "case": "cue-readonly",
+      "completed": true,
+      "runtime_sha256": "0679b27eaefddb842ec54e03d966dc8369b39c63842bd7ddd74e2f058505c37e",
+      "skill_sha256": "48ccb1c93c68e6f5af355629d753e7fd72e4757644b399af489ec09c751cbcf1",
+      "mcp_enabled": true,
+      "mcp_readonly": false,
+      "binding_and_skill_unchanged": true,
+      "elapsed_seconds": 11.095,
+      "heads": {
+        "local": "c723dde568325f29baa3a87438e8b8122a28e1c6",
+        "remote": "e7dbb0417a45de0a468053e47aca6a32f2648efb"
+      },
+      "prompt": "This is the way. This task is read-only: do not save, journal, checkpoint, repair or modify anything, including earlier pending work.\n",
+      "prompt_sha256": "ec9af4d7ce3e7953b602586ac06aa9dafca396c99e3a182ba605f9ae2a1f7b54",
+      "tools": [],
+      "writes": [],
+      "save_requests": 0,
+      "standalone_sync_requests": 0,
+      "pre_save_sync_requests": 0,
+      "added_records": 0,
+      "added_journals": 0,
+      "existing_semantic_files_unchanged": true,
+      "no_cli_fallback": true,
+      "negative_full_inventory_unchanged": false,
+      "observer_prestart_metadata_differences": [
+        {
+          "path": ".git",
+          "before_mtime": 1789545116210.9763,
+          "observed_after_mtime": 1789545116278.4036,
+          "predates_native_start": true,
+          "bytes_type_mode_unchanged": true
+        }
+      ],
+      "heads_before": {
+        "local": "c723dde568325f29baa3a87438e8b8122a28e1c6",
+        "remote": "e7dbb0417a45de0a468053e47aca6a32f2648efb"
+      },
+      "heads_after": {
+        "local": "c723dde568325f29baa3a87438e8b8122a28e1c6",
+        "remote": "e7dbb0417a45de0a468053e47aca6a32f2648efb"
+      },
+      "saved": null,
+      "delivery": null,
+      "all_memory_envelope_bytes": 0,
+      "all_tool_output_text_bytes": 6831,
+      "tool_code_bytes": 110,
+      "code_calls": 1,
+      "model_requests": 2,
+      "last_request_usage": {
+        "input_tokens": 16877,
+        "cached_input_tokens": 15232,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 113,
+        "reasoning_output_tokens": 82,
+        "total_tokens": 16990
+      },
+      "aggregate_usage": {
+        "input_tokens": 32259,
+        "cached_input_tokens": 27392,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 185,
+        "reasoning_output_tokens": 82
+      },
+      "representation": {
+        "completed_memory_calls": 0,
+        "complete_printed_envelopes": 0,
+        "remaining_printed_envelopes": 0,
+        "raw_wrapper_occurrences": 0,
+        "selector_read_before_first_memory": null
+      },
+      "answer": "Understood. Nothing was changed or synchronized. I’ll keep this task strictly read-only and leave all earlier pending work untouched.",
+      "delivery_budgets": [],
+      "private_analysis_sha256": "bc02bd030b4c9bc4f63248fdaa804a24b989e46614bd86328fef44e44227b6f3"
+    },
+    {
+      "case": "cue-offline",
+      "completed": true,
+      "runtime_sha256": "0679b27eaefddb842ec54e03d966dc8369b39c63842bd7ddd74e2f058505c37e",
+      "skill_sha256": "48ccb1c93c68e6f5af355629d753e7fd72e4757644b399af489ec09c751cbcf1",
+      "mcp_enabled": true,
+      "mcp_readonly": false,
+      "binding_and_skill_unchanged": true,
+      "elapsed_seconds": 29.54,
+      "heads": {
+        "local": "3423e9b0ab7dad37fe45d977c3018a74ddaed079",
+        "remote": "1bd9d837f8b576c39ad0e1cdc9271978c49153f3"
+      },
+      "prompt": "There is no new knowledge or useful journal entry to add from this conversation. This is the way.\n",
+      "prompt_sha256": "18f366130750d89997f64c55b01960a8111e54e41d27e66eebc7348c6d204963",
+      "tools": [
+        "memory_sync"
+      ],
+      "writes": [
+        "memory_sync"
+      ],
+      "save_requests": 0,
+      "standalone_sync_requests": 1,
+      "pre_save_sync_requests": 0,
+      "added_records": 0,
+      "added_journals": 0,
+      "existing_semantic_files_unchanged": true,
+      "no_cli_fallback": true,
+      "negative_full_inventory_unchanged": null,
+      "observer_prestart_metadata_differences": [],
+      "heads_before": {
+        "local": "3423e9b0ab7dad37fe45d977c3018a74ddaed079",
+        "remote": "1bd9d837f8b576c39ad0e1cdc9271978c49153f3"
+      },
+      "heads_after": {
+        "local": "3423e9b0ab7dad37fe45d977c3018a74ddaed079",
+        "remote": "1bd9d837f8b576c39ad0e1cdc9271978c49153f3"
+      },
+      "saved": null,
+      "delivery": {
+        "protocol_version": 1,
+        "ok": true,
+        "result": {
+          "signet_id": "signet-250978ca7e3b67e1386fcf43156541f0",
+          "state": "pending",
+          "phase": "fetch",
+          "head": "3423e9b0ab7dad37fe45d977c3018a74ddaed079",
+          "remote_id": "b1ac18c600817d0e14879d9815cc84dbeef5713f74e9f6f8dd234815130ed145",
+          "checked_at": "2026-09-16T07:54:47.703196Z",
+          "checkpointed": true,
+          "delivered": false,
+          "semantic_conflicts": 0,
+          "notice": "Remote unavailable; local changes remain committed."
+        }
+      },
+      "all_memory_envelope_bytes": 427,
+      "all_tool_output_text_bytes": 11545,
+      "tool_code_bytes": 1470,
+      "code_calls": 3,
+      "model_requests": 4,
+      "last_request_usage": {
+        "input_tokens": 18453,
+        "cached_input_tokens": 17792,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 27,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 18480
+      },
+      "aggregate_usage": {
+        "input_tokens": 68527,
+        "cached_input_tokens": 49664,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 587,
+        "reasoning_output_tokens": 66
+      },
+      "representation": {
+        "completed_memory_calls": 1,
+        "complete_printed_envelopes": 1,
+        "remaining_printed_envelopes": 0,
+        "raw_wrapper_occurrences": 0,
+        "selector_read_before_first_memory": true
+      },
+      "answer": "No new knowledge or journal entry added. Sync remains pending because the remote is unavailable; existing local changes remain committed.",
+      "delivery_budgets": [
+        {
+          "operation": "memory_sync",
+          "seconds": 3,
+          "explicit": true
+        }
+      ],
+      "private_analysis_sha256": "c190f607a91d7601fc3944eef5f3a19819c459907339bdd8ef3969eb9c028382"
+    },
+    {
+      "case": "missing",
+      "completed": true,
+      "runtime_sha256": "0679b27eaefddb842ec54e03d966dc8369b39c63842bd7ddd74e2f058505c37e",
+      "skill_sha256": "48ccb1c93c68e6f5af355629d753e7fd72e4757644b399af489ec09c751cbcf1",
+      "mcp_enabled": false,
+      "mcp_readonly": false,
+      "binding_and_skill_unchanged": true,
+      "elapsed_seconds": 13.689,
+      "heads": {
+        "local": "faff31d24b1231f794318ec3ad38fb25f48ab81a",
+        "remote": "25e73c86687682268b2beb2ce5610ea68fcd68f5"
+      },
+      "prompt": "There is no new knowledge or useful journal entry to add from this conversation. This is the way.\n",
+      "prompt_sha256": "18f366130750d89997f64c55b01960a8111e54e41d27e66eebc7348c6d204963",
+      "tools": [],
+      "writes": [],
+      "save_requests": 0,
+      "standalone_sync_requests": 0,
+      "pre_save_sync_requests": 0,
+      "added_records": 0,
+      "added_journals": 0,
+      "existing_semantic_files_unchanged": true,
+      "no_cli_fallback": true,
+      "negative_full_inventory_unchanged": false,
+      "observer_prestart_metadata_differences": [
+        {
+          "path": ".git",
+          "before_mtime": 1789545118664.406,
+          "observed_after_mtime": 1789545118728.657,
+          "predates_native_start": true,
+          "bytes_type_mode_unchanged": true
+        },
+        {
+          "path": ".git/index",
+          "before_mtime": 1789545118516.5903,
+          "observed_after_mtime": 1789545118728.5188,
+          "predates_native_start": true,
+          "bytes_type_mode_unchanged": true
+        }
+      ],
+      "heads_before": {
+        "local": "faff31d24b1231f794318ec3ad38fb25f48ab81a",
+        "remote": "25e73c86687682268b2beb2ce5610ea68fcd68f5"
+      },
+      "heads_after": {
+        "local": "faff31d24b1231f794318ec3ad38fb25f48ab81a",
+        "remote": "25e73c86687682268b2beb2ce5610ea68fcd68f5"
+      },
+      "saved": null,
+      "delivery": null,
+      "all_memory_envelope_bytes": 0,
+      "all_tool_output_text_bytes": 6880,
+      "tool_code_bytes": 315,
+      "code_calls": 2,
+      "model_requests": 3,
+      "last_request_usage": {
+        "input_tokens": 16994,
+        "cached_input_tokens": 16640,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 32,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 17026
+      },
+      "aggregate_usage": {
+        "input_tokens": 49239,
+        "cached_input_tokens": 44032,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 211,
+        "reasoning_output_tokens": 44
+      },
+      "representation": {
+        "completed_memory_calls": 0,
+        "complete_printed_envelopes": 0,
+        "remaining_printed_envelopes": 0,
+        "raw_wrapper_occurrences": 0,
+        "selector_read_before_first_memory": null
+      },
+      "answer": "This is the way. No knowledge or journal entry was added. Mandalore isn’t connected here, so I couldn’t check pending delivery.",
+      "delivery_budgets": [],
+      "private_analysis_sha256": "e30b6c4fd6f896587d483a762e267ffbce5c9b771807f355ecc0edb0657d0d44"
+    },
+    {
+      "case": "ordinary-offline",
+      "completed": true,
+      "runtime_sha256": "0679b27eaefddb842ec54e03d966dc8369b39c63842bd7ddd74e2f058505c37e",
+      "skill_sha256": "48ccb1c93c68e6f5af355629d753e7fd72e4757644b399af489ec09c751cbcf1",
+      "mcp_enabled": true,
+      "mcp_readonly": false,
+      "binding_and_skill_unchanged": true,
+      "elapsed_seconds": 33.583,
+      "heads": {
+        "local": "2b810a9b2ae4cfa36d18361c48126351a594898f",
+        "remote": "7798298d14d2db3570587b3378c4f63d542d74c8"
+      },
+      "prompt": "For future reference, my fictional hiking route is Birch Loop.\n",
+      "prompt_sha256": "c3360cf50c3295e5cd432d40918bce6ea794031996f27b196e5023a4ad175e6e",
+      "tools": [
+        "memory_recall",
+        "memory_remember_and_sync"
+      ],
+      "writes": [
+        "memory_remember_and_sync"
+      ],
+      "save_requests": 1,
+      "standalone_sync_requests": 0,
+      "pre_save_sync_requests": 0,
+      "added_records": 1,
+      "added_journals": 0,
+      "existing_semantic_files_unchanged": true,
+      "no_cli_fallback": true,
+      "negative_full_inventory_unchanged": null,
+      "observer_prestart_metadata_differences": [],
+      "heads_before": {
+        "local": "883d8ace84fc8844c9cf55aca0241ca585acabe5",
+        "remote": "7798298d14d2db3570587b3378c4f63d542d74c8"
+      },
+      "heads_after": {
+        "local": "2b810a9b2ae4cfa36d18361c48126351a594898f",
+        "remote": "7798298d14d2db3570587b3378c4f63d542d74c8"
+      },
+      "saved": {
+        "signet_id": "signet-0d318abea299bf4ae6a35a82da0fb61c",
+        "id": "revision-7ca66694fa0e44a86f25c912ecb3e040",
+        "record_id": "record-f795c783ebf7741c51d520435c6796a0",
+        "durable_locally": true,
+        "synchronization": "pending"
+      },
+      "delivery": {
+        "protocol_version": 1,
+        "ok": true,
+        "result": {
+          "signet_id": "signet-0d318abea299bf4ae6a35a82da0fb61c",
+          "state": "pending",
+          "phase": "fetch",
+          "head": "2b810a9b2ae4cfa36d18361c48126351a594898f",
+          "remote_id": "87d74c1ce06f7586abd775455db8fb6a39f663c5f801064b54046498cbf43684",
+          "checked_at": "2026-09-16T07:55:36.189406Z",
+          "checkpointed": true,
+          "delivered": false,
+          "semantic_conflicts": 0,
+          "notice": "Remote unavailable; local changes remain committed."
+        }
+      },
+      "all_memory_envelope_bytes": 1452,
+      "all_tool_output_text_bytes": 46117,
+      "tool_code_bytes": 1761,
+      "code_calls": 4,
+      "model_requests": 5,
+      "last_request_usage": {
+        "input_tokens": 26334,
+        "cached_input_tokens": 25728,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 27,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 26361
+      },
+      "aggregate_usage": {
+        "input_tokens": 117318,
+        "cached_input_tokens": 102400,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 574,
+        "reasoning_output_tokens": 0
+      },
+      "representation": {
+        "completed_memory_calls": 2,
+        "complete_printed_envelopes": 2,
+        "remaining_printed_envelopes": 0,
+        "raw_wrapper_occurrences": 0,
+        "selector_read_before_first_memory": true
+      },
+      "answer": "Saved locally: your fictional hiking route is **Birch Loop**. Sync is pending because the remote is unavailable.",
+      "delivery_budgets": [
+        {
+          "operation": "memory_remember_and_sync",
+          "seconds": 3,
+          "explicit": true
+        }
+      ],
+      "private_analysis_sha256": "dc742fdee4c5683cf906bd4ab1a28f5134594015e28d50098aa3bd19dd1d6138"
+    }
+  ],
+  "limitations": [
+    "Three negative-case full-inventory comparisons failed on pre-native Git directory/index mtimes. Bytes/types/modes/heads and semantic inventories match; observer control reproduces optional Git status metadata refresh. No clean whole-inventory claim.",
+    "One native observation per case, not a reliability or cost benchmark. Same model-request count and greater candidate context retained.",
+    "One old-baseline duplicate wrapper retained; candidate envelopes are faithful and single.",
+    "Local bare origins do not prove hosted authentication or cross-machine delivery.",
+    "Human acceptance, release, live activation and remaining original Pi rendered cases are separate."
+  ]
+}

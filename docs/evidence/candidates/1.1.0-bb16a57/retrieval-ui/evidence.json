@@ -100,7 +100,7 @@
     "Narrow values wrap without disappearing; no copyability guarantee for wrapped commands."
   ],
   "limitations": [
-    "Synthetic temporary paths retained; no user/home/auth/private-memory data.",
+    "Only synthetic temporary paths are retained; no user profile, authentication or private memory data.",
     "No screen-reader, alternate locale/font, native Linux or independent human acceptance.",
     "Recordings preserve original bytes; replay in disposable terminal because terminal queries can cause replies.",
     "Application exit1 in plain/stale is expected refusal, not a crash."

@@ -55,7 +55,7 @@ This does not promise copyability of arbitrary wrapped recovery commands (#77).
 
 [Evidence manifest](evidence.json) binds all four original binary recordings,
 dimensions, application outcomes, pins and inventory checks. Its SHA-256 is
-`62d81e26af3ca2744fa93e3292cc76e246466f8fcdb3ba393fe7f909c6ceaf11`.
+`ec41127e31b337f8d2e962e04eaddeb99f2bf1d7a36fdff54aed727e1ba3c81a`.
 Recordings contain only owned synthetic temporary paths; no native user profile,
 authentication, personal memory or model transcripts are included. They preserve
 original bytes and can be opened with macOS `script -dpq FILE`; replay in a
@@ -68,8 +68,17 @@ other platforms, screen readers, alternate locales/fonts and an approved pixel
 baseline are not established. Reconcile remaining original candidate-guide gaps
 before presenting a release decision.
 
-Full pinned `mise exec -- bin/ci` passed in this evidence worktree: 22 Pi tests,
-Go race-enabled checks, vet and four target builds. Docker remained unavailable,
-so this used the documented host fallback. Cached Go test results are not relabeled
-fresh native runs; the four recordings above were executed separately against
-the retained release-candidate executable.
+The initial pinned `mise exec -- bin/ci` passed before the new receipt was tracked;
+its tracked-content privacy scan therefore did not cover that receipt. The next
+CI run caught a slash-separated explanatory phrase that resembled a home path.
+Inspection established a wording false positive, not a private path or credential.
+Only that limitation sentence was reworded; recordings and all measurements are
+unchanged. The old receipt digest `62d81e26af3ca2744fa93e3292cc76e246466f8fcdb3ba393fe7f909c6ceaf11`
+remains bound to the earlier commit, not to the corrected receipt above.
+
+Validation must run with all evidence files staged/tracked so the privacy scan
+covers the complete change. Docker is unavailable; use the documented pinned host
+fallback. Cached Go results are not fresh native runs; the four recordings were
+executed separately against the retained release-candidate executable.
+The corrected staged checkpoint passed full host CI, including the public-content
+scan, 22 Pi tests, Go race-enabled checks, vet and four target builds.

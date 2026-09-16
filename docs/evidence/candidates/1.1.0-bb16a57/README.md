@@ -178,6 +178,14 @@ expansion, and changed-source Next refusal. Fixture effects and terminal
 restoration are verified; a mistaken controller Back-target expectation is
 retained separately from application behavior.
 
+The [native delivery checkpoint](delivery-model/README.md) adds nine fresh
+conversations: ordinary learning comparison, journal-only delivery, useful
+consolidation, no-sync/read-only, unavailable-origin and missing-connection
+behavior. Combined delivery removed a mutation request and the save-to-sync
+decision gap, but not total model rounds or context cost. Negative-case Git
+metadata observer effects are retained with a no-agent control; no clean
+whole-inventory pass is claimed for those three runs.
+
 This remains a partial engineering checkpoint. Remaining
 lifecycle/rendering/failure scenarios must still be reconciled against the full
 original candidate guide. Earlier-head evidence is a baseline, not exact-candidate acceptance.
