@@ -29,6 +29,11 @@ and another absent profile. Both preserve default-No confirmation and explicit
 partial/success phases. Captures normalize selected paths; they are not screenshots
 or screen-reader, color, alternate-font/locale or other-platform acceptance.
 
+The Git text projection trims final prompt whitespace and adds a terminal newline.
+`published_text_sha256` binds those committed text files separately from the
+helper's original and path-normalized output hashes. Interior prompt spacing is
+retained, including intentional trailing blanks visible to whitespace checks.
+
 The first packaged check already passed real installation/inspection. Its menu
 capture then stopped at the publication privacy guard because the longer runtime
 path wrapped across lines and exact-string masking missed it. Raw output stayed
