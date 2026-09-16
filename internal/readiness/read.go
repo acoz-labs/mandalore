@@ -53,6 +53,17 @@ func scanRegular(ctx context.Context, path string, limit int64, allowRedirect bo
 	}
 	path = filepath.Clean(path)
 	selected := path
+	if !allowRedirect {
+		// Refuse even a dangling final symlink as redirected managed metadata;
+		// EvalSymlinks alone would misclassify it as missing setup.
+		info, err := os.Lstat(path)
+		if err != nil {
+			return "", nil, err
+		}
+		if !info.Mode().IsRegular() {
+			return "", nil, errMetadataUnsafe
+		}
+	}
 	resolved, err := filepath.EvalSymlinks(path)
 	if err != nil {
 		return "", nil, err
