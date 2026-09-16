@@ -142,7 +142,8 @@ func applyInstall(ctx context.Context, p InstallPlan, client *ReleaseClient, ver
 			return result, nil
 		}
 	}
-	fresh, err := planInstall(ctx, p.InstallOptions, client)
+	var verified verifiedRelease
+	fresh, err := planInstallVerified(ctx, p.InstallOptions, client, &verified)
 	if err != nil {
 		return result, err
 	}
@@ -159,7 +160,7 @@ func applyInstall(ctx context.Context, p InstallPlan, client *ReleaseClient, ver
 	}
 	defer cleanup()
 	result.Phase = "staging"
-	if err = stageInstallSource(ctx, p, client, stage); err != nil {
+	if err = stageInstallSource(ctx, fresh, client, stage, &verified); err != nil {
 		return result, err
 	}
 	if err = os.Chmod(filepath.Join(stage, "mandalore"), 0700); err != nil {

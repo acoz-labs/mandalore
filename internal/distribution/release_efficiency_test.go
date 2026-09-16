@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -41,6 +42,89 @@ func TestReleaseInstallRequestBudget(t *testing.T) {
 			t.Logf("plan=%d apply=%d total=%d replay=%d", planned, applied-planned, applied, len(f.requests)-applied)
 			if planned != 4 || applied != 13 || len(f.requests) != applied {
 				t.Fatal("request budget or zero-request replay changed")
+			}
+		})
+	}
+}
+
+func TestReleaseStagingRequiresFreshPrivateSource(t *testing.T) {
+	for _, kind := range []string{"missing", "wrong view", "corrupt bytes", "cancelled"} {
+		t.Run(kind, func(t *testing.T) {
+			f := newReleaseFixture(t)
+			var source verifiedRelease
+			p, err := planInstallVerified(context.Background(), InstallOptions{Prefix: filepath.Join(t.TempDir(), "prefix")}, f.client, &source)
+			if err != nil {
+				t.Fatal(err)
+			}
+			root := t.TempDir()
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			v := &source
+			switch kind {
+			case "missing":
+				v = nil
+			case "wrong view":
+				source.view.ID++
+			case "corrupt bytes":
+				source.manifest = []byte("corrupt")
+			case "cancelled":
+				cancel()
+			}
+			before := len(f.requests)
+			if err := stageInstallSource(ctx, p, f.client, root, v); err == nil {
+				t.Fatal("invalid source staged")
+			}
+			entries, err := os.ReadDir(root)
+			if err != nil || len(entries) != 0 || len(f.requests) != before {
+				t.Fatal("invalid source caused writes or network", err)
+			}
+		})
+	}
+}
+
+func TestEfficientReleaseApplyRejectsChangesAndPreservesDestination(t *testing.T) {
+	for _, kind := range []string{"stale preview", "release during staging", "tag during staging", "asset during staging", "probe changes bytes", "corrupt binary"} {
+		t.Run(kind, func(t *testing.T) {
+			f := newReleaseFixture(t)
+			p, err := planInstall(context.Background(), InstallOptions{Prefix: filepath.Join(t.TempDir(), "prefix")}, f.client)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if kind == "stale preview" {
+				f.release["id"] = int64(43)
+			}
+			if kind == "corrupt binary" {
+				for _, a := range f.assets {
+					if a["name"] == p.Binary.Name {
+						f.body[fmt.Sprintf("/repos/acoz-labs/mandalore/releases/assets/%d", a["id"])] = []byte("corrupt")
+					}
+				}
+			}
+			probe := func(ctx context.Context, path string, p InstallPlan) error {
+				if kind == "probe changes bytes" {
+					return os.WriteFile(path, []byte("changed by probe"), 0600)
+				}
+				return inertInstallVerifier(ctx, path, p)
+			}
+			after := func(phase string) error {
+				if phase == "verified" {
+					switch kind {
+					case "release during staging":
+						f.release["id"] = int64(43)
+					case "tag during staging":
+						f.body["/repos/acoz-labs/mandalore/git/ref/tags/v1.0.0"] = []byte(`{"ref":"refs/tags/v1.0.0","object":{"type":"commit","sha":"` + strings.Repeat("f", 40) + `"}}`)
+					case "asset during staging":
+						f.assets[0]["digest"] = "sha256:" + strings.Repeat("f", 64)
+					}
+				}
+				return nil
+			}
+			r, err := applyInstall(context.Background(), p, f.client, probe, after)
+			if err == nil || r.Installed || r.DestinationChanged {
+				t.Fatal("changed source installed", r, err)
+			}
+			if _, err := os.Lstat(p.Prefix); !os.IsNotExist(err) {
+				t.Fatal("refusal changed destination", err)
 			}
 		})
 	}
