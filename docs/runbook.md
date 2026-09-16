@@ -19,6 +19,15 @@ Archiving My Friday neither migrates nor removes existing pinned installations.
 
 ## Storage recovery and remaining integration work
 
+For privacy incidents, start with [memory lifetime and scoped incident guidance](privacy.md#accidental-secret-or-sensitive-content-save).
+Rotate/revoke an exposed credential first without printing it into a new report.
+Corrections and foundling disconnection preserve historical evidence. A local
+deletion does not erase Git, remote, backup or native-session copies; append-only
+sync is not a redaction transport. Review exact cleanup targets, backup exposure
+and recovery authority separately. Do not force-push, prune history or remove
+evidence as a routine repair. Export/withdrawal designs in that guide are deferred,
+not available commands. Normal authorized learning remains enabled.
+
 ### Implemented library behavior
 
 - A busy writer fails without taking over another process's lock. Retry after
