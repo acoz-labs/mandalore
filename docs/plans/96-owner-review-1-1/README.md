@@ -1,7 +1,9 @@
 # Exact 1.1.0 owner-review eligibility
 - **Issue:** #96
-- **Status:** Draft
+- **Status:** Final
 - **Repository basis:** b89458617b49d2eb0a8686dcd75c26aa7ea6f6ba
+- **Planning PR:** #97
+- **Execution envelope:** implementation
 
 ## Decision Spotlight
 Add one exact source/artifact pair and its nine nominated issues to the existing
