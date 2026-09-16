@@ -1,8 +1,8 @@
 # Solution Design: distinguish no new content from no-save direction
 
-- **Status:** Draft
+- **Status:** Final
 - **Issue:** #100
-- **Planning PR:** Pending
+- **Planning PR:** #102
 - **Repository basis:** 7d9ec5c3cd2083e41bf56c47aee3e4295fe0aef9
 - **Execution envelope:** implementation
 
