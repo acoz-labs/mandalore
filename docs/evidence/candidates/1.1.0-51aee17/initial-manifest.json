@@ -1,0 +1,94 @@
+{
+  "identity": "mandalore:51aee17afec015ba2ad44584f8190b4bb6d901a8:sha256:7adacb6e7dc990a12df2cc25e72404dde0156835d771474c9745d3b517a0780c",
+  "phase": "initial-integrity-and-cancellation-engineering-only",
+  "files": [
+    {
+      "path": "verified.json",
+      "sha256": "5095f0c82867036945681d30046abd5ccbbf23f2e23a3535ef1a2893b50167b3"
+    },
+    {
+      "path": "transport.json",
+      "sha256": "7c1279abe922d5f7bf29078e77ea3b96f16ce60532a0cd7afe3db18f376223d9"
+    },
+    {
+      "path": "cancellation/additional.json",
+      "sha256": "79494cccfa204029ee1b45665b4cf82af6b28a5b0e6fb2a2c373db8f2ee048b2"
+    },
+    {
+      "path": "cancellation/default-no.capture.json",
+      "sha256": "b691e86d33b32e3afee49808b14f0a28b115b39ffd1cebd129a3dfef6b9de464"
+    },
+    {
+      "path": "cancellation/default-no.recording",
+      "sha256": "436bf724e45215a67ac61b93c966a98fb55ca8e4b3bc86479282edda9a193a4b"
+    },
+    {
+      "path": "cancellation/eof.capture.json",
+      "sha256": "dcf3145a3819c71e4422e87888953e1bcec40c794af43738d9b21df65a7af1f7"
+    },
+    {
+      "path": "cancellation/eof.recording",
+      "sha256": "4114b7362bde5de1e129db680f692b0aa575a0df7bd748dd88116e116cec649c"
+    },
+    {
+      "path": "cancellation/evidence.json",
+      "sha256": "4b3e62bbbec14932fa4255fc0e607112cbe38dcaa787a92a12ce9d0ba2059e42"
+    },
+    {
+      "path": "cancellation/idle.capture.json",
+      "sha256": "fb92e2e8ecbd27bd72dda76ef203eb4871046b8e78219563c45af3c421e20726"
+    },
+    {
+      "path": "cancellation/idle.recording",
+      "sha256": "5a538c638abf454701c4155f5ce6a58d8de6a858ce5634b4aae86ff61c2262ab"
+    },
+    {
+      "path": "cancellation/partial-approval.capture.json",
+      "sha256": "7c26f9de2d9c72f495e720e5426a99ead5c7c312191de3672d1ffaa95cdc6494"
+    },
+    {
+      "path": "cancellation/partial-approval.recording",
+      "sha256": "dca14abea5f19f2a3ee62b59b1eb00721a89fd5bb758f3d6f69c3e4c21a97371"
+    },
+    {
+      "path": "cancellation/partial-choice.capture.json",
+      "sha256": "287ac57d4b48642f2dcbdfff1efeb4f1b8aff532844bf208589ca1c7ec82c8b1"
+    },
+    {
+      "path": "cancellation/partial-choice.recording",
+      "sha256": "ff84cf339af31aaca10003badb398dd4e4fbe25f9317e4f1c4db0def3b65bf2e"
+    },
+    {
+      "path": "cancellation/release-approval-color.capture.json",
+      "sha256": "8e1041015261649ed20bdf9d7ff175da2452971186ee9a41dca822c38e106798"
+    },
+    {
+      "path": "cancellation/release-approval-color.recording",
+      "sha256": "c2e05f6c25a7284728e0879b9368657357cfb3ec453a941a6526783dc3ca6e2d"
+    },
+    {
+      "path": "cancellation/text.capture.json",
+      "sha256": "6e1d9609ab27936558a8ce77d403b41fef2bbb331f70650aed8e5ae485e32d4b"
+    },
+    {
+      "path": "cancellation/text.recording",
+      "sha256": "7bb814daa4a79bfbee18875c3168cbf60035ea7996424b1f1f8215d446ac6b2c"
+    },
+    {
+      "path": "cancellation/tui-back-color-complete.capture.json",
+      "sha256": "a8620c9e429fbc2e7b0fd5cd2bf2a8385dcb807dd5d3e9eb71fa8cadf40c00c0"
+    },
+    {
+      "path": "cancellation/tui-back-color-complete.recording",
+      "sha256": "f3c7c6e7e8ead60bc1b9a0b0d66c0314bfa76e61847a62a2010128b916831e99"
+    },
+    {
+      "path": "cancellation/tui.capture.json",
+      "sha256": "e0a9fd768acda73500d2367ffa4bddddee6d54b2db478b0922a27e37e7f496c2"
+    },
+    {
+      "path": "cancellation/tui.recording",
+      "sha256": "6114d01802f51b2590945749de73b8c549e613a9c2cd41af02d58f8f01c928b2"
+    }
+  ]
+}
