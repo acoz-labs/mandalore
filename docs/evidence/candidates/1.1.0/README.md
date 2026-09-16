@@ -71,9 +71,12 @@ published here. Native aggregate token counts are not Mandalore-only context cos
 
 ## Remaining gates
 
-This initial checkpoint passes only the four scenarios above. Remaining candidate
-work includes opposite-direction correction, consolidation/no-filler/quoted and
-prohibited cases, failure/concurrency/context/lifecycle checks, progressive
+The [second checkpoint](continuity-rendering.md) adds opposite-direction
+correction, explicit no-sync, quoted-cue and no-filler delivery checks. It also
+retains a first-error rendering failure: #56 is not ready for candidate acceptance
+until that finding is addressed or explicitly resolved through product review.
+Remaining candidate work includes additional prohibited cases,
+failure/concurrency/context/lifecycle checks, progressive
 foundling quality and actual code-mode presentation, rendered quota/readiness
 matrices, isolated old→new update/recovery, and the human acceptance handoff.
 Earlier implementation evidence is a baseline, not a substitute for exact-byte

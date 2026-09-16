@@ -1,0 +1,322 @@
+{
+  "source": "6f9bb5e4d3b79a1c5cf4947b428dcd5b31da0a41",
+  "identity": "mandalore:6f9bb5e4d3b79a1c5cf4947b428dcd5b31da0a41:sha256:431046675befde9e68c0ff30fe3b31f636af18fb41701ce9a2ed4d00487fb120",
+  "model": "gpt-6-astra",
+  "reasoning": "high",
+  "issue_56_candidate_ready": false,
+  "finding": "The first invalid recall was printed as a full duplicate wrapper before the model read the selector guidance. Later scopes/recall used selected envelopes. Error fidelity and recovery passed; uniform deduplication did not.",
+  "scenarios": [
+    {
+      "variant": "baseline",
+      "source": "f899cf6a2a255f3b6b35dcd778c672f799c65eb2",
+      "runtime_sha256": "bcc1b7fdf9e72ccb2bbd734d798c16f3aa5b96de757846711a4e5afe6eb00f93",
+      "answer": "Cedar Orbit’s current release day is **Monday**. The two earlier decisions, oldest first, were **Thursday → Friday**.",
+      "calls": [
+        "memory_scopes",
+        "memory_recall",
+        "memory_history"
+      ],
+      "read_only_fixtures_unchanged": true,
+      "code_mode_batches": [
+        {
+          "output_utf8_bytes": 40154,
+          "input_utf8_bytes": 199,
+          "structured_wrapper_occurrences": 0,
+          "tool_names": [],
+          "reads_selector": false,
+          "uses_selector": false
+        },
+        {
+          "output_utf8_bytes": 598,
+          "input_utf8_bytes": 61,
+          "structured_wrapper_occurrences": 1,
+          "tool_names": [
+            "mcp__mandalore__memory_scopes"
+          ],
+          "reads_selector": false,
+          "uses_selector": false
+        },
+        {
+          "output_utf8_bytes": 1690,
+          "input_utf8_bytes": 108,
+          "structured_wrapper_occurrences": 1,
+          "tool_names": [
+            "mcp__mandalore__memory_recall"
+          ],
+          "reads_selector": false,
+          "uses_selector": false
+        },
+        {
+          "output_utf8_bytes": 5676,
+          "input_utf8_bytes": 105,
+          "structured_wrapper_occurrences": 1,
+          "tool_names": [
+            "mcp__mandalore__memory_history"
+          ],
+          "reads_selector": false,
+          "uses_selector": false
+        }
+      ],
+      "output_utf8_bytes": 48118,
+      "tool_code_utf8_bytes": 473,
+      "printed_structured_wrappers": 3,
+      "last_request_usage": {
+        "input_tokens": 27482,
+        "cached_input_tokens": 25472,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 31,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 27513
+      },
+      "aggregate_usage": {
+        "input_tokens": 118711,
+        "cached_input_tokens": 102656,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 239,
+        "reasoning_output_tokens": 0
+      },
+      "complete_wire_envelopes_preserved": true,
+      "deduplication_pass": false,
+      "memory_presentation": [
+        {
+          "operation": "memory_scopes",
+          "bytes": 550,
+          "representation": "full-duplicate-wrapper",
+          "ok": true
+        },
+        {
+          "operation": "memory_recall",
+          "bytes": 1642,
+          "representation": "full-duplicate-wrapper",
+          "ok": true
+        },
+        {
+          "operation": "memory_history",
+          "bytes": 5628,
+          "representation": "full-duplicate-wrapper",
+          "ok": true
+        }
+      ],
+      "memory_presentation_bytes": 7820
+    },
+    {
+      "variant": "candidate",
+      "source": "6f9bb5e4d3b79a1c5cf4947b428dcd5b31da0a41",
+      "runtime_sha256": "5f19988a729637eea300949bce603796da831c9c1365c9f8dea043f4c0391d89",
+      "answer": "Cedar Orbit’s current release day is **Monday**. The two earlier decisions, in order, were **Thursday → Friday**.",
+      "calls": [
+        "memory_scopes",
+        "memory_recall",
+        "memory_history"
+      ],
+      "read_only_fixtures_unchanged": true,
+      "code_mode_batches": [
+        {
+          "output_utf8_bytes": 40156,
+          "input_utf8_bytes": 219,
+          "structured_wrapper_occurrences": 0,
+          "tool_names": [],
+          "reads_selector": false,
+          "uses_selector": false
+        },
+        {
+          "output_utf8_bytes": 7272,
+          "input_utf8_bytes": 242,
+          "structured_wrapper_occurrences": 0,
+          "tool_names": [
+            "mcp__mandalore__memory_"
+          ],
+          "reads_selector": true,
+          "uses_selector": false
+        },
+        {
+          "output_utf8_bytes": 276,
+          "input_utf8_bytes": 1184,
+          "structured_wrapper_occurrences": 0,
+          "tool_names": [
+            "mcp__mandalore__memory_scopes"
+          ],
+          "reads_selector": false,
+          "uses_selector": true
+        },
+        {
+          "output_utf8_bytes": 804,
+          "input_utf8_bytes": 161,
+          "structured_wrapper_occurrences": 0,
+          "tool_names": [
+            "mcp__mandalore__memory_recall"
+          ],
+          "reads_selector": false,
+          "uses_selector": false
+        },
+        {
+          "output_utf8_bytes": 2696,
+          "input_utf8_bytes": 158,
+          "structured_wrapper_occurrences": 0,
+          "tool_names": [
+            "mcp__mandalore__memory_history"
+          ],
+          "reads_selector": false,
+          "uses_selector": false
+        }
+      ],
+      "output_utf8_bytes": 51204,
+      "tool_code_utf8_bytes": 1964,
+      "printed_structured_wrappers": 0,
+      "last_request_usage": {
+        "input_tokens": 28181,
+        "cached_input_tokens": 27136,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 31,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 28212
+      },
+      "aggregate_usage": {
+        "input_tokens": 149135,
+        "cached_input_tokens": 132352,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 688,
+        "reasoning_output_tokens": 0
+      },
+      "complete_wire_envelopes_preserved": true,
+      "deduplication_pass": true,
+      "memory_presentation": [
+        {
+          "operation": "memory_scopes",
+          "bytes": 228,
+          "representation": "selected-envelope",
+          "ok": true
+        },
+        {
+          "operation": "memory_recall",
+          "bytes": 756,
+          "representation": "selected-envelope",
+          "ok": true
+        },
+        {
+          "operation": "memory_history",
+          "bytes": 2648,
+          "representation": "selected-envelope",
+          "ok": true
+        }
+      ],
+      "memory_presentation_bytes": 3632
+    },
+    {
+      "variant": "candidate-error",
+      "source": "6f9bb5e4d3b79a1c5cf4947b428dcd5b31da0a41",
+      "runtime_sha256": "5f19988a729637eea300949bce603796da831c9c1365c9f8dea043f4c0391d89",
+      "answer": "The `limit: -1` call returned `input.invalid`: “Memory validation failed; inspect the input schema and selected signet structure.”\n\nValid read-only recall confirms Cedar Orbit’s current release day is **Monday**, replacing Friday.",
+      "calls": [
+        "memory_recall",
+        "memory_scopes",
+        "memory_recall"
+      ],
+      "read_only_fixtures_unchanged": true,
+      "code_mode_batches": [
+        {
+          "output_utf8_bytes": 8201,
+          "input_utf8_bytes": 184,
+          "structured_wrapper_occurrences": 0,
+          "tool_names": [],
+          "reads_selector": false,
+          "uses_selector": false
+        },
+        {
+          "output_utf8_bytes": 4762,
+          "input_utf8_bytes": 241,
+          "structured_wrapper_occurrences": 1,
+          "tool_names": [
+            "mcp__mandalore__memory_recall"
+          ],
+          "reads_selector": true,
+          "uses_selector": false
+        },
+        {
+          "output_utf8_bytes": 276,
+          "input_utf8_bytes": 946,
+          "structured_wrapper_occurrences": 0,
+          "tool_names": [
+            "mcp__mandalore__memory_scopes"
+          ],
+          "reads_selector": false,
+          "uses_selector": true
+        },
+        {
+          "output_utf8_bytes": 804,
+          "input_utf8_bytes": 167,
+          "structured_wrapper_occurrences": 0,
+          "tool_names": [
+            "mcp__mandalore__memory_recall"
+          ],
+          "reads_selector": false,
+          "uses_selector": false
+        }
+      ],
+      "output_utf8_bytes": 14043,
+      "tool_code_utf8_bytes": 1538,
+      "printed_structured_wrappers": 1,
+      "last_request_usage": {
+        "input_tokens": 19124,
+        "cached_input_tokens": 18688,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 50,
+        "reasoning_output_tokens": 0,
+        "total_tokens": 19174
+      },
+      "aggregate_usage": {
+        "input_tokens": 88863,
+        "cached_input_tokens": 81280,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 633,
+        "reasoning_output_tokens": 12
+      },
+      "complete_wire_envelopes_preserved": true,
+      "deduplication_pass": false,
+      "memory_presentation": [
+        {
+          "operation": "memory_recall",
+          "bytes": 573,
+          "representation": "full-duplicate-wrapper",
+          "ok": false,
+          "error": {
+            "code": "input.invalid",
+            "message": "Memory validation failed; inspect the input schema and selected signet structure.",
+            "retryable": false,
+            "write_may_have_occurred": false,
+            "inspect_before_retry": false
+          }
+        },
+        {
+          "operation": "memory_scopes",
+          "bytes": 228,
+          "representation": "selected-envelope",
+          "ok": true
+        },
+        {
+          "operation": "memory_recall",
+          "bytes": 756,
+          "representation": "selected-envelope",
+          "ok": true
+        }
+      ],
+      "memory_presentation_bytes": 1557
+    }
+  ],
+  "selector": {
+    "source": "6f9bb5e4d3b79a1c5cf4947b428dcd5b31da0a41",
+    "reference_sha256": "37e4b489445d9140a895bb96bebdeb78c580459ba144139a242d259787695f40",
+    "checks_sha256": "a0e98bb1e567e0ad247781c3f42f6def9996736701dbe486d0c02b1c45098bb6",
+    "passed": 21,
+    "serialized_wrapper_bytes": 639,
+    "selected_envelope_bytes": 257,
+    "note": "synthetic UTF-8 bytes, not native token measurements"
+  },
+  "limitations": [
+    "one native observation per scenario, not statistical benchmarking",
+    "small payloads: extra selection/discovery overhead exceeded deduplication savings in total context",
+    "native aggregate input is not retained context or billed cost",
+    "synthetic selector fixtures cover pending/conflict/truncation/fallback; not native fault delivery",
+    "not human product acceptance"
+  ]
+}
