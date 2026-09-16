@@ -147,10 +147,18 @@ exact clean source, not the retained release executable. An initial wrong-cwd
 bootstrap test failure is retained separately, and #77's narrow-command wrapping
 limitation remains visible.
 
+The [upgrade/recovery checkpoint](upgrade/README.md) adds actual published
+1.0-to-retained-1.1 CLI and Codex connection updates, a real permission-induced
+partial activation, same-plan recovery, no-write replay and compatible retained
+rollback/re-upgrade. Two fresh retained-candidate recordings cover rollback
+default-No and narrow plain approval with the native handoff declined. All 32
+protected fixture entries and old generations survived unchanged; structural
+native checks do not imply fresh-session authentication/MCP behavior.
+
 This is a partial engineering checkpoint. The full candidate matrix still
 requires additional lifecycle, retrieval-quality, rendering/failure,
-retained-runtime installation and isolated published-1.0.0-to-candidate update/recovery
-evidence. Earlier-head evidence is a baseline, not exact-candidate acceptance.
+native connection failure/recovery and the remaining original candidate-guide
+matrix. Earlier-head evidence is a baseline, not exact-candidate acceptance.
 The 512-byte repeated preview remains an explicit observed limitation.
 
 No raw sessions, private machine paths, authentication or personal memories are
