@@ -17,6 +17,10 @@ case "$2" in
     case "$3" in 13|56|57|61|65|74|85|88|93) ;; *) exit 1 ;; esac
     [[ "$4" == mandalore:b89458617b49d2eb0a8686dcd75c26aa7ea6f6ba:sha256:7995f820a7182a95b828851afce12bacea7108f82afac9369d307a43d961f45a ]] || exit 1
     ;;
+  51aee17afec015ba2ad44584f8190b4bb6d901a8)
+    case "$3" in 13|56|57|61|65|74|85|88|93|99|100) ;; *) exit 1 ;; esac
+    [[ "$4" == mandalore:51aee17afec015ba2ad44584f8190b4bb6d901a8:sha256:7adacb6e7dc990a12df2cc25e72404dde0156835d771474c9745d3b517a0780c ]] || exit 1
+    ;;
   *) exit 1 ;;
 esac
 [[ "${MVP_OWNER_REVIEW_CONFIRMED:-}" == true ]] || exit 1
