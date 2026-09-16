@@ -171,7 +171,27 @@ func (m *menu) line() (string, error) {
 	if m.outputErr != nil {
 		return "", m.outputErr
 	}
-	raw, err := m.in.ReadSlice('\n')
+	// A terminal's in-flight read may not return when stdin is closed. Let the
+	// menu stop on cancellation without interpreting a partial/default answer.
+	// There is at most one outstanding read: cancellation ends this invocation,
+	// and the buffered result lets a later reader completion exit independently.
+	type lineResult struct {
+		raw []byte
+		err error
+	}
+	result := make(chan lineResult, 1)
+	go func() {
+		raw, err := m.in.ReadSlice('\n')
+		result <- lineResult{raw, err}
+	}()
+	var raw []byte
+	var err error
+	select {
+	case <-m.ctx.Done():
+		return "", m.ctx.Err()
+	case value := <-result:
+		raw, err = value.raw, value.err
+	}
 	if errors.Is(err, bufio.ErrBufferFull) {
 		return "", errMenuInputLimit
 	}

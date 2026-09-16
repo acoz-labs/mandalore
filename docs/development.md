@@ -25,6 +25,22 @@ may inherit existing native resources and authentication with explicit local
 runtime/binding selection; do not replace CODEX_HOME or copy authentication,
 private transcripts or real memory into acceptance fixtures.
 
+## Plain-menu input cancellation
+
+Plain numbered choices, text fields and confirmation waits return on context
+cancellation without requiring another newline or EOF. Cancellation never
+accepts a default choice or partially entered approval. Input remains bounded,
+and complete newline-terminated answers are still required.
+
+The menu races its single buffered read against cancellation. Closing stdin is
+not assumed to unblock an in-flight terminal read on every OS. An outstanding
+worker can finish into its buffered result after cancellation; no further menu
+read begins, and CLI exit releases a terminal read that cannot otherwise finish.
+Tests deliberately hold the underlying reader open until after the menu returns.
+Run `mise exec -- go test -race ./cmd/mandalore -run TestPlainMenu -count=1` and
+verify Ctrl+C in a real terminal separately; pipe/EOF tests do not establish that
+native behavior. The retained failing observation is tracked in #99.
+
 ## Public CI
 
 Every job uses the explicit `CI_RUNNER=ubuntu-latest` repository variable,
