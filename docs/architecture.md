@@ -66,6 +66,9 @@ to a regular target. Bounded streamed reads check cancellation and changes in
 identity, size, mode and mtime. This is not loaded-image attestation, a filesystem
 lease or protection from a hostile local user; OS access-time/cache bookkeeping
 can occur. No product state, credential, remembered content or network is involved.
+Binding reads are capped at 16 KiB, manifest/device reads at 4 MiB, Codex/Pi
+receipts at 32/64 KiB and runtime/native fingerprints at 128/512 MiB. Cancellation
+is checked between chunks, not a hard deadline for blocked kernel/filesystem I/O.
 
 Assessment has no persistent state or recovery transaction. Optional fixed-text
 guidance is an assessment-time snapshot and no new authority. Native inspection

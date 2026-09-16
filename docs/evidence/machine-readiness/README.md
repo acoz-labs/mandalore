@@ -7,6 +7,10 @@ acceptance or release authority. Fixtures contain synthetic data only.
 The [source-bound menu checkpoint](menu/README.md) retains actual terminal
 recordings, the narrow-layout finding and its corrected retest. It is partial
 rendered engineering evidence, not the final-head or candidate matrix.
+The [configured/adverse-state checkpoint](menu/configured-d2ce027/README.md)
+adds both native handoffs, stale identity, malformed selection and a known
+incompatible retained artifact. [Reconciliation](reconciliation.md) tracks the
+requirement map, durable documentation and remaining final-head/release gates.
 
 ## Evidence-matcher sensitivity
 
