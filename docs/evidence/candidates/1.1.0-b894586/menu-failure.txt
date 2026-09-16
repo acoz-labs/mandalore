@@ -1,0 +1,96 @@
+
+Mandalore
+  Memory across time and space. Opening this menu changes nothing. A signet is
+  your private memory bank.
+
+What would you like to do?
+  Enter a number (default 10); :back cancels; EOF exits.
+  1. Signet · Create a new local memory bank
+  2. Signet · Connect an existing local clone
+  3. Signet · Inspect selected memory and sync status
+  4. Signet · Synchronize with its configured remote
+  5. Connection · Connect or update Codex or Pi
+  6. The Armorer · Assess or inspect
+  7. The Armorer · Repair connection
+  8. Foundlings · Manage historical references
+  9. CLI · Install, update or select a retained runtime
+  10. Exit
+> 
+Choose native harness
+  Enter a number (default 1); :back cancels; EOF exits.
+  1. Codex
+  2. Pi
+  3. Back
+> 
+Trusted local Mandalore runtime (not a download)
+  :back cancels; EOF exits.
+  Default:
+    /synthetic/mandalore
+> 
+Review Codex connection
+  Apply executes the selected trusted binaries and manages this native plugin
+  registration. A hash identifies bytes; it does not prove publisher trust.
+  Retain old source/runtime copies; native cache may be replaced. No signet
+  edits or authentication setup. Review hooks and start a fresh native session
+  afterward.
+  Signet ID:               signet-0254aa724cd8bb06ae30862ea5c9684c
+  Binding:
+    /synthetic/lab/binding.json
+  Selected runtime:
+    /synthetic/mandalore
+  Runtime SHA256:
+    25a980f7c59cfd7b1fb511a4caa0c6fe6ee738006ffbc96a31440e4741dbc93a
+  Pinned runtime:
+    /synthetic/lab/menu-failure-state/runtimes/s
+    ha256-25a980f7c59cfd7b1fb511a4caa0c6fe6ee738006ffbc96a31440e4741dbc93a/manda
+    lore
+  Native binary:
+    /synthetic/lab/synthetic-native-failure
+  Native SHA256:
+    0548d82b3894b7a0582099a1800ec00e657e45274010fa30531ea2485226f1ef
+  Native profile:
+    /synthetic/lab/menu-failure-profile
+  Installation state:
+    /synthetic/lab/menu-failure-state
+  Managed package:
+    /synthetic/lab/menu-failure-state/connection
+    s/7b34315c8d0a765f6b5802934452bb827ade250f99965dc729c3fefe0c73cf03
+  Package version:
+    1.1.0+codex.7b34315c8d0a765f6b5802934452bb827ade250f99965dc729c3fefe0c73cf03
+  Embedded package SHA256:
+    8a97ef3ad31a16f08dc1726b1db08500d3bca549478fbc592c124b2715186eed
+
+Apply these changes?
+  Enter a number (default 1); :back cancels; EOF exits.
+  1. No · Return without applying
+  2. Yes · Apply this reviewed plan
+> 
+Connection receipt
+  Installation is incomplete. Retained copies and completed phases are
+  preserved; inspect before retrying. No automatic rollback or authentication
+  changes were attempted.
+  Completed phase:        preflight
+  Target:
+    /synthetic/lab/menu-failure-state/connection
+    s/7b34315c8d0a765f6b5802934452bb827ade250f99965dc729c3fefe0c73cf03
+  Previous source:        
+  Fresh session required: true
+
+[FAIL] Needs attention
+  selected Codex profile inventory (plugin marketplace list --json): selected
+  process exited unsuccessfully Changes may have occurred; inspect the retained
+  paths and receipt before retrying. No automatic rollback was performed.
+
+What would you like to do?
+  Enter a number (default 10); :back cancels; EOF exits.
+  1. Signet · Create a new local memory bank
+  2. Signet · Connect an existing local clone
+  3. Signet · Inspect selected memory and sync status
+  4. Signet · Synchronize with its configured remote
+  5. Connection · Connect or update Codex or Pi
+  6. The Armorer · Assess or inspect
+  7. The Armorer · Repair connection
+  8. Foundlings · Manage historical references
+  9. CLI · Install, update or select a retained runtime
+  10. Exit
+>

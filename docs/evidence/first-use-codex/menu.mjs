@@ -34,9 +34,14 @@ for (const scenario of ['failure', 'success']) {
     assert.ok(raw.includes('verified'));
   }
   assert.equal(existsSync(profile), true);
-  const sanitized = raw.split(native).join('/synthetic/native-codex')
-    .split(runtime).join('/synthetic/mandalore').split(lab).join('/synthetic/lab')
-    .split(homedir()).join('/synthetic/home');
+  // Rendering can wrap within the longer retained-artifact path. Normalize
+  // only selected path bytes and their inserted line breaks, never other text.
+  const masked = [[native, '/synthetic/native-codex'], [runtime, '/synthetic/mandalore'],
+    [lab, '/synthetic/lab'], [homedir(), '/synthetic/home']];
+  const sanitized = masked.reduce((text, [path, label]) => {
+    const pattern = [...path].map(c => '\\^$.*+?()[]{}|'.includes(c) ? '\\' + c : c).join('(?:\\n[ \\t]*)?');
+    return text.replace(new RegExp(pattern, 'g'), label);
+  }, raw);
   assert.equal(/\/Users\/|\/home\/[^\s]|\/private\/tmp\//.test(sanitized.replaceAll('/synthetic/home/', '/synthetic/profile/')), false,
     'sanitized output still contains a workstation path; do not publish');
   writeFileSync(join(lab, 'menu-' + scenario + '.txt'), sanitized, {flag: 'wx', mode: 0o600});

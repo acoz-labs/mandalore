@@ -1,0 +1,14 @@
+{
+  "native_version": "codex-cli 0.154.0",
+  "native_sha256": "4f85982624b3898c8991cb80c0981b2aa71070e3537046c9a95950318a95afcc",
+  "runtime_sha256": "25a980f7c59cfd7b1fb511a4caa0c6fe6ee738006ffbc96a31440e4741dbc93a",
+  "package_sha256": "8a97ef3ad31a16f08dc1726b1db08500d3bca549478fbc592c124b2715186eed",
+  "preview_left_home_and_state_absent": true,
+  "installed": true,
+  "phase": "verified",
+  "healthy": true,
+  "profile_mode": "0700",
+  "binding_unchanged": true,
+  "no_auth_file": true,
+  "limits": "Engineering installation and structural checks only; no provider login, hook trust, live model or owner acceptance."
+}
