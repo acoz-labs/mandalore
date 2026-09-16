@@ -42,6 +42,11 @@ the JavaScript example check is a separately performed diagnostic.
 
 ## Native engineering evidence and remaining acceptance
 
+The [first-result follow-up](first-result.md) retains a later candidate sequencing
+failure and four fresh targeted runs of the corrected guidance. It requires
+preparing selection before the first raw call, including the first error. Neither
+that improvement nor the earlier measurements guarantees lower whole-task cost.
+
 The [native comparison](native.md) records four fresh baseline/candidate sessions
 and a candidate error/recovery session. The candidate selected complete envelopes
 without a presentation-specific user prompt, preserved correct recall and
