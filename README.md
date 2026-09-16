@@ -55,6 +55,7 @@ portability is not included.
 - [Signet data format](docs/signet-format.md) and [source extraction](docs/memory-extraction.md)
 - [Development CLI, local MCP and machine bindings](docs/interface.md)
 - [Git synchronization, offline work and freshness](docs/synchronization.md)
+- [Privacy, retention and the limits of forgetting](docs/privacy.md)
 - [Guided setup and CLI installation](docs/setup.md) and [historical foundlings](docs/foundlings.md)
 - [Codex plugin](plugins/codex/README.md) and [native engineering evidence](docs/codex-native-evidence.md)
 - [Migration and predecessor disposition](docs/migration.md)
