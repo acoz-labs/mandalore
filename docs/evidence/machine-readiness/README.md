@@ -4,6 +4,10 @@ Issue #85 / draft implementation PR #87. This is incremental engineering
 evidence, not complete feature verification, native rendered evidence, candidate
 acceptance or release authority. Fixtures contain synthetic data only.
 
+The [source-bound menu checkpoint](menu/README.md) retains actual terminal
+recordings, the narrow-layout finding and its corrected retest. It is partial
+rendered engineering evidence, not the final-head or candidate matrix.
+
 ## Evidence-matcher sensitivity
 
 Baseline: `52839e9cf31dd18bf6cc1d5a186fe8976a72a24c`.
