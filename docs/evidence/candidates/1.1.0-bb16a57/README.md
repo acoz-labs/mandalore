@@ -164,10 +164,17 @@ registration. Native cache creation and directory-mtime effects are recorded
 explicitly, including a no-Mandalore control; whole-profile immutability is not
 claimed for startup.
 
-This remains a partial engineering checkpoint. Retrieval-quality and remaining
+The [fresh retrieval checkpoint](retrieval/README.md) adds six native quality
+cases and a controlled historical-backend comparison using the same candidate
+skill. Later qualifications, negation, twelve-document pagination, full-document
+review, changed-source refusal and inert quoted instructions behaved correctly.
+All fixtures were unchanged. One empty EOF read remains; this comparison does
+not show overall context savings or erase the earlier 512-byte repeated preview.
+
+This remains a partial engineering checkpoint. Rendered retrieval and remaining
 lifecycle/rendering/failure scenarios must still be reconciled against the full
 original candidate guide. Earlier-head evidence is a baseline, not exact-candidate acceptance.
-The 512-byte repeated preview remains an explicit observed limitation.
+Both retrieval inefficiencies remain explicit observed limitations.
 
 No raw sessions, private machine paths, authentication or personal memories are
 published. No other-platform native, screen-reader or alternate-locale claims
