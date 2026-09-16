@@ -60,7 +60,8 @@ The model discovered scopes and recalled `project/cedar-orbit`, returning
 Thursday rather than bank B's Saturday. Native events verified only read-only
 memory calls, the correct signet identity, successful completion and unchanged
 complete snapshots of both banks. The two MCP response text bodies were 228 and
-725 UTF-8 bytes; the full JSON bodies were not repeated in result metadata.
+725 UTF-8 bytes. Native JSON events retain MCP compatibility representations;
+those events alone do not establish single-copy model-visible rendering.
 
 Native aggregate usage was 90,207 input tokens, including 63,616 cached tokens,
 and 574 output tokens. Those totals include native instructions, skills and all
@@ -90,8 +91,41 @@ superseding its previous revision. The receipt confirmed local durability and
 delivery to the synthetic local bare remote, with matching head/remote head and
 zero semantic conflicts. B remained byte-identical. This proves ordinary model
 learning and model-selected combined delivery, **not** lifecycle synchronization.
-Pi did not append a journal in this case; journaling and subsequent Codex/Pi
-supersession remain separate checks.
+Pi did not append a journal in this case; journaling remains a separate check.
+
+A fresh Codex process then recalled Pi's Friday decision and superseded it with
+the newly confirmed Monday decision. File-level verification found the same
+record with three linked revisions, `fixture -> pi -> codex`, retaining a stable
+device ID. The other bank remained byte-identical. The new save was durable
+locally with synchronization `not-requested`. The model reported an approval
+restriction, but the retained event stream does not itself show a rejected sync
+call, so the precise native-policy cause is not established by this run. It is
+not successful Codex delivery evidence. No approval policy was bypassed or
+delivery failure silently retried.
+
+A fresh native Pi RPC process, launched from the other project directory but
+explicitly bound to A, recalled Monday and used history to recover
+Thursday → Friday → Monday. Complete bank snapshots were unchanged during that
+read-only turn. A subsequent grammar question quoting the cue produced no
+memory calls or bank changes. The quoted-cue check was also repeated in a fresh
+learning-enabled Pi process with no preceding read-only instruction: again no
+memory calls and unchanged complete snapshots of both banks.
+A direct consolidation request then inspected the
+current decision and journal, appended one short semantic journal through
+`memory_journal_append_and_sync`, and confirmed delivery of the resulting head
+to the local bare remote. B remained unchanged. That subsequent Pi delivery is
+separate from the earlier Codex local-only save.
+An additional observer checked the actual local and bare-remote Git heads against
+the delivery receipt and verified that the original record still had exactly
+three revisions, with no duplicate current decision introduced by consolidation.
+
+An observation-only extension after Mandalore measured the system-prompt suffix
+received by each of those three actual turns: 2073 UTF-8 bytes, exactly one
+attachment marker and zero persistent custom context messages every time. The
+entire system prompt stayed 6263 bytes. This demonstrates bounded, non-growing
+injection in this fixture, not token pricing, worst-case memory volume, or proof
+that every relevant fact will be retrieved. The scoped project history came from
+tools, not from treating the orientation packet as exhaustive memory.
 
 ## Review and remaining work
 
@@ -100,5 +134,8 @@ versus model distinction, the disabled-extension control, complete no-effects
 snapshots and aggregate-token limitations. This is not independent approval.
 Hosted CI for the exact source passed in
 [run 35037748296](https://github.com/acoz-labs/mandalore/actions/runs/35037748296);
-later changes still require their own checks. Pi model learning, cross-harness
-updates, delivery/concurrency and the final rendered matrix remain in progress.
+later changes still require their own checks. Hosted CI for regression/evidence
+head `264c8438cd7f9b686457643134057f42c1ed32c8` also passed in
+[run 35038007076](https://github.com/acoz-labs/mandalore/actions/runs/35038007076).
+The remaining delivery/concurrency, live context-refresh and final rendered
+matrix are not completed by these observations.
