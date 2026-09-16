@@ -7,6 +7,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -172,5 +173,26 @@ func TestPiMenuInspectionUsesSelectedProfileWithoutCreatingIt(t *testing.T) {
 	entries, err := os.ReadDir(dir)
 	if err != nil || len(entries) != 0 {
 		t.Fatal("inspection created state", err, entries)
+	}
+}
+
+func TestPiMenuMakesAbsentPreviousGenerationExplicit(t *testing.T) {
+	for _, previous := range []string{"", "/synthetic/previous"} {
+		m, out, _ := piMenuFixture(t, "")
+		p := install.PiPlan{PreviousRoot: previous}
+		want := previous
+		if want == "" {
+			want = "None"
+		}
+		pattern := regexp.MustCompile(`(?m)Previous generation:\s+` + regexp.QuoteMeta(want) + `(?:\s|$)`)
+		m.piPreview(p)
+		if !pattern.MatchString(out.String()) {
+			t.Fatal("ambiguous previous generation in preview", out.String())
+		}
+		out.Reset()
+		m.piResult(install.PiResult{Connection: p, Phase: "verified"})
+		if !pattern.MatchString(out.String()) {
+			t.Fatal("ambiguous previous generation in receipt", out.String())
+		}
 	}
 }

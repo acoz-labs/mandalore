@@ -112,6 +112,10 @@ func (m *menu) applyPiPlan(p install.PiPlan) error {
 
 func (m *menu) piPreview(p install.PiPlan) {
 	mode := "Learning enabled"
+	previous := p.PreviousRoot
+	if previous == "" {
+		previous = "None"
+	}
 	if p.ReadOnly {
 		mode = "Read-only (enforced)"
 	}
@@ -119,14 +123,18 @@ func (m *menu) piPreview(p install.PiPlan) {
 		{Label: "Harness", Value: "Pi"}, {Label: "Signet ID", Value: p.SignetID}, {Label: "Binding", Value: p.Binding}, {Label: "Memory access", Value: mode},
 		{Label: "Native profile", Value: p.NativeHome}, {Label: "Native binary", Value: p.NativeBinary}, {Label: "Native SHA256", Value: p.NativeSHA256},
 		{Label: "Selected runtime", Value: p.Binary}, {Label: "Runtime SHA256", Value: p.BinarySHA256}, {Label: "Pinned runtime", Value: p.Runtime},
-		{Label: "Installation state", Value: p.StateDir}, {Label: "Managed generation", Value: p.Root}, {Label: "Previous generation", Value: p.PreviousRoot},
+		{Label: "Installation state", Value: p.StateDir}, {Label: "Managed generation", Value: p.Root}, {Label: "Previous generation", Value: previous},
 		{Label: "Package version", Value: p.PackageVersion}, {Label: "Pi package SHA256", Value: p.PackageSHA256},
 	}})
 }
 
 func (m *menu) piResult(r install.PiResult) {
+	previous := r.Connection.PreviousRoot
+	if previous == "" {
+		previous = "None"
+	}
 	m.block(console.Block{Title: "Pi connection receipt", Body: r.Notice, Fields: []console.Field{
-		{Label: "Completed phase", Value: r.Phase}, {Label: "Target", Value: r.Connection.Root}, {Label: "Previous generation", Value: r.Connection.PreviousRoot},
+		{Label: "Completed phase", Value: r.Phase}, {Label: "Target", Value: r.Connection.Root}, {Label: "Previous generation", Value: previous},
 		{Label: "Attempt receipt", Value: r.Attempt}, {Label: "Native effects uncertain", Value: strconv.FormatBool(r.Uncertain)},
 		{Label: "Installed", Value: strconv.FormatBool(r.Installed)}, {Label: "Fresh session required", Value: strconv.FormatBool(r.RequiresFreshSession)},
 	}})

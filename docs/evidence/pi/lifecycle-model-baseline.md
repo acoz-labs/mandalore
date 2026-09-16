@@ -10,7 +10,7 @@ are **not** the published v1.0.0 bytes. Nothing was nominated or published.
 | Candidate manifest | `280e1147bb30bcdd655827f4d3347beb3872d0ff64e5f76aa900c9988b498bff` |
 | macOS arm64 executable | `9e6350e8c0af94f5030ff9573d78930e2c55a5a0d88c9b4160a52cba93d46a95` |
 | Embedded Pi package | `79d2491186a6da434bd1e7fd8ea212136595247e90162c5bb3beabc6639614f8` |
-| Codex plugin ZIP | `605b32eafff3ae6422a7623cdf235313c1f3e6f3544f25b7b7e054dbc02b393c` |
+| Embedded Codex plugin identity | `605b32eafff3ae6422a7623cdf235313c1f3e6f3544f25b7b7e054dbc02b393c` |
 
 All candidate assets were checked against the manifest before fixture setup.
 Two synthetic signets use local bare Git remotes and separately installed native
