@@ -1,8 +1,8 @@
 # Solution Design: corrected-candidate owner eligibility
 
-- **Status:** Draft
+- **Status:** Final
 - **Issue:** #105
-- **Planning PR:** Pending
+- **Planning PR:** #106
 - **Repository basis:** 51aee17afec015ba2ad44584f8190b4bb6d901a8
 - **Execution envelope:** implementation
 
