@@ -140,9 +140,16 @@ no-color, missing/malformed/unsupported/stale states, default-No, native handoff
 EOF/Ctrl+C and terminal restoration. It retains an alias-path diagnostic limitation
 and a controller error separately from the clean canonical-path observations.
 
+The [quota checkpoint](quota/README.md) adds eight passing fresh source-bound
+recordings for quota/refusal/partial/default-No/Back presentation and fixture
+request-count/retry regressions. This uses test executables compiled from the
+exact clean source, not the retained release executable. An initial wrong-cwd
+bootstrap test failure is retained separately, and #77's narrow-command wrapping
+limitation remains visible.
+
 This is a partial engineering checkpoint. The full candidate matrix still
 requires additional lifecycle, retrieval-quality, rendering/failure,
-quota/readiness UI and isolated published-1.0.0-to-candidate update/recovery
+retained-runtime installation and isolated published-1.0.0-to-candidate update/recovery
 evidence. Earlier-head evidence is a baseline, not exact-candidate acceptance.
 The 512-byte repeated preview remains an explicit observed limitation.
 
