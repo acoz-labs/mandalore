@@ -5,6 +5,7 @@ import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {existsSync, readFileSync, realpathSync, writeFileSync} from 'node:fs';
 import {join} from 'node:path';
+import {homedir} from 'node:os';
 const [runtimeArg, nativeArg, labArg] = process.argv.slice(2);
 const runtime = realpathSync(runtimeArg), native = realpathSync(nativeArg), lab = realpathSync(labArg);
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -34,7 +35,10 @@ for (const scenario of ['failure', 'success']) {
   }
   assert.equal(existsSync(profile), true);
   const sanitized = raw.split(native).join('/synthetic/native-codex')
-    .split(runtime).join('/synthetic/mandalore').split(lab).join('/synthetic/lab');
+    .split(runtime).join('/synthetic/mandalore').split(lab).join('/synthetic/lab')
+    .split(homedir()).join('/synthetic/home');
+  assert.equal(/\/Users\/|\/home\/[^\s]|\/private\/tmp\//.test(sanitized.replaceAll('/synthetic/home/', '/synthetic/profile/')), false,
+    'sanitized output still contains a workstation path; do not publish');
   writeFileSync(join(lab, 'menu-' + scenario + '.txt'), sanitized, {flag: 'wx', mode: 0o600});
   evidence.push({scenario, exit: result.status, original_sha256: hash(raw), sanitized_sha256: hash(sanitized)});
 }
