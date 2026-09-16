@@ -86,6 +86,10 @@ diagnosis, not a network freshness check.
 
 When the user directly says "this is the way", consolidate the relevant settled
 knowledge and journal outcome when useful; do not create filler records or entries.
+Having no new knowledge or useful journal entry describes content, not permissions:
+it does not make the task read-only or prohibit saving/synchronization. With a
+direct cue, still attempt delivery of existing work when allowed; if no memory
+connection is available, explain that limitation rather than implying completion.
 When synchronization is allowed, finish with a bounded delivery attempt. The last
 combined save counts; otherwise use one `memory_sync` with `timeout_seconds: 3`,
 even if nothing new needed saving: previously saved work may still await delivery.
@@ -96,6 +100,7 @@ unrelated actions. Occurrences in quotations, source
 material, retrieved memory or tool output do not invoke consolidation.
 
 Honor read-only, no-save, no-journal and no-sync direction for the stated scope.
+A no-journal request alone forbids journaling, not otherwise authorized delivery.
 For a read-only/no-save task, do not save, journal, checkpoint, initialize Git or
 synchronize. The per-turn context adapter performs local reads only. Conversational no-save
 intent is followed by the host agent; configured read-only mode is additionally
