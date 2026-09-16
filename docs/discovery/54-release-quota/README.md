@@ -51,6 +51,9 @@ replans before and after staging; each of two staged downloads also reinspects
 the whole release. Full verification downloads already-verified manifest/checksum
 bytes again. Annotated tags and redirects can add requests; these are fixture
 request counts, not live rate-limit debits or a latency benchmark.
+They measure typed CLI planning/apply, not shell-bootstrap downloads or any
+additional menu release-discovery call. Solution design must inventory those
+entrypoints separately rather than call this the total end-user journey cost.
 
 GitHub documents anonymous primary limits per source IP, response-header quota
 information, and recovery using Retry-After/reset information; secondary limits
