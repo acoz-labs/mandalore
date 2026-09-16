@@ -8,8 +8,39 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 )
+
+func TestReleaseConcurrentOperationsKeepVerifiedStatePrivate(t *testing.T) {
+	f := newReleaseFixture(t)
+	transport := f.client.http.Transport
+	var mu sync.Mutex
+	// Serialize only the fixture's request-log writes, not either operation.
+	f.client.http.Transport = roundTripFunc(func(r *http.Request) (*http.Response, error) {
+		mu.Lock()
+		defer mu.Unlock()
+		return transport.RoundTrip(r)
+	})
+	t.Run("operations", func(t *testing.T) {
+		for _, name := range []string{"one", "two"} {
+			t.Run(name, func(t *testing.T) {
+				t.Parallel()
+				p, err := planInstall(context.Background(), InstallOptions{Prefix: filepath.Join(t.TempDir(), "prefix")}, f.client)
+				if err != nil {
+					t.Fatal(err)
+				}
+				r, err := applyInstall(context.Background(), p, f.client, inertInstallVerifier, nil)
+				if err != nil || !r.Installed {
+					t.Fatal(r, err)
+				}
+			})
+		}
+	})
+	if len(f.requests) != 26 {
+		t.Fatal("independent operations shared/skipped live verification", len(f.requests))
+	}
+}
 
 func TestReleaseInstallRequestBudget(t *testing.T) {
 	for _, update := range []bool{false, true} {
