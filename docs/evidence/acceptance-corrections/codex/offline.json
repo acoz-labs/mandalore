@@ -1,0 +1,29 @@
+{
+  "case": "offline",
+  "kind": "development-guidance-not-candidate-acceptance",
+  "skill_source": "8a7106c14eb5480cbcd562dad5d151e776a9f144",
+  "skill_sha256": "0a3777925dfbba691e4a33235f8bba32522fe77d57625fdb5a5812c7aaeeb386",
+  "runtime_sha256": "25a980f7c59cfd7b1fb511a4caa0c6fe6ee738006ffbc96a31440e4741dbc93a",
+  "tools": [
+    "memory_sync"
+  ],
+  "no_new_semantic_files": true,
+  "negative_full_inventory_unchanged": false,
+  "delivery": {
+    "protocol_version": 1,
+    "ok": true,
+    "result": {
+      "signet_id": "signet-f53a807e3162ca020b37755e3ce9cdae",
+      "state": "pending",
+      "phase": "fetch",
+      "head": "20629b7b523467fb1bcdf6a8df9ea7781ae3a523",
+      "remote_id": "f40fb56c8f4fc8e5b58b2a1adb9b24dcdfe49c195900869e8996a825b02a5355",
+      "checked_at": "2026-09-16T19:39:48.811172Z",
+      "checkpointed": true,
+      "delivered": false,
+      "semantic_conflicts": 0,
+      "notice": "Remote unavailable; local changes remain committed."
+    }
+  },
+  "answer": "This is the way. No new knowledge or journal entry added. Existing changes remain committed locally; sync is pending because the remote is unavailable."
+}

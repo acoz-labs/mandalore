@@ -1,0 +1,56 @@
+{
+  "source": "0c12991713bf15bf4b332b0ed233e9fe1e0c9491",
+  "binary_sha256": "a95d07c23b002e15b16dca3e13837c5bd9fb24fa7c6bb3f74ba44c91996d0561",
+  "kind": "development-binary-not-retained-candidate",
+  "cases": [
+    {
+      "case": "idle",
+      "exit": 130,
+      "terminal_restored": true,
+      "setup_paths_absent": true,
+      "no_extra_enter_after_interrupt": true
+    },
+    {
+      "case": "partial-choice",
+      "exit": 130,
+      "terminal_restored": true,
+      "setup_paths_absent": true,
+      "no_extra_enter_after_interrupt": true
+    },
+    {
+      "case": "text",
+      "exit": 130,
+      "terminal_restored": true,
+      "setup_paths_absent": true,
+      "no_extra_enter_after_interrupt": true
+    },
+    {
+      "case": "partial-approval",
+      "exit": 130,
+      "terminal_restored": true,
+      "setup_paths_absent": true,
+      "no_extra_enter_after_interrupt": true
+    },
+    {
+      "case": "default-no",
+      "exit": 0,
+      "terminal_restored": true,
+      "setup_paths_absent": true,
+      "no_extra_enter_after_interrupt": false
+    },
+    {
+      "case": "eof",
+      "exit": 0,
+      "terminal_restored": true,
+      "setup_paths_absent": true,
+      "no_extra_enter_after_interrupt": false
+    },
+    {
+      "case": "tui",
+      "exit": 0,
+      "terminal_restored": true,
+      "setup_paths_absent": true,
+      "no_extra_enter_after_interrupt": true
+    }
+  ]
+}
