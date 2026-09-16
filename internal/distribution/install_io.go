@@ -110,26 +110,46 @@ func copyInstallPayload(ctx context.Context, from, to string, limit int64) error
 	return closeErr
 }
 
-func stageInstallSource(ctx context.Context, p InstallPlan, client *ReleaseClient, root string) error {
+func stageInstallSource(ctx context.Context, p InstallPlan, client *ReleaseClient, root string, verified *verifiedRelease) error {
 	manifestPath := filepath.Join(root, "manifest.json")
 	binaryPath := filepath.Join(root, "mandalore")
 	if p.Source.Kind == "github-release" {
-		for _, item := range []struct{ name, path string }{{"manifest.json", manifestPath}, {p.Binary.Name, binaryPath}} {
-			f, err := os.OpenFile(item.path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
-			if err != nil {
-				return err
+		if verified == nil || p.Source.Published == nil || !reflect.DeepEqual(verified.view, *p.Source.Published) {
+			return errors.New("published staging requires the current operation's verified source")
+		}
+		m, err := ParseManifest(verified.manifest)
+		if err != nil || !reflect.DeepEqual(m, p.Source.Manifest) {
+			return errors.New("verified source manifest differs from the reviewed plan")
+		}
+		var binary ReleaseAsset
+		for _, a := range verified.view.Assets {
+			if a.Name == p.Binary.Name && a.Size == p.Binary.Size && a.SHA256 == p.Binary.SHA256 {
+				binary = a
 			}
-			err = client.DownloadAsset(ctx, *p.Source.Published, item.name, f)
-			if err == nil {
-				err = f.Sync()
-			}
-			closeErr := f.Close()
-			if err != nil {
-				return err
-			}
-			if closeErr != nil {
-				return closeErr
-			}
+		}
+		if binary.ID <= 0 {
+			return errors.New("runtime is absent from the verified source")
+		}
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if err := writeInstallFile(manifestPath, verified.manifest, 0600); err != nil {
+			return err
+		}
+		f, err := os.OpenFile(binaryPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
+		if err != nil {
+			return err
+		}
+		err = client.asset(ctx, binary, f)
+		if err == nil {
+			err = f.Sync()
+		}
+		closeErr := f.Close()
+		if err != nil {
+			return err
+		}
+		if closeErr != nil {
+			return closeErr
 		}
 	} else {
 		source, name := p.Candidate, p.Binary.Name

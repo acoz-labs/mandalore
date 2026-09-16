@@ -195,8 +195,8 @@ func TestPublisherStagesVerifiesPublishesAndReusesSameBytes(t *testing.T) {
 	if r.Phase != "publication-verified" || r.ReleaseID != 42 || len(r.Assets) != 8 || r.Identity != f.identity || r.PendingOperation != "" || f.writes != 10 {
 		t.Fatal("incomplete publication", r, f.writes)
 	}
-	if publicReads != 10 {
-		t.Fatalf("public inspection must check manifest/checksums and download all eight assets: %d", publicReads)
+	if publicReads != 8 {
+		t.Fatalf("public verification must download and check each of eight assets once: %d", publicReads)
 	}
 	for _, a := range r.Assets {
 		b, _ := os.ReadFile(filepath.Join(f.dir, a.Name))

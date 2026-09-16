@@ -87,7 +87,9 @@ CLI installation and a native connection are separately confirmed. No credential
 shell change, old-memory import or migration is implicit.
 
 Public release discovery uses GitHub's anonymous API quota. If it is exhausted,
-wait for the reset before retrying; the CLI does not borrow your GitHub credentials.
+wait before explicitly retrying; the CLI does not borrow your GitHub credentials.
+Current-source builds offer [bounded quota guidance](docs/interface.md#read-only-release-inspection)
+when GitHub supplies usable timing; the published v1.0.0 retains its generic error.
 See the [release record](docs/releases/1.0.0.md) for the verified manual-download
 alternative and the distinction between published and local-candidate installation.
 

@@ -3,8 +3,11 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
+
+	"github.com/acoz-labs/mandalore/internal/distribution"
 )
 
 func TestReleaseInspectionIsCLIOnlyUnboundAndReadOnly(t *testing.T) {
@@ -32,6 +35,31 @@ func TestReleaseInspectionIsCLIOnlyUnboundAndReadOnly(t *testing.T) {
 		out := New(nil, true).Call(context.Background(), "release_inspect", []byte(data))
 		if out.OK || out.Error.Code != "input.invalid" {
 			t.Fatal("invalid selection did not fail before network", out)
+		}
+	}
+}
+
+func TestReleaseQuotaFailurePreservesOperationEffects(t *testing.T) {
+	quota := &distribution.ReleaseRateLimitError{Retry: distribution.ReleaseRetry{HTTPStatus: 429, Kind: "unspecified", RetryAfterSeconds: 60}}
+	for _, result := range []*distribution.InstallResult{nil, {Phase: "staging"}, {Phase: "pending-inspection", Pending: "/synthetic/pending.json"}, {Phase: "activation", DestinationChanged: true, Pending: "/synthetic/pending.json"}} {
+		e := &releaseFailure{err: quota, result: result}
+		out := New(nil, false).failure(Operation{}, e)
+		if out.Error.Code != "release.rate_limited" || out.Error.ReleaseRetry == nil || *out.Error.ReleaseRetry != quota.Retry || out.Error.ReleaseResult != result || out.Error.Retryable {
+			t.Fatal("typed quota advice lost or enabled automatic retry", out)
+		}
+		mayWrite := result != nil && result.DestinationChanged
+		inspect := mayWrite || result != nil && result.Pending != ""
+		if out.Error.WriteMayHaveOccurred != mayWrite || out.Error.InspectBeforeRetry != inspect {
+			t.Fatal("HTTP refusal replaced operation effects", out)
+		}
+		if strings.Contains(out.Error.Message, "no installation occurred") {
+			t.Fatal("invented effects", out)
+		}
+	}
+	for _, cause := range []error{context.Canceled, context.DeadlineExceeded} {
+		out := New(nil, false).failure(Operation{}, &releaseFailure{err: errors.Join(quota, cause)})
+		if out.Error.Code != "operation.cancelled" || out.Error.ReleaseRetry != nil {
+			t.Fatal("cancellation lost precedence", out)
 		}
 	}
 }

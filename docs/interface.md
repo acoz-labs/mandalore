@@ -91,7 +91,7 @@ An invalid or absent memory binding does not affect release inspection.
 The result distinguishes local byte/content verification from published-release
 inspection. Published inspection checks the official immutable release ID, exact
 tag commit, manifest/checksum bytes and GitHub asset IDs/sizes/digests. It does
-not claim that every executable was downloaded or run. Asset downloads recheck
+not claim that every executable was downloaded or run. Standalone asset downloads recheck
 the pinned release ID and exact inspection before accepting matching bytes;
 `latest` is not reselected silently. None of these checks installs a runtime,
 activates a native connection, writes memory or establishes independent acceptance.
@@ -100,6 +100,23 @@ Only public HTTPS GitHub API/release hosts are used, with bounded redirects,
 headers, responses and timeouts. No GitHub CLI login, provider token or cookies
 are borrowed. Unavailable, incompatible, mutable, corrupt or rate-limited releases
 fail visibly; local candidate inspection remains available offline.
+
+Current-source builds distinguish supported quota refusals as
+`release.rate_limited`, with `error.release_retry` containing `http_status`,
+`kind` (`primary` or `unspecified`), and optional `retry_after_seconds` and
+`reset_at` (UTC RFC3339). This is post-v1.0.0 behavior, not a change to the
+published immutable release. A 429 indicates rate limiting; a 403 requires
+validated remaining-zero or Retry-After evidence. Reset alone is insufficient.
+Ordinary refusal remains `release.failed`; unavailable/cancel codes are unchanged.
+
+Advice uses only bounded, single-valued numeric response headers. Malformed,
+duplicate, overflowing, stale or more-than-24-hour timing is omitted, not
+clamped. Retry-After accepts seconds, not HTTP-date syntax. Timing is advisory:
+wait until all reported limits have passed before an explicit retry, which may
+still fail. No automatic retry, credential fallback or quota polling occurs.
+Provider bodies and raw headers/URLs are never included. Installation effects
+come from `release_result` and the existing write/inspect flags, not HTTP status.
+These administration-only details do not inflate memory MCP tool schemas.
 
 ## Read-only CLI installation planning
 
@@ -157,8 +174,12 @@ response against the manifest. The version probe runs with a minimal environment
 no inherited home, memory binding or provider credentials, a 15-second deadline
 and a 16 KiB output limit. This is execution of the explicitly trusted selected
 source, not a sandbox or independent publisher approval. Staged bytes are checked
-again after the probe. Published downloads revalidate the pinned release ID and
-asset identity; an unavailable/corrupt payload does not activate anything.
+again after the probe. Current-source builds reuse original manifest bytes from
+the same live apply preflight and hash the selected binary against its verified
+asset identity. The original serialized preview cannot supply those bytes.
+Apply still refreshes the entire source and destination after staging and the
+probe, before destination changes. An unavailable/corrupt payload does not
+activate anything. No verified data is cached across commands or callers.
 
 Installation writers coordinate with a persistent file lock in their owned state.
 An initial state tree is assembled privately and published without replacing an

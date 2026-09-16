@@ -264,6 +264,16 @@ func PlanInstall(ctx context.Context, o InstallOptions) (InstallPlan, error) {
 // Preview reads source and destination; it never creates a prefix, downloads or
 // executes a binary, takes a write lock, changes a launcher or opens a signet.
 func planInstall(ctx context.Context, o InstallOptions, client *ReleaseClient) (InstallPlan, error) {
+	return planInstallVerified(ctx, o, client, nil)
+}
+
+// capture is operation-local, not part of the public/serialized plan. Only a
+// successfully completed fresh plan can supply staging's verified source bytes.
+func planInstallVerified(ctx context.Context, o InstallOptions, client *ReleaseClient, capture *verifiedRelease) (InstallPlan, error) {
+	if capture != nil {
+		*capture = verifiedRelease{}
+	}
+	var verified verifiedRelease
 	if err := ctx.Err(); err != nil {
 		return InstallPlan{}, err
 	}
@@ -305,9 +315,9 @@ func planInstall(ctx context.Context, o InstallOptions, client *ReleaseClient) (
 		p.Source.Manifest, err = retainedManifest(prefix, o.Retained, p.OS, p.Arch)
 	default:
 		p.Source.Kind = "github-release"
-		var r ReleaseView
-		r, err = client.Inspect(ctx, o.Version)
+		verified, err = client.inspectVersion(ctx, o.Version)
 		if err == nil {
+			r := verified.view
 			p.Source.Manifest = r.Manifest
 			p.Source.Published = &r
 			p.Version = r.Manifest.Manifest.Version
@@ -344,6 +354,9 @@ func planInstall(ctx context.Context, o InstallOptions, client *ReleaseClient) (
 	encoded, err := json.Marshal(p)
 	if err != nil || len(encoded) > MaxInstallPlanBytes {
 		return InstallPlan{}, errors.New("installation plan exceeds the typed input budget; choose shorter explicit paths")
+	}
+	if capture != nil {
+		*capture = verified
 	}
 	return p, nil
 }

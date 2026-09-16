@@ -41,6 +41,7 @@ type Error struct {
 	PiConnectionReport *install.PiReport           `json:"pi_connection_report,omitempty"`
 	MigrationResult    *migration.Result           `json:"migration_result,omitempty"`
 	ReleaseResult      *distribution.InstallResult `json:"release_result,omitempty"`
+	ReleaseRetry       *distribution.ReleaseRetry  `json:"release_retry,omitempty"`
 }
 type Envelope struct {
 	ProtocolVersion int    `json:"protocol_version"`
@@ -224,6 +225,10 @@ func (a *API) failure(op Operation, err error) Envelope {
 	var release *releaseFailure
 	if errors.As(err, &release) {
 		code := "release.failed"
+		var quota *distribution.ReleaseRateLimitError
+		if errors.As(err, &quota) {
+			code = "release.rate_limited"
+		}
 		if errors.Is(err, distribution.ErrNoRelease) {
 			code = "release.unavailable"
 		}
@@ -233,6 +238,10 @@ func (a *API) failure(op Operation, err error) Envelope {
 		mayWrite := release.result != nil && release.result.DestinationChanged
 		out := Failure(code, release.Error(), mayWrite)
 		out.Error.ReleaseResult = release.result
+		if code == "release.rate_limited" {
+			retry := quota.Retry
+			out.Error.ReleaseRetry = &retry
+		}
 		if release.result != nil && release.result.Pending != "" {
 			out.Error.InspectBeforeRetry = true
 		}

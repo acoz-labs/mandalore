@@ -85,6 +85,44 @@ func TestReleaseMenuPartialFailureShowsReceipt(t *testing.T) {
 	}
 }
 
+func TestReleaseMenuQuotaAdvicePreservesReceiptAndExplicitRetry(t *testing.T) {
+	for _, delay := range []int64{0, 60} {
+		for _, partial := range []bool{false, true} {
+			m, out, _, o := releaseMenuFixture(t, "2\n")
+			original := m.releaseInvoke
+			applies := 0
+			m.releaseInvoke = func(name string, value any) api.Envelope {
+				if name != "release_apply" {
+					return original(name, value)
+				}
+				applies++
+				quota := &distribution.ReleaseRateLimitError{Retry: distribution.ReleaseRetry{HTTPStatus: 429, Kind: "unspecified", RetryAfterSeconds: delay}}
+				r := api.Failure("release.rate_limited", quota.Error(), partial)
+				r.Error.ReleaseRetry = &quota.Retry
+				r.Error.ReleaseResult = &distribution.InstallResult{Phase: "staging", Connections: "unchanged", DestinationChanged: partial}
+				if partial {
+					r.Error.ReleaseResult.Phase = "launcher-activated"
+					r.Error.ReleaseResult.Pending = "/synthetic/pending.json"
+				}
+				return r
+			}
+			err := m.installRelease(o)
+			if err == nil || applies != 1 || !strings.Contains(err.Error(), "No automatic retry") || !strings.Contains(out.String(), "CLI receipt") || strings.Contains(out.String(), "CLI installation verified") {
+				t.Fatal("advice, receipt or explicit retry lost", err, out.String(), applies)
+			}
+			if delay == 0 && !strings.Contains(err.Error(), "Retry timing is unavailable") {
+				t.Fatal("missing unknown timing", err)
+			}
+			if delay > 0 && !strings.Contains(err.Error(), "60 seconds") {
+				t.Fatal("missing bounded delay", err)
+			}
+			if partial && (!strings.Contains(err.Error(), "Changes may have occurred") || !strings.Contains(out.String(), "/synthetic/pending.json")) {
+				t.Fatal("partial effects lost", err, out.String())
+			}
+		}
+	}
+}
+
 func TestReleaseRecoveryInstructionQuotesPendingPath(t *testing.T) {
 	m, out, _, _ := releaseMenuFixture(t, "")
 	m.releaseResult(distribution.InstallResult{Pending: "/synthetic/owner's tools/pending.json"})

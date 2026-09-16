@@ -267,6 +267,24 @@ then refreshes metadata. It emits success JSON only after complete verification;
 a failed check does not emit a partial receipt as success. Neither command
 reads GitHub CLI authentication or changes remote/local product state.
 
+Current-source release operations retain bounded original manifest/checksum
+bytes privately within one inspection. Apply's fresh preflight supplies staging
+with original bytes; the public serialized plan supplies no reusable trust.
+Standalone `DownloadAsset` still refreshes the pinned release ID. Post-probe
+byte verification and the final full source/destination comparison remain.
+Full publication verification reuses its own already-hashed metadata bytes,
+checks the other six assets, and retains ledger/final release/tag checks.
+
+Synthetic simple-tag/no-redirect request counts are now: inspect/plan 4;
+fresh or different-retained-digest update plan+apply 13 (formerly 22); exact
+completed-plan replay 0; full verifier 13 (formerly 15), covering all eight
+assets once. The menu directly plans/applies without extra inspection. Bootstrap
+adds two asset downloads; fetching its script, redirects and annotated tags are
+outside these counts. These are HTTP fixture counts, not live quota debits.
+See `release_efficiency_test.go` and `release_retry_test.go` for count, identity,
+source-change, refusal, timing and explicit-retry regressions. This optimization
+and typed quota guidance are post-v1.0.0 engineering work, not yet release acceptance.
+
 `bin/finalize-release artifact` now requires `RELEASE_VERSION` as well as the
 existing accepted SHA/identity and explicit issue set. After the existing
 issue-specific workflow-authored nomination/acceptance checks, it calls the live

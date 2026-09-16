@@ -38,10 +38,11 @@ func (c *ReleaseClient) VerifyPublication(ctx context.Context, version, identity
 	}
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
 	defer cancel()
-	view, err := c.Inspect(ctx, version)
+	verified, err := c.inspectVersion(ctx, version)
 	if err != nil {
 		return receipt, err
 	}
+	view := verified.view
 	if view.Manifest.Identity() != identity {
 		return receipt, errors.New("published release does not match the selected candidate identity")
 	}
@@ -63,6 +64,21 @@ func (c *ReleaseClient) VerifyPublication(ctx context.Context, version, identity
 		return receipt, errors.New("publication changed during verification")
 	}
 	for _, a := range assets {
+		// Inspection already downloaded and hashed these exact metadata assets.
+		// Reuse only its original bytes after the publication inventory matches.
+		var checked []byte
+		switch a.Name {
+		case "manifest.json":
+			checked = verified.manifest
+		case "SHA256SUMS":
+			checked = verified.checksums
+		}
+		if checked != nil {
+			if int64(len(checked)) != a.Size || Digest(checked) != a.SHA256 {
+				return receipt, errors.New("verified metadata bytes disagree with publication")
+			}
+			continue
+		}
 		if err := c.asset(ctx, a, io.Discard); err != nil {
 			return receipt, err
 		}
