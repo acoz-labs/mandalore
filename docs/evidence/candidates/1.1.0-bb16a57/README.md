@@ -186,9 +186,16 @@ decision gap, but not total model rounds or context cost. Negative-case Git
 metadata observer effects are retained with a no-agent control; no clean
 whole-inventory pass is claimed for those three runs.
 
-This remains a partial engineering checkpoint. Remaining
-lifecycle/rendering/failure scenarios must still be reconciled against the full
-original candidate guide. Earlier-head evidence is a baseline, not exact-candidate acceptance.
+The [Pi display checkpoint](pi-display/README.md) adds the remaining narrow/plain
+inspection and EOF setup flow, actual model-visible success/partial delivery,
+and unavailable-memory warning startup. Exactly one authorized synthetic journal
+was saved; no Git setup/retry occurred. The read-only turn and warning fixture
+were unchanged, with native inspection's profile-root mtime effect explicit.
+
+The [acceptance handoff](acceptance-handoff.md) reconciles these engineering
+checkpoints against the full candidate guide and live issue criteria, identifies
+the human review path and preserves the unresolved product judgments.
+Earlier-head evidence is a baseline, not exact-candidate acceptance.
 Both retrieval inefficiencies remain explicit observed limitations.
 
 No raw sessions, private machine paths, authentication or personal memories are

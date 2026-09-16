@@ -1,0 +1,91 @@
+{
+  "classification": "contributor-rendered-judgment-not-human-acceptance",
+  "source": "bb16a57eb16dcd5e3da1386d6eb72c64169be6b5",
+  "manifest_sha256": "ab4af42cee70495b66f4a64b3d754dc0e83d50c789ac1d8b6c4a419e7ffcb986",
+  "runtime_sha256": "0679b27eaefddb842ec54e03d966dc8369b39c63842bd7ddd74e2f058505c37e",
+  "pi_package_sha256": "013dcc492565ba180abd59eb50e3a6fbea2cd8ba045ccf067e17d51a050e7fda",
+  "environment": {
+    "platform": "darwin/arm64",
+    "pi": "0.85.1",
+    "node": "24.1.0",
+    "model": "gpt-6-astra",
+    "thinking": "high",
+    "terminal": "Herdr",
+    "locale": "English"
+  },
+  "recordings": [
+    {
+      "file": "narrow.recording",
+      "sha256": "98e53312283d798875040c4b74f8eae3cd2ce6ad9f4b59eabd108de1645f06e8",
+      "bytes": 7177,
+      "columns": 32,
+      "rows": 30,
+      "no_color": true,
+      "plain": true,
+      "application_exit": 0,
+      "terminal_modes_restored_except_transient_pendin": true,
+      "terminal_dimensions_restored": true,
+      "raw_recording_unchanged": true
+    },
+    {
+      "file": "tools.recording",
+      "sha256": "92cbb177aa49748516e3a78e9d9d06daf94361ab6414e2e161e1da3103ab59d2",
+      "bytes": 113557,
+      "columns": 100,
+      "rows": 34,
+      "no_color": false,
+      "plain": false,
+      "application_exit": 0,
+      "terminal_modes_restored_except_transient_pendin": true,
+      "terminal_dimensions_restored": true,
+      "raw_recording_unchanged": true
+    },
+    {
+      "file": "warning.recording",
+      "sha256": "4742db638d473b760299f4b76a870af95b55db48e9c79caa6a1263c710f57e53",
+      "bytes": 4942,
+      "columns": 100,
+      "rows": 34,
+      "no_color": false,
+      "plain": false,
+      "application_exit": 0,
+      "terminal_modes_restored_except_transient_pendin": true,
+      "terminal_dimensions_restored": true,
+      "raw_recording_unchanged": true
+    }
+  ],
+  "checks": {
+    "narrow_all_files_and_owned_state_unchanged": true,
+    "narrow_profile_root_mtime": {
+      "before": 1789546135537.5493,
+      "after": 1789546190571.599
+    },
+    "read_turn_complete_fixture_unchanged": true,
+    "write_turn_one_pi_journal_only": true,
+    "saved_event_id": "event-69c03f634aaac8fc9d99d75290577722",
+    "prior_memory_files_unchanged": true,
+    "no_git_initialized": true,
+    "no_knowledge_records_created": true,
+    "unrelated_package_filters_and_auth_session_sentinels_unchanged": true,
+    "warning_no_model_requested": true,
+    "warning_full_post_control_fixture_unchanged": true,
+    "warning_binding_left_intentionally_mismatched": true
+  },
+  "rendered_judgment": {
+    "success_and_partial_envelopes_visible": true,
+    "one_body_per_displayed_call_without_duplicate_metadata_copy": true,
+    "wire_or_model_context_byte_count_claimed": false,
+    "warning_concise_and_actionable": true
+  },
+  "findings": [
+    "Controller stopped after a 20-line read omitted the main-menu heading. Visible choices proved the correct screen; the same recording continued without repeated navigation.",
+    "Native Pi inspection changed only the synthetic profile root directory mtime; all files and owned installation state were unchanged."
+  ],
+  "limitations": [
+    "Explicit package/skills selection establishes rendered native behavior, not another implicit-profile-loading claim. Separate installation checkpoint verifies actual profile registration.",
+    "Existing provider authentication inherited in place; not copied into fixture auth sentinel and not a whole-native-home immutability claim.",
+    "Only tools recording requested model work. Native UI usage display is not a benchmark or billing claim.",
+    "No screen-reader, alternate locale/font or non-host platform verification.",
+    "Raw recordings retain only owned synthetic temporary paths, not private user profile paths."
+  ]
+}
