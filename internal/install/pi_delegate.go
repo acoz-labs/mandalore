@@ -12,6 +12,7 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	"unicode"
 
 	"github.com/acoz-labs/mandalore/internal/strictjson"
 )
@@ -54,6 +55,29 @@ func executePiDelegate(ctx context.Context, binary, dir string, input []byte, ar
 	return out.buffer.Bytes(), nil
 }
 
+// Preview failures have no mutation receipt. Preserve a bounded typed reason,
+// never raw stdout/stderr or terminal controls, and do not mask cancellation.
+func piPreviewFailure(raw []byte, fallback error) error {
+	if errors.Is(fallback, context.Canceled) || errors.Is(fallback, context.DeadlineExceeded) {
+		return fallback
+	}
+	var reply struct {
+		Protocol int   `json:"protocol_version"`
+		OK       *bool `json:"ok"`
+		Error    struct {
+			Code    string `json:"code"`
+			Message string `json:"message"`
+		} `json:"error"`
+	}
+	if len(raw) > 65536 || decodeNative(raw, &reply) != nil || reply.Protocol != 1 || reply.OK == nil || *reply.OK {
+		return fallback
+	}
+	if reply.Error.Code == "" || len(reply.Error.Code) > 128 || strings.TrimSpace(reply.Error.Message) == "" || len(reply.Error.Message) > 2048 || strings.IndexFunc(reply.Error.Code+reply.Error.Message, unicode.IsControl) >= 0 {
+		return fallback
+	}
+	return errors.New("selected Pi runtime refused preview [" + reply.Error.Code + "]: " + reply.Error.Message)
+}
+
 func PreparePiViaRuntime(ctx context.Context, o PiOptions) (PiPlan, error) {
 	if err := ctx.Err(); err != nil {
 		return PiPlan{}, err
@@ -81,7 +105,7 @@ func PreparePiViaRuntime(ctx context.Context, o PiOptions) (PiPlan, error) {
 	}
 	raw, err := executePiDelegate(ctx, o.Binary, filepath.Dir(o.Binding), input, "call", "pi_connection_plan", "--read-only")
 	if err != nil {
-		return PiPlan{}, err
+		return PiPlan{}, piPreviewFailure(raw, err)
 	}
 	var reply struct {
 		Protocol int             `json:"protocol_version"`
@@ -89,7 +113,7 @@ func PreparePiViaRuntime(ctx context.Context, o PiOptions) (PiPlan, error) {
 		Result   json.RawMessage `json:"result"`
 	}
 	if decodeNative(raw, &reply) != nil || reply.Protocol != 1 || !reply.OK {
-		return PiPlan{}, errors.New("selected runtime returned an invalid Pi preview")
+		return PiPlan{}, piPreviewFailure(raw, errors.New("selected runtime returned an invalid Pi preview"))
 	}
 	var p PiPlan
 	if strictjson.Decode(reply.Result, &p, 32768) != nil {
@@ -240,7 +264,7 @@ func PreparePiRepairViaRuntime(ctx context.Context, in RepairInput) (PiPlan, err
 	}
 	raw, err := executePiDelegate(ctx, o.Binary, filepath.Dir(o.Binding), input, "call", "pi_connection_repair_plan", "--read-only")
 	if err != nil {
-		return PiPlan{}, err
+		return PiPlan{}, piPreviewFailure(raw, err)
 	}
 	var reply struct {
 		Protocol int             `json:"protocol_version"`
@@ -248,7 +272,7 @@ func PreparePiRepairViaRuntime(ctx context.Context, in RepairInput) (PiPlan, err
 		Result   json.RawMessage `json:"result"`
 	}
 	if decodeNative(raw, &reply) != nil || reply.Protocol != 1 || !reply.OK {
-		return PiPlan{}, errors.New("retained runtime could not preview Pi repair; inspect its ownership and inputs")
+		return PiPlan{}, piPreviewFailure(raw, errors.New("retained runtime could not preview Pi repair; inspect its ownership and inputs"))
 	}
 	var p PiPlan
 	if strictjson.Decode(reply.Result, &p, 32768) != nil {

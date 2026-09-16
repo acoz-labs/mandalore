@@ -31,6 +31,10 @@ was present before setup. No model request or personal activation occurred.
 | --- | --- |
 | [Initial preview/default-No](preview-before-fix.recording) | On source `318c2bb915e82024da534428a57036062a337f16`, used vim k and arrow navigation, accepted explicit fixture defaults, kept learning enabled, reviewed effects and chose default No. Complete bank/settings snapshots stayed identical and installation state remained absent. Found an ambiguous blank Previous generation label. |
 | [Fixed install and inspection](install-inspect-color.recording) | On the fixed source above, repeated keyboard setup, verified Previous generation: None, explicitly approved installation, inspected the connection through the Armorer, then exited normally to the shell. Receipt showed verified/installed, no uncertain effects and a fresh-session requirement. Armorer distinguished structural passes from untested native login, live tools, remote freshness and active context. |
+| [Narrow plain inspection and EOF](plain-narrow.recording) | On the fixed source, 32 columns / 30 rows with NO_COLOR and plain mode. Inspected the healthy Pi connection, used the explicit harness Back choice, then entered connection setup and exited at its first text prompt using EOF. Headings, status words and full wrapped identities remained readable. |
+| [No-color Back and cancellation](no-color-cancel.recording) | On the fixed source, 80 columns / 30 rows with NO_COLOR in the interactive menu. Used Esc and h to return from harness selection, then selected Pi and used Ctrl+C at the runtime prompt. Returned to the shell with canonical input, echo and signal handling restored. |
+| [Stale preview refusal](stale-plan.recording) | On the fixed source, 32-column plain mode. Prepared a learning-enabled update, changed only the disposable native wrapper bytes after preview, then confirmed. The menu refused the stale plan and returned without retry or registration changes. The wrapper was restored to its original bytes afterward. |
+| [Foreign registration diagnostic finding](foreign-before-fix.recording) | On the fixed source, 80-column plain mode. A separate synthetic profile referenced an inert, unowned local package named mandalore. Preview correctly refused it before confirmation, but displayed only a generic child-exit error. This is a usability finding, not a passing diagnostic. |
 
 The first artifact's manifest SHA-256 was
 `6cb1add4e30037d200d2f708fd420ef5c4601d9990317859cad064ac5bfc1f41`,
@@ -46,6 +50,18 @@ learning enabled, selecting the exact candidate executable. Complete synthetic
 bank hashes were unchanged; the unrelated relative package/filter and theme
 were preserved. Native credentials were neither copied nor inspected.
 
+The narrow/EOF, no-color/cancellation and stale-refusal journeys preserved all
+31 files in the installed synthetic signet, profile and installation state,
+verified by complete path/hash snapshots. The foreign profile and inert package
+were separate fixtures; no registration or generation was created there.
+
+The foreign-refusal finding prompted a bounded structured-preview diagnostic
+fix. It carries only a valid protocol-1 failure's nonempty code and message,
+with size limits and rejection of terminal controls; invalid/duplicate JSON and
+raw process output remain suppressed. Cancellation/deadline errors retain their
+identity. Regression tests cover the decoder and delegated failed previews with
+both zero and nonzero exit status. A fresh rendered retest remains required.
+
 ## Review, validation and remaining work
 
 Contributor self-review checked actual rendered headings, full wrapped paths
@@ -60,9 +76,9 @@ builds; Docker was unavailable. Hosted CI for the fixed source passed in
 [run 35039496193](https://github.com/acoz-labs/mandalore/actions/runs/35039496193).
 Cross-builds are not native Linux/Intel execution.
 
-Scoped verdict: pass for the fixed recorded journeys. Still required: no-color
-and narrow/plain output, Back/EOF/cancellation, stale/foreign refusal, interrupted
-registration/recovery and native tool warning/partial-result display at the final
+Scoped verdict: pass for the fixed recorded journeys except the explicitly
+retained foreign-diagnostic finding. Still required: the diagnostic's rendered
+retest, interrupted registration/recovery and native tool warning/partial-result display at the final
 implementation head. Earlier deterministic tests are not rendered evidence.
 No browser/mobile interface exists. Screen readers, alternate locales/fonts and
 native non-host platforms remain unverified. Replay uses macOS `script -p`;

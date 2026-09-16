@@ -19,7 +19,7 @@ func delegatedPiFixture(t *testing.T) (PiOptions, PiPlan) {
 	t.Helper()
 	o := PiOptions{Options: fixture(t), ReadOnly: true}
 	o.Binary = filepath.Join(filepath.Dir(o.Binding), "selected Pi runtime")
-	script := "#!/bin/sh\ncase \"$*\" in\n'call pi_connection_plan --read-only'|'call pi_connection_repair_plan --read-only') /bin/cat \"$PI_DELEGATE_PLAN\";;\n'call pi_connection_apply') /bin/cat \"$PI_DELEGATE_RESULT\"; exit \"${PI_DELEGATE_EXIT:-0}\";;\n*) exit 99;;\nesac\n"
+	script := "#!/bin/sh\ncase \"$*\" in\n'call pi_connection_plan --read-only'|'call pi_connection_repair_plan --read-only') /bin/cat \"$PI_DELEGATE_PLAN\"; exit \"${PI_DELEGATE_PLAN_EXIT:-0}\";;\n'call pi_connection_apply') /bin/cat \"$PI_DELEGATE_RESULT\"; exit \"${PI_DELEGATE_EXIT:-0}\";;\n*) exit 99;;\nesac\n"
 	if err := os.WriteFile(o.Binary, []byte(script), 0700); err != nil {
 		t.Fatal(err)
 	}
@@ -217,6 +217,61 @@ func TestDelegatedPiRefusesUnboundPlanAndChangedInputs(t *testing.T) {
 			writeDelegateReply(t, os.Getenv("PI_DELEGATE_PLAN"), map[string]any{"protocol_version": 1, "ok": true, "result": p})
 			if _, err := PreparePiViaRuntime(context.Background(), o); err == nil {
 				t.Fatal("unbound delegated plan accepted")
+			}
+		})
+	}
+}
+
+func TestPiPreviewFailurePreservesOnlyBoundedTypedDiagnostics(t *testing.T) {
+	valid := `{"protocol_version":1,"ok":false,"error":{"code":"connection.failed","message":"foreign Pi registration; preserve it for explicit review"}}`
+	for _, tc := range []struct {
+		name, raw string
+		want      bool
+	}{
+		{"typed", valid, true},
+		{"invalid", "raw child output", false},
+		{"duplicate", strings.Replace(valid, `"ok":false`, `"ok":true,"ok":false`, 1), false},
+		{"protocol", strings.Replace(valid, `"protocol_version":1`, `"protocol_version":2`, 1), false},
+		{"success", strings.Replace(valid, `"ok":false`, `"ok":true`, 1), false},
+		{"missing-ok", strings.Replace(valid, `"ok":false,`, "", 1), false},
+		{"terminal-control", strings.Replace(valid, "foreign Pi", `\u001b[31mforeign Pi`, 1), false},
+		{"oversized-message", strings.Replace(valid, "foreign Pi", strings.Repeat("x", 2049), 1), false},
+		{"missing-code", strings.Replace(valid, `"code":"connection.failed",`, "", 1), false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			fallback := errors.New("process failed; raw output suppressed")
+			got := piPreviewFailure([]byte(tc.raw), fallback)
+			if tc.want {
+				if got == fallback || !strings.Contains(got.Error(), "foreign Pi registration") {
+					t.Fatal("useful structured diagnostic lost", got)
+				}
+			} else if got != fallback {
+				t.Fatal("unusable child output exposed", got)
+			}
+		})
+	}
+	if got := piPreviewFailure([]byte(valid), context.Canceled); !errors.Is(got, context.Canceled) {
+		t.Fatal("cancellation replaced by child diagnostic", got)
+	}
+	if got := piPreviewFailure([]byte(valid), context.DeadlineExceeded); !errors.Is(got, context.DeadlineExceeded) {
+		t.Fatal("deadline replaced by child diagnostic", got)
+	}
+}
+
+func TestDelegatedPiReportsTypedPreviewRejectionWithoutEffects(t *testing.T) {
+	for _, exit := range []string{"0", "2"} {
+		t.Run(exit, func(t *testing.T) {
+			o, _ := delegatedPiFixture(t)
+			t.Setenv("PI_DELEGATE_PLAN_EXIT", exit)
+			writeDelegateReply(t, os.Getenv("PI_DELEGATE_PLAN"), map[string]any{
+				"protocol_version": 1, "ok": false,
+				"error": map[string]any{"code": "input.invalid", "message": "foreign Pi registration; preserve it for explicit review"},
+			})
+			if _, err := PreparePiViaRuntime(context.Background(), o); err == nil || !strings.Contains(err.Error(), "foreign Pi registration") {
+				t.Fatal("preview rejection reason lost", err)
+			}
+			if _, err := os.Stat(o.StateDir); !os.IsNotExist(err) {
+				t.Fatal("rejected preview changed installation state")
 			}
 		})
 	}
