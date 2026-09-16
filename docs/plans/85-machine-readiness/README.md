@@ -19,11 +19,12 @@ publication are separate. The shipped 1.0.0 artifacts remain immutable.
 
 ## Needs Attention
 
-Before final review, resolve static receipt selection and component identity
-matching without executing native binaries. Confirm bounded file access and
-cancellation seams against the actual code. Binding open reads manifest/device
-metadata, not records; avoid a full signet validation. Finish product-design review
-before implementing the menu. No implementation is authorized by this draft.
+No unresolved product or technical choice remains. Product-design self-review
+of head `2d8fbe0f241e134bd2d3c4eb15729c485270639a` is recorded in PR #86.
+The completed solution still requires exact-final-head engineering review and
+passing checks before this draft becomes Final. Native rendered implementation
+evidence and new-candidate product acceptance are later gates, not blockers to
+the selected implementation envelope.
 
 ## Decision Spotlight
 
@@ -45,6 +46,8 @@ before implementing the menu. No implementation is authorized by this draft.
 
 ## Final Gate
 
-This draft requires completed product/solution design, resolved bounded static
-inspection seams, a recorded PR number, exact-head ADR 0003 review and passing
-checks. The envelope is implementation only, not live activation or release.
+Product direction, bounded static inspection, shared schemas and verification
+are specified. Record exact-head solution self-review under ADR 0003, then mark
+Final and review that status-change head before implementation/merge. Required
+checks must pass before merge. The envelope is implementation only, not live
+activation, Pi acceptance or release.

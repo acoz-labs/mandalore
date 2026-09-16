@@ -11,7 +11,7 @@ scope; shared UI/agent semantics; no new private-data or release authority.
    meet the measured no-execution/no-native-write default.
 2. Add static tables alone. Cheap but fails the current-machine outcome.
 3. Add a small shared assessor plus reviewed declarations and explicit deeper
-   handoff. Selected direction; reuse safe install metadata validation seams.
+   handoff. Selected; reuse safe install metadata validation seams.
 4. Add external compatibility registry and agentic auto-repair. Excluded scope,
    with unnecessary network, lifecycle and trust boundaries.
 
@@ -41,5 +41,9 @@ Keep the existing deeper inspector as an explicit optional next action.
 | Optional prompt from typed findings only | Avoid copying raw metadata into agent instructions |
 | No automatic native selection scan | Multiple retained generations need explicit ownership/selection |
 
-The final plan must specify how explicit retained selection and safe defaults
-interact before implementation. This table is not a substitute for that contract.
+The [technical contract](03-design.md) resolves selection and safe defaults:
+shared non-executing defaults for paths, no implicit retained generation, receipt
+ownership checks before following paths and separate toolkit/retained identities.
+Confidence is high in the boundaries and source seams. Native menu quality and
+actual implementation behavior remain verification requirements, not assumptions
+that authorize completion.

@@ -56,9 +56,9 @@ Pi implementation exists, but Pi product acceptance remains pending separately.
 
 The reviewed discovery contains native empty/missing-profile probes and exact
 release/Pi evidence identities. New assessment behavior itself is unimplemented.
-Outstanding design work: static receipt selection, narrow metadata readers,
-identity matching and complete CLI/menu failure semantics. Neither historical
-evidence nor an operator-supplied string may silently become verified status.
+The [technical design](03-design.md) resolves selection, bounded metadata reads,
+identity matching and CLI/menu failure semantics. Neither historical evidence
+nor an operator-supplied string may silently become verified status.
 
 ## Product Design
 
@@ -87,7 +87,7 @@ The Armorer · Machine readiness
   Completed local assessment. No programs run or files changed.
 
 Next step
-  Connect the selected signet on this machine.
+  Select an installed native executable, then reassess.
 
 Memory runtime
   Support: Supported target

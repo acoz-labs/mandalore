@@ -8,8 +8,7 @@ or renamed existing inspector alone does not satisfy the issue.
 
 ## Dependency Order And Reviewable Slices
 
-1. Finalize product/solution design and exact-head review. Resolve explicit
-   selection, data limits and metadata-only reader seams first.
+1. Complete exact-head review of the specified product/solution design.
 2. TDD declarations, identities and pure classification.
 3. TDD bounded static observations and API/CLI response contracts.
 4. TDD menu rendering, navigation and sanitized prompt generation.
@@ -31,6 +30,9 @@ Detailed tests live in [verification](04-verification.md).
 - Metadata ownership and evidence distinction: `docs/architecture.md`.
 - Actual engineering/terminal results: scoped `docs/evidence/` record.
 - Toolchain/testing and unsupported cases: `docs/development.md` as needed.
+- Conversational administration discovery: update existing Armorer reference
+  guidance for the new CLI operation without changing memory learning behavior;
+  apply native skill/plugin validation when those packaged instructions change.
 
 Delete this six-file plan and `docs/discovery/15-machine-readiness` after durable
 promotion during implementation reconciliation. Git and PRs retain provenance.
