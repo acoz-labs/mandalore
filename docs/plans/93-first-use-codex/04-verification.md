@@ -17,6 +17,8 @@ substantive product-design gate. Verify failure copy and success through the
 existing command/menu surfaces. Replacement retained-candidate human acceptance
 remains separate from engineering checks. Old evidence is never rewritten.
 
-Production preflight: no production execution in this implementation envelope.
+## Production Readiness Preflight
+
+No production execution in this implementation envelope.
 Release requires reviewed main, immutable artifact build/nomination, actual owner
 acceptance under a valid candidate-specific policy and explicit publication.
