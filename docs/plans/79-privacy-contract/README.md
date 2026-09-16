@@ -1,8 +1,8 @@
 # Solution Design: privacy and lifetime contract
 
-- **Status:** Draft
+- **Status:** Final
 - **Issue:** #79
-- **Planning PR:** Pending
+- **Planning PR:** #82
 - **Repository basis:** e78e08329335f753adce821979541bf77d879d91
 - **Execution envelope:** implementation
 
