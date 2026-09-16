@@ -21,8 +21,8 @@ publication are separate. The shipped 1.0.0 artifacts remain immutable.
 
 Before final review, resolve static receipt selection and component identity
 matching without executing native binaries. Confirm bounded file access and
-cancellation seams against the actual code; do not reuse a full binding open
-that traverses remembered content. Finish the rendered product-design review
+cancellation seams against the actual code. Binding open reads manifest/device
+metadata, not records; avoid a full signet validation. Finish product-design review
 before implementing the menu. No implementation is authorized by this draft.
 
 ## Decision Spotlight
