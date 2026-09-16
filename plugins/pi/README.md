@@ -2,8 +2,10 @@
 
 Development integration for issue #13, after accepted Codex MVP #10. The native
 package is not yet a released or accepted connection workflow. Typed CLI and
-guided menu installation/recovery are implemented; the full native model and
-exact-head rendered verification matrix remain part of that issue.
+guided menu installation/recovery are implemented. Source-bound native model,
+delivery and rendered evidence is recorded in
+[engineering reconciliation](../../docs/evidence/pi/reconciliation.md);
+final-head verification and immutable-candidate acceptance remain separate gates.
 
 The dependency-free JavaScript extension discovers the retained runtime's typed
 catalog and exposes its bound memory operations as native Pi tools. Every call

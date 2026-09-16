@@ -5,6 +5,8 @@ publication or personal activation. Issue #13 / implementation PR #72 remains
 in progress. The engineering native/model matrix is recorded below; final-head
 reconciliation and rendered evidence binding remain before readiness. These
 checks do not constitute exact-candidate product acceptance.
+The [implementation reconciliation](reconciliation.md) maps requirements to
+evidence and durable documentation, with remaining readiness/release gates.
 
 The [native lifecycle and model baseline](lifecycle-model-baseline.md) records
 actual Pi RPC transitions (with a disabled-extension control), an immutable
