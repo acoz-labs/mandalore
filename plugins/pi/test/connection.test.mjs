@@ -4,6 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { appendFileSync, chmodSync, copyFileSync, cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 import test, {after, before} from 'node:test';
 import { openConnection, packageDigest, readConnection } from '../package/connection.js';
@@ -127,4 +128,81 @@ test('close disables new requests without dispatching another child', async t =>
   await connection.close();
   await connection.close();
   await assert.rejects(connection.call('memory_remember', {}), error => error.envelope.error.code === 'binding.invalid' && !error.envelope.error.write_may_have_occurred);
+});
+
+test('an open connection refreshes superseded context without reopening or writing', async t => {
+  const f = fixture(t);
+  const connection = await openConnection(f.pkg);
+  t.after(() => connection.close());
+  const record = {kind: 'preference', summary: 'Greeting code word', body: 'The greeting code word is River.', basis: 'user-direction', reason: 'Confirmed'};
+  const first = f.invoke(['call', 'memory_remember', '--binding', f.binding], record).result;
+  const beforeFirst = snapshot(f.bank);
+  const original = await connection.context('greeting code word');
+  assert.match(original.context, /The greeting code word is River/);
+  assert.deepEqual(snapshot(f.bank), beforeFirst);
+  f.invoke(['call', 'memory_remember', '--binding', f.binding], {...record, record_id: first.record_id, supersedes: [first.id], body: 'The greeting code word is Willow.'});
+  const beforeSecond = snapshot(f.bank);
+  const current = await connection.context('greeting code word');
+  assert.match(current.context, /The greeting code word is Willow/);
+  assert.doesNotMatch(current.context, /The greeting code word is River/);
+  assert.equal(current.context.split('Mandalore memory is attached.').length - 1, 1);
+  assert.deepEqual(snapshot(f.bank), beforeSecond);
+});
+
+test('real save-and-sync cancellation retains the saved receipt and reaps its Git child', async t => {
+  const f = fixture(t);
+  const connection = await openConnection(f.pkg);
+  const controller = new AbortController();
+  const previousPath = process.env.PATH;
+  let pending;
+  try {
+    const before = snapshot(f.bank);
+    const preCancelled = new AbortController();
+    preCancelled.abort();
+    await assert.rejects(connection.call('memory_journal_append', {kind: 'test', summary: 'Must not save.'}, preCancelled.signal), error => error.envelope.error.code === 'operation.cancelled' && !error.envelope.error.write_may_have_occurred);
+    assert.deepEqual(snapshot(f.bank), before);
+
+    f.invoke(['call', 'memory_git_init', '--binding', f.binding], {});
+    execFileSync('git', ['-C', f.bank, 'remote', 'add', 'origin', 'https://example.invalid/synthetic.git']);
+    const realGit = execFileSync('sh', ['-c', 'command -v git'], {encoding: 'utf8'}).trim();
+    const bin = join(f.root, 'bin');
+    const marker = join(f.root, 'fetch-pid');
+    mkdirSync(bin);
+    const quote = value => "'" + value.replaceAll("'", "'\\''") + "'";
+    writeFileSync(join(bin, 'git'), '#!/bin/sh\nset -eu\nfor arg in "$@"; do\nif [ "$arg" = ls-remote ]; then\nprintf "%s\\n" "$$" > ' + quote(marker) + '\nexec sleep 30\nfi\ndone\nexec ' + quote(realGit) + ' "$@"\n', {mode: 0o700});
+    process.env.PATH = bin + ':' + previousPath;
+    pending = connection.call('memory_journal_append_and_sync', {entry: {kind: 'test', summary: 'Saved before controlled fetch cancellation.'}, timeout_seconds: 30}, controller.signal);
+    // Observe early failures immediately, without an unhandled rejection while
+    // waiting for a complete marker from an actually live child.
+    let settled = false;
+    pending.then(() => { settled = true; }, () => { settled = true; });
+    let pid;
+    const until = Date.now() + 10000;
+    while (Date.now() < until && !settled) {
+      let value = '';
+      try { value = readFileSync(marker, 'utf8'); }
+      catch (error) { if (error.code !== 'ENOENT') throw error; }
+      if (/^\d+\n$/.test(value)) { pid = Number(value.trim()); process.kill(pid, 0); break; }
+      await delay(10);
+    }
+    assert.ok(pid, 'complete live Git PID must precede cancellation');
+    controller.abort();
+    const envelope = await pending;
+    assert.equal(envelope.ok, true);
+    assert.equal(envelope.result.saved.durable_locally, true);
+    assert.equal(envelope.result.delivery.ok, false);
+    assert.equal(envelope.result.delivery.error.code, 'operation.cancelled');
+    assert.equal(envelope.result.delivery.error.sync_status.phase, 'fetch');
+    assert.equal(envelope.result.delivery.error.sync_status.delivered, false);
+    assert.throws(() => process.kill(pid, 0), error => error.code === 'ESRCH');
+    const journal = await connection.call('memory_journal', {});
+    assert.equal(journal.result.items.length, 1);
+    assert.equal(journal.result.items[0].id, envelope.result.saved.id);
+  } finally {
+    controller.abort();
+    await pending?.catch(() => {});
+    await connection.close();
+    if (previousPath === undefined) delete process.env.PATH;
+    else process.env.PATH = previousPath;
+  }
 });

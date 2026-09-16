@@ -9,6 +9,9 @@ stamping engineering evidence are recorded below; they do not complete that matr
 The [native lifecycle and model baseline](lifecycle-model-baseline.md) records
 actual Pi RPC transitions (with a disabled-extension control), an immutable
 engineering build and the first Codex model recall against its synthetic bank.
+The [delivery and live-refresh checks](delivery-refresh.md) cover compatible
+concurrent writes, unresolved semantic conflicts, partial-save cancellation,
+explicit recovery and an actual already-open Pi model seeing superseded memory.
 
 ## Native package and callback probe
 
