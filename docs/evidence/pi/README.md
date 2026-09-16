@@ -2,9 +2,9 @@
 
 This records development verification, not independent product acceptance,
 publication or personal activation. Issue #13 / implementation PR #72 remains
-in progress. The full native model/candidate and exact-head rendered matrix must
-still be completed. Guided menu/owned installation/recovery, skills and release-
-stamping engineering evidence are recorded below; they do not complete that matrix.
+in progress. The engineering native/model matrix is recorded below; final-head
+reconciliation and rendered evidence binding remain before readiness. These
+checks do not constitute exact-candidate product acceptance.
 
 The [native lifecycle and model baseline](lifecycle-model-baseline.md) records
 actual Pi RPC transitions (with a disabled-extension control), an immutable
@@ -12,9 +12,10 @@ engineering build and the first Codex model recall against its synthetic bank.
 The [delivery and live-refresh checks](delivery-refresh.md) cover compatible
 concurrent writes, unresolved semantic conflicts, partial-save cancellation,
 explicit recovery and an actual already-open Pi model seeing superseded memory.
-The [rendered menu checkpoint](menu/README.md) retains actual color-terminal
-preview/default-No, confirmed install and Armorer inspection recordings, including
-the initial clarity finding and its failing-first fix.
+The [rendered menu checkpoint](menu/README.md) retains actual color/no-color,
+narrow/plain, preview/default-No, install/inspection, cancellation, stale/foreign
+refusal, interrupted update/recovery and native tool/warning recordings. It
+preserves initial clarity findings separately from their verified corrections.
 
 ## Native package and callback probe
 
