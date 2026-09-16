@@ -155,10 +155,18 @@ default-No and narrow plain approval with the native handoff declined. All 32
 protected fixture entries and old generations survived unchanged; structural
 native checks do not imply fresh-session authentication/MCP behavior.
 
-This is a partial engineering checkpoint. The full candidate matrix still
-requires additional lifecycle, retrieval-quality, rendering/failure,
-native connection failure/recovery and the remaining original candidate-guide
-matrix. Earlier-head evidence is a baseline, not exact-candidate acceptance.
+The [Pi installation checkpoint](pi-install/README.md) adds eight retained-
+candidate recordings: initial default-No/install, interrupted replacement,
+explicit repair, foreign/stale refusal, cancellation and normal replacement.
+Old generations and 35 protected entries survive. Fresh post-repair/post-update
+Pi processes load 18 unique tools and two skills through actual profile
+registration. Native cache creation and directory-mtime effects are recorded
+explicitly, including a no-Mandalore control; whole-profile immutability is not
+claimed for startup.
+
+This remains a partial engineering checkpoint. Retrieval-quality and remaining
+lifecycle/rendering/failure scenarios must still be reconciled against the full
+original candidate guide. Earlier-head evidence is a baseline, not exact-candidate acceptance.
 The 512-byte repeated preview remains an explicit observed limitation.
 
 No raw sessions, private machine paths, authentication or personal memories are
