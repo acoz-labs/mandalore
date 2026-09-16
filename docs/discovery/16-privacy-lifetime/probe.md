@@ -126,3 +126,16 @@ caches. Rejected deletion is graph-invalid and does not independently isolate th
 append-only guard; the existing checkpoint rewrite test covers that separate
 guard. No proof of cross-device erasure, provider behavior, native UI acceptance,
 semantic classification or secret detection. This is not a benchmark.
+
+The existing focused API, Codex and synchronization checks also passed uncached:
+`TestRejectedCallsAndReadOnly`, `TestSaveAndSyncRejectsBeforePublication`,
+`TestHooksAreReadOnlyScopedAndSupportNativeEvolution`,
+`TestNativeContextIsFreshBoundedScopedAndNeverWrites`,
+`TestNativeContextWarningsDoNotEchoCorruptContent`,
+`TestCheckpointRefusesRewrittenEvidenceAndWrongBranch` and
+`TestIgnoreRulesCannotHideValidMemoryFromCheckpoint`.
+The memory and memorycontext packages had no test names matching that focused
+filter; they are covered separately by full pinned host CI, not counted as
+focused probe successes. Docker was unavailable; `mise exec -- bin/ci` used the
+documented host fallback (Go 1.26.4, Node 24.1.0, Git 2.50.1). Full final-head
+validation and exact review are recorded on PR #78, not inferred from this probe.

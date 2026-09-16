@@ -2,6 +2,7 @@
 
 - **Status:** Proposed decision
 - **Discovery issue:** #16
+- **Discovery PR:** #78
 - **Repository basis:** a8b56b268ed48f47363d015ab6d5f89e847bee6c
 - **Recommended decision:** select O1; deliberately defer O2/O3
 - **Gate 1:** exact-head contributor review required under ADR 0003
@@ -37,7 +38,7 @@ establish these distinctions. The probe is characterization, not new behavior.
 
 | Surface | Stored or exposed today | Boundary |
 | --- | --- | --- |
-| Portable signet | Plain JSON revisions, all superseded branches, source reasons/citations, semantic journals, device labels/IDs and foundling registrations | Format validation is not encryption, secret detection or recipient authorization |
+| Portable signet | Plain JSON revisions, all superseded branches, source reasons/citations, semantic journals, device labels/IDs, actor/harness and optional model/session provenance, foundling registrations | Format validation is not encryption, secret detection or recipient authorization |
 | Git checkpoint/delivery | Allowed portable files, including old revisions, journals and provenance; Git commits and repository-local author attribution | Append-only checks refuse evidence deletion/rewrite; sensitivity and ignore rules do not omit otherwise valid memory |
 | Local operational state | Ignored writer lock, sync receipt and foundling connections; separate bindings and native installation configuration | Not included by Mandalore checkpoints; local backup tools and direct Git use are outside this promise |
 | Ordinary recall | Effective non-conflicting heads in the selected scope, within count/byte bounds | All sensitivity levels are eligible; compact hits omit the sensitivity field |
