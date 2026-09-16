@@ -38,7 +38,14 @@ Binding selection is `--binding FILE`, then `MANDALORE_BINDING`, then the platfo
 config default. A newly created/connected binding becomes selected for this menu.
 Use explicit bindings for additional banks; no cwd discovery or shell edits occur.
 
-## Codex journeys
+## Native connection journeys
+
+Connection setup, Armorer inspection and repair first ask for **Codex** or **Pi**.
+Each keeps its own native-profile defaults; choosing Pi does not reuse a resolved
+Codex home. Native executables must already be installed. Neither journey installs
+a harness, logs into a provider or copies authentication/session files.
+
+### Codex
 
 **Connect/update** asks for a trusted local Mandalore executable and previews its
 hash, the preparing toolkit's embedded plugin identity, bound signet, native
@@ -61,9 +68,35 @@ completed phase and retained paths; inspect before retrying, not assumed rollbac
 
 `--state-dir DIR`, `--native-home DIR` and `--native-binary FILE` select an explicit
 installation/profile. `--binary FILE` sets the local artifact offered by the menu.
-Codex is required only for native journeys, not opening the menu or memory setup.
+Codex is required only for Codex journeys, not opening the menu or memory setup.
 Exact-candidate acceptance is recorded in [the v1.0.0 release record](releases/1.0.0.md).
 No assistant launcher, capability framework or live predecessor import is added.
+
+### Pi
+
+Pi setup asks for a trusted Mandalore executable, binding, native profile,
+installation state, native executable and memory access mode. Ordinary learning
+is the default; enforced read-only is an explicit connection choice, not a mode
+automatically entered for ordinary questions. Preview executes the selected
+runtime's read-only planner so its own embedded package is used. Review paths,
+identities and effects, then separately confirm application (default No).
+
+Pi defaults to `PI_CODING_AGENT_DIR`, otherwise its native `.pi/agent` directory.
+Explicit profile/path flags prefill the menu. The inspected native contract is
+Pi 0.85.1; Node 24.1.0/macOS arm64 is the verified engineering baseline. Other
+versions/platform execution must not be inferred from cross-builds.
+
+After installation, launch ordinary `pi` in any project using the selected native
+profile. The signet is bound independently of cwd. Start a fresh session or use
+native reload after a connection update. Per-turn reads refresh memory, not code.
+
+The Armorer distinguishes structural health from untested login, live tools,
+remote freshness and active context. Repair requires an owned retained root and
+intact matching runtime/binding. It creates a fresh generation while preserving
+the old one and its access mode; it does not fix credentials or overwrite edits.
+An interrupted remove/install may leave no active registration. Inspect its
+phase/attempt receipt before recovery. See the [Pi guide](../plugins/pi/README.md)
+and [engineering evidence](evidence/pi/README.md).
 
 ## CLI installation and updates
 
@@ -79,14 +112,16 @@ an owned CLI launcher and retains older runtimes; it changes no memory or native
 connections. A launcher outside PATH is shown as a full command, not silently added
 to shell settings. Missing receipt fields are displayed as None.
 
-After CLI success, optionally choose one Codex connection. Its preview executes
-the verified new runtime to prepare **its own embedded plugin**, then asks for a
+After CLI success, optionally choose one Codex or Pi connection. Its preview executes
+the verified new runtime to prepare **its own embedded package**, then asks for a
 second confirmation before native activation. CLI success and any later native
 failure are reported separately. The default leaves connections unchanged; a
 successful update requires a fresh native session. Use this release journey when
 updating runtime and plugin together. The older local-artifact Codex journey above
 still previews the running toolkit's embedded plugin without executing the selected
-artifact; its `--binary` flag is not a release-package selector.
+artifact; its `--binary` flag is not a release-package selector. Pi's local-artifact
+journey instead delegates to the selected executable. Pi identity uses its own
+package metadata, not the release manifest's Codex plugin hash.
 
 If activation was interrupted, inspect the retained phase and pending record and
 reapply its exact reviewed plan through the [CLI recovery interface](interface.md#apply-a-reviewed-cli-installation).
@@ -138,18 +173,23 @@ The plugin's **The Armorer** skill provides conversational administration: ask
 It uses structured CLI operations, not menu navigation. **This Is the Way** stays
 focused on ordinary recall and learning; administrative guidance loads on demand.
 
-Managed installations generate a skill-local `references/connection.json` with
+Managed Codex installations generate a skill-local `references/connection.json` with
 the retained runtime, binding and native installation paths. Those machine-local
 values are ownership-checked projection, not public package or signet content.
 The skill works without a global PATH entry and does not assume MCP process
 exports are available in the agent shell. Explicit target/override differences
 must be resolved before changes. Public unconnected plugins have no such file;
 an agent needs a supplied runtime or one on PATH and the missing setup choices.
+Managed Pi packages provide equivalent local context in package-root
+`connection.json` (the skill's `../../connection.json`), including binding guards
+and enforced access mode. These values are not exported into the agent shell.
 The skill cannot bootstrap itself before the plugin is installed.
 
 `mandalore connection armorer` is the read-only inspection command;
 `connection doctor` remains a compatibility alias. The typed operation is still
-`connection_doctor`. A diagnostic request does not authorize repair or sync.
+`connection_doctor` for Codex and `pi_connection_doctor` for Pi. Add `--harness pi`
+to the human Pi command; omitting it retains the Codex default. A diagnostic
+request does not authorize repair or sync.
 Requested setup/update/repair follows the existing preview/apply contracts;
 native authentication and hook trust remain separate, and a structural pass
 does not establish live memory or remote health. Shell access is required for

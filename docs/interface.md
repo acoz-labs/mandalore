@@ -226,16 +226,18 @@ use inspect/plan instead. EOF, Back and cancellation stop subsequent steps witho
 undoing an installation already completed.
 
 After CLI verification, keeping native connections unchanged is the default. An
-optional Codex handoff asks for the selected binding, native executable/profile
+optional Codex or Pi handoff asks for the selected binding, native executable/profile
 and installation state. Flags `--binding`, `--native-binary`, `--native-home` and
 `--state-dir` prefill these choices; CLI-only installation does not require them.
 Preparing that handoff **executes the explicitly trusted installed runtime** via
-its existing `call connection_plan --read-only` operation. The parent verifies its
+its `call connection_plan --read-only` (Codex) or `call pi_connection_plan --read-only`
+(Pi) operation. The parent verifies its
 bounded JSON plan against the selected paths, executable/binding hashes and release
-plugin identity. It never substitutes the parent's embedded plugin.
+package identity. Pi uses its own metadata, not the manifest's Codex hash.
+It never substitutes the parent's embedded package.
 
 A second default-No confirmation precedes that same runtime's
-`call connection_apply`. Native authentication is inherited normally, not copied;
+`call connection_apply` or `call pi_connection_apply`. Native authentication is inherited normally, not copied;
 raw failed output is suppressed. A typed partial receipt remains visible even
 when the subprocess exits unsuccessfully. CLI installation success remains distinct
 from native failure. Start a fresh native session after a successful connection
@@ -487,7 +489,9 @@ compiled executable create/correction/history, unrelated cwd, explicit binding
 precedence, no-write hashes, real stdio, EOF and interruption. Full race tests,
 vet and four platform builds run in `bin/ci`. Cross-builds are not native runtime
 acceptance. These tests use synthetic local data and an SDK client, not a model
-conversation or installed Codex plugin. Those remain #6/#10.
+conversation or installed native plugin. Native Codex acceptance is recorded in
+[v1.0.0](releases/1.0.0.md); subsequent Pi engineering evidence remains distinct
+from new candidate acceptance in [the Pi evidence](evidence/pi/README.md).
 
 ## Development connection management
 
@@ -536,7 +540,41 @@ Native marketplace removal may delete Codex's installed cache. Recovery relies
 on retained managed source/runtime copies, not cache retention; edited cache
 files are refused before replacement so that native cleanup cannot erase them.
 
-This is in-progress #7 engineering, not release or immutable-candidate
-acceptance. The interactive menu and published-release update discovery are
-still pending. Native #6 behavior evidence is recorded separately in
-[the Codex receipt](codex-native-evidence.md).
+The menu and published-release discovery are implemented; the Codex-first
+[v1.0.0 record](releases/1.0.0.md) records subsequent acceptance/publication.
+Later implementation or local installation does not confer new-candidate
+acceptance. Native behavior evidence is retained separately for
+[Codex](codex-native-evidence.md) and [Pi](evidence/pi/README.md).
+
+### Pi connection differences
+
+Use `connection plan/apply/armorer/repair --harness pi` or the corresponding
+`pi_connection_*` operations. Pi defaults to `PI_CODING_AGENT_DIR`, otherwise
+the native `.pi/agent` directory, and `pi` on PATH. The current adapter accepts
+Pi 0.85.1. Pi/Node installation and model authentication are separate prerequisites.
+
+The plan's `read_only` (`--memory-read-only`) enforces memory access in the
+installed connection; common CLI `--read-only` prohibits this invocation's own
+mutations instead. Learning is the ordinary default. Repair preserves access
+mode and binding identity rather than adopting newer ambient configuration.
+
+Plans pin runtime/native/binding/package identities, profile settings and previous
+ownership. Native `pi install`/`remove` own registration, while retained files and
+receipts remain outside the signet/profile. Unknown, filtered, duplicated or
+edited Mandalore registrations are refused. Unrelated packages/resource filters
+are preserved. Each update/repair uses a fresh retained generation; interruption
+may leave no active registration, so inspect phase/attempt receipts before retry.
+
+Pi's menu delegates preview/apply to the explicitly selected runtime. Repair
+selects the owned generation's intact retained runtime, falling back only to its
+matching source bytes. Existing threads need restart or native reload to load
+changed code; the next-turn memory packet is independently read fresh.
+
+The native extension exposes the same 18 bound operations as MCP with sequential
+tool execution, shell-free arguments, binding guards and `pi` provenance.
+One complete envelope is returned in text, with only operation/ok metadata.
+Read nested delivery errors even if the outer save succeeded. Input/output bounds
+remain 32768/65536 bytes (catalog discovery allows 1 MiB). Tool calls have a
+45-second outer deadline; startup/context calls use five seconds. Cancellation
+terminates owned process groups with bounded escalation; lost output can mean a
+write occurred and requires inspection, never an automatic retry.

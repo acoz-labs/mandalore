@@ -120,3 +120,33 @@ predecessor did not guarantee idempotent writes.
 Changing plugin/runtime/connection may need a fresh session. Updated files do
 not automatically refresh context already read. An interrupted turn cannot
 guarantee persistence of unfinished work.
+
+### Pi-specific diagnosis
+
+Select Pi in the Armorer menu or use `connection armorer --harness pi` with the
+actual native profile/executable/state paths. Inspect `error.pi_connection_report`
+on failure. Structural success does not establish a loaded connection, model
+login or remote access in an already-open session.
+
+For unavailable attachment, inspect the exact retained generation and binding.
+Pi guards binding bytes and signet identity on every call; replacement is not
+silently adopted at restart. Do not remove guards or fall back to a cwd bank.
+Edited or ambiguous packages require investigation. Missing owned files can be
+repaired into a fresh generation using the intact retained runtime, preserving
+old generations, binding and access mode. Native login remains Pi's task.
+
+Apply failures retain `pi_connection_result` with an attempt path, phase and
+uncertain-native-effects flag. The old registration may already be removed.
+Reinspect and preview recovery; do not assume rollback or repeat stale plans.
+Native registration leaves unrelated profile resources under Pi's ownership.
+
+Tool completion is not proof of delivery. A combined save may be durable while
+nested delivery is pending, cancelled or conflicted. Keep the saved ID, inspect
+effects and do not repeat the save to retry delivery. Explicit synchronization
+can deliver the existing record. A delivered semantic conflict remains unresolved
+knowledge, not permission to select the newest timestamp.
+
+Pi reads current local memory each turn without saving or synchronizing. An
+externally superseded fact can appear next turn without restarting; previously
+read reasoning is not changed mid-turn. Reload or restart is still needed for
+changed extension/skill/connection code. Hooks do not promise an exit checkpoint.
