@@ -50,8 +50,12 @@ previous candidate evidence branch. The reviewed source change is confined to
 Codex profile preparation/diagnostics; the embedded Codex package content hash is
 unchanged. Nevertheless, a new candidate is a new acceptance identity.
 
-The owner will repeat Codex connection from a fresh synthetic profile using the
-same disposable acceptance bank, retaining its correction history. New profile,
-state and capture paths keep the original failed attempt intact. No whole-candidate
-human verdict has been supplied. Independent/explicitly scoped owner-acceptance
-policy and publication gates remain in force; no acceptance workflow dispatched.
+The owner completed Codex connection from a fresh synthetic profile using the
+same disposable acceptance bank, retaining its correction history. Structural
+inspection passed; a fresh session automatically recalled the Pi-authored current
+project fact and preference. The owner accepted this setup-and-recall experience
+in the [recorded scenario verdict](https://github.com/acoz-labs/mandalore/issues/93#issuecomment-5701496652).
+New profile, state and capture paths keep the original failed attempt intact.
+No whole-candidate human verdict has been supplied. See the
+[release reconciliation](release-reconciliation.md) for remaining evidence and
+authority gates; no acceptance workflow has been dispatched.
