@@ -1,9 +1,12 @@
 # Mandalore results in code mode
 
-When a code-mode call exposes the raw MCP wrapper, present one full envelope,
-not both compatibility copies and not only `.result`. Native clients that already
-select a representation need no extra wrapping. Never call the tool again just
-to render it differently, especially after a write or ambiguous failure.
+Before the first Mandalore call through code mode, prepare the selector below
+when raw MCP wrappers are exposed. Apply it to that first result and reuse it
+for subsequent results, including errors. Reading this guidance after printing
+the first response cannot remove context already consumed. Present one full
+envelope, not both compatibility copies and not only `.result`. Native clients
+already selecting a representation need no extra wrapping. Never call the tool
+again just to render it differently, especially after a write or ambiguous failure.
 
 This conservative example selects structured content only when the single text
 block matches its serialization and error state. Otherwise it preserves the
