@@ -1,8 +1,8 @@
 # Solution Design: efficient anonymous release operations
 
-- **Status:** Draft
+- **Status:** Final
 - **Issue:** #74
-- **Planning PR:** Pending
+- **Planning PR:** #75
 - **Repository basis:** 6e008087a25daf5a0db6686f1d2669ae5930677f
 - **Execution envelope:** implementation
 
