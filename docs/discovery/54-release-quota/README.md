@@ -1,8 +1,8 @@
 # Discovery: bounded anonymous release retrieval
 
-- **Status:** Draft
+- **Status:** Final candidate
 - **Discovery issue:** #54
-- **Discovery PR:** pending creation
+- **Discovery PR:** #73
 - **Repository basis:** 29c4d48a697f5ccdbddcd87b3f145ba2048df240
 - **Recommended decision:** approve one bounded delivery outcome
 - **Gate 1:** awaiting exact-head engineering self-review under ADR 0003
@@ -30,8 +30,9 @@ does not prove current remote freshness.
 The original #54 incident is a post-publication quota exhaustion observation,
 not proof that every first installation hits the limit. The current anonymous
 client never reads native credentials. Its generic error merges all non-200,
-non-404 refusals and incorrectly uses a universal no-installation phrase even
-when an enclosing operation must report its own partial-state boundaries.
+non-404 refusals and uses a universal no-installation phrase. New guidance must
+defer to the enclosing operation's own partial-state evidence rather than infer
+whole-operation effects from a single failed HTTP request.
 
 At the repository basis, a synthetic HTTP fixture measured:
 
