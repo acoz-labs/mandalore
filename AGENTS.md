@@ -45,7 +45,9 @@ within those outcomes, including exact-head self-review and reviewed merges afte
 required checks. Record the scope in
 `docs/decisions/0003-post-1-roadmap-self-review.md`. Acceptance, public release,
 live installation, privacy and data boundaries remain unchanged; the following
-MVP candidate-specific acceptance exception does not extend to new candidates.
+MVP candidate-specific acceptance exception does not automatically extend to new
+candidates. The separately authorized exact 1.1.0 extension below is not a
+blanket change to that rule.
 
 The owner subsequently authorized personally performed owner acceptance for the
 exact retained MVP candidate despite matching implementation-account authorship.
@@ -53,6 +55,13 @@ Follow `docs/decisions/0002-mvp-owner-acceptance.md` and its fail-closed workflo
 scope. This supersedes only the independent-author rule in that case. It is not
 agent self-acceptance, an acceptance verdict, or permission to publish. All other
 evidence, checks, privacy and release gates remain in effect.
+
+On September 16, 2026 the owner explicitly extended personally performed owner
+acceptance to retained source `b89458617b49d2eb0a8686dcd75c26aa7ea6f6ba` and its
+exact artifact for nominated issues #13, #56, #57, #61, #65, #74, #85, #88 and #93.
+Follow the additional pair and boundaries in ADR0002 and control issue #96.
+No other candidate is added; actual human verdicts, evidence and publication
+authority remain separate. Do not rebuild the retained artifact for this policy.
 
 The owner also authorizes routine interactive selections during this goal,
 including native startup menus and review/trust of the exact synthetic-test

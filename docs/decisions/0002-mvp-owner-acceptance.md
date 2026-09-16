@@ -1,4 +1,4 @@
-# Candidate-specific MVP owner acceptance
+# Candidate-specific owner acceptance
 
 Status: explicitly authorized by the product owner during the acceptance walkthrough.
 
@@ -19,6 +19,11 @@ it is not an acceptance verdict or permission for agent self-acceptance.
 - Replacement pair: nominated delivery issues #2–#12 and #45 (The Armorer).
   Source/artifact pairs cannot be mixed. Foundation #1 is already closed.
   Maintainer-control issues #42 and #48 are outside both product candidate sets.
+- Explicitly authorized 1.1.0 source: `b89458617b49d2eb0a8686dcd75c26aa7ea6f6ba`.
+- 1.1.0 artifact: `mandalore:b89458617b49d2eb0a8686dcd75c26aa7ea6f6ba:sha256:7995f820a7182a95b828851afce12bacea7108f82afac9369d307a43d961f45a`.
+- 1.1.0 pair: nominated delivery issues #13, #56, #57, #61, #65, #74, #85,
+  #88 and #93 only. Earlier 1.1.0 candidates, mixed source/artifact pairs and
+  control issue #96 are ineligible. Older pairs retain their older issue sets.
 - Workflow actor must match repository variable `MVP_ACCEPTANCE_OWNER` and also
   belong to the normal `ACCEPTANCE_ACTORS` allowlist. No private actor name is
   embedded in public code.
@@ -42,6 +47,22 @@ agent self-acceptance or publication. No acceptance was recorded by this change.
 The [sanitized walkthrough observations](https://github.com/acoz-labs/mandalore/blob/06f2dede753ec4065941017033cdbcafd1ba68c9/docs/evidence/armorer/retained-candidate.md)
 distinguish the actual checks from retained historical evidence and their limits.
 They are not a substitute for issue-specific acceptance evidence or owner verdict.
+
+## Explicit 1.1.0 scope extension — 2026-09-16
+
+After release-checklist reconciliation, the owner explicitly authorized extending
+the same-account exception to the exact retained 1.1.0 pair above. Issue #96
+records that direction as a maintainer-control change, separate from the retained
+product's implementation set. The prior MVP-only restriction is superseded only
+for this additional pair and its nine nominated issues, not for a version range,
+other builds or descendants. The previously accepted setup-and-recall scenario
+is still not a whole-candidate or per-issue workflow verdict.
+
+The legacy predicate name and `MVP_` configuration names remain for compatibility;
+they do not imply automatic eligibility for any MVP or release. This change
+does not configure actors, dispatch acceptance, rebuild or renominate a product,
+publish a release, or activate an installation. It does not relax remaining
+exact-artifact checks or permit an agent to attest personally performed review.
 
 ## Review, recording and release
 

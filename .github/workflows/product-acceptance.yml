@@ -31,7 +31,7 @@ on:
         required: true
         type: string
       owner_review_confirmed:
-        description: I personally performed this review under the documented MVP owner exception
+        description: I personally performed this review under the documented candidate-specific owner exception
         required: false
         default: false
         type: boolean
