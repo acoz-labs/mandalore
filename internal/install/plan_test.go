@@ -58,6 +58,9 @@ func TestPlanIsDeterministicReadOnlyAndPinsAllInputs(t *testing.T) {
 	if _, err := os.Lstat(o.StateDir); !os.IsNotExist(err) {
 		t.Fatal("preview wrote state", err)
 	}
+	if _, err := os.Lstat(o.NativeHome); !os.IsNotExist(err) {
+		t.Fatal("preview created native profile", err)
+	}
 	after, err := os.ReadFile(o.Binding)
 	if err != nil || string(before) != string(after) {
 		t.Fatal("preview changed binding", err)

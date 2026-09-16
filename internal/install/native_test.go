@@ -22,9 +22,13 @@ type fakeNative struct {
 
 func encoded(v any) []byte { b, _ := json.Marshal(v); return b }
 
-func (f *fakeNative) run(_ context.Context, _ Options, args ...string) ([]byte, error) {
+func (f *fakeNative) run(_ context.Context, o Options, args ...string) ([]byte, error) {
 	command := strings.Join(args, " ")
 	f.calls = append(f.calls, command)
+	// Real Codex requires CODEX_HOME before even read-only plugin inventory.
+	if st, err := os.Stat(o.NativeHome); err != nil || !st.IsDir() {
+		return nil, errors.New("selected native home must exist before inventory")
+	}
 	if f.fail != "" && strings.HasPrefix(command, f.fail) {
 		return nil, errors.New("synthetic native failure")
 	}
@@ -78,6 +82,129 @@ func (f *fakeNative) run(_ context.Context, _ Options, args ...string) ([]byte, 
 }
 
 func noProbe(context.Context, Plan) error { return nil }
+
+func TestApplyPreparesNativeHomeBeforeInventory(t *testing.T) {
+	for _, existing := range []bool{false, true} {
+		t.Run(map[bool]string{false: "missing", true: "existing"}[existing], func(t *testing.T) {
+			o := fixture(t)
+			sentinel := filepath.Join(o.NativeHome, "unrelated.txt")
+			wantMode := os.FileMode(0700)
+			if existing {
+				if err := os.Mkdir(o.NativeHome, 0700); err != nil {
+					t.Fatal(err)
+				}
+				wantMode = 0750
+				if err := os.Chmod(o.NativeHome, wantMode); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.WriteFile(sentinel, []byte("preserve me"), 0600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			p, err := Prepare(o)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !existing {
+				if _, err := os.Lstat(o.NativeHome); !os.IsNotExist(err) {
+					t.Fatal("preview created native home", err)
+				}
+			}
+			f := &fakeNative{plan: p}
+			result, err := apply(context.Background(), p, f.run, noProbe)
+			if err != nil || !result.Installed {
+				t.Fatal(result, err)
+			}
+			st, err := os.Stat(o.NativeHome)
+			if err != nil || st.Mode().Perm() != wantMode {
+				t.Fatal("native home permissions changed", st, err)
+			}
+			if existing {
+				data, err := os.ReadFile(sentinel)
+				if err != nil || string(data) != "preserve me" {
+					t.Fatal("unrelated profile file changed", err)
+				}
+			}
+		})
+	}
+}
+
+func TestApplyRefusesChangedNativeHomeBeforeNativeCommands(t *testing.T) {
+	for _, kind := range []string{"file", "redirected", "cancelled"} {
+		t.Run(kind, func(t *testing.T) {
+			p, err := Prepare(fixture(t))
+			if err != nil {
+				t.Fatal(err)
+			}
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			switch kind {
+			case "file":
+				if err := os.WriteFile(p.NativeHome, []byte("preserve me"), 0600); err != nil {
+					t.Fatal(err)
+				}
+			case "redirected":
+				if err := os.Symlink(filepath.Dir(p.Binding), p.NativeHome); err != nil {
+					t.Fatal(err)
+				}
+			case "cancelled":
+				cancel()
+			}
+			f := &fakeNative{plan: p}
+			result, err := apply(ctx, p, f.run, noProbe)
+			if err == nil || result.Installed || len(f.calls) != 0 {
+				t.Fatal("unsafe native execution", result, err, f.calls)
+			}
+			if kind == "cancelled" {
+				if !errors.Is(err, context.Canceled) {
+					t.Fatal(err)
+				}
+				if _, err := os.Lstat(p.NativeHome); !os.IsNotExist(err) {
+					t.Fatal("cancelled apply created home", err)
+				}
+			}
+		})
+	}
+}
+
+func TestInventoryErrorsNameFailedOperation(t *testing.T) {
+	for _, command := range []string{"plugin marketplace list --json", "plugin list --json"} {
+		t.Run(command, func(t *testing.T) {
+			run := func(_ context.Context, _ Options, args ...string) ([]byte, error) {
+				if strings.Join(args, " ") == command {
+					return []byte("private subprocess output"), context.Canceled
+				}
+				return []byte(`{"marketplaces":[]}`), nil
+			}
+			_, _, err := inventory(context.Background(), Options{}, run)
+			if !errors.Is(err, context.Canceled) || !strings.Contains(err.Error(), command) || strings.Contains(err.Error(), "private subprocess output") {
+				t.Fatal("missing bounded operation context or cancellation identity", err)
+			}
+		})
+	}
+}
+
+func TestApplyNativeInventoryFailureRetainsPreparedHome(t *testing.T) {
+	p, err := Prepare(fixture(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := &fakeNative{plan: p, fail: "plugin marketplace list"}
+	result, err := apply(context.Background(), p, f.run, noProbe)
+	if err == nil || !strings.Contains(err.Error(), "plugin marketplace list --json") ||
+		result.Installed || result.Phase != "preflight" || !strings.Contains(result.Notice, "preserved") {
+		t.Fatal("incorrect partial receipt", result, err)
+	}
+	entries, err := os.ReadDir(p.NativeHome)
+	if err != nil || len(entries) != 0 {
+		t.Fatal("empty prepared profile not retained", entries, err)
+	}
+	for _, path := range []string{p.Runtime, p.Root, filepath.Join(p.StateDir, ".install-lock")} {
+		if _, err := os.Lstat(path); !os.IsNotExist(err) {
+			t.Fatal("unexpected retained staging or lock", path, err)
+		}
+	}
+}
 
 func TestApplyNativeSuccessIdempotenceAndPartialRetry(t *testing.T) {
 	p, err := Prepare(fixture(t))

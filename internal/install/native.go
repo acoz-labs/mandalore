@@ -168,7 +168,7 @@ type plugin struct {
 func inventory(ctx context.Context, o Options, run runner) ([]marketplace, []plugin, error) {
 	raw, err := run(ctx, o, "plugin", "marketplace", "list", "--json")
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("selected Codex profile inventory (plugin marketplace list --json): %w", err)
 	}
 	var ms struct {
 		Items []marketplace `json:"marketplaces"`
@@ -178,7 +178,7 @@ func inventory(ctx context.Context, o Options, run runner) ([]marketplace, []plu
 	}
 	raw, err = run(ctx, o, "plugin", "list", "--json")
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("selected Codex profile inventory (plugin list --json): %w", err)
 	}
 	var ps struct {
 		Items []plugin `json:"installed"`
@@ -319,6 +319,15 @@ func apply(ctx context.Context, p Plan, run runner, probe probeFunc) (result Res
 	}()
 	if statErr != nil || closeErr != nil {
 		return result, errors.New("cannot establish installation lock")
+	}
+	if err := ctx.Err(); err != nil {
+		return result, err
+	}
+	// Codex resolves CODEX_HOME before even read-only inventory. Prepare only
+	// on explicit apply, after plan revalidation and locking; preserve existing
+	// profile contents and permissions, including on a later partial failure.
+	if err := realDirectory(p.NativeHome); err != nil {
+		return result, fmt.Errorf("cannot prepare selected Codex profile: %w", err)
 	}
 	previous, err := checkCollision(ctx, p, run)
 	if err != nil {
