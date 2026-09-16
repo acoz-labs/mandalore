@@ -117,7 +117,11 @@ func TestOwnerAcceptanceScope(t *testing.T) {
 }
 
 func TestOwnerAcceptanceRecorder(t *testing.T) {
-	for _, candidate := range []struct{ name, source, artifact, issue string }{{"original", ownerCandidate, ownerArtifact, "10"}, {"armorer", armorerCandidate, armorerArtifact, "45"}} {
+	candidates := []struct{ name, source, artifact, issue string }{{"original", ownerCandidate, ownerArtifact, "10"}, {"armorer", armorerCandidate, armorerArtifact, "45"}}
+	for _, issue := range roadmapIssues {
+		candidates = append(candidates, struct{ name, source, artifact, issue string }{"roadmap-" + strconv.Itoa(issue), roadmapCandidate, roadmapArtifact, strconv.Itoa(issue)})
+	}
+	for _, candidate := range candidates {
 		t.Run(candidate.name, func(t *testing.T) {
 			for _, scenario := range []string{"owner candidate author", "owner linked author", "no confirmation", "linked no confirmation", "unlisted owner", "normal independent", "wrong nomination", "gate failed"} {
 				t.Run(scenario, func(t *testing.T) {

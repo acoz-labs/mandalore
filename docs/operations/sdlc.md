@@ -11,7 +11,8 @@ Use exact-head contributor self-review for the enumerated discovery, planning an
 implementation outcomes. Acceptance, release and live-installation gates remain
 unchanged; this is not independent approval or new-candidate acceptance.
 
-For the two exact retained MVP candidate pairs listed in the policy, the explicitly authorized
+For the exact retained candidate pairs listed in the policy (two MVP pairs and
+the separately authorized 1.1.0 pair), the explicitly authorized
 [owner-acceptance exception](../decisions/0002-mvp-owner-acceptance.md) permits
 personally confirmed owner review despite matching PR authorship. Configure
 `MVP_ACCEPTANCE_OWNER` and the normal `ACCEPTANCE_ACTORS`, then select the
