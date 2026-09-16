@@ -1,0 +1,28 @@
+{
+  "probe": "native-pi-live-refresh",
+  "source": "bb16a57eb16dcd5e3da1386d6eb72c64169be6b5",
+  "identity": "mandalore:bb16a57eb16dcd5e3da1386d6eb72c64169be6b5:sha256:ab4af42cee70495b66f4a64b3d754dc0e83d50c789ac1d8b6c4a419e7ffcb986",
+  "same_session": true,
+  "answers": [
+    "River",
+    "Willow"
+  ],
+  "observed": [
+    {
+      "context_bytes": 2472,
+      "attachments": 1,
+      "has_river": true,
+      "has_willow": false,
+      "custom_messages": 0
+    },
+    {
+      "context_bytes": 2473,
+      "attachments": 1,
+      "has_river": false,
+      "has_willow": true,
+      "custom_messages": 0
+    }
+  ],
+  "external_update_harness": "fixture",
+  "model_read_only": true
+}

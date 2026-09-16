@@ -1,0 +1,59 @@
+{
+  "source": "bb16a57eb16dcd5e3da1386d6eb72c64169be6b5",
+  "identity": "mandalore:bb16a57eb16dcd5e3da1386d6eb72c64169be6b5:sha256:ab4af42cee70495b66f4a64b3d754dc0e83d50c789ac1d8b6c4a419e7ffcb986",
+  "native": {
+    "pi": "0.85.1",
+    "driver_node": "v24.1.0",
+    "os": "darwin",
+    "arch": "arm64"
+  },
+  "lifecycle_control_and_candidate_checked": true,
+  "same_open_model_session_refresh_checked": true,
+  "delivery": [
+    {
+      "fixture": "native-delivery",
+      "calls": 18,
+      "runtime_copies_match_retained": true,
+      "pi_package_identity_matches": true,
+      "local_head": "585ea42acc3fdb85c99dc3d460c8fdbee3e3ea6b",
+      "remote_head": "585ea42acc3fdb85c99dc3d460c8fdbee3e3ea6b"
+    },
+    {
+      "fixture": "native-boundaries",
+      "calls": 7,
+      "runtime_copies_match_retained": true,
+      "pi_package_identity_matches": true,
+      "local_head": "beaefcb0014d7d914d139ca731ee455cc6395a2e",
+      "remote_head": "beaefcb0014d7d914d139ca731ee455cc6395a2e"
+    }
+  ],
+  "receipts": [
+    {
+      "file": "lifecycle-control-result.json",
+      "sha256": "4a8c31b97042a711b5c5c4bfcc70d1e3c25e65a335677bf56bd9995f4b3ec1bb"
+    },
+    {
+      "file": "lifecycle-result.json",
+      "sha256": "5baceb993abe32bfb2ceb4ff35a139af262eebf9f63e1b1c3c1c39f2b42dcb28"
+    },
+    {
+      "file": "refresh-result.json",
+      "sha256": "ceecd226795bf694f9bfb6e5ef26ad5f1bf94eb5a78ed8ecece9cf37c4e76aa9"
+    },
+    {
+      "file": "native-delivery/result.json",
+      "sha256": "7812bcaeddac9ab0fc413828d53e63f60d5c08a15ddc2ef2150d00455a824c09"
+    },
+    {
+      "file": "native-boundaries/result.json",
+      "sha256": "f6cec2b048ffb27624cc10720a6c8883eebe9e0ded0ce0ad7434ab99a146eac3"
+    }
+  ],
+  "limitations": [
+    "native callbacks validate the actual registered tools, not model choice or Escape-key UX",
+    "synthetic sessions are lifecycle fixtures, not fabricated model evidence",
+    "controlled local Git origins and process wrapper, not live network fault injection",
+    "writer contention observed before publication; between-save-and-sync contention remains API-test evidence",
+    "no deterministic lifecycle checkpoint synchronization or human acceptance"
+  ]
+}

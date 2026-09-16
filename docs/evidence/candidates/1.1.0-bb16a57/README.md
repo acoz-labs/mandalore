@@ -80,7 +80,9 @@ synthetic signets and local bare origins:
   silently selected or discarded.
 
 These are real CLI checks, not native model judgment or hosted authentication.
-Writer contention, live cancellation and ambiguous responses remain separate.
+Fresh [native callback and lifecycle checks](lifecycle.md) add cancellation,
+pre-publication writer contention and ambiguous Git push acknowledgement.
+These are not model-selected recovery or rendered Escape-key tests.
 
 ## Initial cross-harness continuity
 
@@ -126,6 +128,11 @@ deterministic lifecycle synchronization. Explicit restrictions belonged to test
 requests; ordinary usage is not put into a default read-only mode.
 
 ## Remaining gates and evidence boundary
+
+The [lifecycle checkpoint](lifecycle.md) adds native startup/reload/new/resume/fork,
+a live same-session model refresh, 18 delivery/cancellation calls and seven
+contention/acknowledgement-boundary calls. Its manifest independently binds
+actual runtime copies, package identities and final local/remote heads.
 
 This is a partial engineering checkpoint. The full candidate matrix still
 requires additional lifecycle, retrieval-quality, rendering/failure,
