@@ -226,16 +226,18 @@ use inspect/plan instead. EOF, Back and cancellation stop subsequent steps witho
 undoing an installation already completed.
 
 After CLI verification, keeping native connections unchanged is the default. An
-optional Codex handoff asks for the selected binding, native executable/profile
+optional Codex or Pi handoff asks for the selected binding, native executable/profile
 and installation state. Flags `--binding`, `--native-binary`, `--native-home` and
 `--state-dir` prefill these choices; CLI-only installation does not require them.
 Preparing that handoff **executes the explicitly trusted installed runtime** via
-its existing `call connection_plan --read-only` operation. The parent verifies its
+its `call connection_plan --read-only` (Codex) or `call pi_connection_plan --read-only`
+(Pi) operation. The parent verifies its
 bounded JSON plan against the selected paths, executable/binding hashes and release
-plugin identity. It never substitutes the parent's embedded plugin.
+package identity. Pi uses its own metadata, not the manifest's Codex hash.
+It never substitutes the parent's embedded package.
 
 A second default-No confirmation precedes that same runtime's
-`call connection_apply`. Native authentication is inherited normally, not copied;
+`call connection_apply` or `call pi_connection_apply`. Native authentication is inherited normally, not copied;
 raw failed output is suppressed. A typed partial receipt remains visible even
 when the subprocess exits unsuccessfully. CLI installation success remains distinct
 from native failure. Start a fresh native session after a successful connection
@@ -296,6 +298,17 @@ name remains `connection_doctor` to preserve existing automation. Repair remains
 `connection_repair_plan` followed by `connection_apply`, not an effect of
 inspection. No administrative tools are added to memory MCP.
 
+Pi uses `connection ... --harness pi` and the CLI-only typed operations
+`pi_connection_plan`, `pi_connection_apply`, `pi_connection_doctor` and
+`pi_connection_repair_plan`. The omitted harness remains Codex. Pi plans include
+explicit profile/runtime/binding paths, byte identities, selected signet,
+read-only memory choice, native settings observation and previous ownership.
+Apply errors preserve `pi_connection_result`; diagnostic failures preserve
+`pi_connection_report`. The apply receipt names its retained attempt and last
+phase, distinguishing uncertain native effects from completed verification.
+Interrupted or changed plans require inspection and a fresh recovery preview,
+not automatic retries. See the [Pi guide](../plugins/pi/README.md).
+
 `mandalore operations` lists versioned input/result JSON schemas, read/write and
 idempotency annotations, `requires_binding` and `cli_only` visibility.
 `mandalore call OPERATION --binding FILE < input.json`
@@ -307,6 +320,9 @@ uses the same decoder and methods as the human commands and MCP tools.
 | `migration_preflight`, `migration_apply` | `migration preflight`, `migration apply` | Not exposed |
 | `memory_recall`, `memory_scopes`, `memory_history` | `memory recall`, `scopes`, `history` | Bound signet only |
 | `memory_journal`, `memory_inspect` | `memory journal`, `inspect` | Bound signet only |
+| `memory_context` | `call memory_context` with JSON `prompt` | Not exposed; read-only native lifecycle packet |
+| `pi_package_inspect` | `call pi_package_inspect` with `{}` | Not exposed; unbound embedded-package metadata |
+| `pi_connection_plan`, `pi_connection_apply`, `pi_connection_doctor`, `pi_connection_repair_plan` | `connection plan/apply/armorer/repair --harness pi` | Not exposed; explicit native administration |
 | `memory_remember`, `memory_journal_append` | `memory remember`, `journal-append` | Bound signet only |
 | `memory_git_init`, `memory_checkpoint`, `memory_sync`, `memory_sync_status` | `memory git-init`, `checkpoint`, `sync`, `sync-status` | Bound signet only |
 | `foundling_list`, `foundling_inspect`, `foundling_search`, `foundling_read`, `foundling_promote` | `foundling list`, `inspect`, `search`, `read`, `promote` | Bound signet only |
@@ -385,6 +401,18 @@ MCP server retains one binding; changing its local file requires restarting the
 server. Reads load current local records; no persistent model context is refreshed
 merely by updating those records.
 
+`memory_context` assembles fresh local orientation, up to three bank-wide recall
+hits within 4096 result bytes, and five routing scopes. It truncates its prompt
+query to 2048 UTF-8 bytes and caps the encoded packet at 16383 bytes. The packet
+labels retrieved data as untrusted evidence, never reads native transcripts or
+automatically scans foundlings, and does not save or synchronize even for an
+explicit consolidation cue. Read failures return a compact warning without raw
+file contents. Native adapters must preserve their host prompt and separately
+honor connection read-only settings; a packet is not authorization to mutate.
+Omitting `prompt` returns orientation only after opening the guarded binding,
+without scanning records; an explicitly supplied empty prompt performs local
+bank-wide recall. Attachment validation is not a whole-bank health check.
+
 ## Binding and provenance
 
 Selection is explicit `--binding`, then absolute `MANDALORE_BINDING`, then
@@ -399,6 +427,17 @@ symlink ancestors. Creation refuses existing destinations. Reads reject unknown
 fields/versions and changed bank identity. Labels and actors are user-supplied;
 hostnames are not discovered. Harness attribution comes from `--harness` (default
 `cli`, or `mcp` for the server), not from automatic native-session detection.
+
+Short-lived bound CLI callers can also pass `--binding-sha256 SHA256 --signet-id ID`
+to pin a connection between invocations. Both nonempty values are required; the
+digest is lowercase SHA-256 of the complete binding file. The runtime hashes the
+same bounded bytes it decodes, checks the expected signet before opening it, and
+retains normal root-identity validation. Replacing a binding with another valid
+binding therefore cannot silently redirect a guarded call. Malformed or
+inapplicable guards are `input.invalid`; mismatches are `binding.invalid`, before
+reading mutation input or performing writes/network operations. Unbound setup
+operations refuse these guards. Existing unguarded selection is unchanged.
+Digests pin identity, not publisher trust or a sandbox against a hostile local user.
 
 Create and bind are deliberately separate. Create writes a bootstrap device;
 each new binding enrolls a fresh opaque device ID, including another binding on
@@ -450,7 +489,9 @@ compiled executable create/correction/history, unrelated cwd, explicit binding
 precedence, no-write hashes, real stdio, EOF and interruption. Full race tests,
 vet and four platform builds run in `bin/ci`. Cross-builds are not native runtime
 acceptance. These tests use synthetic local data and an SDK client, not a model
-conversation or installed Codex plugin. Those remain #6/#10.
+conversation or installed native plugin. Native Codex acceptance is recorded in
+[v1.0.0](releases/1.0.0.md); subsequent Pi engineering evidence remains distinct
+from new candidate acceptance in [the Pi evidence](evidence/pi/README.md).
 
 ## Development connection management
 
@@ -499,7 +540,41 @@ Native marketplace removal may delete Codex's installed cache. Recovery relies
 on retained managed source/runtime copies, not cache retention; edited cache
 files are refused before replacement so that native cleanup cannot erase them.
 
-This is in-progress #7 engineering, not release or immutable-candidate
-acceptance. The interactive menu and published-release update discovery are
-still pending. Native #6 behavior evidence is recorded separately in
-[the Codex receipt](codex-native-evidence.md).
+The menu and published-release discovery are implemented; the Codex-first
+[v1.0.0 record](releases/1.0.0.md) records subsequent acceptance/publication.
+Later implementation or local installation does not confer new-candidate
+acceptance. Native behavior evidence is retained separately for
+[Codex](codex-native-evidence.md) and [Pi](evidence/pi/README.md).
+
+### Pi connection differences
+
+Use `connection plan/apply/armorer/repair --harness pi` or the corresponding
+`pi_connection_*` operations. Pi defaults to `PI_CODING_AGENT_DIR`, otherwise
+the native `.pi/agent` directory, and `pi` on PATH. The current adapter accepts
+Pi 0.85.1. Pi/Node installation and model authentication are separate prerequisites.
+
+The plan's `read_only` (`--memory-read-only`) enforces memory access in the
+installed connection; common CLI `--read-only` prohibits this invocation's own
+mutations instead. Learning is the ordinary default. Repair preserves access
+mode and binding identity rather than adopting newer ambient configuration.
+
+Plans pin runtime/native/binding/package identities, profile settings and previous
+ownership. Native `pi install`/`remove` own registration, while retained files and
+receipts remain outside the signet/profile. Unknown, filtered, duplicated or
+edited Mandalore registrations are refused. Unrelated packages/resource filters
+are preserved. Each update/repair uses a fresh retained generation; interruption
+may leave no active registration, so inspect phase/attempt receipts before retry.
+
+Pi's menu delegates preview/apply to the explicitly selected runtime. Repair
+selects the owned generation's intact retained runtime, falling back only to its
+matching source bytes. Existing threads need restart or native reload to load
+changed code; the next-turn memory packet is independently read fresh.
+
+The native extension exposes the same 18 bound operations as MCP with sequential
+tool execution, shell-free arguments, binding guards and `pi` provenance.
+One complete envelope is returned in text, with only operation/ok metadata.
+Read nested delivery errors even if the outer save succeeded. Input/output bounds
+remain 32768/65536 bytes (catalog discovery allows 1 MiB). Tool calls have a
+45-second outer deadline; startup/context calls use five seconds. Cancellation
+terminates owned process groups with bounded escalation; lost output can mean a
+write occurred and requires inspection, never an automatic retry.

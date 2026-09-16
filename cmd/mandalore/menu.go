@@ -30,6 +30,8 @@ type menu struct {
 	tui           *console.Console
 	binding       string
 	profile       install.Profile
+	piProfile     install.Profile
+	harness       string
 	binary        string
 	failed        bool
 	outputErr     error
@@ -39,6 +41,8 @@ type menu struct {
 	releaseInvoke             func(string, any) api.Envelope
 	prepareSelectedConnection func(context.Context, install.Options) (install.Plan, error)
 	applySelectedConnection   func(context.Context, install.Plan) (install.Result, error)
+	prepareSelectedPi         func(context.Context, install.PiOptions) (install.PiPlan, error)
+	applySelectedPi           func(context.Context, install.PiPlan) (install.PiResult, error)
 }
 
 var errMenuInputLimit = errors.New("answer exceeds 4096 bytes; menu stopped without interpreting remaining input")
@@ -50,8 +54,8 @@ func runMenu(ctx context.Context, args []string, input io.Reader, out io.Writer)
 	m := &menu{ctx: ctx, in: bufio.NewReader(input), out: out}
 	f.StringVar(&m.binding, "binding", "", "Selected local binding")
 	f.StringVar(&m.profile.StateDir, "state-dir", "", "Installation directory")
-	f.StringVar(&m.profile.NativeHome, "native-home", "", "Native Codex profile")
-	f.StringVar(&m.profile.NativeBinary, "native-binary", "", "Native Codex executable")
+	f.StringVar(&m.profile.NativeHome, "native-home", "", "Explicit native profile for the chosen harness")
+	f.StringVar(&m.profile.NativeBinary, "native-binary", "", "Explicit native executable for the chosen harness")
 	f.StringVar(&m.binary, "binary", "", "Trusted local runtime artifact")
 	f.StringVar(&m.releasePrefix, "prefix", "", "CLI installation prefix for the release journey")
 	if err := f.Parse(args); err != nil || f.NArg() != 0 {
@@ -61,6 +65,7 @@ func runMenu(ctx context.Context, args []string, input io.Reader, out io.Writer)
 		}
 		return bad(out, "Invalid menu options; use --help.")
 	}
+	m.piProfile = m.profile // Copy explicit flags, never resolved Codex defaults.
 	if !*plain {
 		m.tui = console.New(input, out)
 		if m.tui != nil {
@@ -78,7 +83,7 @@ func runMenu(ctx context.Context, args []string, input io.Reader, out io.Writer)
 		m.binary, _ = os.Executable()
 	}
 	m.block(console.Block{Title: "Mandalore", Body: "Memory across time and space. Opening this menu changes nothing. A signet is your private memory bank."})
-	choices := []string{"Signet · Create a new local memory bank", "Signet · Connect an existing local clone", "Signet · Inspect selected memory and sync status", "Signet · Synchronize with its configured remote", "Codex · Connect or update from a local artifact", "The Armorer · Inspect connection (read-only)", "The Armorer · Repair connection", "Foundlings · Manage historical references", "CLI · Install, update or select a retained runtime", "Exit"}
+	choices := []string{"Signet · Create a new local memory bank", "Signet · Connect an existing local clone", "Signet · Inspect selected memory and sync status", "Signet · Synchronize with its configured remote", "Connection · Connect or update Codex or Pi", "The Armorer · Inspect connection (read-only)", "The Armorer · Repair connection", "Foundlings · Manage historical references", "CLI · Install, update or select a retained runtime", "Exit"}
 	for {
 		if m.outputErr != nil {
 			return 1
@@ -284,6 +289,12 @@ func (m *menu) outcome(title string, v api.Envelope) error {
 		if v.Error.ConnectionResult != nil {
 			m.connectionResult(*v.Error.ConnectionResult)
 		}
+		if v.Error.PiConnectionReport != nil {
+			m.piReport(*v.Error.PiConnectionReport)
+		}
+		if v.Error.PiConnectionResult != nil {
+			m.piResult(*v.Error.PiConnectionResult)
+		}
 		if v.Error.SyncStatus != nil {
 			m.jsonBlock("Synchronization receipt", v.Error.SyncStatus)
 		}
@@ -408,9 +419,9 @@ func (m *menu) setup(create bool) error {
 	if create {
 		title = "[PASS] Local signet ready"
 	}
-	body = "Selected for this menu. Connect Codex when ready. No synchronization was performed; inspect its existing Git configuration before synchronizing."
+	body = "Selected for this menu. Connect Codex or Pi when ready. No synchronization was performed; inspect its existing Git configuration before synchronizing."
 	if create {
-		body = "Remote synchronization is not configured. Keep this private bank backed up; configure its native Git origin separately. Next: connect Codex. No agent was launched."
+		body = "Remote synchronization is not configured. Keep this private bank backed up; configure its native Git origin separately. Next: connect Codex or Pi. No agent was launched."
 	}
 	m.block(console.Block{Title: title, Body: body, Tone: console.Success, Fields: []console.Field{{Label: "Signet", Value: root}, {Label: "Binding", Value: path}}})
 	return nil
@@ -455,6 +466,13 @@ func (m *menu) nativeProfile() error {
 }
 
 func (m *menu) connect() error {
+	harness, err := m.chooseHarness()
+	if err != nil {
+		return err
+	}
+	if harness == "pi" {
+		return m.connectPi()
+	}
 	if err := m.nativeProfile(); err != nil {
 		return err
 	}
@@ -511,6 +529,13 @@ func (m *menu) report(r install.Report) {
 }
 
 func (m *menu) doctor() error {
+	harness, err := m.chooseHarness()
+	if err != nil {
+		return err
+	}
+	if harness == "pi" {
+		return m.doctorPi()
+	}
 	if err := m.nativeProfile(); err != nil {
 		return err
 	}
@@ -523,6 +548,13 @@ func (m *menu) doctor() error {
 }
 
 func (m *menu) repair() error {
+	harness, err := m.chooseHarness()
+	if err != nil {
+		return err
+	}
+	if harness == "pi" {
+		return m.repairPi()
+	}
 	root, err := m.input("Retained managed connection root (shown by The Armorer)", "")
 	if err != nil {
 		return err

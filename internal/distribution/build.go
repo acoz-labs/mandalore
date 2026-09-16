@@ -268,6 +268,20 @@ func Build(ctx context.Context, o BuildOptions) (ParsedManifest, error) {
 			return ParsedManifest{}, err
 		}
 	}
+	// The source export is bounded, tracked and symlink-free. Stamp the Pi
+	// manifest here as well, so every target embeds this release's identity.
+	piManifest := filepath.Join(work, "plugins", "pi", "package", "package.json")
+	piSource, err := os.ReadFile(piManifest)
+	if err != nil {
+		return ParsedManifest{}, err
+	}
+	piStamped, err := preparePiManifest(piSource, releaseVersion)
+	if err != nil {
+		return ParsedManifest{}, err
+	}
+	if err := os.WriteFile(piManifest, piStamped, 0600); err != nil {
+		return ParsedManifest{}, err
+	}
 	m := Manifest{FormatVersion: 1, Product: "mandalore", Version: releaseVersion, Tag: "v" + releaseVersion, SourceCommit: commit, GoVersion: PinnedGo, ProtocolVersion: 1, SignetReadVersions: []int{1}, SignetWriteVersions: []int{1}, PluginSHA256: p.SHA256}
 	for _, target := range [][2]string{{"darwin", "amd64"}, {"darwin", "arm64"}, {"linux", "amd64"}, {"linux", "arm64"}} {
 		a := Asset{Kind: "cli", OS: target[0], Arch: target[1], Name: "mandalore_" + releaseVersion + "_" + target[0] + "_" + target[1]}

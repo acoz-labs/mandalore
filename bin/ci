@@ -40,6 +40,11 @@ done
   exit 1
 }
 [[ -z "$(gofmt -l internal cmd)" ]] || { echo "Run gofmt on internal/ and cmd/." >&2; exit 1; }
+[[ "$(node --version)" == "v24.1.0" ]] || {
+  echo "Node 24.1.0 is required for Pi adapter tests; use mise exec -- bin/ci." >&2
+  exit 1
+}
+node --test plugins/pi/test/*.test.mjs
 go mod verify
 git --version
 go test -race ./...

@@ -1,0 +1,9 @@
+{
+  "name": "mandalore",
+  "version": "0.0.0-dev",
+  "private": true,
+  "type": "module",
+  "description": "Native Pi access to Mandalore's shared signet memory.",
+  "engines": { "node": ">=22.19.0" },
+  "pi": { "extensions": ["./index.js"], "skills": ["./skills"] }
+}

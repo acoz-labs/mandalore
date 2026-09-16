@@ -18,8 +18,12 @@ delegates to shared operations rather than owning a second implementation.
 transport, owned CLI activation/recovery and verified same-byte publication.
 Maintainer commands and workflows coordinate nomination, acceptance guards and
 release-ledger finalization outside the memory MCP surface.
-Later harness plugins remain integration targets. [Native engineering evidence](codex-native-evidence.md) is
-separate from independent product acceptance; no release is implied.
+`plugins/pi` supplies a second native adapter over guarded, short-lived CLI calls;
+`internal/memorycontext` shares bounded local evidence assembly across harnesses.
+Claude Code remains a later target after Pi acceptance. [Codex](codex-native-evidence.md)
+and [Pi engineering evidence](evidence/pi/README.md) are separate from product
+acceptance. Published v1.0.0 is Codex-first; Pi development code is not an accepted
+production upgrade.
 
 | Location | Responsibility |
 | --- | --- |
@@ -31,13 +35,14 @@ separate from independent product acceptance; no release is implied.
 | `internal/foundlings` | Bounded local/Git reference observation, clone-local connections and verified selective promotion |
 | `internal/mcp` | Typed stdio MCP access over the same memory engine |
 | `internal/codex` | Bounded read-only native event adapter; no transcript access or synchronization |
+| `internal/memorycontext` | Shared bounded local orientation, bank-wide evidence and scope routing |
 | `internal/install` | Native connections, runtime pinning, doctor/update/repair |
 | `internal/distribution` | Versioned assets, provenance and byte verification, owned CLI installation and phased publication |
 | `cmd/build-artifacts`, `cmd/candidate-transport`, `cmd/promote-candidate`, `cmd/release-publication` | Repository-maintainer build/verification/publication entrypoints; not memory tools |
 | `internal/migration` | Read-only legacy census, explicit out-of-place conversion and retained recovery receipts |
 | `internal/console` | Presentation-only terminal prompts, navigation and bounded-width reports |
 | `plugins/codex` | First native plugin and `this-is-the-way` skill |
-| `plugins/pi` | Reserved second integration after Codex acceptance |
+| `plugins/pi` | Embedded native extension, guarded CLI transport, memory/Armorer skills and tests |
 | `plugins/claude-code` | Reserved third integration after Pi acceptance |
 
 ## Ownership and trust
@@ -55,7 +60,28 @@ Retained content-addressed runtimes and versioned package generations avoid
 in-place overwrite. Native commands own registration/cache, not hand-edited native
 configuration. Ownership receipts and filesystem integrity protect recovery;
 unknown edits or partial publication are preserved for inspection. A structural
-doctor does not establish authentication, hook trust, live MCP or fresh context.
+doctor does not establish authentication, hook trust, live tools or fresh context.
+
+Pi owns native tools, authentication, resources and sessions. Mandalore registers
+the bound memory catalog once, preserves native tool selection and appends fresh
+bounded evidence to the existing system prompt per turn. It does not accumulate
+persistent attachment messages, scan transcripts or write at startup, compaction
+or shutdown. Shutdown cancels/reaps owned calls. Confirmed learning and delivery
+remain semantic tool use; lifecycle synchronization is a separate unresolved
+workstream, not implemented by these context hooks.
+
+Pi's generated connection pins runtime/package hashes, binding bytes and signet
+identity. Go validates the same bytes it hashes, preventing later binding changes
+from silently redirecting calls. Native tools return one full envelope with only
+operation/ok metadata, retaining nested save/delivery outcomes after cancellation.
+There is no JavaScript memory engine, MCP proxy or credential broker.
+
+Pi registration uses native install/remove commands against the selected profile.
+Inventory preserves unrelated packages and resource filters; foreign, ambiguous
+or edited state is refused. The menu executes the selected runtime's own planner
+and apply operation. Repair uses the owned generation's intact runtime and keeps
+its binding/access mode. Replacement is phased rather than atomic: interruption
+can leave the connection inactive with retained receipts.
 
 CLI distribution and native connection ownership are separate. A release plan
 pins a manifest, platform binary, embedded plugin and observed prefix state;

@@ -1,0 +1,22 @@
+{
+  "source_commit": "a43fae481d118c5b7fe3d0ab26361d0593f06180",
+  "runtime_sha256": "6d4f9fc08a7ceef9d755fb1ca065d83cd97d39b875b6412f03de58561cd00ca0",
+  "selected_runtime_source": "a4c143574744b771b12e138a3b940493895a4c41",
+  "selected_runtime_sha256": "7edd53debd8b8375246db0b2f1ea39f6ddd012e8720f012ac596763c956bf63e",
+  "platform": "darwin/arm64",
+  "pi_version": "0.85.1",
+  "node_version": "24.1.0",
+  "interface": "real CLI plain menu with real native Pi registration",
+  "back_and_default_no_without_native_changes": true,
+  "selected_older_runtime_used": true,
+  "native_install_verified": true,
+  "configured_read_only_preserved": true,
+  "inspection_and_missing_file_detection": true,
+  "repair_uses_owned_retained_runtime": true,
+  "old_generation_unchanged": true,
+  "unrelated_profile_settings_preserved": true,
+  "complete_synthetic_bank_snapshot_unchanged": true,
+  "model_requested": false,
+  "full_exact_head_rendered_matrix": "pending",
+  "independent_product_acceptance": false
+}

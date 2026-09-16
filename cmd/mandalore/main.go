@@ -54,6 +54,9 @@ const help = `Mandalore — durable memory across tools
   mandalore migration apply --writers-stopped < reviewed-preflight.json
 
 Profile options: --state-dir DIR, --native-home DIR, --native-binary FILE.
+Connection harness: --harness codex|pi (default codex).
+Pi plan --memory-read-only enforces read-only memory in the installed connection;
+--read-only instead prohibits mutations by this CLI invocation.
 Connection plan/armorer/doctor/repair preview do not activate a connection.
 Migration preflight accepts optional --legacy-binding FILE and explicit
 --native-home DIR --native-binary FILE for native inventory. No implicit defaults.
@@ -67,12 +70,13 @@ Foundling options: --foundling-id ID, --query TEXT (search), --limit N (list/his
 Search offsets select document ranks; read offsets select UTF-8 bytes.
 Foundling setup is CLI-only; MCP exposes list/inspect/search/read/promote.
 Common options: --binding FILE, --harness NAME, --read-only, --help.
+Optional connection guards: --binding-sha256 SHA256 --signet-id ID (both required).
 Binding selection: explicit file, then MANDALORE_BINDING, then platform config.
 No cwd-based bank discovery. Local saves and delivery receipts are distinct.
 Combined save-and-sync calls attempt delivery once; inspect saved and delivery separately.
 Release inspection/planning are read-only; apply changes only the selected CLI installation.
 Release install/menu use default-No previews; a native connection update is a separate choice.
-Public release publication is still under development.
+Publication uses separate maintainer acceptance/release gates; local builds are not releases.
 `
 
 func main() {
@@ -195,6 +199,8 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 	}
 	harness := f.String("harness", harnessDefault, "Attribution harness label")
 	readOnly := f.Bool("read-only", false, "Reject mutations")
+	bindingSHA := f.String("binding-sha256", "", "Expected binding bytes SHA-256; requires signet-id")
+	signetID := f.String("signet-id", "", "Expected signet identity; requires binding-sha256")
 	var repository, label, actor, displayName, query, kind, scopeID, recordID string
 	var foundlingID, registrationID, locator string
 	var limit, offset, budget, timeout, excerptBytes int
@@ -262,6 +268,22 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 	if f.NArg() != 0 {
 		return bad(failureOut, "Unexpected positional arguments.")
 	}
+	guard := binding.Guard{SHA256: *bindingSHA, SignetID: *signetID}
+	guardRequested := false
+	f.Visit(func(option *flag.Flag) {
+		if option.Name == "binding-sha256" || option.Name == "signet-id" {
+			guardRequested = true
+		}
+	})
+	if guardRequested && guard == (binding.Guard{}) {
+		return bad(failureOut, "Connection guard values must not be empty.")
+	}
+	if err := guard.Validate(); err != nil {
+		return bad(failureOut, "Connection guards require a lowercase SHA-256 and a valid signet ID together.")
+	}
+	if guard != (binding.Guard{}) && name != "mcp" && !selected.RequiresBinding {
+		return bad(failureOut, "Connection guards apply only to bound operations.")
+	}
 	if (kind == "") != (scopeID == "") {
 		return bad(failureOut, "scope-kind and scope-id must be supplied together.")
 	}
@@ -278,7 +300,7 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 			*path, err = binding.DefaultPath()
 		}
 		if err == nil {
-			service, err = binding.Open(*path, *harness)
+			service, err = binding.OpenGuarded(*path, *harness, guard)
 		}
 		if err != nil {
 			return emit(failureOut, api.Failure("binding.invalid", "Cannot open the selected binding/signet; inspect the path, version, enrolled device and pinned identity.", false))

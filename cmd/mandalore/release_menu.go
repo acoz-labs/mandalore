@@ -47,6 +47,7 @@ func runReleaseInstall(ctx context.Context, args []string, input io.Reader, out 
 	if *readOnly {
 		return emit(out, api.Failure("operation.read_only", "Use release inspect or plan for a read-only task.", false))
 	}
+	m.piProfile = m.profile
 	check := o
 	if check.Prefix == "" {
 		check.Prefix = "/selection"
@@ -225,7 +226,7 @@ func (m *menu) releaseResult(r distribution.InstallResult) {
 }
 
 func (m *menu) offerReleaseConnection(p distribution.InstallPlan, r distribution.InstallResult) error {
-	n, err := m.selectItem("Update one native memory connection?", []string{"Keep native connections unchanged", "Preview one Codex connection with this runtime"}, 0)
+	n, err := m.selectItem("Update one native memory connection?", []string{"Keep native connections unchanged", "Preview one Codex connection with this runtime", "Preview one Pi connection with this runtime"}, 0)
 	if err != nil {
 		return err
 	}
@@ -237,6 +238,9 @@ func (m *menu) offerReleaseConnection(p distribution.InstallPlan, r distribution
 		if err != nil {
 			return err
 		}
+	}
+	if n == 2 {
+		return m.offerPiRelease(p, r)
 	}
 	if err := m.nativeProfile(); err != nil {
 		return fmt.Errorf("CLI installation remains complete; connection preview unavailable: %w", err)
