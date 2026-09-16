@@ -24,6 +24,11 @@ it is not an acceptance verdict or permission for agent self-acceptance.
 - 1.1.0 pair: nominated delivery issues #13, #56, #57, #61, #65, #74, #85,
   #88 and #93 only. Earlier 1.1.0 candidates, mixed source/artifact pairs and
   control issue #96 are ineligible. Older pairs retain their older issue sets.
+- Corrected 1.1.0 source: `51aee17afec015ba2ad44584f8190b4bb6d901a8`.
+- Corrected artifact: `mandalore:51aee17afec015ba2ad44584f8190b4bb6d901a8:sha256:7adacb6e7dc990a12df2cc25e72404dde0156835d771474c9745d3b517a0780c`.
+- Corrected pair: nominated delivery issues #13, #56, #57, #61, #65, #74,
+  #85, #88, #93, #99 and #100 only. Control issue #105 remains excluded.
+  Earlier pairs keep their own issue sets; no mixed pair or descendant qualifies.
 - Workflow actor must match repository variable `MVP_ACCEPTANCE_OWNER` and also
   belong to the normal `ACCEPTANCE_ACTORS` allowlist. No private actor name is
   embedded in public code.
@@ -63,6 +68,21 @@ they do not imply automatic eligibility for any MVP or release. This change
 does not configure actors, dispatch acceptance, rebuild or renominate a product,
 publish a release, or activate an installation. It does not relax remaining
 exact-artifact checks or permit an agent to attest personally performed review.
+
+## Corrected 1.1.0 scope extension — 2026-09-16
+
+After the two acceptance-discovered corrections were merged and the replacement
+artifact was retained and nominated, the owner explicitly authorized extending
+review eligibility to that exact replacement, including #99/#100. Control issue
+#105 records this separate direction. The verified retained identity above is
+bound to build35142798067, artifact10466086799 and nomination35143418519.
+
+This adds the fourth literal pair; it neither rewrites earlier acceptance nor
+turns a previously accepted human scenario into a verdict for corrected bytes.
+The remaining exact-candidate matrix and personally performed issue judgments
+remain required. No candidate is rebuilt, acceptance dispatched, actor configured
+or release published by this eligibility change. Evidence and limitations remain
+in [the corrected candidate's initial receipt](https://github.com/acoz-labs/mandalore/tree/6884a72e2430cc2e99d8b10cf0de3763f2bf6682/docs/evidence/candidates/1.1.0-51aee17).
 
 ## Review, recording and release
 

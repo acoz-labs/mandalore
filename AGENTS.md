@@ -60,8 +60,15 @@ On September 16, 2026 the owner explicitly extended personally performed owner
 acceptance to retained source `b89458617b49d2eb0a8686dcd75c26aa7ea6f6ba` and its
 exact artifact for nominated issues #13, #56, #57, #61, #65, #74, #85, #88 and #93.
 Follow the additional pair and boundaries in ADR0002 and control issue #96.
-No other candidate is added; actual human verdicts, evidence and publication
+That extension adds no other candidate; actual human verdicts, evidence and publication
 authority remain separate. Do not rebuild the retained artifact for this policy.
+
+The owner separately authorized the corrected retained source
+`51aee17afec015ba2ad44584f8190b4bb6d901a8` and exact manifest
+`7adacb6e7dc990a12df2cc25e72404dde0156835d771474c9745d3b517a0780c`
+for the same nine issues plus #99 and #100. ADR0002 and control issue #105 record
+this additional literal pair. It permits personally performed owner review,
+not a verdict, agent self-acceptance, publication or future-candidate eligibility.
 
 The owner also authorizes routine interactive selections during this goal,
 including native startup menus and review/trust of the exact synthetic-test
