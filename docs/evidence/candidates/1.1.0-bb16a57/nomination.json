@@ -1,0 +1,55 @@
+{
+  "identity": "mandalore:bb16a57eb16dcd5e3da1386d6eb72c64169be6b5:sha256:ab4af42cee70495b66f4a64b3d754dc0e83d50c789ac1d8b6c4a419e7ffcb986",
+  "workflow_run": 35060900748,
+  "markers": [
+    {
+      "issue": 13,
+      "url": "https://github.com/acoz-labs/mandalore/issues/13#issuecomment-5692660070",
+      "created_at": "2026-09-16T05:47:31Z",
+      "author": "github-actions"
+    },
+    {
+      "issue": 56,
+      "url": "https://github.com/acoz-labs/mandalore/issues/56#issuecomment-5692660461",
+      "created_at": "2026-09-16T05:47:33Z",
+      "author": "github-actions"
+    },
+    {
+      "issue": 57,
+      "url": "https://github.com/acoz-labs/mandalore/issues/57#issuecomment-5692660975",
+      "created_at": "2026-09-16T05:47:37Z",
+      "author": "github-actions"
+    },
+    {
+      "issue": 61,
+      "url": "https://github.com/acoz-labs/mandalore/issues/61#issuecomment-5692661263",
+      "created_at": "2026-09-16T05:47:39Z",
+      "author": "github-actions"
+    },
+    {
+      "issue": 65,
+      "url": "https://github.com/acoz-labs/mandalore/issues/65#issuecomment-5692661654",
+      "created_at": "2026-09-16T05:47:42Z",
+      "author": "github-actions"
+    },
+    {
+      "issue": 74,
+      "url": "https://github.com/acoz-labs/mandalore/issues/74#issuecomment-5692661962",
+      "created_at": "2026-09-16T05:47:45Z",
+      "author": "github-actions"
+    },
+    {
+      "issue": 85,
+      "url": "https://github.com/acoz-labs/mandalore/issues/85#issuecomment-5692662261",
+      "created_at": "2026-09-16T05:47:47Z",
+      "author": "github-actions"
+    },
+    {
+      "issue": 88,
+      "url": "https://github.com/acoz-labs/mandalore/issues/88#issuecomment-5692662559",
+      "created_at": "2026-09-16T05:47:49Z",
+      "author": "github-actions"
+    }
+  ],
+  "human_acceptance": false
+}

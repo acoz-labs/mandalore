@@ -1,0 +1,33 @@
+{
+  "source": "bb16a57eb16dcd5e3da1386d6eb72c64169be6b5",
+  "identity": "mandalore:bb16a57eb16dcd5e3da1386d6eb72c64169be6b5:sha256:ab4af42cee70495b66f4a64b3d754dc0e83d50c789ac1d8b6c4a419e7ffcb986",
+  "runtime": {
+    "arch": "arm64",
+    "codex_hook_protocol": 1,
+    "go_version": "go1.26.4",
+    "name": "mandalore",
+    "os": "darwin",
+    "plugin_sha256": "8a97ef3ad31a16f08dc1726b1db08500d3bca549478fbc592c124b2715186eed",
+    "plugin_version": "1.1.0",
+    "protocol_version": 1,
+    "signet_read_versions": [
+      1
+    ],
+    "signet_write_versions": [
+      1
+    ],
+    "source_commit": "bb16a57eb16dcd5e3da1386d6eb72c64169be6b5",
+    "version": "1.1.0"
+  },
+  "pi_package": {
+    "name": "mandalore",
+    "version": "1.1.0",
+    "sha256": "013dcc492565ba180abd59eb50e3a6fbea2cd8ba045ccf067e17d51a050e7fda",
+    "harness_protocol_version": 1,
+    "file_count": 10
+  },
+  "runtime_sha256": "0679b27eaefddb842ec54e03d966dc8369b39c63842bd7ddd74e2f058505c37e",
+  "codex_zip_sha256": "de80777d60a9e877c335a98e0df024dcc824f0be7a6b15d52d9f6a65e912b6ba",
+  "skill_sha256": "48ccb1c93c68e6f5af355629d753e7fd72e4757644b399af489ec09c751cbcf1",
+  "reference_sha256": "4c801bf9e4eda9d0d7ec1abe80bbf3ff5d806a9ddddc9478775b064fd652bfe3"
+}

@@ -1,0 +1,96 @@
+{
+  "source": "bb16a57eb16dcd5e3da1386d6eb72c64169be6b5",
+  "identity": "mandalore:bb16a57eb16dcd5e3da1386d6eb72c64169be6b5:sha256:ab4af42cee70495b66f4a64b3d754dc0e83d50c789ac1d8b6c4a419e7ffcb986",
+  "scenarios": [
+    {
+      "case": "quoted-phrase-not-a-trigger",
+      "harness": "pi",
+      "answer": "“Way” is a noun, meaning a method or manner of doing something.",
+      "calls": [],
+      "read_only_fixtures_unchanged": true
+    },
+    {
+      "probe": "candidate-codex-local-correction",
+      "source": "bb16a57eb16dcd5e3da1386d6eb72c64169be6b5",
+      "answer": "Saved locally: Cedar Orbit’s confirmed release day is Monday, with prior history retained. No synchronization, journaling, project-file changes, or access to another memory bank.",
+      "calls": [
+        "memory_scopes",
+        "memory_recall",
+        "memory_remember"
+      ],
+      "record_id": "record-d2da97a3531386129e8ee6a4dd27e0ca",
+      "revision_id": "revision-00b46ee333b13dbd9f98b6ea12cbbe18",
+      "supersedes": [
+        "revision-63cdd01bfcde07a5d9da28fdebb98c3b"
+      ],
+      "revisions": 3,
+      "harness": "codex",
+      "stable_device": true,
+      "protected_state_unchanged": true,
+      "local_head": "fdcd7266ac06bd38ae1ac783c357e6739ec07c0e",
+      "remote_head": "fdcd7266ac06bd38ae1ac783c357e6739ec07c0e",
+      "delivery_attempted": false,
+      "model_visible_rendering_attested": false,
+      "journal_events_unchanged": true
+    },
+    {
+      "case": "fresh-pi-recall-of-codex-correction",
+      "harness": "pi",
+      "answer": "We settled on **Monday**, replacing **Friday**.",
+      "calls": [
+        "memory_recall",
+        "memory_history"
+      ],
+      "read_only_fixtures_unchanged": true
+    },
+    {
+      "source": "bb16a57eb16dcd5e3da1386d6eb72c64169be6b5",
+      "case": "direct-cue-delivers-local-correction",
+      "calls": [
+        "memory_recall",
+        "memory_recall",
+        "memory_sync"
+      ],
+      "answer": "Reviewed existing records; no consolidation changes needed. No memories or journal entries created. Existing local records synchronized successfully.",
+      "no_filler_semantic_content_unchanged": true,
+      "other_bank_unchanged": true,
+      "old_head": "fdcd7266ac06bd38ae1ac783c357e6739ec07c0e",
+      "local_head": "5497d608fb52289bbe614d1377555b7befcb85d0",
+      "remote_head": "5497d608fb52289bbe614d1377555b7befcb85d0",
+      "delivered": true,
+      "semantic_conflicts": 0
+    }
+  ],
+  "history": {
+    "record_id": "record-d2da97a3531386129e8ee6a4dd27e0ca",
+    "revisions": 3,
+    "chronological": [
+      {
+        "id": "revision-10d0cfdcb1e00fe019284156b295cd7c",
+        "harness": "fixture",
+        "supersedes": []
+      },
+      {
+        "id": "revision-63cdd01bfcde07a5d9da28fdebb98c3b",
+        "harness": "pi",
+        "supersedes": [
+          "revision-10d0cfdcb1e00fe019284156b295cd7c"
+        ]
+      },
+      {
+        "id": "revision-00b46ee333b13dbd9f98b6ea12cbbe18",
+        "harness": "codex",
+        "supersedes": [
+          "revision-63cdd01bfcde07a5d9da28fdebb98c3b"
+        ]
+      }
+    ],
+    "stable_device": true
+  },
+  "limitations": [
+    "individual native observations, not statistical reliability",
+    "local bare Git delivery, not hosted authentication",
+    "explicit restrictions are test requests, not a default read-only mode",
+    "not automatic lifecycle sync or human acceptance"
+  ]
+}
