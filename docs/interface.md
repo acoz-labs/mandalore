@@ -47,12 +47,15 @@ See [delivery semantics](synchronization.md#save-triggered-delivery).
 
 MCP returns the same complete envelope in `structuredContent` and a JSON text
 block for client compatibility. `isError` agrees with the envelope's `ok` flag.
-Keep both wire representations. In code-mode orchestration, the memory skill
-guides the agent to print one equivalent envelope while preserving errors,
+Keep both wire representations. For raw code-mode wrappers, the memory skill
+directs the agent to prepare selection before the first Mandalore call and reuse
+it for later responses, including errors. It guides the agent to print one
+equivalent envelope while preserving errors,
 provenance, conflicts and continuation metadata. Text-only, distinct content,
 unknown metadata and uncertain equivalence fall back intact. This is scoped
 presentation guidance, not a global renderer or a change to memory semantics.
-Do not retry an operation merely to render its receipt differently.
+Do not retry an operation merely to render its receipt differently. Loading
+guidance after printing a raw first response cannot reclaim consumed context.
 
 The [synthetic presentation checks](evidence/mcp-rendering/README.md) distinguish
 wire compatibility, selector behavior and observed native engineering runs from

@@ -126,6 +126,13 @@ input, while its replicate did not. Added reference/code cost is included in the
 reported context and byte counts. These observations are not universal cost,
 latency or compaction guarantees. Unknown results safely remain verbose.
 
+A later retained-candidate small-task check reduced three duplicate wrappers
+to zero but increased final-request input by 699 tokens: selector/discovery
+overhead exceeded saved payload bytes. A first-error run also bypassed the
+selector before loading its reference. The [sequencing follow-up](evidence/mcp-rendering/first-result.md)
+retains that counterexample and the targeted correction; these observations must
+not be restated as a general token-cost reduction.
+
 Schema sizes, tool response bytes, hook text, requested context ceilings and
 native aggregate token counters are distinct. Prior foundling tests observed
 a 16000-byte recall request for two records. An earlier report of a redundant
