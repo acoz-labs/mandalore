@@ -35,6 +35,7 @@ was present before setup. No model request or personal activation occurred.
 | [No-color Back and cancellation](no-color-cancel.recording) | On the fixed source, 80 columns / 30 rows with NO_COLOR in the interactive menu. Used Esc and h to return from harness selection, then selected Pi and used Ctrl+C at the runtime prompt. Returned to the shell with canonical input, echo and signal handling restored. |
 | [Stale preview refusal](stale-plan.recording) | On the fixed source, 32-column plain mode. Prepared a learning-enabled update, changed only the disposable native wrapper bytes after preview, then confirmed. The menu refused the stale plan and returned without retry or registration changes. The wrapper was restored to its original bytes afterward. |
 | [Foreign registration diagnostic finding](foreign-before-fix.recording) | On the fixed source, 80-column plain mode. A separate synthetic profile referenced an inert, unowned local package named mandalore. Preview correctly refused it before confirmation, but displayed only a generic child-exit error. This is a usability finding, not a passing diagnostic. |
+| [Foreign registration diagnostic retest](foreign-fixed.recording) | On source `ed7764b79534b337d5b3d08df06ae1dfd3bc5ee9`, repeated the same 80-column plain journey against a fresh immutable local build. The menu displayed the structured `connection.failed` reason: foreign, filtered or ambiguous registration, preserve for explicit review. It returned without confirmation, installation or retry. |
 
 The first artifact's manifest SHA-256 was
 `6cb1add4e30037d200d2f708fd420ef5c4601d9990317859cad064ac5bfc1f41`,
@@ -60,7 +61,14 @@ fix. It carries only a valid protocol-1 failure's nonempty code and message,
 with size limits and rejection of terminal controls; invalid/duplicate JSON and
 raw process output remain suppressed. Cancellation/deadline errors retain their
 identity. Regression tests cover the decoder and delegated failed previews with
-both zero and nonzero exit status. A fresh rendered retest remains required.
+both zero and nonzero exit status. The rendered retest used manifest SHA-256
+`35b6657226874004d856446246f85ce28670c3ab4a72675c3bea6a3d5dec1e7c`
+and macOS arm64 executable SHA-256
+`2e3a874b62effb71ad5eca4b1d2432056f494c2aa16f04f5ca305c3151536aa6`.
+All manifest assets were verified. Foreign profile/package bytes stayed
+identical, its installation state remained absent and the original 31-file
+installed fixture remained unchanged. The generic failure recording remains
+failure evidence; the retest establishes the correction on its stated source.
 
 ## Review, validation and remaining work
 
@@ -76,9 +84,9 @@ builds; Docker was unavailable. Hosted CI for the fixed source passed in
 [run 35039496193](https://github.com/acoz-labs/mandalore/actions/runs/35039496193).
 Cross-builds are not native Linux/Intel execution.
 
-Scoped verdict: pass for the fixed recorded journeys except the explicitly
-retained foreign-diagnostic finding. Still required: the diagnostic's rendered
-retest, interrupted registration/recovery and native tool warning/partial-result display at the final
+Scoped verdict: pass for the corrected recorded journeys, retaining original
+findings separately. Still required: interrupted registration/recovery and
+native tool warning/partial-result display at the final
 implementation head. Earlier deterministic tests are not rendered evidence.
 No browser/mobile interface exists. Screen readers, alternate locales/fonts and
 native non-host platforms remain unverified. Replay uses macOS `script -p`;
