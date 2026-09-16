@@ -197,6 +197,15 @@ correction, not a product terminal-mode change.
 
 ## Limits
 
+The assessment pipeline also has a replacement regression: a private
+`os.Executable` path seam reports a fixed fixture path, the file at that path is
+renamed and replaced, and a second assessment must measure the new disk bytes
+while keeping the supplied process stamps and embedded package unchanged. Unknown
+replacement bytes cannot gain verified evidence from source/version labels.
+This complements the exact catalog matcher tests. It models path replacement,
+not native loader behavior or attestation of a loaded process image. No public
+input can override that seam, process platform or bundled catalog.
+
 - Reads can affect OS access-time/cache bookkeeping; no product state is written.
 - Cancellation is checked between reads; it is not a hard kernel/filesystem
   deadline or a sandbox against a hostile local user.

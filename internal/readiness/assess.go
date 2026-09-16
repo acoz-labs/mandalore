@@ -168,6 +168,12 @@ func fileComponent(ctx context.Context, id, path string, limit int64) (Component
 // service, scans no native profile, executes no selected binary and writes no
 // state. Missing setup is a successful observation, not an operation failure.
 func Assess(ctx context.Context, in Input) (Report, error) {
+	return assess(ctx, in, os.Executable)
+}
+
+// The private executable-path seam makes disk replacement testable without
+// overriding production process identity or adding caller-controlled inputs.
+func assess(ctx context.Context, in Input, executablePath func() (string, error)) (Report, error) {
 	if err := ctx.Err(); err != nil {
 		return Report{}, err
 	}
@@ -190,7 +196,7 @@ func Assess(ctx context.Context, in Input) (Report, error) {
 		Notice:   "Non-executing assessment-time snapshot, not a readiness lease. Support, observed setup and recorded scenario evidence are independent. On-disk fingerprints do not attest loaded programs. No installation, repair, authentication, memory writes or synchronization performed.",
 	}
 	add := func(c Component) { r.Components = append(r.Components, c); r.Complete = r.Complete && c.Complete }
-	executable, exeErr := os.Executable()
+	executable, exeErr := executablePath()
 	toolkit := observedComponent("memory-runtime", "unknown", "process-path-unavailable", false)
 	if exeErr == nil {
 		toolkit, r.Toolkit.OnDisk, err = fileComponent(ctx, "memory-runtime", executable, 128<<20)

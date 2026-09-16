@@ -75,6 +75,26 @@ Git configuration, native handoff and synchronization remain separate operations
 
 ### Native integration and installation recovery
 
+For initial or new-machine checks in current-source builds, start with
+`connection assess --harness codex|pi` or **The Armorer → Assess this machine**.
+It works with missing setup and performs no native execution, network or product
+writes. Read support, setup and scenario evidence independently; completed is not
+an overall healthy verdict. Use the reported next step rather than treating
+unknown/historical evidence as a repair instruction.
+
+For partial findings, correct invalid explicit paths or inspect the named metadata
+problem, then reassess. Select a retained root explicitly if its identity matters;
+do not guess the latest generation. A matching receipt/runtime does not prove
+active native registration, authentication, memory graph validity or remote
+freshness. Optional follow-up guidance contains no repair authority. See the
+[bounded assessment contract](interface.md#non-executing-machine-assessment).
+
+For deeper native inspection, choose it separately after reviewing the selected
+program/profile and possible native logs/cache writes. Menu confirmation defaults
+to No. CLI `connection armorer` / `doctor` retain their existing executing
+behavior; `--read-only` does not suppress native log/cache effects. Failed native
+inspection does not repair, retry or change the earlier static assessment.
+
 Current-source builds report verified quota refusals as `release.rate_limited`.
 If retry timing is available, wait until every reported lower bound has passed;
 availability is not guaranteed. If timing is unavailable, wait before explicitly

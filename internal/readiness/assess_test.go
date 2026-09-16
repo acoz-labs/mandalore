@@ -2,6 +2,8 @@ package readiness
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"os"
@@ -107,5 +109,49 @@ func TestUntestedRequirementsStayHarnessSpecific(t *testing.T) {
 		if hasNode != (harness == "pi") {
 			t.Fatal("Node requirement attached to wrong harness", harness, r.Untested)
 		}
+	}
+}
+
+func TestAssessmentKeepsProcessMetadataWhenExecutablePathIsReplaced(t *testing.T) {
+	in := assessmentInput(t)
+	path := filepath.Join(filepath.Dir(in.Binding), "toolkit")
+	original := []byte("original process image fixture")
+	replacement := []byte("unrelated replacement image fixture")
+	if err := os.WriteFile(path, original, 0700); err != nil {
+		t.Fatal(err)
+	}
+	ctx := WithBuild(context.Background(), "0.0.0-test", strings.Repeat("a", 40))
+	// Model a stable os.Executable result independently of the host's path
+	// behavior after rename. This tests the actual assessment pipeline, not
+	// native loader behavior or a promise of loaded-image attestation.
+	executable := func() (string, error) { return path, nil }
+	before, err := assess(ctx, in, executable)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(path, path+"-previous"); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, replacement, 0700); err != nil {
+		t.Fatal(err)
+	}
+	after, err := assess(ctx, in, executable)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := sha256.Sum256(replacement)
+	if after.Toolkit.OnDisk.SHA256 != hex.EncodeToString(want[:]) || before.Toolkit.OnDisk.SHA256 == after.Toolkit.OnDisk.SHA256 {
+		t.Fatal("replacement was not represented as the current on-disk bytes", before.Toolkit, after.Toolkit)
+	}
+	if before.Toolkit.Package != after.Toolkit.Package || after.Toolkit.SourceCommit != strings.Repeat("a", 40) || after.Toolkit.Version != "0.0.0-test" {
+		t.Fatal("disk replacement rewrote process metadata", before.Toolkit, after.Toolkit)
+	}
+	for _, c := range after.Components {
+		if c.Evidence == "verified" {
+			t.Fatal("source/version labels certified unknown replacement", c)
+		}
+	}
+	if !strings.Contains(after.Notice, "On-disk fingerprints do not attest loaded programs") || !strings.Contains(strings.Join(after.Untested, " "), "loaded-image identity") {
+		t.Fatal("loaded-image limitation disappeared", after.Notice, after.Untested)
 	}
 }

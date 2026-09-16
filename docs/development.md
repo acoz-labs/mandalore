@@ -64,6 +64,24 @@ widens that empty-file window and verifies the durable save, cancelled fetch and
 stopped child. Run it alongside `TestSaveAndSyncCancellationDuringFetchKeepsReceipt`
 with `-race -count=20` after changing the cancellation fixture or observer.
 
+### Readiness regression tests
+
+For readiness changes, run the focused `internal/readiness` and CLI assessment
+tests before full CI. The compiled boundary probe places marker-writing native
+and dependency traps on PATH, inventories all fixture paths/bytes/modes/mtimes
+and empty directories, and counts connections to configured proxy/provider
+endpoints. That instrumentation is not a system-wide network sandbox. Reader
+allowlists separately exclude remembered-content reads. The private executable-
+path seam models replacement independently of host-specific loader path behavior;
+the assessment must retain process metadata and label new bytes as on-disk only.
+There are no public fake-platform, identity or evidence-catalog inputs.
+
+The [readiness evidence](evidence/machine-readiness/README.md) records controlled
+matcher mutation, failing-first defects, read limits and source-bound terminal
+checks. Keep unknown/stale/partial results distinct and validate the actual menu
+at narrow/normal widths before claiming rendered readiness. Cross-builds, synthetic
+path replacement and component tests do not establish native acceptance.
+
 ## Local distribution candidates
 
 From a clean committed repository, run:

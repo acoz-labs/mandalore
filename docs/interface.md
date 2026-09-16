@@ -311,6 +311,66 @@ lexical limits, completeness/conflict semantics and measured scale behavior.
 
 ## Machine-ready contract
 
+### Non-executing machine assessment
+
+Current-source builds add the unbound, CLI-only `connection_assess` operation:
+
+```sh
+mandalore connection assess --harness pi --prompt
+mandalore connection assess --harness codex --binding /example/binding.json --connection-root /example/owned-generation
+mandalore call connection_assess < assessment-input.json
+```
+
+The typed input requires `harness` (`codex` or `pi`), with optional `state_dir`,
+`native_home`, `native_binary`, `binding`, `connection_root` and `include_prompt`.
+There is no separate `pi_connection_assess`. Paths must be absolute, control-free
+and at most 4096 bytes. Defaults use platform installation state, explicit/native
+profile environment selection and a bounded non-executing PATH lookup. Binding
+selection follows the normal explicit/environment/platform order. There is no
+cwd lookup or automatic retained-root selection. Missing binaries are findings;
+invalid defaults can be corrected with explicit paths.
+
+Assessment is read-only, idempotent and non-network. It needs no bound memory
+service and is not a memory MCP/native tool. It executes no subprocess, creates
+no directory/lock and reads no remembered content, credentials or transcripts.
+`--read-only` is accepted; it does not change ordinary learning policy.
+
+The format-1 report has `complete`, `harness`, `selection`, `toolkit`, optional
+`retained`, `declarations`, `components`, `untested`, `next_action`, optional
+`prompt` and `notice`. There is deliberately no aggregate healthy flag:
+
+| Dimension | Meaning |
+| --- | --- |
+| `support` | supported, unsupported or unknown contract target |
+| `setup` | present, verified-static, missing, inconsistent or unknown observation |
+| `evidence` | verified, historical or none for the named recorded scenario |
+| `complete` | Fixed observations completed; not live integration health |
+
+`verified-static` names a narrow binding-identity or retained-byte check, not
+whole-bank/package health. Exact evidence requires every identity applicable to
+that scenario. A source/version label, shim hash or cross-build is insufficient.
+Executing process stamps/embedded package and separately measured on-disk bytes
+are distinct; disk fingerprints do not attest loaded programs. An explicitly
+selected retained runtime is measured separately, never executed. Receipt package
+identities are declarations, not proof of active registration or loaded context.
+
+Missing setup still returns a successful report. Malformed or unreadable observed
+metadata produces partial findings without discarding unrelated observations.
+Invalid selection is `input.invalid`; corrupt bundled declarations are
+`readiness.invalid`. Cancellation returns `operation.cancelled`, exit 130 and no
+successful report/prompt. The normal 32 KiB input/64 KiB envelope bounds apply;
+oversized output fails rather than silently truncating findings. Prompt output is
+bounded to 8 KiB and derives from fixed finding/action codes, never private paths
+or raw metadata. `--prompt` adds it to JSON; it does not execute the guidance.
+
+Native inspection remains a separate explicit command/choice. It may execute the
+selected harness and create its logs/cache even with `--read-only`. The menu
+discloses those effects before a default-No confirmation; automation's existing
+inspection command remains its explicit execution choice. Neither path repairs,
+syncs, authenticates or proves provider/live-session behavior implicitly.
+
+### Native inspection and recovery
+
 The plugin's on-demand **The Armorer** skill drives these administrative
 operations through shell access. Human inspection is
 `mandalore connection armorer [profile options]`; `connection doctor` is a
@@ -337,6 +397,7 @@ uses the same decoder and methods as the human commands and MCP tools.
 
 | Operation | Human command | MCP |
 | --- | --- | --- |
+| `connection_assess` | `connection assess --harness codex\|pi` | Not exposed; no binding required |
 | `signet_create`, `signet_bind` | `signet create`, `signet bind` | Not exposed |
 | `migration_preflight`, `migration_apply` | `migration preflight`, `migration apply` | Not exposed |
 | `memory_recall`, `memory_scopes`, `memory_history` | `memory recall`, `scopes`, `history` | Bound signet only |
