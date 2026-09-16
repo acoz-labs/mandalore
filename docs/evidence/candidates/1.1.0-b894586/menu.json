@@ -3,12 +3,14 @@
   "evidence": [
     {
       "scenario": "failure",
+      "published_text_sha256": "f626f826de4cd86daa6235e46572099c6d98740442e41a04bc844084cbe1d529",
       "exit": 1,
       "original_sha256": "f9abe673d020c4053585b64769083a572a258a0eba81671d6754c132cd7903a0",
       "sanitized_sha256": "cd00e6715c50b9b9fbe97cbb543b659954bf78418342c05573d94ad632245551"
     },
     {
       "scenario": "success",
+      "published_text_sha256": "bc59c7f4b50b28e06c060f8d4052a446bd8488abe7ae0416ac3efb7645670d82",
       "exit": 0,
       "original_sha256": "6407eb1930590d18aef3403da16e2b9f8e6b193004c7c22e26bc1e25e48dc7e7",
       "sanitized_sha256": "1ba5de73b04ff59516aefcd6451859800cedf8bcc852c09d9afdfb324accf070"
