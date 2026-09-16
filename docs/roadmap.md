@@ -40,6 +40,13 @@ Foundlings belongs before real-memory adoption, not merely an optional post-MVP
 improvement. Codex acceptance precedes Pi; Pi acceptance precedes Claude Code.
 Engineering merges alone are not release acceptance.
 
+The [1.1.0 candidate guide](releases/1.1.0-candidate.md) maps the merged post-1.0
+batch (#56, #61, #65, #57, #13, #74 and #85) to its original acceptance criteria.
+Preparation is tracked by #88; no candidate acceptance or publication is implied.
+Lifecycle #55 O1/O2, deferred export/withdrawal #80/#81, and Claude #14 remain
+unfinished. The completed independent improvements do not redefine the remaining
+roadmap or remove Pi's acceptance prerequisite for Claude.
+
 The public [Mandalore board](https://github.com/orgs/acoz-labs/projects/35) contains
 the original 16 successor issues. Template fields/views and item status were verified;
 see the [project receipt](operations/project.md) and issue #1 for live follow-up.
