@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/json"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -96,6 +97,10 @@ func TestPrivacyReadOnlyDeniesMutationNotDisclosure(t *testing.T) {
 				out := readOnly.Call(ctx, operation, []byte(`{}`))
 				if !out.OK {
 					t.Fatal("read-only unexpectedly denied read", operation, out.Error)
+				}
+				raw, err := json.Marshal(out.Result)
+				if err != nil || !strings.Contains(string(raw), marker) {
+					t.Fatal("read-only hid existing evidence", operation, err)
 				}
 			}
 			text, warning := contextText(t, readOnly, "Privacy example")
