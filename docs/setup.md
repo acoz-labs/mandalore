@@ -82,6 +82,13 @@ executable/profile and retained installation paths. Applying executes selected
 binaries. A digest identifies bytes, not publisher trust. The menu and JSON CLI
 use the same revalidated plan. It does not launch agents or accept hook trust.
 
+Preview does not create a missing native profile. Explicit apply creates the
+selected profile directory before Codex inventories plugins; new directories use
+owner-only permissions. Existing profile permissions and unrelated contents are
+preserved. An empty profile can remain after a later failure; inspect the reported
+phase before retrying. Native inventory errors name the failed operation without
+including raw subprocess output. This preparation does not enroll credentials.
+
 The managed connection pins a retained runtime and binding, so exports are not
 needed. Explicit environment overrides still win; doctor reports conflicts.
 Old managed source/runtime copies are retained, but native cache can be replaced.
