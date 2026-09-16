@@ -23,7 +23,7 @@ func TestPublishedVerificationIsReadOnlyAndChecksEveryAsset(t *testing.T) {
 		}
 	}
 	r, err := f.p.public.VerifyPublication(context.Background(), "1.0.0", f.identity)
-	if err != nil || r.Phase != "publication-verified" || r.Identity != f.identity || r.ReleaseID != 42 || len(r.Assets) != 8 || f.writes != writes || reads != 10 {
+	if err != nil || r.Phase != "publication-verified" || r.Identity != f.identity || r.ReleaseID != 42 || len(r.Assets) != 8 || f.writes != writes || reads != 8 {
 		t.Fatal("incomplete published verification", r, err, reads)
 	}
 }
@@ -55,7 +55,7 @@ func TestPublishedVerificationRefusesIncompleteOrWrongRelease(t *testing.T) {
 				f.before = func(r *http.Request) {
 					if publicationAssetPath.MatchString(r.URL.Path) {
 						reads++
-						if reads == 10 {
+						if reads == 8 {
 							if kind == "tag changed after download" {
 								f.tag = strings.Repeat("f", 40)
 							} else {
