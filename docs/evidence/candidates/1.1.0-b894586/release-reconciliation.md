@@ -4,6 +4,27 @@ Audit dated September 16, 2026. **Not yet ready for publication.** This is an
 evidence/checklist update, not changed candidate bytes, a new acceptance policy,
 an issue-level approval or authority to update an existing installation.
 
+## Follow-up: acceptance authority resolved
+
+After this audit the owner explicitly authorized the narrowly scoped personally
+performed same-account review extension. [Control issue #96](https://github.com/acoz-labs/mandalore/issues/96)
+and reviewed [PR #98](https://github.com/acoz-labs/mandalore/pull/98), merged as
+`7d9ec5c3cd2083e41bf56c47aee3e4295fe0aef9`, implement that decision for this exact
+source/artifact pair and its nine nominated issues only. Local full CI,
+[exact-head PR CI](https://github.com/acoz-labs/mandalore/actions/runs/35130922685)
+and the [main audit](https://github.com/acoz-labs/mandalore/actions/runs/35131096955)
+passed. Failing-first scope/recorder tests preserve the old scopes and normal
+allowlisting, confirmation, author checks and release gates. No actor
+configuration was changed.
+
+This supersedes item 3's unresolved authority question below, not the original
+audit evidence or any remaining tests/verdicts. The owner must still personally
+review and supply actual issue-level judgments; no acceptance was dispatched.
+Main now includes control-policy commits, while the retained product source and
+manifest remain the exact values below. Rechecked manifest and macOS arm64
+runtime hashes are unchanged. This control issue/PR is not added to the retained
+product implementation sets. No rebuild, nomination, publication or live update.
+
 ## Verified current state
 
 - Source: `b89458617b49d2eb0a8686dcd75c26aa7ea6f6ba`; still the live main head.
