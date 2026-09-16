@@ -1,0 +1,187 @@
+{
+  "schema_version": 1,
+  "targets": [
+    {
+      "os": "darwin",
+      "arch": "amd64"
+    },
+    {
+      "os": "darwin",
+      "arch": "arm64"
+    },
+    {
+      "os": "linux",
+      "arch": "amd64"
+    },
+    {
+      "os": "linux",
+      "arch": "arm64"
+    }
+  ],
+  "signet_read_versions": [
+    1
+  ],
+  "signet_write_versions": [
+    1
+  ],
+  "memory_protocol": 1,
+  "codex_hook_protocol": 1,
+  "pi_harness_protocol": 1,
+  "components": [
+    {
+      "id": "memory-runtime",
+      "dependencies": []
+    },
+    {
+      "id": "git-sync",
+      "dependencies": [
+        {
+          "id": "git",
+          "constraint": "merge-tree --write-tree and commit-tree"
+        }
+      ]
+    },
+    {
+      "id": "codex",
+      "dependencies": [
+        {
+          "id": "codex",
+          "constraint": "Native plugin and hook support; version must be verified explicitly"
+        }
+      ]
+    },
+    {
+      "id": "pi",
+      "dependencies": [
+        {
+          "id": "pi",
+          "constraint": "=0.85.1"
+        },
+        {
+          "id": "node",
+          "constraint": ">=22.19.0"
+        }
+      ],
+      "native_contract": "0.85.1"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "release-1-0-0-cli-darwin-amd64",
+      "component": "memory-runtime",
+      "scenario": "cli-mcp",
+      "platform": {
+        "os": "darwin",
+        "arch": "amd64"
+      },
+      "source_commit": "f899cf6a2a255f3b6b35dcd778c672f799c65eb2",
+      "manifest_sha256": "c2f5a340d0e665c81e01bc26add4c0dfe8ba27faac87b83a3fd81aff254f56ea",
+      "identities": {
+        "runtime_sha256": "e8dcf5b86407b45000006fea0da81ef2d48e8ce152baf72d1f33e83dfbd05a36"
+      },
+      "level": "accepted-release",
+      "sources": [
+        "https://github.com/acoz-labs/mandalore/blob/1c13e2230c47a34d77c2a51f11a428cc08ebf2d3/docs/evidence/final-candidate/platforms/darwin-amd64/summary.json",
+        "https://github.com/acoz-labs/mandalore/blob/3332938212cc73ee05d03d57e5179d13705a0447/docs/releases/1.0.0.md"
+      ]
+    },
+    {
+      "id": "release-1-0-0-cli-darwin-arm64",
+      "component": "memory-runtime",
+      "scenario": "cli-mcp",
+      "platform": {
+        "os": "darwin",
+        "arch": "arm64"
+      },
+      "source_commit": "f899cf6a2a255f3b6b35dcd778c672f799c65eb2",
+      "manifest_sha256": "c2f5a340d0e665c81e01bc26add4c0dfe8ba27faac87b83a3fd81aff254f56ea",
+      "identities": {
+        "runtime_sha256": "bcc1b7fdf9e72ccb2bbd734d798c16f3aa5b96de757846711a4e5afe6eb00f93"
+      },
+      "level": "accepted-release",
+      "sources": [
+        "https://github.com/acoz-labs/mandalore/blob/1c13e2230c47a34d77c2a51f11a428cc08ebf2d3/docs/evidence/final-candidate/platforms/darwin-arm64/summary.json",
+        "https://github.com/acoz-labs/mandalore/blob/3332938212cc73ee05d03d57e5179d13705a0447/docs/releases/1.0.0.md"
+      ]
+    },
+    {
+      "id": "release-1-0-0-cli-linux-amd64",
+      "component": "memory-runtime",
+      "scenario": "cli-mcp",
+      "platform": {
+        "os": "linux",
+        "arch": "amd64"
+      },
+      "source_commit": "f899cf6a2a255f3b6b35dcd778c672f799c65eb2",
+      "manifest_sha256": "c2f5a340d0e665c81e01bc26add4c0dfe8ba27faac87b83a3fd81aff254f56ea",
+      "identities": {
+        "runtime_sha256": "74817349099318fc557b4db17b0bf4a69413caf833fe218032320c40d333a719"
+      },
+      "level": "accepted-release",
+      "sources": [
+        "https://github.com/acoz-labs/mandalore/blob/1c13e2230c47a34d77c2a51f11a428cc08ebf2d3/docs/evidence/final-candidate/platforms/linux-amd64/summary.json",
+        "https://github.com/acoz-labs/mandalore/blob/3332938212cc73ee05d03d57e5179d13705a0447/docs/releases/1.0.0.md"
+      ]
+    },
+    {
+      "id": "release-1-0-0-cli-linux-arm64",
+      "component": "memory-runtime",
+      "scenario": "cli-mcp",
+      "platform": {
+        "os": "linux",
+        "arch": "arm64"
+      },
+      "source_commit": "f899cf6a2a255f3b6b35dcd778c672f799c65eb2",
+      "manifest_sha256": "c2f5a340d0e665c81e01bc26add4c0dfe8ba27faac87b83a3fd81aff254f56ea",
+      "identities": {
+        "runtime_sha256": "a18e084ca7ce4b52e0b36de5580ff178a4d4ebefb07b22a4146289a984304408"
+      },
+      "level": "accepted-release",
+      "sources": [
+        "https://github.com/acoz-labs/mandalore/blob/1c13e2230c47a34d77c2a51f11a428cc08ebf2d3/docs/evidence/final-candidate/platforms/linux-arm64/summary.json",
+        "https://github.com/acoz-labs/mandalore/blob/3332938212cc73ee05d03d57e5179d13705a0447/docs/releases/1.0.0.md"
+      ]
+    },
+    {
+      "id": "release-1-0-0-codex-recall",
+      "component": "codex",
+      "scenario": "native-recall",
+      "platform": {
+        "os": "darwin",
+        "arch": "arm64"
+      },
+      "source_commit": "f899cf6a2a255f3b6b35dcd778c672f799c65eb2",
+      "manifest_sha256": "c2f5a340d0e665c81e01bc26add4c0dfe8ba27faac87b83a3fd81aff254f56ea",
+      "identities": {
+        "runtime_sha256": "bcc1b7fdf9e72ccb2bbd734d798c16f3aa5b96de757846711a4e5afe6eb00f93",
+        "native_version": "0.153.4"
+      },
+      "level": "accepted-release",
+      "sources": [
+        "https://github.com/acoz-labs/mandalore/blob/1c13e2230c47a34d77c2a51f11a428cc08ebf2d3/docs/evidence/final-candidate/README.md",
+        "https://github.com/acoz-labs/mandalore/blob/3332938212cc73ee05d03d57e5179d13705a0447/docs/releases/1.0.0.md"
+      ]
+    },
+    {
+      "id": "pi-41a45b7-native-setup-tools",
+      "component": "pi",
+      "scenario": "native-setup-tools",
+      "platform": {
+        "os": "darwin",
+        "arch": "arm64"
+      },
+      "source_commit": "41a45b730c74070391af0305a1283e136b9ae8de",
+      "manifest_sha256": "e6a9919de1ddbad3d3514a7c5519336505057929ad83ea009b851d57ac7addc1",
+      "identities": {
+        "runtime_sha256": "a1311edf613c175c8e4dec40bab254d9f9391fc4f708a57879b38b13048dadb0",
+        "package_sha256": "79d2491186a6da434bd1e7fd8ea212136595247e90162c5bb3beabc6639614f8",
+        "native_version": "0.85.1",
+        "interpreter_version": "24.1.0"
+      },
+      "level": "engineering",
+      "sources": [
+        "https://github.com/acoz-labs/mandalore/blob/a102ab8b6142c7e5c62ba04fbb33b4907436286e/docs/evidence/pi/final-head-41a45b7/README.md"
+      ]
+    }
+  ]
+}

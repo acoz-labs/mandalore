@@ -40,10 +40,39 @@ Use explicit bindings for additional banks; no cwd discovery or shell edits occu
 
 ## Native connection journeys
 
-Connection setup, Armorer inspection and repair first ask for **Codex** or **Pi**.
+Connection setup, Armorer assessment/inspection and repair first ask for **Codex** or **Pi**.
 Each keeps its own native-profile defaults; choosing Pi does not reuse a resolved
 Codex home. Native executables must already be installed. Neither journey installs
 a harness, logs into a provider or copies authentication/session files.
+
+### Assess this machine first
+
+In current-source builds, **The Armorer · Assess or inspect** offers **Assess
+this machine** by default. This works before native binaries, profiles or a
+signet exist. It reads selected setup metadata without running programs,
+contacting a provider, reading remembered content or changing product state.
+This post-1.0.0 addition does not modify the published 1.0.0 executable.
+
+Review the displayed defaults, choose **Edit selection** to change one path, or
+assess them directly. Editable paths are the native executable/profile,
+installation state, binding and an optional owned retained root. `:default`
+restores that field's default; `:none` clears the optional root. No newest
+generation is inferred: an unselected root does not mean no connection exists.
+
+The result separates **Support**, **Setup**, and scenario-specific **Evidence**.
+Completed means fixed observations finished, not that the connection is healthy.
+Unknown or historical evidence alone is not a reason to repair. A single next
+step identifies what to investigate; narrow terminals stack the status fields.
+**Details** explains exact identities, findings, declarations and evidence links.
+**Show agent follow-up prompt** displays optional guidance without starting an
+agent, changing learning behavior or authorizing repair. Recheck fresh state
+before acting on that snapshot.
+
+**Run native checks**, or the submenu's **Inspect native connection**, is a
+separate default-No choice. It shows the selected program/profile and warns that
+native programs may create logs/cache. It never automatically repairs or retries;
+its result does not rewrite the preceding static assessment. Both interfaces use
+the same [administration operations](interface.md#non-executing-machine-assessment).
 
 ### Codex
 
@@ -59,7 +88,7 @@ Old managed source/runtime copies are retained, but native cache can be replaced
 Unmanaged or edited registrations are not silently removed. Start a fresh native
 session and review exact hooks afterward. No native credentials are copied.
 
-**The Armorer · Inspect connection** labels pass, fail and not-tested independently. It inspects structure
+**Inspect native connection** labels pass, fail and not-tested independently. It inspects structure
 and native inventory; it does not prove login, hook trust, live MCP, remote
 freshness or active context. **The Armorer · Repair connection** asks for a retained connection root
 (shown by inspection), previews a fresh generation and requires approval. Unknown

@@ -37,6 +37,7 @@ production upgrade.
 | `internal/codex` | Bounded read-only native event adapter; no transcript access or synchronization |
 | `internal/memorycontext` | Shared bounded local orientation, bank-wide evidence and scope routing |
 | `internal/install` | Native connections, runtime pinning, doctor/update/repair |
+| `internal/readiness` | Non-executing setup observations, support declarations, exact scenario evidence and bounded follow-up guidance |
 | `internal/distribution` | Versioned assets, provenance and byte verification, owned CLI installation and phased publication |
 | `cmd/build-artifacts`, `cmd/candidate-transport`, `cmd/promote-candidate`, `cmd/release-publication` | Repository-maintainer build/verification/publication entrypoints; not memory tools |
 | `internal/migration` | Read-only legacy census, explicit out-of-place conversion and retained recovery receipts |
@@ -46,6 +47,33 @@ production upgrade.
 | `plugins/claude-code` | Reserved third integration after Pi acceptance |
 
 ## Ownership and trust
+
+Machine readiness is CLI-only administration. `internal/readiness` owns one
+assessor used by the menu and typed/human CLI. Its reviewed format-1 catalog
+separates intended targets, dependencies and immutable engineering/accepted
+scenario evidence. No online registry or caller-supplied evidence is consulted.
+No executable self-hash is embedded: measured disk bytes, process metadata and
+retained-runtime identities stay separate. Missing scenario identities are not
+wildcards; historical evidence is not a diagnosis of broken software.
+
+The assessor follows a fixed read set: executable fingerprints, directory presence,
+binding/manifest/enrolled-device identity, and optionally one explicitly selected
+owned receipt/runtime. It reuses pure memory validators and installer receipt
+projections, not full store validation or native Doctor/Prepare/Apply routines.
+Ownership/selection checks precede following retained paths. Managed metadata
+redirects and special files are refused; selected executable aliases can resolve
+to a regular target. Bounded streamed reads check cancellation and changes in
+identity, size, mode and mtime. This is not loaded-image attestation, a filesystem
+lease or protection from a hostile local user; OS access-time/cache bookkeeping
+can occur. No product state, credential, remembered content or network is involved.
+Binding reads are capped at 16 KiB, manifest/device reads at 4 MiB, Codex/Pi
+receipts at 32/64 KiB and runtime/native fingerprints at 128/512 MiB. Cancellation
+is checked between chunks, not a hard deadline for blocked kernel/filesystem I/O.
+
+Assessment has no persistent state or recovery transaction. Optional fixed-text
+guidance is an assessment-time snapshot and no new authority. Native inspection
+is an explicit subsequent operation with separately disclosed log/cache effects.
+See the [assessment interface](interface.md#non-executing-machine-assessment).
 
 The private signet owns knowledge/history, not native sessions or credentials.
 Local bindings own clone paths and device enrollment. Generated connections own

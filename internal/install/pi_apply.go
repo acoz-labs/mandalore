@@ -27,6 +27,9 @@ type PiResult struct {
 
 type piProbe func(context.Context, PiPlan) error
 
+// PiNativeVersion is the exact implemented native contract, not a version range.
+const PiNativeVersion = "0.85.1"
+
 func nativePi(ctx context.Context, o Options, args ...string) ([]byte, error) {
 	return execute(ctx, o.NativeBinary, filepath.Dir(o.Binding), environment(map[string]string{"PI_CODING_AGENT_DIR": o.NativeHome}), nil, args...)
 }
@@ -36,7 +39,7 @@ func piNativeVersion(ctx context.Context, o Options, run runner) error {
 	if err != nil {
 		return err
 	}
-	if strings.TrimSpace(string(raw)) != "0.85.1" {
+	if strings.TrimSpace(string(raw)) != PiNativeVersion {
 		return errors.New("unsupported Pi native contract; this adapter is verified against Pi 0.85.1")
 	}
 	return nil

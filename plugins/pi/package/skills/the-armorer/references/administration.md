@@ -12,6 +12,25 @@ the Codex connection operations or hand-edit native settings.
 
 ## Inspection and recovery
 
+For initial readiness, use the shared `connection_assess` with `harness: "pi"`
+and explicit paths for the selected connection. Human equivalent:
+`connection assess --harness pi`. There is no `pi_connection_assess` operation.
+It needs no bound service and remains useful when binaries, profiles or bindings
+are missing. If the selected runtime does not advertise it, report that limit;
+do not silently substitute a command that executes native programs.
+
+Read `complete`, each component's `support`, `setup` and scenario `evidence`, and
+`next_action` separately. `verified-static` has a narrow metadata/byte scope, not
+whole-bank or live-session health. Historical evidence is not a repair request.
+Keep executing-toolkit and retained-runtime identities separate. Supply
+`connection_root` only for an explicitly selected owned generation; do not scan
+for the newest one. Optional `include_prompt: true` (`--prompt`) returns bounded
+follow-up guidance, not a repair plan or execution authority. Recheck current
+state before acting on that assessment-time snapshot.
+
+For explicitly requested deeper native inspection, disclose that the selected
+native program may run and create native log/cache files; `--read-only` does not
+prevent those native effects. This is distinct from static assessment.
 The human command is `connection armorer --harness pi`; `connection doctor --harness pi` is its compatible
 alias. The stable typed name remains `pi_connection_doctor`. Supply the selected
 `state_dir`, `native_home` and `native_binary`; add CLI `--read-only`. Read both

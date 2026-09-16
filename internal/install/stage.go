@@ -170,11 +170,16 @@ func readRegular(path string, limit int64) ([]byte, error) {
 }
 
 func loadReceipt(root string) (Receipt, error) {
-	var r Receipt
 	b, err := readRegular(filepath.Join(root, "connection.json"), 32768)
 	if err != nil {
-		return r, err
+		return Receipt{}, err
 	}
+	return decodeReceipt(root, b)
+}
+
+// decodeReceipt validates supplied bytes only; callers own bounded file reads.
+func decodeReceipt(root string, b []byte) (Receipt, error) {
+	var r Receipt
 	if err := strictjson.Decode(b, &r, 32768); err != nil {
 		return r, err
 	}

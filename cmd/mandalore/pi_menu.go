@@ -154,12 +154,7 @@ func (m *menu) doctorPi() error {
 	if err := m.piInputs(false); err != nil {
 		return err
 	}
-	v := m.call("pi_connection_doctor", m.piProfile, false)
-	if !v.OK {
-		return m.outcome("The Armorer · Pi", v)
-	}
-	m.piReport(v.Result.(install.PiReport))
-	return m.outputErr
+	return m.nativeInspection("pi", m.piProfile)
 }
 
 func (m *menu) repairPi() error {

@@ -51,6 +51,11 @@ effects before applying an authorized change; ask only for missing choices or
 authority beyond the request. Preview and apply use the same reviewed plan,
 without bypassing ownership, stale-plan or read-only refusals.
 
+For new-machine readiness or an initial connection check, prefer the advertised
+`connection_assess` operation. It reads setup metadata without running native
+programs or reading remembered content. Native inspection is a separate deeper
+check that may create native logs/cache; use the reference to distinguish them.
+
 Keep verification proportional to the changed resources: use structured receipts,
 selected-bank inspection and scoped diffs. Do not recursively hash native profiles,
 session archives or every retained runtime, or read credential files just to prove

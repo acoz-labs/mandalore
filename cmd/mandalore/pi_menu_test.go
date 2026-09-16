@@ -160,7 +160,8 @@ func TestPiMenuReleaseRefusesIdentityMismatchAndKeepsPartialEvidence(t *testing.
 func TestPiMenuInspectionUsesSelectedProfileWithoutCreatingIt(t *testing.T) {
 	dir := t.TempDir()
 	profile := install.Profile{StateDir: dir + "/state", NativeHome: dir + "/pi", NativeBinary: dir + "/pi-cli"}
-	m, out, _ := piMenuFixture(t, "2\n\n\n\n")
+	// Explicitly approve the new default-No native-execution disclosure.
+	m, out, _ := piMenuFixture(t, "2\n\n\n\n2\n")
 	m.piProfile = profile
 	// Resolving Codex earlier must not redirect the Pi journey.
 	m.profile = install.Profile{StateDir: "/synthetic/codex-state", NativeHome: "/synthetic/codex", NativeBinary: "/synthetic/codex-cli"}

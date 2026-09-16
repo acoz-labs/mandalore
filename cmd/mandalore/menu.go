@@ -43,6 +43,7 @@ type menu struct {
 	applySelectedConnection   func(context.Context, install.Plan) (install.Result, error)
 	prepareSelectedPi         func(context.Context, install.PiOptions) (install.PiPlan, error)
 	applySelectedPi           func(context.Context, install.PiPlan) (install.PiResult, error)
+	nativeInspect             func(string, install.Profile) api.Envelope
 }
 
 var errMenuInputLimit = errors.New("answer exceeds 4096 bytes; menu stopped without interpreting remaining input")
@@ -83,7 +84,7 @@ func runMenu(ctx context.Context, args []string, input io.Reader, out io.Writer)
 		m.binary, _ = os.Executable()
 	}
 	m.block(console.Block{Title: "Mandalore", Body: "Memory across time and space. Opening this menu changes nothing. A signet is your private memory bank."})
-	choices := []string{"Signet · Create a new local memory bank", "Signet · Connect an existing local clone", "Signet · Inspect selected memory and sync status", "Signet · Synchronize with its configured remote", "Connection · Connect or update Codex or Pi", "The Armorer · Inspect connection (read-only)", "The Armorer · Repair connection", "Foundlings · Manage historical references", "CLI · Install, update or select a retained runtime", "Exit"}
+	choices := []string{"Signet · Create a new local memory bank", "Signet · Connect an existing local clone", "Signet · Inspect selected memory and sync status", "Signet · Synchronize with its configured remote", "Connection · Connect or update Codex or Pi", "The Armorer · Assess or inspect", "The Armorer · Repair connection", "Foundlings · Manage historical references", "CLI · Install, update or select a retained runtime", "Exit"}
 	for {
 		if m.outputErr != nil {
 			return 1
@@ -105,7 +106,7 @@ func runMenu(ctx context.Context, args []string, input io.Reader, out io.Writer)
 			case 4:
 				err = m.connect()
 			case 5:
-				err = m.doctor()
+				err = m.armorer()
 			case 6:
 				err = m.repair()
 			case 7:
@@ -539,12 +540,7 @@ func (m *menu) doctor() error {
 	if err := m.nativeProfile(); err != nil {
 		return err
 	}
-	v := m.call("connection_doctor", m.profile, false)
-	if !v.OK {
-		return m.outcome("The Armorer", v)
-	}
-	m.report(v.Result.(install.Report))
-	return nil
+	return m.nativeInspection("codex", m.profile)
 }
 
 func (m *menu) repair() error {

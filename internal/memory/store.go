@@ -142,11 +142,8 @@ func Open(root string) (*Store, error) {
 	if err := readJSON(filepath.Join(abs, "signet.json"), &s.Signet); err != nil {
 		return nil, err
 	}
-	if s.Signet.Version != FormatVersion {
-		return nil, errors.New("unsupported signet format")
-	}
-	if !identifier.MatchString(s.Signet.ID) || !textWithin(s.Signet.Name, 256) || strings.ContainsAny(s.Signet.Name, "\r\n") {
-		return nil, errors.New("invalid signet identity")
+	if err := validateSignetMetadata(s.Signet); err != nil {
+		return nil, err
 	}
 	return s, nil
 }
@@ -340,17 +337,14 @@ func (s *Store) readSource(id string, out *Source) error {
 	return s.validateSource(*out)
 }
 func (s *Store) deviceExists(id string) error {
-	if !identifier.MatchString(id) {
-		return errors.New("invalid device ID")
+	if err := ValidateDeviceID(id); err != nil {
+		return err
 	}
 	var d Device
 	if err := readJSON(filepath.Join(s.Root, "provenance/devices", id+".json"), &d); err != nil {
 		return fmt.Errorf("unknown device %s: %w", id, err)
 	}
-	if d.ID != id || d.Version != 1 || strings.TrimSpace(d.Label) == "" {
-		return errors.New("invalid device identity")
-	}
-	return nil
+	return validateDeviceMetadata(d, id)
 }
 
 func memorySchema() (*jsonschema.Schema, error) {

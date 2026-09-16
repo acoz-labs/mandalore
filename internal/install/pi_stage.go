@@ -56,11 +56,15 @@ func piBundle(p PiPlan) (map[string][]byte, PiReceipt, error) {
 }
 
 func loadPiReceipt(root string) (PiReceipt, error) {
-	var r PiReceipt
 	raw, err := readRegular(filepath.Join(root, "receipt.json"), 65536)
 	if err != nil {
-		return r, err
+		return PiReceipt{}, err
 	}
+	return decodePiReceipt(root, raw)
+}
+
+func decodePiReceipt(root string, raw []byte) (PiReceipt, error) {
+	var r PiReceipt
 	if strictjson.Decode(raw, &r, 65536) != nil {
 		return r, errors.New("invalid Pi ownership receipt")
 	}
