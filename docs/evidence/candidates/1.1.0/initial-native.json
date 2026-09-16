@@ -1,0 +1,138 @@
+{
+  "source": "6f9bb5e4d3b79a1c5cf4947b428dcd5b31da0a41",
+  "identity": "mandalore:6f9bb5e4d3b79a1c5cf4947b428dcd5b31da0a41:sha256:431046675befde9e68c0ff30fe3b31f636af18fb41701ce9a2ed4d00487fb120",
+  "runtime": {
+    "arch": "arm64",
+    "codex_hook_protocol": 1,
+    "go_version": "go1.26.4",
+    "name": "mandalore",
+    "os": "darwin",
+    "plugin_sha256": "2a8a47c24a9d7ba8580cac4ad37b6d7796ac94cacfb70c74d81417ee43ffcaa9",
+    "plugin_version": "1.1.0",
+    "protocol_version": 1,
+    "signet_read_versions": [
+      1
+    ],
+    "signet_write_versions": [
+      1
+    ],
+    "source_commit": "6f9bb5e4d3b79a1c5cf4947b428dcd5b31da0a41",
+    "version": "1.1.0"
+  },
+  "pi_package": {
+    "name": "mandalore",
+    "version": "1.1.0",
+    "sha256": "013dcc492565ba180abd59eb50e3a6fbea2cd8ba045ccf067e17d51a050e7fda",
+    "harness_protocol_version": 1,
+    "file_count": 10
+  },
+  "native": {
+    "codex": "codex-cli 0.154.0",
+    "pi": "0.85.1"
+  },
+  "model": "gpt-6-astra",
+  "reasoning": "high",
+  "scenarios": [
+    {
+      "harness": "pi",
+      "case": "recall-a",
+      "answer": "We settled on **Thursday** for Cedar Orbit’s release.",
+      "calls": [
+        "memory_recall"
+      ],
+      "read_only_fixtures_unchanged": true,
+      "presentation": [
+        {
+          "operation": "memory_recall",
+          "text_blocks": 1,
+          "envelope_bytes": 725,
+          "details_keys": [
+            "ok",
+            "operation"
+          ]
+        }
+      ]
+    },
+    {
+      "harness": "pi",
+      "case": "recall-b",
+      "answer": "We settled on **Saturday** for Cedar Orbit’s release.",
+      "calls": [
+        "memory_recall"
+      ],
+      "read_only_fixtures_unchanged": true,
+      "presentation": [
+        {
+          "operation": "memory_recall",
+          "text_blocks": 1,
+          "envelope_bytes": 725,
+          "details_keys": [
+            "ok",
+            "operation"
+          ]
+        }
+      ]
+    },
+    {
+      "harness": "pi",
+      "case": "learn-a",
+      "answer": "Saved and synced: Cedar Orbit’s confirmed release day is now **Friday**, replacing Thursday.",
+      "calls": [
+        "memory_recall",
+        "memory_remember_and_sync"
+      ],
+      "read_only_fixtures_unchanged": false,
+      "presentation": [
+        {
+          "operation": "memory_recall",
+          "text_blocks": 1,
+          "envelope_bytes": 725,
+          "details_keys": [
+            "ok",
+            "operation"
+          ]
+        },
+        {
+          "operation": "memory_remember_and_sync",
+          "text_blocks": 1,
+          "envelope_bytes": 834,
+          "details_keys": [
+            "ok",
+            "operation"
+          ]
+        }
+      ]
+    },
+    {
+      "harness": "codex",
+      "case": "fresh-cross-harness-recall",
+      "answer": "We settled on **Friday** for Cedar Orbit’s release day. Previously, it was **Thursday**.",
+      "calls": [
+        "memory_scopes",
+        "memory_recall",
+        "memory_history"
+      ],
+      "read_only_fixtures_unchanged": true,
+      "model_visible_rendering_attested": false
+    }
+  ],
+  "learning": {
+    "record_id": "record-78a644016304c3228b9f74ef4168672b",
+    "revisions": 2,
+    "supersedes": [
+      "revision-194005575c0bef6f562170f65da3bc14"
+    ],
+    "harness": "pi",
+    "stable_device": true,
+    "local_head": "0a56ae46ef0f8b3c29aec92b4104861a86c9a4c8",
+    "remote_head": "0a56ae46ef0f8b3c29aec92b4104861a86c9a4c8",
+    "delivered": true,
+    "semantic_conflicts": 0
+  },
+  "limitations": [
+    "initial candidate engineering checks only; no human acceptance",
+    "not Codex model-visible duplication evidence",
+    "not lifecycle automatic synchronization",
+    "no other-platform native claim"
+  ]
+}
