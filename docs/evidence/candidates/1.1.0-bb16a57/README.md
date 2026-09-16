@@ -134,6 +134,12 @@ a live same-session model refresh, 18 delivery/cancellation calls and seven
 contention/acknowledgement-boundary calls. Its manifest independently binds
 actual runtime copies, package identities and final local/remote heads.
 
+The [readiness terminal checkpoint](readiness/README.md) adds seven actual retained-
+binary recordings and eleven static cases, including both harnesses, narrow/plain/
+no-color, missing/malformed/unsupported/stale states, default-No, native handoffs,
+EOF/Ctrl+C and terminal restoration. It retains an alias-path diagnostic limitation
+and a controller error separately from the clean canonical-path observations.
+
 This is a partial engineering checkpoint. The full candidate matrix still
 requires additional lifecycle, retrieval-quality, rendering/failure,
 quota/readiness UI and isolated published-1.0.0-to-candidate update/recovery

@@ -1,0 +1,118 @@
+{
+  "source": "bb16a57eb16dcd5e3da1386d6eb72c64169be6b5",
+  "identity": "mandalore:bb16a57eb16dcd5e3da1386d6eb72c64169be6b5:sha256:ab4af42cee70495b66f4a64b3d754dc0e83d50c789ac1d8b6c4a419e7ffcb986",
+  "runtime_sha256": "0679b27eaefddb842ec54e03d966dc8369b39c63842bd7ddd74e2f058505c37e",
+  "platform": "darwin/arm64",
+  "terminal": "Herdr",
+  "locale": "English",
+  "recordings": [
+    {
+      "file": "codex-color.recording",
+      "sha256": "7f1c4f23d2de4904e7d51ff8904bf981815515cdc09a9664097fa5e11d5df73a",
+      "bytes": 50518,
+      "columns": 80,
+      "rows": 32,
+      "no_color": false,
+      "plain": false,
+      "scenario": "retained alias-path/driver-error observation",
+      "terminal_modes_restored": true,
+      "application_exit": 0
+    },
+    {
+      "file": "codex-canonical.recording",
+      "sha256": "a1c04f3a1003a6113fa9a7a9c7d9cb4c4631418bce583484945bf6341a8e9b51",
+      "bytes": 33259,
+      "columns": 80,
+      "rows": 32,
+      "no_color": false,
+      "plain": false,
+      "scenario": "configured Codex, details/prompt/default-No/native Yes, Escape/Back",
+      "terminal_modes_restored": true,
+      "application_exit": 0
+    },
+    {
+      "file": "pi-plain.recording",
+      "sha256": "bcbb6ffc11d9121363c697c4329483ed0a0432af988b7e5a372a423979105144",
+      "bytes": 27797,
+      "columns": 32,
+      "rows": 32,
+      "no_color": true,
+      "plain": true,
+      "scenario": "configured Pi, numbered plain/no-color, details/prompt/default-No/native Yes",
+      "terminal_modes_restored": true,
+      "application_exit": 0
+    },
+    {
+      "file": "missing-narrow.recording",
+      "sha256": "f48e9195e4beccb73807157ff6283d80a2101cfce4d0cafb2900959d67a6ea74",
+      "bytes": 7685,
+      "columns": 32,
+      "rows": 32,
+      "no_color": true,
+      "plain": false,
+      "scenario": "missing selection, Vim/arrows/default-No, Ctrl+C",
+      "terminal_modes_restored": true,
+      "application_exit": 0
+    },
+    {
+      "file": "malformed-eof.recording",
+      "sha256": "3fe46b5f205ed08fad4d2c777d2d6b2412252769639ecbe3110175463534b543",
+      "bytes": 4866,
+      "columns": 80,
+      "rows": 32,
+      "no_color": true,
+      "plain": true,
+      "scenario": "malformed binding, sanitized follow-up, plain EOF",
+      "terminal_modes_restored": true,
+      "application_exit": 0
+    },
+    {
+      "file": "unsupported.recording",
+      "sha256": "c26ccb51c535c9ef8f53557269ac02c4f5448ed9edfe1b1a0bbe82f4b9ed1ee1",
+      "bytes": 10488,
+      "columns": 80,
+      "rows": 32,
+      "no_color": false,
+      "plain": false,
+      "scenario": "known foreign retained runtime, unsupported guidance, Ctrl+C",
+      "terminal_modes_restored": true,
+      "application_exit": 0
+    },
+    {
+      "file": "stale-native.recording",
+      "sha256": "2604374ce56ed9331b3e615edeb5e8d77ee31680640775f0f949d97a64ba1132",
+      "bytes": 11779,
+      "columns": 80,
+      "rows": 32,
+      "no_color": true,
+      "plain": false,
+      "scenario": "changed native fingerprint, partial static report, explicit native failure, Ctrl+C",
+      "terminal_modes_restored": true,
+      "application_exit": 1
+    }
+  ],
+  "static_cases": 11,
+  "static_full_inventories_unchanged": true,
+  "aggregate_controlled_effects": {
+    "fixture_author_changed_codex_wrapper": true,
+    "native_inspections_changed_only_directory_mtimes": [
+      "codex-profile/tmp/arg0",
+      "pi-profile"
+    ],
+    "other_inventory_unchanged": true,
+    "node_trap_absent": true,
+    "missing_paths_absent": true
+  },
+  "findings": [
+    "Aliased /tmp binding is refused as metadata-unsafe; canonical paths pass. Retain as diagnostic-usability observation, not silent path repair.",
+    "First alias-path recording includes invalid controller Home-key attempt and unintended menu input; no fixture changes occurred. It is not a clean configured pass.",
+    "Pi native inspection outlived the first immediate screen read; the same process completed, with no restart or repeated command."
+  ],
+  "limitations": [
+    "Contributor terminal judgment, not human product acceptance",
+    "No screen-reader, alternate font/locale or other-platform native coverage",
+    "Recordings retain only owned synthetic temporary paths; no real user/profile paths or credentials",
+    "No approved pixel baseline",
+    "Static observations are not native authentication/live context/network freshness"
+  ]
+}

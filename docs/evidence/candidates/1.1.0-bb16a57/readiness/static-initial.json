@@ -1,0 +1,694 @@
+{
+  "source": "bb16a57eb16dcd5e3da1386d6eb72c64169be6b5",
+  "runtime_sha256": "0679b27eaefddb842ec54e03d966dc8369b39c63842bd7ddd74e2f058505c37e",
+  "cases": [
+    {
+      "case": "configured-codex",
+      "complete": true,
+      "components": [
+        {
+          "id": "memory-runtime",
+          "support": "supported",
+          "setup": "present",
+          "evidence": "historical",
+          "code": "on-disk-bytes-measured",
+          "complete": true
+        },
+        {
+          "id": "git-sync",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "dependency-present-version-untested",
+          "complete": true
+        },
+        {
+          "id": "codex",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "historical",
+          "code": "on-disk-bytes-measured",
+          "complete": true
+        },
+        {
+          "id": "native-profile",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "directory-present",
+          "complete": true
+        },
+        {
+          "id": "installation-state",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "directory-present",
+          "complete": true
+        },
+        {
+          "id": "binding",
+          "support": "unknown",
+          "setup": "verified-static",
+          "evidence": "none",
+          "code": "binding-metadata-consistent",
+          "complete": true
+        },
+        {
+          "id": "retained-runtime",
+          "support": "unknown",
+          "setup": "verified-static",
+          "evidence": "historical",
+          "code": "retained-runtime-and-selection-consistent",
+          "complete": true
+        }
+      ],
+      "next_action": {
+        "code": "verify-native",
+        "summary": "If desired, explicitly run native checks; they may execute the selected program and create native logs or cache files."
+      },
+      "prompt": "Help me assess Mandalore's codex memory connection. The fixed observations completed; this does not establish overall readiness. If desired, explicitly run native checks; they may execute the selected program and create native logs or cache files. Confirm the intended harness and signet binding with me, then recheck current state. Treat this as an assessment-time snapshot, not permission to install, repair, access credentials, synchronize or change configuration. Use current task authorization for any follow-up. Historical artifact/scenario evidence does not prove this live session works; unknown evidence alone is not a reason to repair or upgrade. Keep ordinary learning behavior unchanged.",
+      "full_inventory_unchanged": true
+    },
+    {
+      "case": "unselected-codex",
+      "complete": true,
+      "components": [
+        {
+          "id": "memory-runtime",
+          "support": "supported",
+          "setup": "present",
+          "evidence": "historical",
+          "code": "on-disk-bytes-measured",
+          "complete": true
+        },
+        {
+          "id": "git-sync",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "dependency-present-version-untested",
+          "complete": true
+        },
+        {
+          "id": "codex",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "historical",
+          "code": "on-disk-bytes-measured",
+          "complete": true
+        },
+        {
+          "id": "native-profile",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "directory-present",
+          "complete": true
+        },
+        {
+          "id": "installation-state",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "directory-present",
+          "complete": true
+        },
+        {
+          "id": "binding",
+          "support": "unknown",
+          "setup": "verified-static",
+          "evidence": "none",
+          "code": "binding-metadata-consistent",
+          "complete": true
+        }
+      ],
+      "next_action": {
+        "code": "verify-native",
+        "summary": "If desired, explicitly run native checks; they may execute the selected program and create native logs or cache files."
+      },
+      "prompt": "Help me assess Mandalore's codex memory connection. The fixed observations completed; this does not establish overall readiness. If desired, explicitly run native checks; they may execute the selected program and create native logs or cache files. Confirm the intended harness and signet binding with me, then recheck current state. Treat this as an assessment-time snapshot, not permission to install, repair, access credentials, synchronize or change configuration. Use current task authorization for any follow-up. Historical artifact/scenario evidence does not prove this live session works; unknown evidence alone is not a reason to repair or upgrade. Keep ordinary learning behavior unchanged.",
+      "full_inventory_unchanged": true
+    },
+    {
+      "case": "missing-codex",
+      "complete": true,
+      "components": [
+        {
+          "id": "memory-runtime",
+          "support": "supported",
+          "setup": "present",
+          "evidence": "historical",
+          "code": "on-disk-bytes-measured",
+          "complete": true
+        },
+        {
+          "id": "git-sync",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "dependency-present-version-untested",
+          "complete": true
+        },
+        {
+          "id": "codex",
+          "support": "unknown",
+          "setup": "missing",
+          "evidence": "historical",
+          "code": "executable-missing",
+          "complete": true
+        },
+        {
+          "id": "native-profile",
+          "support": "unknown",
+          "setup": "missing",
+          "evidence": "none",
+          "code": "directory-missing",
+          "complete": true
+        },
+        {
+          "id": "installation-state",
+          "support": "unknown",
+          "setup": "missing",
+          "evidence": "none",
+          "code": "directory-missing",
+          "complete": true
+        },
+        {
+          "id": "binding",
+          "support": "unknown",
+          "setup": "missing",
+          "evidence": "none",
+          "code": "binding-missing",
+          "complete": true
+        }
+      ],
+      "next_action": {
+        "code": "select-dependencies",
+        "summary": "Select or configure the missing dependencies in a separately authorized task."
+      },
+      "prompt": "Help me assess Mandalore's codex memory connection. The fixed observations completed; this does not establish overall readiness. Select or configure the missing dependencies in a separately authorized task. Confirm the intended harness and signet binding with me, then recheck current state. Treat this as an assessment-time snapshot, not permission to install, repair, access credentials, synchronize or change configuration. Use current task authorization for any follow-up. Historical artifact/scenario evidence does not prove this live session works; unknown evidence alone is not a reason to repair or upgrade. Keep ordinary learning behavior unchanged.",
+      "full_inventory_unchanged": true
+    },
+    {
+      "case": "malformed-codex",
+      "complete": false,
+      "components": [
+        {
+          "id": "memory-runtime",
+          "support": "supported",
+          "setup": "present",
+          "evidence": "historical",
+          "code": "on-disk-bytes-measured",
+          "complete": true
+        },
+        {
+          "id": "git-sync",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "dependency-present-version-untested",
+          "complete": true
+        },
+        {
+          "id": "codex",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "historical",
+          "code": "on-disk-bytes-measured",
+          "complete": true
+        },
+        {
+          "id": "native-profile",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "directory-present",
+          "complete": true
+        },
+        {
+          "id": "installation-state",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "directory-present",
+          "complete": true
+        },
+        {
+          "id": "binding",
+          "support": "unknown",
+          "setup": "inconsistent",
+          "evidence": "none",
+          "code": "binding-invalid",
+          "complete": false
+        },
+        {
+          "id": "retained-runtime",
+          "support": "unknown",
+          "setup": "inconsistent",
+          "evidence": "none",
+          "code": "retained-receipt-or-selection-invalid",
+          "complete": false
+        }
+      ],
+      "next_action": {
+        "code": "inspect-selection",
+        "summary": "Inspect the selected paths and incomplete findings before considering changes."
+      },
+      "prompt": "Help me assess Mandalore's codex memory connection. Some observations were incomplete. Inspect the selected paths and incomplete findings before considering changes. Confirm the intended harness and signet binding with me, then recheck current state. Treat this as an assessment-time snapshot, not permission to install, repair, access credentials, synchronize or change configuration. Use current task authorization for any follow-up. Historical artifact/scenario evidence does not prove this live session works; unknown evidence alone is not a reason to repair or upgrade. Keep ordinary learning behavior unchanged.",
+      "full_inventory_unchanged": true
+    },
+    {
+      "case": "configured-pi",
+      "complete": true,
+      "components": [
+        {
+          "id": "memory-runtime",
+          "support": "supported",
+          "setup": "present",
+          "evidence": "historical",
+          "code": "on-disk-bytes-measured",
+          "complete": true
+        },
+        {
+          "id": "git-sync",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "dependency-present-version-untested",
+          "complete": true
+        },
+        {
+          "id": "pi",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "historical",
+          "code": "on-disk-bytes-measured",
+          "complete": true
+        },
+        {
+          "id": "node",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "dependency-present-version-untested",
+          "complete": true
+        },
+        {
+          "id": "native-profile",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "directory-present",
+          "complete": true
+        },
+        {
+          "id": "installation-state",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "directory-present",
+          "complete": true
+        },
+        {
+          "id": "binding",
+          "support": "unknown",
+          "setup": "verified-static",
+          "evidence": "none",
+          "code": "binding-metadata-consistent",
+          "complete": true
+        },
+        {
+          "id": "retained-runtime",
+          "support": "unknown",
+          "setup": "verified-static",
+          "evidence": "historical",
+          "code": "retained-runtime-and-selection-consistent",
+          "complete": true
+        }
+      ],
+      "next_action": {
+        "code": "verify-native",
+        "summary": "If desired, explicitly run native checks; they may execute the selected program and create native logs or cache files."
+      },
+      "prompt": "Help me assess Mandalore's pi memory connection. The fixed observations completed; this does not establish overall readiness. If desired, explicitly run native checks; they may execute the selected program and create native logs or cache files. Confirm the intended harness and signet binding with me, then recheck current state. Treat this as an assessment-time snapshot, not permission to install, repair, access credentials, synchronize or change configuration. Use current task authorization for any follow-up. Historical artifact/scenario evidence does not prove this live session works; unknown evidence alone is not a reason to repair or upgrade. Keep ordinary learning behavior unchanged.",
+      "full_inventory_unchanged": true
+    },
+    {
+      "case": "unselected-pi",
+      "complete": true,
+      "components": [
+        {
+          "id": "memory-runtime",
+          "support": "supported",
+          "setup": "present",
+          "evidence": "historical",
+          "code": "on-disk-bytes-measured",
+          "complete": true
+        },
+        {
+          "id": "git-sync",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "dependency-present-version-untested",
+          "complete": true
+        },
+        {
+          "id": "pi",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "historical",
+          "code": "on-disk-bytes-measured",
+          "complete": true
+        },
+        {
+          "id": "node",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "dependency-present-version-untested",
+          "complete": true
+        },
+        {
+          "id": "native-profile",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "directory-present",
+          "complete": true
+        },
+        {
+          "id": "installation-state",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "directory-present",
+          "complete": true
+        },
+        {
+          "id": "binding",
+          "support": "unknown",
+          "setup": "verified-static",
+          "evidence": "none",
+          "code": "binding-metadata-consistent",
+          "complete": true
+        }
+      ],
+      "next_action": {
+        "code": "verify-native",
+        "summary": "If desired, explicitly run native checks; they may execute the selected program and create native logs or cache files."
+      },
+      "prompt": "Help me assess Mandalore's pi memory connection. The fixed observations completed; this does not establish overall readiness. If desired, explicitly run native checks; they may execute the selected program and create native logs or cache files. Confirm the intended harness and signet binding with me, then recheck current state. Treat this as an assessment-time snapshot, not permission to install, repair, access credentials, synchronize or change configuration. Use current task authorization for any follow-up. Historical artifact/scenario evidence does not prove this live session works; unknown evidence alone is not a reason to repair or upgrade. Keep ordinary learning behavior unchanged.",
+      "full_inventory_unchanged": true
+    },
+    {
+      "case": "missing-pi",
+      "complete": true,
+      "components": [
+        {
+          "id": "memory-runtime",
+          "support": "supported",
+          "setup": "present",
+          "evidence": "historical",
+          "code": "on-disk-bytes-measured",
+          "complete": true
+        },
+        {
+          "id": "git-sync",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "dependency-present-version-untested",
+          "complete": true
+        },
+        {
+          "id": "pi",
+          "support": "unknown",
+          "setup": "missing",
+          "evidence": "historical",
+          "code": "executable-missing",
+          "complete": true
+        },
+        {
+          "id": "node",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "dependency-present-version-untested",
+          "complete": true
+        },
+        {
+          "id": "native-profile",
+          "support": "unknown",
+          "setup": "missing",
+          "evidence": "none",
+          "code": "directory-missing",
+          "complete": true
+        },
+        {
+          "id": "installation-state",
+          "support": "unknown",
+          "setup": "missing",
+          "evidence": "none",
+          "code": "directory-missing",
+          "complete": true
+        },
+        {
+          "id": "binding",
+          "support": "unknown",
+          "setup": "missing",
+          "evidence": "none",
+          "code": "binding-missing",
+          "complete": true
+        }
+      ],
+      "next_action": {
+        "code": "select-dependencies",
+        "summary": "Select or configure the missing dependencies in a separately authorized task."
+      },
+      "prompt": "Help me assess Mandalore's pi memory connection. The fixed observations completed; this does not establish overall readiness. Select or configure the missing dependencies in a separately authorized task. Confirm the intended harness and signet binding with me, then recheck current state. Treat this as an assessment-time snapshot, not permission to install, repair, access credentials, synchronize or change configuration. Use current task authorization for any follow-up. Historical artifact/scenario evidence does not prove this live session works; unknown evidence alone is not a reason to repair or upgrade. Keep ordinary learning behavior unchanged.",
+      "full_inventory_unchanged": true
+    },
+    {
+      "case": "malformed-pi",
+      "complete": false,
+      "components": [
+        {
+          "id": "memory-runtime",
+          "support": "supported",
+          "setup": "present",
+          "evidence": "historical",
+          "code": "on-disk-bytes-measured",
+          "complete": true
+        },
+        {
+          "id": "git-sync",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "dependency-present-version-untested",
+          "complete": true
+        },
+        {
+          "id": "pi",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "historical",
+          "code": "on-disk-bytes-measured",
+          "complete": true
+        },
+        {
+          "id": "node",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "dependency-present-version-untested",
+          "complete": true
+        },
+        {
+          "id": "native-profile",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "directory-present",
+          "complete": true
+        },
+        {
+          "id": "installation-state",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "directory-present",
+          "complete": true
+        },
+        {
+          "id": "binding",
+          "support": "unknown",
+          "setup": "inconsistent",
+          "evidence": "none",
+          "code": "binding-invalid",
+          "complete": false
+        },
+        {
+          "id": "retained-runtime",
+          "support": "unknown",
+          "setup": "inconsistent",
+          "evidence": "none",
+          "code": "retained-receipt-or-selection-invalid",
+          "complete": false
+        }
+      ],
+      "next_action": {
+        "code": "inspect-selection",
+        "summary": "Inspect the selected paths and incomplete findings before considering changes."
+      },
+      "prompt": "Help me assess Mandalore's pi memory connection. Some observations were incomplete. Inspect the selected paths and incomplete findings before considering changes. Confirm the intended harness and signet binding with me, then recheck current state. Treat this as an assessment-time snapshot, not permission to install, repair, access credentials, synchronize or change configuration. Use current task authorization for any follow-up. Historical artifact/scenario evidence does not prove this live session works; unknown evidence alone is not a reason to repair or upgrade. Keep ordinary learning behavior unchanged.",
+      "full_inventory_unchanged": true
+    },
+    {
+      "case": "unsupported-codex",
+      "complete": true,
+      "components": [
+        {
+          "id": "memory-runtime",
+          "support": "supported",
+          "setup": "present",
+          "evidence": "historical",
+          "code": "on-disk-bytes-measured",
+          "complete": true
+        },
+        {
+          "id": "git-sync",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "dependency-present-version-untested",
+          "complete": true
+        },
+        {
+          "id": "codex",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "historical",
+          "code": "on-disk-bytes-measured",
+          "complete": true
+        },
+        {
+          "id": "native-profile",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "directory-present",
+          "complete": true
+        },
+        {
+          "id": "installation-state",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "directory-present",
+          "complete": true
+        },
+        {
+          "id": "binding",
+          "support": "unknown",
+          "setup": "verified-static",
+          "evidence": "none",
+          "code": "binding-metadata-consistent",
+          "complete": true
+        },
+        {
+          "id": "retained-runtime",
+          "support": "unsupported",
+          "setup": "verified-static",
+          "evidence": "historical",
+          "code": "retained-runtime-and-selection-consistent",
+          "complete": true
+        }
+      ],
+      "next_action": {
+        "code": "review-support",
+        "summary": "Review the unsupported target or artifact selection; do not assume an upgrade is required."
+      },
+      "prompt": "Help me assess Mandalore's codex memory connection. The fixed observations completed; this does not establish overall readiness. Review the unsupported target or artifact selection; do not assume an upgrade is required. Confirm the intended harness and signet binding with me, then recheck current state. Treat this as an assessment-time snapshot, not permission to install, repair, access credentials, synchronize or change configuration. Use current task authorization for any follow-up. Historical artifact/scenario evidence does not prove this live session works; unknown evidence alone is not a reason to repair or upgrade. Keep ordinary learning behavior unchanged.",
+      "full_inventory_unchanged": true
+    },
+    {
+      "case": "aliased-binding-codex",
+      "complete": false,
+      "components": [
+        {
+          "id": "memory-runtime",
+          "support": "supported",
+          "setup": "present",
+          "evidence": "historical",
+          "code": "on-disk-bytes-measured",
+          "complete": true
+        },
+        {
+          "id": "git-sync",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "dependency-present-version-untested",
+          "complete": true
+        },
+        {
+          "id": "codex",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "historical",
+          "code": "on-disk-bytes-measured",
+          "complete": true
+        },
+        {
+          "id": "native-profile",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "directory-present",
+          "complete": true
+        },
+        {
+          "id": "installation-state",
+          "support": "unknown",
+          "setup": "present",
+          "evidence": "none",
+          "code": "directory-present",
+          "complete": true
+        },
+        {
+          "id": "binding",
+          "support": "unknown",
+          "setup": "inconsistent",
+          "evidence": "none",
+          "code": "metadata-unsafe",
+          "complete": false
+        },
+        {
+          "id": "retained-runtime",
+          "support": "unknown",
+          "setup": "inconsistent",
+          "evidence": "none",
+          "code": "retained-receipt-or-selection-invalid",
+          "complete": false
+        }
+      ],
+      "next_action": {
+        "code": "inspect-selection",
+        "summary": "Inspect the selected paths and incomplete findings before considering changes."
+      },
+      "prompt": "Help me assess Mandalore's codex memory connection. Some observations were incomplete. Inspect the selected paths and incomplete findings before considering changes. Confirm the intended harness and signet binding with me, then recheck current state. Treat this as an assessment-time snapshot, not permission to install, repair, access credentials, synchronize or change configuration. Use current task authorization for any follow-up. Historical artifact/scenario evidence does not prove this live session works; unknown evidence alone is not a reason to repair or upgrade. Keep ordinary learning behavior unchanged.",
+      "full_inventory_unchanged": true
+    }
+  ],
+  "native_or_dependency_execution_observed": false,
+  "node_trap_absent": true,
+  "missing_paths_remain_absent": true,
+  "limitations": [
+    "static metadata checks, not native login or live memory behavior",
+    "no system-wide network isolation claim",
+    "known foreign 1.0.0 Linux bytes are a classification fixture only and were never executed"
+  ]
+}
