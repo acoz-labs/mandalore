@@ -172,6 +172,25 @@ The two skill validators and Codex plugin validator pass in an isolated PyYAML
 connection is changed by this source update. Focused race tests pass; full and
 hosted validation for the committed slice is recorded in PR #87.
 
+## Committed-build narrow-layout finding
+
+The first committed menu build, source
+`b757751886fc3e19a0bb4edeab6b8ead98d6fb29`, passed local full CI and
+[hosted CI](https://github.com/acoz-labs/mandalore/actions/runs/35053701426).
+Its 32-column no-color/plain preview exposed status words split across lines
+in the compact component rows (`pr` / `esent`). A failing-first regression
+reproduced that output at 31 usable columns. The report now stacks Support,
+Setup and Evidence fields below 60 usable columns, retaining compact rows at
+normal widths. The regression verifies intact status words in both layouts.
+Rendered retesting and final-head evidence binding remain required.
+
+The plain-mode EOF fixture's initial exact `stty -g` comparison also flagged a
+terminal difference. Investigation found only Darwin's `PENDIN` bit changed
+(`0x20000000`, retype-pending-input state); canonical input, echo, signals and
+all control characters were unchanged. The fixture comparison now excludes
+only that transient bit and discloses the exclusion. This is a test-harness
+correction, not a product terminal-mode change.
+
 ## Limits
 
 - Reads can affect OS access-time/cache bookkeeping; no product state is written.

@@ -151,3 +151,22 @@ func TestAssessmentNativeFailurePreservesSnapshotAndDoesNotRetry(t *testing.T) {
 		t.Fatal("native result rewrote earlier assessment")
 	}
 }
+
+func TestAssessmentComponentLayoutKeepsNarrowStatusWordsIntact(t *testing.T) {
+	components := []readiness.Component{{ID: "memory-runtime", Support: "supported", Setup: "verified-static", Evidence: "historical"}, {ID: "pi", Support: "unknown", Setup: "present", Evidence: "none"}}
+	for _, width := range []int{31, 79} {
+		blocks := assessmentComponentBlocks(components, width)
+		var rendered strings.Builder
+		for _, block := range blocks {
+			rendered.WriteString(console.RenderBlock(block, console.Theme{}, width))
+		}
+		for _, value := range []string{"supported", "verified-static", "historical", "unknown", "present", "none"} {
+			if !strings.Contains(rendered.String(), value) {
+				t.Fatal("status split across narrow lines", width, value, rendered.String())
+			}
+		}
+		if width == 79 && len(blocks) != 1 || width == 31 && len(blocks) != len(components)+1 {
+			t.Fatal("component layout did not adapt to width", width, blocks)
+		}
+	}
+}

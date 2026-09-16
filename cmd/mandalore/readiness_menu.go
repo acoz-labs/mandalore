@@ -144,12 +144,22 @@ func (m *menu) assessmentSummary(r readiness.Report) {
 	}
 	m.block(console.Block{Title: "The Armorer · Machine readiness", Body: body})
 	m.block(console.Block{Title: "Next step", Body: r.NextAction.Summary})
-	fields := []console.Field{}
-	for _, c := range r.Components {
-		fields = append(fields, console.Field{Label: componentLabel(c.ID), Value: "Support: " + c.Support + "; Setup: " + c.Setup + "; Evidence: " + c.Evidence})
+	for _, block := range assessmentComponentBlocks(r.Components, console.ReportWidth(m.out)) {
+		m.block(block)
 	}
-	m.block(console.Block{Title: "Observed components", Body: "Evidence is scenario-specific; historical does not mean broken. Details explains scope and limitations.", Fields: fields})
 	m.block(console.Block{Title: "Still untested", Body: strings.Join(r.Untested, "; ")})
+}
+
+func assessmentComponentBlocks(components []readiness.Component, width int) []console.Block {
+	blocks := []console.Block{{Title: "Observed components", Body: "Evidence is scenario-specific; historical does not mean broken. Details explains scope and limitations."}}
+	for _, c := range components {
+		if width < 60 {
+			blocks = append(blocks, console.Block{Title: componentLabel(c.ID), Fields: []console.Field{{Label: "Support", Value: c.Support}, {Label: "Setup", Value: c.Setup}, {Label: "Evidence", Value: c.Evidence}}})
+		} else {
+			blocks[0].Fields = append(blocks[0].Fields, console.Field{Label: componentLabel(c.ID), Value: "Support: " + c.Support + "; Setup: " + c.Setup + "; Evidence: " + c.Evidence})
+		}
+	}
+	return blocks
 }
 
 func (m *menu) assessmentReport(r readiness.Report) error {
