@@ -15,12 +15,12 @@ hooks and memory/administration skills, guided setup/local-artifact update/inspe
 memory-only migration, foundling consultation/selective promotion, retrieval
 evaluation and synthetic regression tests. Versioned candidate builds, guided
 CLI installation/update and guarded same-byte release tooling are implemented.
-[Mandalore v1.0.0](https://github.com/acoz-labs/mandalore/releases/tag/v1.0.0)
+[Mandalore v1.1.0](https://github.com/acoz-labs/mandalore/releases/tag/v1.1.0)
 is published from the exact owner-accepted retained candidate. See the
-[release record](docs/releases/1.0.0.md) for provenance, verification and limits.
+[release record](docs/releases/1.1.0.md) for provenance, verification and limits.
 
-Codex is the first integration. Pi follows accepted Codex support, then Claude
-Code follows Pi. Prior prototype evidence informs the port; it does not certify
+Codex and Pi integrations are available. Claude Code remains tracked follow-up
+work. Prior prototype evidence informs the port; it does not certify
 newly extracted code or renamed artifacts.
 
 ## A small vocabulary
@@ -58,6 +58,7 @@ portability is not included.
 - [Privacy, retention and the limits of forgetting](docs/privacy.md)
 - [Guided setup and CLI installation](docs/setup.md) and [historical foundlings](docs/foundlings.md)
 - [Codex plugin](plugins/codex/README.md) and [native engineering evidence](docs/codex-native-evidence.md)
+- [Pi plugin](plugins/pi/README.md) and [Pi engineering evidence](docs/evidence/pi/README.md)
 - [Migration and predecessor disposition](docs/migration.md)
 - [Roadmap](docs/roadmap.md) and [issues](https://github.com/acoz-labs/mandalore/issues)
 - [Development](docs/development.md), [releases](docs/deployment.md), [runbook](docs/runbook.md)
@@ -74,31 +75,31 @@ independent acceptance. See [SDLC](docs/operations/sdlc.md).
 Download the bootstrap from the versioned release, inspect it, then run it:
 
 ```sh
-curl -fL -o mandalore-install.sh https://github.com/acoz-labs/mandalore/releases/download/v1.0.0/install.sh
+curl -fL -o mandalore-install.sh https://github.com/acoz-labs/mandalore/releases/download/v1.1.0/install.sh
 less mandalore-install.sh
-sh mandalore-install.sh 1.0.0
+sh mandalore-install.sh 1.1.0
 ```
 
 The bootstrap requires curl 8.4+ and `shasum` or `sha256sum`. It checks the platform
 binary against the official release checksums, then opens a default-No installation
 preview. This trusts the official release, not an independent signing authority.
 Choose a user-owned prefix; the installer prints the full launcher path and does
-not edit PATH. Run that launcher with `menu` for signet setup and Codex connection.
+not edit PATH. Run that launcher with `menu` for signet setup and Codex or Pi connection.
 CLI installation and a native connection are separately confirmed. No credential,
 shell change, old-memory import or migration is implicit.
 
 Public release discovery uses GitHub's anonymous API quota. If it is exhausted,
 wait before explicitly retrying; the CLI does not borrow your GitHub credentials.
-Current-source builds offer [bounded quota guidance](docs/interface.md#read-only-release-inspection)
-when GitHub supplies usable timing; the published v1.0.0 retains its generic error.
-See the [release record](docs/releases/1.0.0.md) for the verified manual-download
+Version 1.1.0 offers [bounded quota guidance](docs/interface.md#read-only-release-inspection)
+when GitHub supplies usable timing; the historical v1.0.0 retains its generic error.
+See the [release record](docs/releases/1.1.0.md) for the manual-download
 alternative and the distinction between published and local-candidate installation.
 
 For prerelease evaluation, use a reviewed local candidate from the
 [pinned builder](docs/development.md#local-distribution-candidates), then run its
 platform executable with `release install --candidate /absolute/candidate-dir`.
 The installer previews its destination and defaults to No. CLI installation and
-connecting a chosen signet to Codex require separate confirmation; no shell,
+connecting a chosen signet to Codex or Pi require separate confirmation; no shell,
 credential or memory migration is implicit.
 
 Independent community project; not affiliated with or endorsed by Lucasfilm or
