@@ -1,0 +1,19 @@
+{
+  "runtime_sha256": "09827de1c1340284dbc5506f2c0db41f8cbd66d9231e3e5dbd9d93ea01fc2429",
+  "evidence": [
+    {
+      "scenario": "failure",
+      "exit": 1,
+      "original_sha256": "25bee9ee38f8f2f4b477e895ac23f9ddee35f680303ad38e54d56cbe519416a5",
+      "sanitized_sha256": "ed1eecfec26d8bdd7d816f53b8acfa504c60092f6415a19471ad31abe66a87a7"
+    },
+    {
+      "scenario": "success",
+      "exit": 0,
+      "original_sha256": "561ede9393e233600c0b49ab45068d5eda62312a7bbc464a7a19558596e46101",
+      "sanitized_sha256": "51e22e14e4ce62918d670d2a0e7105295e32fa9e76a760b8760e34d75166f280"
+    }
+  ],
+  "capture": "Actual plain-mode subprocess output; paths replaced with synthetic labels. No generated screenshots.",
+  "limits": "Keyboard plain-mode flow and diagnostic text only; no screen-reader, color, font, locale or pixel-regression claim."
+}

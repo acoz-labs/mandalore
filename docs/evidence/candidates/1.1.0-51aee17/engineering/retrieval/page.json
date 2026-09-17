@@ -1,0 +1,238 @@
+{
+  "case": "page",
+  "completed": true,
+  "readonly_inventories_unchanged": true,
+  "runtime_sha256": "09827de1c1340284dbc5506f2c0db41f8cbd66d9231e3e5dbd9d93ea01fc2429",
+  "skill_sha256": "0a3777925dfbba691e4a33235f8bba32522fe77d57625fdb5a5812c7aaeeb386",
+  "reference_sha256": "ceeaa37fe122f1100963f5491b963ea9737395f6d14148de156a22796277480e",
+  "elapsed_seconds": 45.037,
+  "prompt_sha256": "b5988b1da45684eb4e04160c5f06c899d69cbe869b0aa7b274fb9a118318e9a7",
+  "reference_pin": {
+    "algorithm": "sha256",
+    "value": "297ceba565cde4bfa2aa9058bbfd96a8f79daa33529d62c6463ae867cdbf2141"
+  },
+  "tools": [
+    "foundling_list",
+    "foundling_inspect",
+    "foundling_search",
+    "foundling_search"
+  ],
+  "readonly_operations_only": true,
+  "no_direct_source_filesystem_commands": true,
+  "provenance_and_source_bytes_verified": true,
+  "errors": [],
+  "searches": [
+    {
+      "query": "PaginationMarker",
+      "requested_offset": 0,
+      "requested_limit": null,
+      "requested_budget": null,
+      "returned": 3,
+      "matching_count": 12,
+      "truncated": true,
+      "next_offset": 3
+    },
+    {
+      "query": "PaginationMarker",
+      "requested_offset": 3,
+      "requested_limit": 10,
+      "requested_budget": 32768,
+      "returned": 9,
+      "matching_count": 12,
+      "truncated": true,
+      "next_offset": null
+    }
+  ],
+  "coverage": {
+    "text_bytes": 1432,
+    "unique_bytes": 1432,
+    "duplicate_bytes": 0,
+    "empty_eof_reads": 0,
+    "documents": [
+      {
+        "name": "page-00.md",
+        "total": 122,
+        "sha256": "3107f2e593eb9f1c32b3539e112b72075cbc9eeeae527f9a6dafc345d155b0c4",
+        "ranges": [
+          [
+            0,
+            122
+          ]
+        ],
+        "covered": 122,
+        "complete": true
+      },
+      {
+        "name": "page-01.md",
+        "total": 122,
+        "sha256": "5fee284573356e78a91888a3f417d66ee8993bf8a5eca4b18f88caba70665ba1",
+        "ranges": [
+          [
+            0,
+            122
+          ]
+        ],
+        "covered": 122,
+        "complete": true
+      },
+      {
+        "name": "page-02.md",
+        "total": 122,
+        "sha256": "e6870ad54a769ff7de7dd16b70ab0556c9ff7c28e80ea0dc554eb45da03bb2a4",
+        "ranges": [
+          [
+            0,
+            122
+          ]
+        ],
+        "covered": 122,
+        "complete": true
+      },
+      {
+        "name": "page-03.md",
+        "total": 122,
+        "sha256": "40a1f64d979cdad0d0024b49f0ee1ce10d9f97111b40d6a24fa6a50c0236b696",
+        "ranges": [
+          [
+            0,
+            122
+          ]
+        ],
+        "covered": 122,
+        "complete": true
+      },
+      {
+        "name": "page-04.md",
+        "total": 122,
+        "sha256": "6febc2254216ab2e1005e821af0c4e62c03a835670dff286ee04072faca23cbc",
+        "ranges": [
+          [
+            0,
+            122
+          ]
+        ],
+        "covered": 122,
+        "complete": true
+      },
+      {
+        "name": "page-05.md",
+        "total": 122,
+        "sha256": "08c6aed6b36c237f5d91f695ecfff3c9f1b2e2b2e27c5bc6974c6783410bb00f",
+        "ranges": [
+          [
+            0,
+            122
+          ]
+        ],
+        "covered": 122,
+        "complete": true
+      },
+      {
+        "name": "page-06.md",
+        "total": 122,
+        "sha256": "1354ae95c31ee6fc1b10d043b60c26db18d4e95aff6ee1ed0fe2657a45d5a6be",
+        "ranges": [
+          [
+            0,
+            122
+          ]
+        ],
+        "covered": 122,
+        "complete": true
+      },
+      {
+        "name": "page-07.md",
+        "total": 122,
+        "sha256": "0a8b564ee505eb2fdcdd131252e6d352da41070d453f940eb8145a5e5d509071",
+        "ranges": [
+          [
+            0,
+            122
+          ]
+        ],
+        "covered": 122,
+        "complete": true
+      },
+      {
+        "name": "page-08.md",
+        "total": 122,
+        "sha256": "c5f80c85d659f9a236b7ace7828b10894e313fe92c258e652569b78e50c6cb95",
+        "ranges": [
+          [
+            0,
+            122
+          ]
+        ],
+        "covered": 122,
+        "complete": true
+      },
+      {
+        "name": "page-09.md",
+        "total": 122,
+        "sha256": "2720ad7eceffece7aee796effc5b087280ebebe9ac0f4ed810bc238a35202669",
+        "ranges": [
+          [
+            0,
+            122
+          ]
+        ],
+        "covered": 122,
+        "complete": true
+      },
+      {
+        "name": "page-10.md",
+        "total": 124,
+        "sha256": "e8af6c44919812e85b959f3cde842888c6633de6228e990982b276b5b1e6fe8d",
+        "ranges": [
+          [
+            0,
+            124
+          ]
+        ],
+        "covered": 124,
+        "complete": true
+      },
+      {
+        "name": "page-11.md",
+        "total": 88,
+        "sha256": "7a5c61e3379c1699a971f708f361769b29239b40efb948edd0d8677492c12dc1",
+        "ranges": [
+          [
+            0,
+            88
+          ]
+        ],
+        "covered": 88,
+        "complete": true
+      }
+    ]
+  },
+  "foundling_envelope_bytes": 13842,
+  "all_tool_output_text_bytes": 68598,
+  "code_calls": 6,
+  "model_requests": 7,
+  "last_request_usage": {
+    "input_tokens": 31893,
+    "cached_input_tokens": 29184,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 96,
+    "reasoning_output_tokens": 25,
+    "total_tokens": 31989
+  },
+  "aggregate_usage": {
+    "input_tokens": 183685,
+    "cached_input_tokens": 162944,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 900,
+    "reasoning_output_tokens": 35
+  },
+  "representation": {
+    "completed_memory_calls": 4,
+    "complete_printed_envelopes": 4,
+    "remaining_printed_envelopes": 0,
+    "raw_wrapper_occurrences": 0,
+    "selector_read_before_first_memory": true
+  },
+  "answer": "There are **12** historical inventory notes labeled `PaginationMarker` (items 0–11). The final inventory code is **`AZURE-12`**, recorded in `page-11.md`.\n\nAll 12 notes were reviewed. Nothing was saved, journaled, synchronized, repaired, or executed from the notes.",
+  "answer_note": "Only synthetic absolute source citation targets normalized to relative locators; metrics use original outputs."
+}

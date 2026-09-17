@@ -1,0 +1,86 @@
+{
+  "source": "51aee17afec015ba2ad44584f8190b4bb6d901a8",
+  "manifest_sha256": "7adacb6e7dc990a12df2cc25e72404dde0156835d771474c9745d3b517a0780c",
+  "classification": "engineering-observations-not-human-acceptance",
+  "completed": {
+    "candidate_native_retrieval_turns": 6,
+    "historical_control_retrieval_turns": 1,
+    "scripted_retrieval_cases": 7,
+    "absent_profile_structural_regression": 1,
+    "plain_setup_output_journeys": 2
+  },
+  "comparison": {
+    "same_prompt_and_reference": true,
+    "candidate": {
+      "foundling_envelope_bytes": 16818,
+      "final_model_input_tokens": 33945,
+      "duplicate_source_bytes": 0
+    },
+    "historical_control": {
+      "foundling_envelope_bytes": 16758,
+      "final_model_input_tokens": 34177,
+      "duplicate_source_bytes": 0
+    }
+  },
+  "files": {
+    "retrieval/scripted.json": {
+      "sha256": "ae1dd459aba9bc469c72affd7fc1353456664f5855418e310dd8a13f6b721313",
+      "bytes": 7157
+    },
+    "first-use/structural.json": {
+      "sha256": "bff3c964869fc8cd62c44d006275076aab9aae7df1442479c33b1eaf67fb4ab4",
+      "bytes": 626
+    },
+    "first-use/menu.json": {
+      "sha256": "add2d1a741e42faab5a76f8f740d617346eb08c8663956076c5f4e567092f54e",
+      "bytes": 849
+    },
+    "first-use/menu-success.txt": {
+      "sha256": "2e315128d55e63a093242f6e2239b74057008a52fe08d192acbee468d97febc5",
+      "bytes": 3583,
+      "driver_sanitized_sha256": "51e22e14e4ce62918d670d2a0e7105295e32fa9e76a760b8760e34d75166f280",
+      "additional_path_sanitization": "Replace synthetic home label with synthetic profile and recovered lab prefix with synthetic candidate. Original output and driver hashes preserved; display content otherwise unchanged."
+    },
+    "first-use/menu-failure.txt": {
+      "sha256": "ddfbae2ac909c7045e1fe75fe4645fcdfb52323175be554e91e1c8f5ad1288ba",
+      "bytes": 3661,
+      "driver_sanitized_sha256": "ed1eecfec26d8bdd7d816f53b8acfa504c60092f6415a19471ad31abe66a87a7",
+      "additional_path_sanitization": "Replace synthetic home label with synthetic profile and recovered lab prefix with synthetic candidate. Original output and driver hashes preserved; display content otherwise unchanged."
+    },
+    "retrieval/ordinary.json": {
+      "sha256": "8f688c853c2b091994c70c7105e548a138cf55bab3ea97f59dc7ce599cc4d72a",
+      "bytes": 4663
+    },
+    "retrieval/late.json": {
+      "sha256": "dec714ebc45a1d2a97ffe372dc149f9060f900867144c514609041f7123b3761",
+      "bytes": 2822
+    },
+    "retrieval/page.json": {
+      "sha256": "2276fef5dd8059780134e69de4768a11780a4fb6cd587d0d5f9ebf65a97104f9",
+      "bytes": 6125
+    },
+    "retrieval/deep.json": {
+      "sha256": "2e91f7cfeaaf5511a606594f087e3776ad3adb3449864eb4d5f2ae5f80969d2b",
+      "bytes": 3187
+    },
+    "retrieval/stale.json": {
+      "sha256": "85f35ac2a8584d80d61cf3f4e8d92a6dbcdbec87e71dc97544dbfab54c13668b",
+      "bytes": 2282
+    },
+    "retrieval/quoted.json": {
+      "sha256": "c650f4ff1ea518fdb16451f43711721fc3be80b270e4605ffe9db6952149d001",
+      "bytes": 2862
+    },
+    "retrieval/controlled-baseline.json": {
+      "sha256": "eeaf60a05a7e48846ccff140dec272de8d1a89a12b65c21b0c059624fd6c62f5",
+      "bytes": 4503
+    }
+  },
+  "limits": [
+    "The comparison control was reconstructed from pinned historical source; see historical-controls.json.",
+    "Initial search, complete evidence envelopes and final native model input are different measurements. Single observations do not establish universal billing or context savings.",
+    "First-use tests execute actual native registration without provider login, hook trust or a model turn; their plain output is path-sanitized, not a PTY screenshot.",
+    "Recovered source-fixture preflight failures are preserved; these observations followed byte-for-byte restoration, not changed expected checksums.",
+    "No human acceptance, publication or personal activation."
+  ]
+}

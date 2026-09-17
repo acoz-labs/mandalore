@@ -1,4 +1,4 @@
-# Corrected 1.1.0 candidate — verification in progress
+# Corrected 1.1.0 candidate — engineering handoff
 
 This is not human acceptance or a published release. It supersedes the failing
 `b894586` candidate for further verification, not its immutable history.
@@ -31,9 +31,9 @@ The source-level evidence for #99/#100 remains
 Its 8 Codex/4 Pi model observations used changed development skills with the old
 runtime; they are not relabeled fresh observations of these packaged bytes.
 
-Remaining exact-candidate work includes the original outcome matrices: packaged
-Codex/Pi behavior, delivery/restrictions, historical retrieval and context costs,
-native connection lifecycle, quota/readiness journeys and isolated upgrade.
+The applicable exact-candidate engineering matrices are now recorded below:
+packaged Codex/Pi behavior, delivery/restrictions, historical retrieval and context
+costs, native connection lifecycle, quota/readiness journeys and isolated upgrade.
 Earlier human scenarios remain historical scoped evidence; this document does
 not demand their repetition or turn them into acceptance of changed bytes.
 
@@ -76,8 +76,8 @@ The recovered [engineering checkpoint](engineering/checkpoint.json) records eigh
 fresh native turns against the retained package: isolated Pi banks, ordinary
 learning and delivery, Codex/Pi cross-harness correction and history, local-only
 restrictions, quoted-cue inertness and no-filler consolidation. Full sanitized
-receipts are linked by SHA256. Other outcome matrices remain in progress; this is
-not a whole-candidate acceptance verdict.
+receipts are linked by SHA256. The subsequent checkpoints complete the remaining
+engineering matrices; this is not a whole-candidate acceptance verdict.
 
 The [systems checkpoint](engineering/systems-checkpoint.json) adds five delivery
 CLI scenarios, 18 Pi delivery callbacks, seven Pi boundary callbacks, eight
@@ -113,4 +113,27 @@ candidate's final input was 25,952 tokens versus 25,665 for the reconstructed
 historical control. This supports fewer memory round trips, not a demonstrated
 whole-conversation token reduction. Raw duplicated MCP wrappers were absent from
 the four new rendering observations; complete success and error envelopes were
-retained. Progressive retrieval's native model matrix remains in progress.
+retained.
+
+The final [retrieval and first-use checkpoint](engineering/retrieval-and-first-use.json)
+records six packaged-candidate retrieval turns, one freshly reconstructed
+historical-control turn, seven scripted retrieval scenarios and the actual
+absent-Codex-profile regression. Full requested review covered all 12,828 source
+bytes; the 12-note pagination case covered every note. Current decisions won over
+historical instructions, later qualifications were read, a changed source was
+not silently repinned and a quoted command was not executed. Read-only fixture
+inventories were unchanged.
+
+First-use preview left native profile and installation state absent; apply
+created a 0700 profile with healthy structural inspection, unchanged binding and
+no authentication file. Plain menu success and controlled native failure were
+captured separately. Public text received additional labeled path sanitization;
+the final checkpoint records both driver-output and published-text hashes.
+
+Contributor self-review: inspected the receipts against the original candidate
+matrix, verified fixture/artifact identities, preserved recovery failures and
+historical-control distinctions, scanned public evidence for private data, and
+checked linked-file digests. No runtime code changed and no new model failure was
+retried into success. The [product review handoff](REVIEW.md) maps all eleven
+nominated issues to their evidence, records consequential limitations and states
+the remaining human-verdict, publication and personal-activation boundaries.

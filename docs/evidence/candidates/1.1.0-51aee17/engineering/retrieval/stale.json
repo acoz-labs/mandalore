@@ -1,0 +1,60 @@
+{
+  "case": "stale",
+  "completed": true,
+  "readonly_inventories_unchanged": true,
+  "runtime_sha256": "09827de1c1340284dbc5506f2c0db41f8cbd66d9231e3e5dbd9d93ea01fc2429",
+  "skill_sha256": "0a3777925dfbba691e4a33235f8bba32522fe77d57625fdb5a5812c7aaeeb386",
+  "reference_sha256": "ceeaa37fe122f1100963f5491b963ea9737395f6d14148de156a22796277480e",
+  "elapsed_seconds": 37.226,
+  "prompt_sha256": "dbf8f6babfd61c7d09ea92a97d97a34845ea810ebc2cf3b0b2c6f64c0ef585a9",
+  "reference_pin": {
+    "algorithm": "sha256",
+    "value": "297ceba565cde4bfa2aa9058bbfd96a8f79daa33529d62c6463ae867cdbf2141"
+  },
+  "tools": [
+    "foundling_list",
+    "memory_scopes",
+    "foundling_inspect",
+    "memory_recall"
+  ],
+  "readonly_operations_only": true,
+  "no_direct_source_filesystem_commands": true,
+  "provenance_and_source_bytes_verified": true,
+  "errors": [],
+  "searches": [],
+  "coverage": {
+    "text_bytes": 0,
+    "unique_bytes": 0,
+    "duplicate_bytes": 0,
+    "empty_eof_reads": 0,
+    "documents": []
+  },
+  "foundling_envelope_bytes": 2403,
+  "all_tool_output_text_bytes": 62806,
+  "code_calls": 5,
+  "model_requests": 6,
+  "last_request_usage": {
+    "input_tokens": 30422,
+    "cached_input_tokens": 29952,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 78,
+    "reasoning_output_tokens": 0,
+    "total_tokens": 30500
+  },
+  "aggregate_usage": {
+    "input_tokens": 158498,
+    "cached_input_tokens": 139392,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 742,
+    "reasoning_output_tokens": 0
+  },
+  "representation": {
+    "completed_memory_calls": 4,
+    "complete_printed_envelopes": 4,
+    "remaining_printed_envelopes": 0,
+    "raw_wrapper_occurrences": 0,
+    "selector_read_before_first_memory": true
+  },
+  "answer": "I couldn’t verify the historical decision about automatic deletion of Quartz Robin audit records. The “Historical project notes” source has changed since its registered pin, so it isn’t usable as verified historical evidence. Available memory contains no audit-deletion decision.\n\nI made only read-only calls; nothing was saved, journaled, synchronized, repaired, reconnected, or repinned.",
+  "answer_note": "Only synthetic absolute source citation targets normalized to relative locators; metrics use original outputs."
+}

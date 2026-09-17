@@ -1,0 +1,25 @@
+{
+  "source": "51aee17afec015ba2ad44584f8190b4bb6d901a8",
+  "manifest_sha256": "7adacb6e7dc990a12df2cc25e72404dde0156835d771474c9745d3b517a0780c",
+  "classification": "contributor-self-review-not-human-acceptance",
+  "date": "2026-09-17",
+  "linked_file_digests_verified": 110,
+  "candidate_evidence_files_privacy_scanned_before_this_receipt": 117,
+  "readme_and_review_local_links_verified": true,
+  "source_checkout_unchanged": true,
+  "candidate_rebuilt": false,
+  "observed_product_failures_in_completed_matrices": 0,
+  "recovery_notes": [
+    "A shutdown removed ephemeral fixtures; the retained hosted artifact and published evidence were restored without rebuilding the candidate.",
+    "Recovered source text initially lost trailing newlines and one later synthetic long-path edit. Pin checks stopped before model execution. Failed preflight receipts were preserved; recovered documents were restored against their original saved edits and pinned checksums.",
+    "A private checkpoint-copy implementation refused existing identical symlinks. Backup transport changed to rsync without altering passed model observations.",
+    "Historical comparison controls were rebuilt from clean pinned old source; their actual provenance and limits are recorded separately.",
+    "An over-broad public scan caught a synthetic home label. Additional labeled path sanitization is recorded with both original driver and published hashes; raw private output was preserved."
+  ],
+  "remaining_gates": [
+    "Actual owner review and issue verdicts under the exact eligibility scope",
+    "Guarded acceptance recording",
+    "Explicit publication authority and unchanged-artifact release validation",
+    "Separate personal activation authority"
+  ]
+}
