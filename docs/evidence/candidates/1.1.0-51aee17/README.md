@@ -50,8 +50,31 @@ It passed, and fresh bot-authored receipts were verified for all eleven issues:
 #13, #56, #57, #61, #65, #74, #85, #88, #93, #99 and #100.
 Labels alone are not evidence of acceptance.
 
-The old same-account owner-review exception is pinned to `b894586`; it does not
-cover this source/artifact pair or correction issues #99/#100. Extending eligibility
-requires explicit owner direction. Actual personally performed review, verdicts,
-release authorization and personal activation remain separate. No published
-release or installed personal runtime was changed.
+Following explicit owner direction, [control PR #107](https://github.com/acoz-labs/mandalore/pull/107)
+extended personally performed owner-review eligibility to this literal source and
+manifest pair, for its eleven nominated issues. Its reviewed policy merged as
+`b7f60315cc1d7bf904862826405f7ea89144180b`; it does not change or rebuild the
+candidate. Actual personally performed review, verdicts, release authorization
+and personal activation remain separate. No published release or installed
+personal runtime was changed.
+
+## September 17 recovery checkpoint
+
+A workstation shutdown removed the temporary engineering lab. The committed
+source, immutable hosted artifact and published cancellation evidence survived.
+The exact original artifact was downloaded again and its provenance, archive
+digest, manifest and payload verified; no candidate rebuild occurred.
+
+Unpublished runs whose full fixtures or receipts were lost are not promoted to
+completed acceptance evidence. Fresh synthetic runs are being collected with
+private persistent checkpoints. Previously published failures and human judgments
+retain their original candidate identities. Test-driver recovery and backup
+failures are distinguished from product failures; completed model turns are not
+repeated merely to repair a backup.
+
+The recovered [engineering checkpoint](engineering/checkpoint.json) records eight
+fresh native turns against the retained package: isolated Pi banks, ordinary
+learning and delivery, Codex/Pi cross-harness correction and history, local-only
+restrictions, quoted-cue inertness and no-filler consolidation. Full sanitized
+receipts are linked by SHA256. Other outcome matrices remain in progress; this is
+not a whole-candidate acceptance verdict.

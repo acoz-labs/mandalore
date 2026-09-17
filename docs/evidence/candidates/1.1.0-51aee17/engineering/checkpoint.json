@@ -1,0 +1,39 @@
+{
+  "source": "51aee17afec015ba2ad44584f8190b4bb6d901a8",
+  "manifest_sha256": "7adacb6e7dc990a12df2cc25e72404dde0156835d771474c9745d3b517a0780c",
+  "classification": "engineering-checkpoint-not-human-acceptance",
+  "observed_native_turns": 8,
+  "files": {
+    "packages.json": "6cba9999f6df5d7dcb637764f1802149519fda8cd4408d06796f4675408a0384",
+    "initial-native.json": "9b5e4f0ecd7a70d7bdcc84749ad95e00815953bc7e340c7c6d628632d7456b4d",
+    "continuity.json": "8f7d69fb14e66b6e07a5b4036770230f478ae8490b319240e56bc6aacbbb5765"
+  },
+  "completed": [
+    "two-bank isolated recall in Pi",
+    "ordinary Pi learning with combined local-save/delivery",
+    "fresh Codex recall of Pi-authored correction and history",
+    "Codex local-only correction with retained revision identity and provenance",
+    "fresh Pi recall of Codex-authored correction",
+    "quoted consolidation phrase is inert",
+    "direct consolidation delivers existing work without filler content"
+  ],
+  "remaining": [
+    "Codex rendering and error envelopes",
+    "expanded delivery and intent boundaries",
+    "progressive historical retrieval and context measurement",
+    "Pi lifecycle, replacement, repair and rendered display",
+    "quota and readiness terminal journeys",
+    "isolated published-to-candidate upgrade and rollback"
+  ],
+  "recovery": {
+    "prior_unpublished_temporary_results_lost": true,
+    "exact_hosted_artifact_restored_without_rebuild": true,
+    "prior_published_evidence_preserved": true,
+    "persistent_private_checkpoints_enabled": true
+  },
+  "limitations": [
+    "Individual native observations, not statistical model reliability.",
+    "Synthetic local bare origins, not hosted-account authentication.",
+    "No personal activation, publication or human verdict."
+  ]
+}
