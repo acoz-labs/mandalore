@@ -4,11 +4,12 @@
 
 Delivery profile: **artifact**. There is no staging service or hosted production
 application. GitHub Releases distribute the CLI and native plugin package.
-[v1.0.0](releases/1.0.0.md) is published from the owner-accepted retained bytes.
+[v1.1.0](releases/1.1.0.md) is published from the owner-accepted retained bytes.
 
-The next intended version is 1.1.0. Its [candidate guide](releases/1.1.0-candidate.md)
-maps the completed roadmap outcomes and exact-artifact acceptance work. This is
-preparation, not a new published release or an automatic installation update.
+Its [candidate guide](releases/1.1.0-candidate.md) preserves the original acceptance
+contract; the release record links actual owner verdicts, publication and public
+verification. [v1.0.0](releases/1.0.0.md) remains immutable historical evidence.
+Publication does not automatically update an existing installation.
 
 The product now has a pinned [local candidate builder](development.md#local-distribution-candidates),
 checksummed platform/plugin assets, a compatibility manifest and read-only release

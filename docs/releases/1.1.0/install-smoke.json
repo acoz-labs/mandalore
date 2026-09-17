@@ -1,0 +1,18 @@
+{
+  "source": "51aee17afec015ba2ad44584f8190b4bb6d901a8",
+  "manifest_sha256": "7adacb6e7dc990a12df2cc25e72404dde0156835d771474c9745d3b517a0780c",
+  "version": "1.1.0",
+  "platform": "darwin/arm64",
+  "all_eight_public_assets_verified": true,
+  "published_install": true,
+  "installed_binary_sha256": "09827de1c1340284dbc5506f2c0db41f8cbd66d9231e3e5dbd9d93ea01fc2429",
+  "preview_target_unchanged": true,
+  "unchanged_replay": true,
+  "unrelated_file_preserved": true,
+  "synthetic_memory_healthy": true,
+  "personal_installation_changed": false,
+  "limits": [
+    "Fresh public CLI installation and synthetic local-memory inspection only; no new native harness or cross-platform claim.",
+    "Full accepted-candidate native and rollback matrices remain separately bound to the same immutable bytes."
+  ]
+}
