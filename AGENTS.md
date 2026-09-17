@@ -85,6 +85,14 @@ This does not expand data, migration, credential or release authority.
 
 ## Roles
 
+The owner authorized engineering self-review for the remainder of the Mandalore
+project on September 17, 2026, including #112 and subsequent authorized work.
+This supersedes the enumerated issue limit above, not task scope. Contributor
+planning and implementation may receive a distinct, recorded exact-head
+self-review and merge after required checks. Do not call this independent review.
+Product acceptance, public release, live installation, privacy and data boundaries
+remain unchanged. See `docs/decisions/0003-post-1-roadmap-self-review.md`.
+
 - Product owners set intent, priority, and product judgment.
 - Maintainers shape work, review PRs, verify releases, and preserve durable
   repository knowledge.

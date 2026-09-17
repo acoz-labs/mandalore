@@ -25,3 +25,13 @@ public release and live-installation authority are unchanged. The
 [MVP owner-acceptance exception](0002-mvp-owner-acceptance.md) remains limited to
 its enumerated candidates; this decision neither accepts a new candidate nor
 authorizes publication, private signet migration or personal plugin activation.
+
+## Project-wide extension
+
+On September 17, 2026, in response to the review gate for #112, the owner explicitly
+authorized engineering self-review for the remainder of the Mandalore project.
+The enumerated issue list is no longer the limit of this authorization. Apply the
+same distinct exact-head review, required-check and honest attribution rules to
+subsequent authorized work. This does not authorize unrelated implementation or
+expand a task beyond its requested stopping point. Product acceptance, release,
+live installation, privacy and data boundaries remain separate and unchanged.
