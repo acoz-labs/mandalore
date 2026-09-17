@@ -1,0 +1,30 @@
+{
+  "case": "nojournal",
+  "kind": "packaged-candidate-engineering-observation",
+  "skill_source": "51aee17afec015ba2ad44584f8190b4bb6d901a8",
+  "skill_sha256": "0a3777925dfbba691e4a33235f8bba32522fe77d57625fdb5a5812c7aaeeb386",
+  "runtime_sha256": "09827de1c1340284dbc5506f2c0db41f8cbd66d9231e3e5dbd9d93ea01fc2429",
+  "tools": [
+    "memory_sync"
+  ],
+  "no_new_semantic_files": true,
+  "negative_full_inventory_unchanged": false,
+  "delivery": {
+    "protocol_version": 1,
+    "ok": true,
+    "result": {
+      "signet_id": "signet-43299a14df312a89838e0ddefd5a9ff5",
+      "state": "synchronized",
+      "phase": "complete",
+      "head": "c0c649b09f7cbc928fb2b82709aba13061e0f6ca",
+      "remote_head": "c0c649b09f7cbc928fb2b82709aba13061e0f6ca",
+      "remote_id": "a5a6fabf900d83f3633e0ab732b37f4e096b418a0cdc9b6d2558c8f6128b1331",
+      "checked_at": "2026-09-17T16:17:04.662342Z",
+      "checkpointed": true,
+      "delivered": true,
+      "semantic_conflicts": 0,
+      "notice": "This head was delivered at checked_at; the remote may advance afterward. Already-read model context is not refreshed."
+    }
+  },
+  "answer": "No new knowledge or journal entry added. Existing memory synchronized successfully."
+}

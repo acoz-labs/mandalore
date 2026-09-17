@@ -93,3 +93,24 @@ exhaustion or the retained executable. Other journeys use the retained runtime.
 The linked manifest hashes all 40 sanitized receipts and terminal recordings.
 Historical retrieval preflight failures caused by reconstructed fixture bytes
 are excluded from these passing results and retained privately for diagnosis.
+
+The [behavior checkpoint](engineering/behavior-checkpoint.json) preserves fresh
+packaged rendering, delivery and explicit-intent observations; Pi lifecycle and
+same-session context refresh; four historical-reference menu journeys; and three
+native Pi display journeys. Its 33 files include synthetic-only terminal
+recordings and a separate provenance receipt for newly rebuilt historical
+comparison controls. These controls do not replace the retained candidate.
+
+The same-session Pi probe recalled River and then Willow after an external
+synthetic correction, with one bounded context attachment per turn (2,472 then
+2,473 bytes) and no accumulating custom messages. Seven supplemental intent
+checks distinguish no new knowledge from no saving, no journaling, no syncing,
+offline delivery and inert quoted cues.
+
+The ordinary save comparison reduced memory calls from recall/save/sync to
+recall/combined-save-and-sync. Both observations made five model requests; the
+candidate's final input was 25,952 tokens versus 25,665 for the reconstructed
+historical control. This supports fewer memory round trips, not a demonstrated
+whole-conversation token reduction. Raw duplicated MCP wrappers were absent from
+the four new rendering observations; complete success and error envelopes were
+retained. Progressive retrieval's native model matrix remains in progress.

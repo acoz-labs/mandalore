@@ -1,0 +1,66 @@
+{
+  "source": "51aee17afec015ba2ad44584f8190b4bb6d901a8",
+  "identity": "mandalore:51aee17afec015ba2ad44584f8190b4bb6d901a8:sha256:7adacb6e7dc990a12df2cc25e72404dde0156835d771474c9745d3b517a0780c",
+  "control": true,
+  "reasons": [
+    "startup",
+    "reload",
+    "new",
+    "new",
+    "resume",
+    "resume",
+    "fork",
+    "fork"
+  ],
+  "inventories": [
+    {
+      "event": "inventory",
+      "memory_tools": 0,
+      "unique_tools": true,
+      "native_read": true,
+      "native_bash": true,
+      "skills": [],
+      "context_entries": 0
+    },
+    {
+      "event": "inventory",
+      "memory_tools": 0,
+      "unique_tools": true,
+      "native_read": true,
+      "native_bash": true,
+      "skills": [],
+      "context_entries": 0
+    },
+    {
+      "event": "inventory",
+      "memory_tools": 0,
+      "unique_tools": true,
+      "native_read": true,
+      "native_bash": true,
+      "skills": [],
+      "context_entries": 0
+    },
+    {
+      "event": "inventory",
+      "memory_tools": 0,
+      "unique_tools": true,
+      "native_read": true,
+      "native_bash": true,
+      "skills": [],
+      "context_entries": 0
+    },
+    {
+      "event": "inventory",
+      "memory_tools": 0,
+      "unique_tools": true,
+      "native_read": true,
+      "native_bash": true,
+      "skills": [],
+      "context_entries": 0
+    }
+  ],
+  "shutdowns": 5,
+  "model_requested": false,
+  "synthetic_session_fixture": true,
+  "bank_snapshots_unchanged": true
+}

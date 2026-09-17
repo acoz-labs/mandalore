@@ -1,0 +1,15 @@
+{
+  "harness": "pi",
+  "case": "nosync",
+  "kind": "packaged-candidate-engineering-observation",
+  "skill_source": "51aee17afec015ba2ad44584f8190b4bb6d901a8",
+  "skill_sha256": "79a892d22f86a5b74741a47255ace3f26ef85c7d32e9d3b2fabbf4ad13fa742b",
+  "runtime_sha256": "09827de1c1340284dbc5506f2c0db41f8cbd66d9231e3e5dbd9d93ea01fc2429",
+  "embedded_package_sha256": "b1502e0f90755f75f736d0667fdc7c270f23725ffde8156fdbcd0773d6736a2b",
+  "packaged_skill_loaded": true,
+  "tools": [],
+  "no_new_semantic_files": true,
+  "negative_full_inventory_unchanged": true,
+  "delivery": null,
+  "answer": "Understood. Nothing saved or journaled, and no synchronization performed."
+}

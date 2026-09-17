@@ -1,0 +1,12 @@
+{
+  "case": "nosave",
+  "kind": "packaged-candidate-engineering-observation",
+  "skill_source": "51aee17afec015ba2ad44584f8190b4bb6d901a8",
+  "skill_sha256": "0a3777925dfbba691e4a33235f8bba32522fe77d57625fdb5a5812c7aaeeb386",
+  "runtime_sha256": "09827de1c1340284dbc5506f2c0db41f8cbd66d9231e3e5dbd9d93ea01fc2429",
+  "tools": [],
+  "no_new_semantic_files": true,
+  "negative_full_inventory_unchanged": true,
+  "delivery": null,
+  "answer": "Understood. Nothing was saved, journaled, or synchronized."
+}

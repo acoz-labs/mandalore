@@ -1,0 +1,32 @@
+{
+  "harness": "pi",
+  "case": "offline",
+  "kind": "packaged-candidate-engineering-observation",
+  "skill_source": "51aee17afec015ba2ad44584f8190b4bb6d901a8",
+  "skill_sha256": "79a892d22f86a5b74741a47255ace3f26ef85c7d32e9d3b2fabbf4ad13fa742b",
+  "runtime_sha256": "09827de1c1340284dbc5506f2c0db41f8cbd66d9231e3e5dbd9d93ea01fc2429",
+  "embedded_package_sha256": "b1502e0f90755f75f736d0667fdc7c270f23725ffde8156fdbcd0773d6736a2b",
+  "packaged_skill_loaded": true,
+  "tools": [
+    "memory_sync"
+  ],
+  "no_new_semantic_files": true,
+  "negative_full_inventory_unchanged": false,
+  "delivery": {
+    "protocol_version": 1,
+    "ok": true,
+    "result": {
+      "signet_id": "signet-262180be61e405da7a5d94a092717fe2",
+      "state": "pending",
+      "phase": "fetch",
+      "head": "f0dd8a8ccd8649b28d4ddc9ad037ccaca64f6e32",
+      "remote_id": "163ae02d37204a4d276ff4cf1ec2f0c2cd281cb7206a6e47d9c6f5ed4f46e0b3",
+      "checked_at": "2026-09-17T16:17:27.251735Z",
+      "checkpointed": true,
+      "delivered": false,
+      "semantic_conflicts": 0,
+      "notice": "Remote unavailable; local changes remain committed."
+    }
+  },
+  "answer": "No new knowledge or journal entry added. Existing memory is committed locally; synchronization remains pending because the remote is unavailable."
+}

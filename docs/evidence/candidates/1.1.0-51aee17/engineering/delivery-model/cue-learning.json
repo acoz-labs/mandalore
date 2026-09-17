@@ -1,0 +1,93 @@
+{
+  "case": "cue-learning",
+  "completed": true,
+  "runtime_sha256": "09827de1c1340284dbc5506f2c0db41f8cbd66d9231e3e5dbd9d93ea01fc2429",
+  "skill_sha256": "0a3777925dfbba691e4a33235f8bba32522fe77d57625fdb5a5812c7aaeeb386",
+  "mcp_enabled": true,
+  "mcp_readonly": false,
+  "binding_and_skill_unchanged": true,
+  "elapsed_seconds": 34.602,
+  "heads": {
+    "local": "3f005b019b9a543e20627a67c8981d86a7e8c92e",
+    "remote": "3f005b019b9a543e20627a67c8981d86a7e8c92e"
+  },
+  "prompt": "Please remember that my fictional hiking route is Birch Loop. There is no useful journal entry to add. This is the way.\n",
+  "prompt_sha256": "053710fec1a0706b2896caead8bae98d6584117f794e8aa0723125852be9f278",
+  "tools": [
+    "memory_recall",
+    "memory_recall",
+    "memory_remember_and_sync"
+  ],
+  "writes": [
+    "memory_remember_and_sync"
+  ],
+  "save_requests": 1,
+  "standalone_sync_requests": 0,
+  "pre_save_sync_requests": 0,
+  "added_records": 1,
+  "added_journals": 0,
+  "existing_semantic_files_unchanged": true,
+  "no_cli_fallback": true,
+  "negative_full_inventory_unchanged": null,
+  "observer_prestart_metadata_differences": [],
+  "heads_before": {
+    "local": "e988a3a052c373468f27abfa6e8472f451c93f84",
+    "remote": "928cabb5e565339f7f2c428faa2a5b55a4b3b18d"
+  },
+  "heads_after": {
+    "local": "3f005b019b9a543e20627a67c8981d86a7e8c92e",
+    "remote": "3f005b019b9a543e20627a67c8981d86a7e8c92e"
+  },
+  "saved": {
+    "signet_id": "signet-d14401da62bc62b213e950ed93749453",
+    "id": "revision-80d1a38bf5e16931937065c5a0851a48",
+    "record_id": "record-fb599dcc262da8c0feec525cb1851a3c",
+    "durable_locally": true,
+    "synchronization": "synchronized"
+  },
+  "delivery": {
+    "protocol_version": 1,
+    "ok": true,
+    "result": {
+      "signet_id": "signet-d14401da62bc62b213e950ed93749453",
+      "state": "synchronized",
+      "phase": "complete",
+      "head": "3f005b019b9a543e20627a67c8981d86a7e8c92e",
+      "remote_head": "3f005b019b9a543e20627a67c8981d86a7e8c92e",
+      "remote_id": "cabcf4c71ccf7086a57f72a05861d8139b33b6e2af8cf6074a54be520167281b",
+      "checked_at": "2026-09-17T16:10:23.992291Z",
+      "checkpointed": true,
+      "delivered": true,
+      "semantic_conflicts": 0,
+      "notice": "This head was delivered at checked_at; the remote may advance afterward. Already-read model context is not refreshed."
+    }
+  },
+  "all_memory_envelope_bytes": 1937,
+  "all_tool_output_text_bytes": 46649,
+  "tool_code_bytes": 2132,
+  "code_calls": 5,
+  "model_requests": 6,
+  "last_request_usage": {
+    "input_tokens": 26100,
+    "cached_input_tokens": 25472,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 28,
+    "reasoning_output_tokens": 0,
+    "total_tokens": 26128
+  },
+  "aggregate_usage": {
+    "input_tokens": 141239,
+    "cached_input_tokens": 126336,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 698,
+    "reasoning_output_tokens": 0
+  },
+  "representation": {
+    "completed_memory_calls": 3,
+    "complete_printed_envelopes": 3,
+    "remaining_printed_envelopes": 0,
+    "raw_wrapper_occurrences": 0,
+    "selector_read_before_first_memory": true
+  },
+  "answer": "Remembered: your fictional hiking route is **Birch Loop**. Saved locally and synced. No journal entry added."
+}

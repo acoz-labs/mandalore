@@ -1,0 +1,84 @@
+{
+  "case": "cue-offline",
+  "completed": true,
+  "runtime_sha256": "09827de1c1340284dbc5506f2c0db41f8cbd66d9231e3e5dbd9d93ea01fc2429",
+  "skill_sha256": "0a3777925dfbba691e4a33235f8bba32522fe77d57625fdb5a5812c7aaeeb386",
+  "mcp_enabled": true,
+  "mcp_readonly": false,
+  "binding_and_skill_unchanged": true,
+  "elapsed_seconds": 28.749,
+  "heads": {
+    "local": "6987ba53cfc6e76e18c25c2b561eac8a619c847b",
+    "remote": "8afe5a5ffc59fdcd4c28bacf2bc31b7aef28ff3b"
+  },
+  "prompt": "There is no new knowledge or useful journal entry to add from this conversation. This is the way.\n",
+  "prompt_sha256": "18f366130750d89997f64c55b01960a8111e54e41d27e66eebc7348c6d204963",
+  "tools": [
+    "memory_sync"
+  ],
+  "writes": [
+    "memory_sync"
+  ],
+  "save_requests": 0,
+  "standalone_sync_requests": 1,
+  "pre_save_sync_requests": 0,
+  "added_records": 0,
+  "added_journals": 0,
+  "existing_semantic_files_unchanged": true,
+  "no_cli_fallback": true,
+  "negative_full_inventory_unchanged": null,
+  "observer_prestart_metadata_differences": [],
+  "heads_before": {
+    "local": "6987ba53cfc6e76e18c25c2b561eac8a619c847b",
+    "remote": "8afe5a5ffc59fdcd4c28bacf2bc31b7aef28ff3b"
+  },
+  "heads_after": {
+    "local": "6987ba53cfc6e76e18c25c2b561eac8a619c847b",
+    "remote": "8afe5a5ffc59fdcd4c28bacf2bc31b7aef28ff3b"
+  },
+  "saved": null,
+  "delivery": {
+    "protocol_version": 1,
+    "ok": true,
+    "result": {
+      "signet_id": "signet-f7a626eb01219df03cf6377306b4bc6e",
+      "state": "pending",
+      "phase": "fetch",
+      "head": "6987ba53cfc6e76e18c25c2b561eac8a619c847b",
+      "remote_id": "da4e06e1648debaf14931d44f6e1bdba57fb736a79d17df21b7eeed75e1e0421",
+      "checked_at": "2026-09-17T16:11:28.395094Z",
+      "checkpointed": true,
+      "delivered": false,
+      "semantic_conflicts": 0,
+      "notice": "Remote unavailable; local changes remain committed."
+    }
+  },
+  "all_memory_envelope_bytes": 427,
+  "all_tool_output_text_bytes": 13690,
+  "tool_code_bytes": 1743,
+  "code_calls": 3,
+  "model_requests": 4,
+  "last_request_usage": {
+    "input_tokens": 19003,
+    "cached_input_tokens": 16768,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 27,
+    "reasoning_output_tokens": 0,
+    "total_tokens": 19030
+  },
+  "aggregate_usage": {
+    "input_tokens": 69768,
+    "cached_input_tokens": 56320,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 642,
+    "reasoning_output_tokens": 35
+  },
+  "representation": {
+    "completed_memory_calls": 1,
+    "complete_printed_envelopes": 1,
+    "remaining_printed_envelopes": 0,
+    "raw_wrapper_occurrences": 0,
+    "selector_read_before_first_memory": true
+  },
+  "answer": "No new knowledge or journal entry added. Existing work remains committed locally; delivery is pending because the remote is unavailable."
+}

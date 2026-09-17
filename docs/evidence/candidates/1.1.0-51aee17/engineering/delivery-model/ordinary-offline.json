@@ -1,0 +1,92 @@
+{
+  "case": "ordinary-offline",
+  "completed": true,
+  "runtime_sha256": "09827de1c1340284dbc5506f2c0db41f8cbd66d9231e3e5dbd9d93ea01fc2429",
+  "skill_sha256": "0a3777925dfbba691e4a33235f8bba32522fe77d57625fdb5a5812c7aaeeb386",
+  "mcp_enabled": true,
+  "mcp_readonly": false,
+  "binding_and_skill_unchanged": true,
+  "elapsed_seconds": 34.241,
+  "heads": {
+    "local": "222ed1e0e414f386a28de214877e319ebc313d72",
+    "remote": "47b78806d7de95aa40d027730449857c357be316"
+  },
+  "prompt": "For future reference, my fictional hiking route is Birch Loop.\n",
+  "prompt_sha256": "c3360cf50c3295e5cd432d40918bce6ea794031996f27b196e5023a4ad175e6e",
+  "tools": [
+    "memory_recall",
+    "memory_recall",
+    "memory_remember_and_sync"
+  ],
+  "writes": [
+    "memory_remember_and_sync"
+  ],
+  "save_requests": 1,
+  "standalone_sync_requests": 0,
+  "pre_save_sync_requests": 0,
+  "added_records": 1,
+  "added_journals": 0,
+  "existing_semantic_files_unchanged": true,
+  "no_cli_fallback": true,
+  "negative_full_inventory_unchanged": null,
+  "observer_prestart_metadata_differences": [],
+  "heads_before": {
+    "local": "e78e64b52ff99614a27491b6ba16f149393bd99e",
+    "remote": "47b78806d7de95aa40d027730449857c357be316"
+  },
+  "heads_after": {
+    "local": "222ed1e0e414f386a28de214877e319ebc313d72",
+    "remote": "47b78806d7de95aa40d027730449857c357be316"
+  },
+  "saved": {
+    "signet_id": "signet-fb7d435b02a1b542c57e99577ea81e6a",
+    "id": "revision-ba766f5ad0cfc385e8329fc952d9dfa5",
+    "record_id": "record-02c5da23b81d4e0efcbbfd9e9c39bce2",
+    "durable_locally": true,
+    "synchronization": "pending"
+  },
+  "delivery": {
+    "protocol_version": 1,
+    "ok": true,
+    "result": {
+      "signet_id": "signet-fb7d435b02a1b542c57e99577ea81e6a",
+      "state": "pending",
+      "phase": "fetch",
+      "head": "222ed1e0e414f386a28de214877e319ebc313d72",
+      "remote_id": "3f0ea4dcab9bdec53f2ff9fd6551894d43158f707835942f47016abd3d600e4b",
+      "checked_at": "2026-09-17T16:12:11.917656Z",
+      "checkpointed": true,
+      "delivered": false,
+      "semantic_conflicts": 0,
+      "notice": "Remote unavailable; local changes remain committed."
+    }
+  },
+  "all_memory_envelope_bytes": 1802,
+  "all_tool_output_text_bytes": 46513,
+  "tool_code_bytes": 1875,
+  "code_calls": 5,
+  "model_requests": 6,
+  "last_request_usage": {
+    "input_tokens": 26023,
+    "cached_input_tokens": 25472,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 27,
+    "reasoning_output_tokens": 0,
+    "total_tokens": 26050
+  },
+  "aggregate_usage": {
+    "input_tokens": 141049,
+    "cached_input_tokens": 126336,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 649,
+    "reasoning_output_tokens": 24
+  },
+  "representation": {
+    "completed_memory_calls": 3,
+    "complete_printed_envelopes": 3,
+    "remaining_printed_envelopes": 0,
+    "raw_wrapper_occurrences": 0,
+    "selector_read_before_first_memory": true
+  },
+  "answer": "Saved locally: your fictional hiking route is **Birch Loop**. Sync is pending because the remote is unavailable."
+}

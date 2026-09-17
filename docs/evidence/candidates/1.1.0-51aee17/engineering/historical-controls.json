@@ -1,0 +1,20 @@
+{
+  "records": [
+    {
+      "name": "before-combined-save",
+      "source": "e829a6c7e11e04eb4901583fff8735f63855abd5",
+      "binary_sha256": "2b06bf2f73042f2c1df713c27cb552dd0dbee13167eee22ac9a7e62f9dca464d",
+      "vcs_metadata_embedded": false,
+      "method": "Reconstructed historical control from inspected clean pinned source. Build command and before/after Git checks bind source; not a retained release artifact or candidate rebuild."
+    },
+    {
+      "name": "before-progressive",
+      "source": "5b6929dc1aa69e8a28c0458f3f803993c522ee77",
+      "binary_sha256": "8a190ae62e84a4d25c91d6d8b589fa98c21f25fbe9e1b0605501ce62cbdd1be9",
+      "vcs_metadata_embedded": false,
+      "method": "Reconstructed historical control from inspected clean pinned source. Build command and before/after Git checks bind source; not a retained release artifact or candidate rebuild."
+    }
+  ],
+  "baseline_skill_sha256": "7a830a6b14543d50ff3107767cb62d587c908d7a978515ca3146d959042b2ab6",
+  "candidate_rebuilt": false
+}

@@ -1,0 +1,155 @@
+{
+  "source": "51aee17afec015ba2ad44584f8190b4bb6d901a8",
+  "manifest_sha256": "7adacb6e7dc990a12df2cc25e72404dde0156835d771474c9745d3b517a0780c",
+  "classification": "engineering-observations-not-human-acceptance",
+  "completed": {
+    "native_codex_rendering_turns": 4,
+    "selector_fixtures": 21,
+    "delivery_model_turns": 9,
+    "intent_codex_turns": 4,
+    "intent_pi_turns": 3,
+    "pi_live_refresh_turns": 2,
+    "historical_ui_journeys": 4,
+    "pi_display_journeys": 3
+  },
+  "files": {
+    "rendering.json": {
+      "sha256": "901032d4b9020aa829616fbdb4411b54a3e3730eca72eb4f052c74e98a7f4090",
+      "bytes": 16588
+    },
+    "pi-lifecycle.json": {
+      "sha256": "7b7e5eaf4ba09576f41a3bae5ec8aef66bd1f977b280d03aa2ef22b9bd7d7e69",
+      "bytes": 1803
+    },
+    "pi-lifecycle-control.json": {
+      "sha256": "5c4be6015d58ab39ea54e12ea7f75efea8f57bbe5c4387540a5b40cc3fbbf3d4",
+      "bytes": 1457
+    },
+    "pi-live-refresh.json": {
+      "sha256": "d0d4f57f88189f3e1566d7cd9bcddb24c08bcbc7b43d3e63fea26877be3b4c29",
+      "bytes": 682
+    },
+    "historical-controls.json": {
+      "sha256": "566e3a5877d504ce0f344077cb9d0ff2198334e2a8d814e8896884ac1bac78b7",
+      "bytes": 1017
+    },
+    "pi-display/evidence.json": {
+      "sha256": "32c316269a983da6c5068a0d3b4c046eb74f8b17c75a223fe074df0c7b93041e",
+      "bytes": 2010
+    },
+    "delivery-model/ordinary.json": {
+      "sha256": "c6768d4bbe3556bd2aca2b7ccd3d01636ffe2e2d58b013de4a5b09e76ad23122",
+      "bytes": 3123
+    },
+    "delivery-model/baseline-record.json": {
+      "sha256": "2d5aef08e0c44221d582f1dc6daaf84a47c3098d0c70bbc053efff2052c86b71",
+      "bytes": 3134
+    },
+    "delivery-model/journal.json": {
+      "sha256": "a04792720143dd55ec4a9ace72e438bc7b2307650de04ddc188bac182df837bd",
+      "bytes": 3192
+    },
+    "delivery-model/cue-learning.json": {
+      "sha256": "227b91e5c9953ede5481bc8567eb92d509a151f17831761ca9b3faba1362acce",
+      "bytes": 3238
+    },
+    "delivery-model/cue-nosync.json": {
+      "sha256": "b57a71be7471ee231b0e2374fd2d2ac76e50d5d65b5f1336d86f79cb647ce2f9",
+      "bytes": 2255
+    },
+    "delivery-model/cue-readonly.json": {
+      "sha256": "a0f5a9ab546f062c4c39da908c40fac790387608304e48127c4e8ea9b7a3ad39",
+      "bytes": 2285
+    },
+    "delivery-model/cue-offline.json": {
+      "sha256": "99ee95cceb6b7bd295f98ada94924152a0d1d73bcd46e532817ad2b28e912535",
+      "bytes": 2792
+    },
+    "delivery-model/missing.json": {
+      "sha256": "1c9c5cded99b0256430c77617afd734592a30b562ae940b1fd50fd08b20177e1",
+      "bytes": 2197
+    },
+    "delivery-model/ordinary-offline.json": {
+      "sha256": "a21ae7a3f52e910257b53f4556ed7266087e9362eaf54448e7174dab60e6738d",
+      "bytes": 3047
+    },
+    "intent-codex/online.json": {
+      "sha256": "a56eaba35469ce91571f106e7d3ebe1b494a2aacb43acb578f7aef2d3d40cfdc",
+      "bytes": 1229
+    },
+    "intent-codex/nosave.json": {
+      "sha256": "ab88ffd2e4ce3eb3e67980758a342e8e2fbe48934f66d5391a824497ae312a88",
+      "bytes": 502
+    },
+    "intent-codex/nojournal.json": {
+      "sha256": "349dbc1cda97cf2a2ac17f75d3897bf5ce616f9d2b22285be40e0bb36988c299",
+      "bytes": 1219
+    },
+    "intent-codex/quoted.json": {
+      "sha256": "f6ed54a87f4d306a1c420f19fe9833efaadd197ebee0e2846ee78f0a681df4fe",
+      "bytes": 464
+    },
+    "intent-pi/offline.json": {
+      "sha256": "d08e1b72ea1a05ef3c7ca019bd4d20756431fbd7242875c0d2c227c1edafd79d",
+      "bytes": 1290
+    },
+    "intent-pi/nosync.json": {
+      "sha256": "9fa26ad0089bdbbe7d5716101fa171d8c85cd7125845dad72e83078d50cd365f",
+      "bytes": 666
+    },
+    "intent-pi/quoted.json": {
+      "sha256": "6562661a122c4f120ef94eb0bc34844e48805483682a0ccb0de24378094b1a80",
+      "bytes": 642
+    },
+    "historical-ui/color.json": {
+      "sha256": "8335e233bfe8ed96ef28eae3c534883ef462576703f0c39d0c934a53d052d214",
+      "bytes": 231
+    },
+    "historical-ui/color.recording": {
+      "sha256": "6a9cb0c8174b74498ebced7ce6806602e793139936e6a790f3b0647f6c4f6955",
+      "bytes": 24665
+    },
+    "historical-ui/plain.json": {
+      "sha256": "69a2c95d85877cff7bc66de5c2dbeede0fd68f5133bdd7790b2e64b59e77c7f7",
+      "bytes": 229
+    },
+    "historical-ui/plain.recording": {
+      "sha256": "a03892ae25986f9e3308f3912d646bb2769f372a03d128de4f08daa036f4863a",
+      "bytes": 21583
+    },
+    "historical-ui/budget.json": {
+      "sha256": "143f10c6c4a712ab56cddfb65d48378c6ccddb9b80a00bcafffb0ec3dd76adc8",
+      "bytes": 231
+    },
+    "historical-ui/budget.recording": {
+      "sha256": "4f7c0c2a492899837212b1b2930d5f241921c9f53a984deee6d1c27c2d9f42d4",
+      "bytes": 10244
+    },
+    "historical-ui/stale.json": {
+      "sha256": "ae833c8821461342dc3936cd4a64094bde34a8635b5cafc455ac94e1ec706328",
+      "bytes": 229
+    },
+    "historical-ui/stale.recording": {
+      "sha256": "cd4a5fcd0ac1b04a908701a8063ae1ac0e4aa580ccfb38fc6456e0ec1cb2c6eb",
+      "bytes": 7649
+    },
+    "pi-display/narrow.recording": {
+      "sha256": "7bd6def7f8c89760f02097cf9b07140558b563ebb1955e082b71781d5aa86a06",
+      "bytes": 7050
+    },
+    "pi-display/tools.recording": {
+      "sha256": "6aac57c8eb4bc7c410a2994fc024672504edab3fc2235be71447c3039863a446",
+      "bytes": 240041
+    },
+    "pi-display/warning.recording": {
+      "sha256": "2931fb1d6be38df08fef751dff88b181f7b09c2a2dd6637607e57ca897118e50",
+      "bytes": 4887
+    }
+  },
+  "limits": [
+    "The baseline-record model uses a freshly rebuilt historical control, not the retained candidate; see historical-controls.json.",
+    "Lifecycle RPC sequences use synthetic session fixtures without model requests; live-refresh is a separate two-turn model observation.",
+    "Display, envelope bytes and native token counts are distinct measurements; no universal context or billing claim.",
+    "No personal installation changes or human product verdicts."
+  ]
+}

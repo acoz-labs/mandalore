@@ -1,0 +1,55 @@
+{
+  "identity": "mandalore:51aee17afec015ba2ad44584f8190b4bb6d901a8:sha256:7adacb6e7dc990a12df2cc25e72404dde0156835d771474c9745d3b517a0780c",
+  "source": "51aee17afec015ba2ad44584f8190b4bb6d901a8",
+  "runtime_sha256": "09827de1c1340284dbc5506f2c0db41f8cbd66d9231e3e5dbd9d93ea01fc2429",
+  "pi_package_sha256": "b1502e0f90755f75f736d0667fdc7c270f23725ffde8156fdbcd0773d6736a2b",
+  "recordings": [
+    {
+      "file": "narrow.recording",
+      "sha256": "7bd6def7f8c89760f02097cf9b07140558b563ebb1955e082b71781d5aa86a06",
+      "bytes": 7050,
+      "columns": 32,
+      "rows": 32,
+      "no_color": true,
+      "application_exit": 0,
+      "terminal_restored": true
+    },
+    {
+      "file": "tools.recording",
+      "sha256": "6aac57c8eb4bc7c410a2994fc024672504edab3fc2235be71447c3039863a446",
+      "bytes": 240041,
+      "columns": 100,
+      "rows": 32,
+      "no_color": false,
+      "application_exit": 0,
+      "terminal_restored": true
+    },
+    {
+      "file": "warning.recording",
+      "sha256": "2931fb1d6be38df08fef751dff88b181f7b09c2a2dd6637607e57ca897118e50",
+      "bytes": 4887,
+      "columns": 100,
+      "rows": 32,
+      "no_color": false,
+      "application_exit": 0,
+      "terminal_restored": true
+    }
+  ],
+  "checks": {
+    "read_turn_complete_fixture_unchanged": true,
+    "write_turn_one_pi_journal_only": true,
+    "saved_event_id": "event-fc949c4cc10fb7f8eebd0df96b5cead9",
+    "prior_memory_files_unchanged": true,
+    "no_git_initialized": true,
+    "protected_auth_session_sentinels_unchanged": true,
+    "warning_no_model_requested": true,
+    "warning_full_post_control_fixture_unchanged": true
+  },
+  "limits": [
+    "Actual packaged candidate in native Pi UI, synthetic memory and fixture profiles.",
+    "Existing provider login inherited in place, not copied.",
+    "Display observations are not model-context or billing benchmarks.",
+    "Explicit package selection; profile registration is tested separately.",
+    "Not human acceptance or personal activation."
+  ]
+}

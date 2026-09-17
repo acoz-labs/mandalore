@@ -1,0 +1,65 @@
+{
+  "case": "missing",
+  "completed": true,
+  "runtime_sha256": "09827de1c1340284dbc5506f2c0db41f8cbd66d9231e3e5dbd9d93ea01fc2429",
+  "skill_sha256": "0a3777925dfbba691e4a33235f8bba32522fe77d57625fdb5a5812c7aaeeb386",
+  "mcp_enabled": false,
+  "mcp_readonly": false,
+  "binding_and_skill_unchanged": true,
+  "elapsed_seconds": 11.018,
+  "heads": {
+    "local": "bdcc59f3dff169383f77710e73cfc2a3ce765b73",
+    "remote": "75f628c186b674212c25651f316cdc2d04bd86c6"
+  },
+  "prompt": "There is no new knowledge or useful journal entry to add from this conversation. This is the way.\n",
+  "prompt_sha256": "18f366130750d89997f64c55b01960a8111e54e41d27e66eebc7348c6d204963",
+  "tools": [],
+  "writes": [],
+  "save_requests": 0,
+  "standalone_sync_requests": 0,
+  "pre_save_sync_requests": 0,
+  "added_records": 0,
+  "added_journals": 0,
+  "existing_semantic_files_unchanged": true,
+  "no_cli_fallback": true,
+  "negative_full_inventory_unchanged": true,
+  "observer_prestart_metadata_differences": [],
+  "heads_before": {
+    "local": "bdcc59f3dff169383f77710e73cfc2a3ce765b73",
+    "remote": "75f628c186b674212c25651f316cdc2d04bd86c6"
+  },
+  "heads_after": {
+    "local": "bdcc59f3dff169383f77710e73cfc2a3ce765b73",
+    "remote": "75f628c186b674212c25651f316cdc2d04bd86c6"
+  },
+  "saved": null,
+  "delivery": null,
+  "all_memory_envelope_bytes": 0,
+  "all_tool_output_text_bytes": 7291,
+  "tool_code_bytes": 185,
+  "code_calls": 2,
+  "model_requests": 3,
+  "last_request_usage": {
+    "input_tokens": 17012,
+    "cached_input_tokens": 16768,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 27,
+    "reasoning_output_tokens": 0,
+    "total_tokens": 17039
+  },
+  "aggregate_usage": {
+    "input_tokens": 49356,
+    "cached_input_tokens": 44160,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 123,
+    "reasoning_output_tokens": 0
+  },
+  "representation": {
+    "completed_memory_calls": 0,
+    "complete_printed_envelopes": 0,
+    "remaining_printed_envelopes": 0,
+    "raw_wrapper_occurrences": 0,
+    "selector_read_before_first_memory": null
+  },
+  "answer": "No knowledge or journal entry added. The Mandalore connection is unavailable, so I couldn’t sync any pending memory.\n"
+}
