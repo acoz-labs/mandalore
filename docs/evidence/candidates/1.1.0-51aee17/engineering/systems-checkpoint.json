@@ -1,0 +1,182 @@
+{
+  "source": "51aee17afec015ba2ad44584f8190b4bb6d901a8",
+  "manifest_sha256": "7adacb6e7dc990a12df2cc25e72404dde0156835d771474c9745d3b517a0780c",
+  "classification": "engineering-observations-not-human-acceptance",
+  "completed": {
+    "delivery_cli_cases": 5,
+    "native_pi_delivery_callbacks": 18,
+    "native_pi_boundary_callbacks": 7,
+    "pi_install_repair_journeys": 8,
+    "readiness_journeys": 7,
+    "upgrade_rollback_journeys": 2,
+    "quota_rendered_source_fixture_journeys": 8
+  },
+  "files": {
+    "delivery.json": {
+      "sha256": "71a91baa4ca0d6e2de75e07f0adc63c7e1175c0ae9def4c3dc5471fb614758e8",
+      "bytes": 1986
+    },
+    "native-delivery.json": {
+      "sha256": "b8d92d2d496a5366a992410257f35f4b2a31172627e526b52e7d2bc1e93cab40",
+      "bytes": 19648
+    },
+    "native-boundaries.json": {
+      "sha256": "2263e0362a9d6a5d865170d6d29f71444251a1ce356fba458e80f7e869dad130",
+      "bytes": 7206
+    },
+    "pi-install/evidence.json": {
+      "sha256": "4f07ccb4f251f57615e199682f29353b6d775b7c62c99a34cd5ed96c2beeb3ef",
+      "bytes": 11068
+    },
+    "upgrade/evidence.json": {
+      "sha256": "aa584437e636e03d2222ffd8c5c59339695c7f15b8e45be707657d30d1232127",
+      "bytes": 7724
+    },
+    "quota/evidence.json": {
+      "sha256": "917ca98fae523e258b8aa215b0984994319f8164f9f02cd5b8157af947d1a243",
+      "bytes": 4483
+    },
+    "readiness/static-initial.json": {
+      "sha256": "897a96787955f1ac28b7c041983fcceca23ed6ee5c6c6548b3e247358aa6609e",
+      "bytes": 26045
+    },
+    "readiness/static-stale.json": {
+      "sha256": "f0e6f88d3834946bc1b098e987e4e9b256483d7463b67a1fc43eae2be284e100",
+      "bytes": 3013
+    },
+    "readiness/codex-canonical.json": {
+      "sha256": "a3bf0f5868216c4e7635f9486911881203e05b2dfdb6ea3f759e1ebb8e037afb",
+      "bytes": 233
+    },
+    "readiness/codex-canonical.recording": {
+      "sha256": "7cd30b9bcaadf48ba76d20f7f99371570dd9df3f9e01cf73eb2de696f7b6d954",
+      "bytes": 25417
+    },
+    "readiness/pi-plain.json": {
+      "sha256": "26ab9af2bd3bdf93e9a2fb7ce1fc194f3fcc444c4680a9581e8dd4199bc8d25b",
+      "bytes": 212
+    },
+    "readiness/pi-plain.recording": {
+      "sha256": "e2c52e0cf7072bfa561c21da04386cd41dd2766f0e91a81bfe0d6d03dda6b201",
+      "bytes": 21892
+    },
+    "readiness/missing-narrow.json": {
+      "sha256": "b1931a413c8046f6ad8d84fa03287ed37d42669c0649341bd34ac6e11b50dd04",
+      "bytes": 208
+    },
+    "readiness/missing-narrow.recording": {
+      "sha256": "c826a1230459882915af0255ec1eec68b21ea45c56389423cf66bb02e389e00a",
+      "bytes": 15998
+    },
+    "readiness/malformed-eof.json": {
+      "sha256": "e3e6481a89c5d2981c5e6ad01ef99ca57035f50bf0ab8e70759c99c6e98a1db3",
+      "bytes": 206
+    },
+    "readiness/malformed-eof.recording": {
+      "sha256": "3f1575a67038b81f6c7b195991b2fef4be18d41431a48f525e388b6eddc47da7",
+      "bytes": 14726
+    },
+    "readiness/unsupported.json": {
+      "sha256": "67f4495aa601dfc676453c755c02dacc414fa1095ced19098f0cb5d66c87258f",
+      "bytes": 204
+    },
+    "readiness/unsupported.recording": {
+      "sha256": "44687efd11c35b9b71d7d8c424f028b0db2580d223882d6320ed93113ccbfc87",
+      "bytes": 19029
+    },
+    "readiness/alias-color.json": {
+      "sha256": "cbba95d363541ce11891d75808a1afdde3d743f76c64c16133444fc18f1e1625",
+      "bytes": 206
+    },
+    "readiness/alias-color.recording": {
+      "sha256": "5f451463115ffa86b4004c3aa642dc857ccea9d94a51eae2b0097fbd253addec",
+      "bytes": 20284
+    },
+    "readiness/stale-native.json": {
+      "sha256": "9a19784b7debeb2d0b35974b4b567a8f93429ff824e861cfd8071787cb192f7a",
+      "bytes": 228
+    },
+    "readiness/stale-native.recording": {
+      "sha256": "6f7dfea861893c8f918cb959194b6996074d95da581f6358a32917ca4abb4646",
+      "bytes": 23652
+    },
+    "pi-install/declined.recording": {
+      "sha256": "c7851d9601be7172477e106fade1ff9d6c7b5db90db693050959a6ea7a27293c",
+      "bytes": 7640
+    },
+    "pi-install/installed.recording": {
+      "sha256": "37436621b5fd45191406c8820606dc99a24795d2834440f53feb85a95d97ed30",
+      "bytes": 8707
+    },
+    "pi-install/interrupted.recording": {
+      "sha256": "0f6265be582890fee6f00dfa9034800df9e1c5876a2ed89b618d13426f06fd81",
+      "bytes": 6450
+    },
+    "pi-install/recovered.recording": {
+      "sha256": "7f810f38036db8fce8f393d2b8a3507ba122d9ddaead6e38b9cb52abb8bfd161",
+      "bytes": 6039
+    },
+    "pi-install/foreign.recording": {
+      "sha256": "5ef27f8c7c99e0ee110e50e84c1c12b5c5a744e17ed50353400e63201c8e5ba7",
+      "bytes": 3533
+    },
+    "pi-install/cancel.recording": {
+      "sha256": "321de51fb855661ac2bcd3f59d6b8910b6c88cab4fd721821aa44cbcb578809d",
+      "bytes": 2861
+    },
+    "pi-install/stale.recording": {
+      "sha256": "ffdb32a04c8a9749471d83913b0851cadc1752829c76d7f1938adae2e0cfd919",
+      "bytes": 5458
+    },
+    "pi-install/updated.recording": {
+      "sha256": "fb8c49e80be56421258fd0871c9e01d8c9bb9ffea855f09dbce6f78b30fee006",
+      "bytes": 9063
+    },
+    "upgrade/rollback-declined.recording": {
+      "sha256": "cd6b137c71b5d6b34fdec0f216fa9a62afb2028ea28dc2fdf516274d74f99708",
+      "bytes": 2803
+    },
+    "upgrade/rollback-applied.recording": {
+      "sha256": "65e5e4542db1a7112b7906c6a059564208badb0ab36fab3d91d5944375293d80",
+      "bytes": 4136
+    },
+    "quota/timing.recording": {
+      "sha256": "820fb96c007e85e34b349c29345075784c6d6ff439d2451ba9b8414ef71d6c58",
+      "bytes": 996
+    },
+    "quota/unknown-narrow.recording": {
+      "sha256": "90a757f01c700e669d36a6f1a65d21afadc90629631b2c0b802ba23db46344e3",
+      "bytes": 847
+    },
+    "quota/ordinary-nocolor.recording": {
+      "sha256": "26464f8c26db764a24bcb5734fa66a0ce910c11edcf48776e2a1bbf0d553dc64",
+      "bytes": 642
+    },
+    "quota/partial.recording": {
+      "sha256": "1dbe4838727901c26ee1b9548027d9b178a4a5cf8847e7c699e4e8b2f0374363",
+      "bytes": 4192
+    },
+    "quota/partial-narrow.recording": {
+      "sha256": "0d8e06a8637fcebeae42d9e4ce639dd9d0078fd03754e1e2a08d0cca047e933e",
+      "bytes": 3713
+    },
+    "quota/default-no.recording": {
+      "sha256": "c72d0edadb64bff189886fdab48445ae93513c6c3b49d37db764e849f18a5d65",
+      "bytes": 2409
+    },
+    "quota/back.recording": {
+      "sha256": "aa114f4f82b5b9e5ac9ad52f44d501560c3aa0c7f15a746af5ec7288f213bc4d",
+      "bytes": 2370
+    },
+    "quota/effect-checks-cwd.recording": {
+      "sha256": "6ecd0d33d445eaa929337f28175ff843d74bc0f0316f76370673dc69a6fe5f6c",
+      "bytes": 27935
+    }
+  },
+  "limits": [
+    "Quota presentation uses source-bound test drivers and synthetic API failures, not the retained executable or live quota exhaustion.",
+    "Other native journeys use the exact retained runtime and synthetic owned profiles.",
+    "No existing authentication or personal installation was changed.",
+    "Historical retrieval recovery preflights stopped before model execution; not included as passing outcomes here."
+  ]
+}

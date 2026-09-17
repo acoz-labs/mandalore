@@ -78,3 +78,18 @@ learning and delivery, Codex/Pi cross-harness correction and history, local-only
 restrictions, quoted-cue inertness and no-filler consolidation. Full sanitized
 receipts are linked by SHA256. Other outcome matrices remain in progress; this is
 not a whole-candidate acceptance verdict.
+
+The [systems checkpoint](engineering/systems-checkpoint.json) adds five delivery
+CLI scenarios, 18 Pi delivery callbacks, seven Pi boundary callbacks, eight
+installation/repair journeys, seven readiness journeys and two upgrade/rollback
+journeys. Protected fixture authentication, sessions, prior generations and
+unrelated files were checked. Cancellation, lock contention, ambiguous push,
+offline recovery and semantic conflict are covered without treating local
+durability as confirmed delivery.
+
+Eight quota-presentation journeys are separately classified as source-bound Go
+test drivers with synthetic API responses, not observations of live quota
+exhaustion or the retained executable. Other journeys use the retained runtime.
+The linked manifest hashes all 40 sanitized receipts and terminal recordings.
+Historical retrieval preflight failures caused by reconstructed fixture bytes
+are excluded from these passing results and retained privately for diagnosis.

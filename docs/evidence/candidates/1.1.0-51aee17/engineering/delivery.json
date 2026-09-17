@@ -1,0 +1,62 @@
+{
+  "source": "51aee17afec015ba2ad44584f8190b4bb6d901a8",
+  "identity": "mandalore:51aee17afec015ba2ad44584f8190b4bb6d901a8:sha256:7adacb6e7dc990a12df2cc25e72404dde0156835d771474c9745d3b517a0780c",
+  "results": [
+    {
+      "case": "missing-git",
+      "invalid_and_read_only_unchanged": true,
+      "saved_locally": true,
+      "record_id": "record-9f7a5c2918f094e65a82d600f7c6cb69",
+      "revision_id": "revision-d11efd51626387d23afc987912e83bec",
+      "delivery": {
+        "error": "sync.failed"
+      },
+      "no_implicit_git": true
+    },
+    {
+      "case": "no-origin",
+      "invalid_and_read_only_unchanged": true,
+      "saved_locally": true,
+      "record_id": "record-b46cbbe88d1788abdb4c8c1c63fce311",
+      "revision_id": "revision-5b97745ae76a2bbe9725d6b187114720",
+      "delivery": {
+        "state": "local-only",
+        "phase": "remote",
+        "delivered": false
+      }
+    },
+    {
+      "case": "offline",
+      "invalid_and_read_only_unchanged": true,
+      "saved_locally": true,
+      "record_id": "record-5b89285fef250e93b74504647d2e9a43",
+      "revision_id": "revision-e2b8a5c3382171c8be6e24573d2bbc48",
+      "delivery": {
+        "state": "pending",
+        "phase": "fetch",
+        "delivered": false
+      }
+    },
+    {
+      "case": "offline-explicit-recovery",
+      "delivered": true,
+      "semantic_content_unchanged": true,
+      "head": "3b5102273d375e30ac59f964cb6708a62e6efe86"
+    },
+    {
+      "case": "concurrent-heads",
+      "saved_locally": true,
+      "delivered": true,
+      "state": "conflicted",
+      "semantic_conflicts": 1,
+      "authoritative_current_records": 0,
+      "head": "e3b3f05d067842e001db85433cda25959d355f6f",
+      "journal_id": "event-1a4228eaa4bbc7f0c380074a58ae11af"
+    }
+  ],
+  "limitations": [
+    "actual retained CLI, not native model judgment",
+    "local bare origins, not hosted credential verification",
+    "writer-lock, live cancellation and ambiguous-response cases remain separate"
+  ]
+}

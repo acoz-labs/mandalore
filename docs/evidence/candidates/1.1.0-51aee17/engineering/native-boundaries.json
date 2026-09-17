@@ -1,0 +1,213 @@
+{
+  "probe": "native-pi-boundaries",
+  "source": "51aee17afec015ba2ad44584f8190b4bb6d901a8",
+  "identity": "mandalore:51aee17afec015ba2ad44584f8190b4bb6d901a8:sha256:7adacb6e7dc990a12df2cc25e72404dde0156835d771474c9745d3b517a0780c",
+  "model_requested": false,
+  "writer_contention": {
+    "save_kinds": 2,
+    "sync_refused": true,
+    "complete_file_hashes_unchanged": true,
+    "heads_unchanged": true,
+    "explicit_release_recovery": true
+  },
+  "ambiguous_push": {
+    "saved_id": "event-88970cb9fdbd764ada1d759b07bab96c",
+    "saved_locally": true,
+    "reported_pending": true,
+    "reported_delivered": false,
+    "actual_remote_inspected_before_recovery": true,
+    "actual_delivered_head": "e8cfa55da1b4e4cffd24d8b69ad0199f7bd1a701",
+    "no_duplicate_save": true,
+    "semantic_recovery_unchanged": true,
+    "recovered": true
+  },
+  "outcomes": [
+    {
+      "bank": "a",
+      "id": "busy-journal",
+      "name": "memory_journal_append_and_sync",
+      "envelope": {
+        "protocol_version": 1,
+        "ok": false,
+        "error": {
+          "code": "store.busy",
+          "message": "Another writer holds the signet lock; retry after it finishes.",
+          "retryable": true,
+          "write_may_have_occurred": false,
+          "inspect_before_retry": false
+        }
+      },
+      "elapsed_ms": 23.02320800000001
+    },
+    {
+      "bank": "a",
+      "id": "busy-record",
+      "name": "memory_remember_and_sync",
+      "envelope": {
+        "protocol_version": 1,
+        "ok": false,
+        "error": {
+          "code": "store.busy",
+          "message": "Another writer holds the signet lock; retry after it finishes.",
+          "retryable": true,
+          "write_may_have_occurred": false,
+          "inspect_before_retry": false
+        }
+      },
+      "elapsed_ms": 28.933542000000045
+    },
+    {
+      "bank": "a",
+      "id": "busy-sync",
+      "name": "memory_sync",
+      "envelope": {
+        "protocol_version": 1,
+        "ok": false,
+        "error": {
+          "code": "store.busy",
+          "message": "Another writer holds the signet lock; retry after it finishes.",
+          "retryable": true,
+          "write_may_have_occurred": false,
+          "inspect_before_retry": false
+        }
+      },
+      "elapsed_ms": 22.878832999999986
+    },
+    {
+      "bank": "a",
+      "id": "after-lock",
+      "name": "memory_journal_append_and_sync",
+      "envelope": {
+        "protocol_version": 1,
+        "ok": true,
+        "result": {
+          "saved": {
+            "signet_id": "signet-ad5562deba2dea084333db412eed4a91",
+            "id": "event-276b86d3b141f30e4217945808568fcb",
+            "durable_locally": true,
+            "synchronization": "synchronized"
+          },
+          "delivery": {
+            "protocol_version": 1,
+            "ok": true,
+            "result": {
+              "signet_id": "signet-ad5562deba2dea084333db412eed4a91",
+              "state": "synchronized",
+              "phase": "complete",
+              "head": "3ef3d1d1e71b1e7293ce53f032dc872de93211be",
+              "remote_head": "3ef3d1d1e71b1e7293ce53f032dc872de93211be",
+              "remote_id": "018932fc3a0e60e669f6feb471e1bfffea0fef3f7e2ee14f8634f6fda7e086f3",
+              "checked_at": "2026-09-17T16:08:33.49644Z",
+              "checkpointed": true,
+              "delivered": true,
+              "semantic_conflicts": 0,
+              "notice": "This head was delivered at checked_at; the remote may advance afterward. Already-read model context is not refreshed."
+            }
+          }
+        }
+      },
+      "elapsed_ms": 1222.24425
+    },
+    {
+      "bank": "a",
+      "id": "ambiguous-push",
+      "name": "memory_journal_append_and_sync",
+      "envelope": {
+        "protocol_version": 1,
+        "ok": true,
+        "result": {
+          "saved": {
+            "signet_id": "signet-ad5562deba2dea084333db412eed4a91",
+            "id": "event-88970cb9fdbd764ada1d759b07bab96c",
+            "durable_locally": true,
+            "synchronization": "pending"
+          },
+          "delivery": {
+            "protocol_version": 1,
+            "ok": true,
+            "result": {
+              "signet_id": "signet-ad5562deba2dea084333db412eed4a91",
+              "state": "pending",
+              "phase": "push",
+              "head": "e8cfa55da1b4e4cffd24d8b69ad0199f7bd1a701",
+              "remote_head": "3ef3d1d1e71b1e7293ce53f032dc872de93211be",
+              "remote_id": "018932fc3a0e60e669f6feb471e1bfffea0fef3f7e2ee14f8634f6fda7e086f3",
+              "checked_at": "2026-09-17T16:08:33.662824Z",
+              "checkpointed": true,
+              "delivered": false,
+              "semantic_conflicts": 0,
+              "notice": "Push not confirmed; inspect the remote before retrying. Local history is preserved."
+            }
+          }
+        }
+      },
+      "elapsed_ms": 1028.259375
+    },
+    {
+      "bank": "a",
+      "id": "inspect-ambiguous-journal",
+      "name": "memory_journal",
+      "envelope": {
+        "protocol_version": 1,
+        "ok": true,
+        "result": {
+          "items": [
+            {
+              "schema_version": 1,
+              "id": "event-88970cb9fdbd764ada1d759b07bab96c",
+              "kind": "test",
+              "summary": "Push reached origin before its acknowledgement failed.",
+              "recorded_at": "2026-09-17T16:08:33.649244Z",
+              "authorship": {
+                "device_id": "device-7cb3c358a67e387d28904bbc1c08f2e4",
+                "actor": "Synthetic tester A",
+                "harness": "pi",
+                "model": null,
+                "session_id": null
+              }
+            },
+            {
+              "schema_version": 1,
+              "id": "event-276b86d3b141f30e4217945808568fcb",
+              "kind": "test",
+              "summary": "Writer available after explicit lock release.",
+              "recorded_at": "2026-09-17T16:08:32.311212Z",
+              "authorship": {
+                "device_id": "device-7cb3c358a67e387d28904bbc1c08f2e4",
+                "actor": "Synthetic tester A",
+                "harness": "pi",
+                "model": null,
+                "session_id": null
+              }
+            }
+          ],
+          "truncated": false
+        }
+      },
+      "elapsed_ms": 23.283124999999927
+    },
+    {
+      "bank": "a",
+      "id": "recover-ambiguous",
+      "name": "memory_sync",
+      "envelope": {
+        "protocol_version": 1,
+        "ok": true,
+        "result": {
+          "signet_id": "signet-ad5562deba2dea084333db412eed4a91",
+          "state": "synchronized",
+          "phase": "complete",
+          "head": "e8cfa55da1b4e4cffd24d8b69ad0199f7bd1a701",
+          "remote_head": "e8cfa55da1b4e4cffd24d8b69ad0199f7bd1a701",
+          "remote_id": "018932fc3a0e60e669f6feb471e1bfffea0fef3f7e2ee14f8634f6fda7e086f3",
+          "checked_at": "2026-09-17T16:08:35.38011Z",
+          "checkpointed": true,
+          "delivered": true,
+          "semantic_conflicts": 0,
+          "notice": "This head was delivered at checked_at; the remote may advance afterward. Already-read model context is not refreshed."
+        }
+      },
+      "elapsed_ms": 679.7067089999996
+    }
+  ]
+}

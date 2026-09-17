@@ -1,0 +1,557 @@
+{
+  "probe": "native-pi-delivery-callbacks",
+  "model_requested": false,
+  "candidate_source": "51aee17afec015ba2ad44584f8190b4bb6d901a8",
+  "identity": "mandalore:51aee17afec015ba2ad44584f8190b4bb6d901a8:sha256:7adacb6e7dc990a12df2cc25e72404dde0156835d771474c9745d3b517a0780c",
+  "outcomes": [
+    {
+      "bank": "a",
+      "id": "before-save",
+      "name": "memory_journal_append",
+      "envelope": {
+        "protocol_version": 1,
+        "ok": false,
+        "error": {
+          "code": "operation.cancelled",
+          "message": "Mandalore call cancelled before execution.",
+          "retryable": false,
+          "write_may_have_occurred": false,
+          "inspect_before_retry": false
+        }
+      },
+      "elapsed_ms": 0.3825420000000008
+    },
+    {
+      "bank": "a",
+      "id": "parallel-a",
+      "name": "memory_journal_append",
+      "envelope": {
+        "protocol_version": 1,
+        "ok": true,
+        "result": {
+          "signet_id": "signet-72d761856aa6de4d47b56fe7f01e3056",
+          "id": "event-e33afa00558e779c933e5b8c458862a0",
+          "durable_locally": true,
+          "synchronization": "not-requested"
+        }
+      },
+      "elapsed_ms": 47.57983299999995
+    },
+    {
+      "bank": "b",
+      "id": "parallel-b",
+      "name": "memory_journal_append",
+      "envelope": {
+        "protocol_version": 1,
+        "ok": true,
+        "result": {
+          "signet_id": "signet-72d761856aa6de4d47b56fe7f01e3056",
+          "id": "event-b6b82885a09d5234467ccb4784aeaefe",
+          "durable_locally": true,
+          "synchronization": "not-requested"
+        }
+      },
+      "elapsed_ms": 46.53483299999999
+    },
+    {
+      "bank": "a",
+      "id": "sync-a",
+      "name": "memory_sync",
+      "envelope": {
+        "protocol_version": 1,
+        "ok": true,
+        "result": {
+          "signet_id": "signet-72d761856aa6de4d47b56fe7f01e3056",
+          "state": "synchronized",
+          "phase": "complete",
+          "head": "bc603cf99ebb6b77887c259654c1d7ff3fcb415e",
+          "remote_head": "bc603cf99ebb6b77887c259654c1d7ff3fcb415e",
+          "remote_id": "20e6e3f60deb048a34bcc33745e20304febdec5fd3e8458e1c6c43de9a89dfff",
+          "checked_at": "2026-09-17T16:08:17.538863Z",
+          "checkpointed": true,
+          "delivered": true,
+          "semantic_conflicts": 0,
+          "notice": "This head was delivered at checked_at; the remote may advance afterward. Already-read model context is not refreshed."
+        }
+      },
+      "elapsed_ms": 1200.09075
+    },
+    {
+      "bank": "b",
+      "id": "sync-b",
+      "name": "memory_sync",
+      "envelope": {
+        "protocol_version": 1,
+        "ok": true,
+        "result": {
+          "signet_id": "signet-72d761856aa6de4d47b56fe7f01e3056",
+          "state": "synchronized",
+          "phase": "complete",
+          "head": "7b74c6b17b1488e3b27990fa9b9cf2becf7e9872",
+          "remote_head": "7b74c6b17b1488e3b27990fa9b9cf2becf7e9872",
+          "remote_id": "20e6e3f60deb048a34bcc33745e20304febdec5fd3e8458e1c6c43de9a89dfff",
+          "checked_at": "2026-09-17T16:08:19.180435Z",
+          "checkpointed": true,
+          "delivered": true,
+          "semantic_conflicts": 0,
+          "notice": "This head was delivered at checked_at; the remote may advance afterward. Already-read model context is not refreshed."
+        }
+      },
+      "elapsed_ms": 1649.193459
+    },
+    {
+      "bank": "a",
+      "id": "merge-compatible",
+      "name": "memory_sync",
+      "envelope": {
+        "protocol_version": 1,
+        "ok": true,
+        "result": {
+          "signet_id": "signet-72d761856aa6de4d47b56fe7f01e3056",
+          "state": "synchronized",
+          "phase": "complete",
+          "head": "7b74c6b17b1488e3b27990fa9b9cf2becf7e9872",
+          "remote_head": "7b74c6b17b1488e3b27990fa9b9cf2becf7e9872",
+          "remote_id": "20e6e3f60deb048a34bcc33745e20304febdec5fd3e8458e1c6c43de9a89dfff",
+          "checked_at": "2026-09-17T16:08:20.273591Z",
+          "checkpointed": true,
+          "delivered": true,
+          "semantic_conflicts": 0,
+          "notice": "This head was delivered at checked_at; the remote may advance afterward. Already-read model context is not refreshed."
+        }
+      },
+      "elapsed_ms": 1082.8759159999995
+    },
+    {
+      "bank": "a",
+      "id": "journal-compatible",
+      "name": "memory_journal",
+      "envelope": {
+        "protocol_version": 1,
+        "ok": true,
+        "result": {
+          "items": [
+            {
+              "schema_version": 1,
+              "id": "event-b6b82885a09d5234467ccb4784aeaefe",
+              "kind": "test",
+              "summary": "Compatible outcome from B.",
+              "recorded_at": "2026-09-17T16:08:16.328799Z",
+              "authorship": {
+                "device_id": "device-f7ea278bfbdce3cd0eb3f65b640f06ac",
+                "actor": "Synthetic tester B",
+                "harness": "pi",
+                "model": null,
+                "session_id": null
+              }
+            },
+            {
+              "schema_version": 1,
+              "id": "event-e33afa00558e779c933e5b8c458862a0",
+              "kind": "test",
+              "summary": "Compatible outcome from A.",
+              "recorded_at": "2026-09-17T16:08:16.328334Z",
+              "authorship": {
+                "device_id": "device-e7d163ba1bcde561810b9be190da7f15",
+                "actor": "Synthetic tester A",
+                "harness": "pi",
+                "model": null,
+                "session_id": null
+              }
+            }
+          ],
+          "truncated": false
+        }
+      },
+      "elapsed_ms": 23.089708000000428
+    },
+    {
+      "bank": "a",
+      "id": "offline-save",
+      "name": "memory_journal_append_and_sync",
+      "envelope": {
+        "protocol_version": 1,
+        "ok": true,
+        "result": {
+          "saved": {
+            "signet_id": "signet-72d761856aa6de4d47b56fe7f01e3056",
+            "id": "event-2f563631a36a338e50a7fdd6ce87f42f",
+            "durable_locally": true,
+            "synchronization": "pending"
+          },
+          "delivery": {
+            "protocol_version": 1,
+            "ok": true,
+            "result": {
+              "signet_id": "signet-72d761856aa6de4d47b56fe7f01e3056",
+              "state": "pending",
+              "phase": "fetch",
+              "head": "8c270fdd3bb4b87f99dfc63a6ccba5b274e3994c",
+              "remote_id": "98e1bd5b379ab6c62b5d2541ddbd82736b6fa6c3aff510d2af84d333d09984d7",
+              "checked_at": "2026-09-17T16:08:20.369391Z",
+              "checkpointed": true,
+              "delivered": false,
+              "semantic_conflicts": 0,
+              "notice": "Remote unavailable; local changes remain committed."
+            }
+          }
+        }
+      },
+      "elapsed_ms": 630.1597080000001
+    },
+    {
+      "bank": "a",
+      "id": "recover-offline",
+      "name": "memory_sync",
+      "envelope": {
+        "protocol_version": 1,
+        "ok": true,
+        "result": {
+          "signet_id": "signet-72d761856aa6de4d47b56fe7f01e3056",
+          "state": "synchronized",
+          "phase": "complete",
+          "head": "8c270fdd3bb4b87f99dfc63a6ccba5b274e3994c",
+          "remote_head": "8c270fdd3bb4b87f99dfc63a6ccba5b274e3994c",
+          "remote_id": "20e6e3f60deb048a34bcc33745e20304febdec5fd3e8458e1c6c43de9a89dfff",
+          "checked_at": "2026-09-17T16:08:21.759554Z",
+          "checkpointed": true,
+          "delivered": true,
+          "semantic_conflicts": 0,
+          "notice": "This head was delivered at checked_at; the remote may advance afterward. Already-read model context is not refreshed."
+        }
+      },
+      "elapsed_ms": 793.0026250000001
+    },
+    {
+      "bank": "a",
+      "id": "journal-after-offline",
+      "name": "memory_journal",
+      "envelope": {
+        "protocol_version": 1,
+        "ok": true,
+        "result": {
+          "items": [
+            {
+              "schema_version": 1,
+              "id": "event-2f563631a36a338e50a7fdd6ce87f42f",
+              "kind": "test",
+              "summary": "Durable while synthetic remote is unavailable.",
+              "recorded_at": "2026-09-17T16:08:20.357148Z",
+              "authorship": {
+                "device_id": "device-e7d163ba1bcde561810b9be190da7f15",
+                "actor": "Synthetic tester A",
+                "harness": "pi",
+                "model": null,
+                "session_id": null
+              }
+            },
+            {
+              "schema_version": 1,
+              "id": "event-b6b82885a09d5234467ccb4784aeaefe",
+              "kind": "test",
+              "summary": "Compatible outcome from B.",
+              "recorded_at": "2026-09-17T16:08:16.328799Z",
+              "authorship": {
+                "device_id": "device-f7ea278bfbdce3cd0eb3f65b640f06ac",
+                "actor": "Synthetic tester B",
+                "harness": "pi",
+                "model": null,
+                "session_id": null
+              }
+            },
+            {
+              "schema_version": 1,
+              "id": "event-e33afa00558e779c933e5b8c458862a0",
+              "kind": "test",
+              "summary": "Compatible outcome from A.",
+              "recorded_at": "2026-09-17T16:08:16.328334Z",
+              "authorship": {
+                "device_id": "device-e7d163ba1bcde561810b9be190da7f15",
+                "actor": "Synthetic tester A",
+                "harness": "pi",
+                "model": null,
+                "session_id": null
+              }
+            }
+          ],
+          "truncated": false
+        }
+      },
+      "elapsed_ms": 24.040541999999732
+    },
+    {
+      "bank": "a",
+      "id": "after-save",
+      "name": "memory_journal_append_and_sync",
+      "envelope": {
+        "protocol_version": 1,
+        "ok": true,
+        "result": {
+          "saved": {
+            "signet_id": "signet-72d761856aa6de4d47b56fe7f01e3056",
+            "id": "event-39947374690488c32bf4d04a03a21c0f",
+            "durable_locally": true,
+            "synchronization": "pending"
+          },
+          "delivery": {
+            "protocol_version": 1,
+            "ok": false,
+            "error": {
+              "sync_status": {
+                "signet_id": "signet-72d761856aa6de4d47b56fe7f01e3056",
+                "state": "pending",
+                "phase": "fetch",
+                "head": "3fcb8606303dfecbfaded5dcdf2e632753ffdd29",
+                "remote_id": "20e6e3f60deb048a34bcc33745e20304febdec5fd3e8458e1c6c43de9a89dfff",
+                "checked_at": "2026-09-17T16:08:21.834074Z",
+                "checkpointed": true,
+                "delivered": false,
+                "semantic_conflicts": 0,
+                "notice": "Synchronization stopped; a write or delivery may have occurred. Inspect this phase and history before retrying."
+              },
+              "code": "operation.cancelled",
+              "message": "Synchronization stopped; inspect its phase and local/remote history before retrying",
+              "retryable": false,
+              "write_may_have_occurred": true,
+              "inspect_before_retry": true
+            }
+          }
+        }
+      },
+      "elapsed_ms": 664.3412500000004,
+      "git_child_reaped": true
+    },
+    {
+      "bank": "a",
+      "id": "recover-cancel",
+      "name": "memory_sync",
+      "envelope": {
+        "protocol_version": 1,
+        "ok": true,
+        "result": {
+          "signet_id": "signet-72d761856aa6de4d47b56fe7f01e3056",
+          "state": "synchronized",
+          "phase": "complete",
+          "head": "3fcb8606303dfecbfaded5dcdf2e632753ffdd29",
+          "remote_head": "3fcb8606303dfecbfaded5dcdf2e632753ffdd29",
+          "remote_id": "20e6e3f60deb048a34bcc33745e20304febdec5fd3e8458e1c6c43de9a89dfff",
+          "checked_at": "2026-09-17T16:08:23.181683Z",
+          "checkpointed": true,
+          "delivered": true,
+          "semantic_conflicts": 0,
+          "notice": "This head was delivered at checked_at; the remote may advance afterward. Already-read model context is not refreshed."
+        }
+      },
+      "elapsed_ms": 732.4573330000003
+    },
+    {
+      "bank": "a",
+      "id": "journal-after-cancel",
+      "name": "memory_journal",
+      "envelope": {
+        "protocol_version": 1,
+        "ok": true,
+        "result": {
+          "items": [
+            {
+              "schema_version": 1,
+              "id": "event-39947374690488c32bf4d04a03a21c0f",
+              "kind": "test",
+              "summary": "Saved before controlled fetch interruption.",
+              "recorded_at": "2026-09-17T16:08:21.822867Z",
+              "authorship": {
+                "device_id": "device-e7d163ba1bcde561810b9be190da7f15",
+                "actor": "Synthetic tester A",
+                "harness": "pi",
+                "model": null,
+                "session_id": null
+              }
+            },
+            {
+              "schema_version": 1,
+              "id": "event-2f563631a36a338e50a7fdd6ce87f42f",
+              "kind": "test",
+              "summary": "Durable while synthetic remote is unavailable.",
+              "recorded_at": "2026-09-17T16:08:20.357148Z",
+              "authorship": {
+                "device_id": "device-e7d163ba1bcde561810b9be190da7f15",
+                "actor": "Synthetic tester A",
+                "harness": "pi",
+                "model": null,
+                "session_id": null
+              }
+            },
+            {
+              "schema_version": 1,
+              "id": "event-b6b82885a09d5234467ccb4784aeaefe",
+              "kind": "test",
+              "summary": "Compatible outcome from B.",
+              "recorded_at": "2026-09-17T16:08:16.328799Z",
+              "authorship": {
+                "device_id": "device-f7ea278bfbdce3cd0eb3f65b640f06ac",
+                "actor": "Synthetic tester B",
+                "harness": "pi",
+                "model": null,
+                "session_id": null
+              }
+            },
+            {
+              "schema_version": 1,
+              "id": "event-e33afa00558e779c933e5b8c458862a0",
+              "kind": "test",
+              "summary": "Compatible outcome from A.",
+              "recorded_at": "2026-09-17T16:08:16.328334Z",
+              "authorship": {
+                "device_id": "device-e7d163ba1bcde561810b9be190da7f15",
+                "actor": "Synthetic tester A",
+                "harness": "pi",
+                "model": null,
+                "session_id": null
+              }
+            }
+          ],
+          "truncated": false
+        }
+      },
+      "elapsed_ms": 24.571083000000726
+    },
+    {
+      "bank": "b",
+      "id": "before-conflict",
+      "name": "memory_sync",
+      "envelope": {
+        "protocol_version": 1,
+        "ok": true,
+        "result": {
+          "signet_id": "signet-72d761856aa6de4d47b56fe7f01e3056",
+          "state": "synchronized",
+          "phase": "complete",
+          "head": "3fcb8606303dfecbfaded5dcdf2e632753ffdd29",
+          "remote_head": "3fcb8606303dfecbfaded5dcdf2e632753ffdd29",
+          "remote_id": "20e6e3f60deb048a34bcc33745e20304febdec5fd3e8458e1c6c43de9a89dfff",
+          "checked_at": "2026-09-17T16:08:24.378476Z",
+          "checkpointed": true,
+          "delivered": true,
+          "semantic_conflicts": 0,
+          "notice": "This head was delivered at checked_at; the remote may advance afterward. Already-read model context is not refreshed."
+        }
+      },
+      "elapsed_ms": 1170.535917000001
+    },
+    {
+      "bank": "a",
+      "id": "left-choice",
+      "name": "memory_remember",
+      "envelope": {
+        "protocol_version": 1,
+        "ok": true,
+        "result": {
+          "signet_id": "signet-72d761856aa6de4d47b56fe7f01e3056",
+          "id": "revision-9389be81a45c667bf2c3912f3b15742f",
+          "record_id": "record-4089bc05f35b7730c3517650ba38db3a",
+          "durable_locally": true,
+          "synchronization": "not-requested"
+        }
+      },
+      "elapsed_ms": 56.33458299999984
+    },
+    {
+      "bank": "b",
+      "id": "right-choice",
+      "name": "memory_remember_and_sync",
+      "envelope": {
+        "protocol_version": 1,
+        "ok": true,
+        "result": {
+          "saved": {
+            "signet_id": "signet-72d761856aa6de4d47b56fe7f01e3056",
+            "id": "revision-5b0a094fdbda931972c3b33537d043a7",
+            "record_id": "record-4089bc05f35b7730c3517650ba38db3a",
+            "durable_locally": true,
+            "synchronization": "synchronized"
+          },
+          "delivery": {
+            "protocol_version": 1,
+            "ok": true,
+            "result": {
+              "signet_id": "signet-72d761856aa6de4d47b56fe7f01e3056",
+              "state": "synchronized",
+              "phase": "complete",
+              "head": "364cc01c262bafa4864895517b782c915ac8daa7",
+              "remote_head": "364cc01c262bafa4864895517b782c915ac8daa7",
+              "remote_id": "20e6e3f60deb048a34bcc33745e20304febdec5fd3e8458e1c6c43de9a89dfff",
+              "checked_at": "2026-09-17T16:08:25.48986Z",
+              "checkpointed": true,
+              "delivered": true,
+              "semantic_conflicts": 0,
+              "notice": "This head was delivered at checked_at; the remote may advance afterward. Already-read model context is not refreshed."
+            }
+          }
+        }
+      },
+      "elapsed_ms": 1059.3019999999997
+    },
+    {
+      "bank": "a",
+      "id": "merge-conflict",
+      "name": "memory_journal_append_and_sync",
+      "envelope": {
+        "protocol_version": 1,
+        "ok": true,
+        "result": {
+          "saved": {
+            "signet_id": "signet-72d761856aa6de4d47b56fe7f01e3056",
+            "id": "event-54645c087ee95e573df7cc8e7ab5e274",
+            "durable_locally": true,
+            "synchronization": "conflicted"
+          },
+          "delivery": {
+            "protocol_version": 1,
+            "ok": true,
+            "result": {
+              "signet_id": "signet-72d761856aa6de4d47b56fe7f01e3056",
+              "state": "conflicted",
+              "phase": "complete",
+              "head": "7062702cd89c4f8d666c4f6aa8f8e6076b8051cd",
+              "remote_head": "7062702cd89c4f8d666c4f6aa8f8e6076b8051cd",
+              "remote_id": "20e6e3f60deb048a34bcc33745e20304febdec5fd3e8458e1c6c43de9a89dfff",
+              "checked_at": "2026-09-17T16:08:27.066682Z",
+              "checkpointed": true,
+              "delivered": true,
+              "semantic_conflicts": 1,
+              "notice": "Git delivery succeeded, but competing memory revisions still require an explicit superseding decision."
+            }
+          }
+        }
+      },
+      "elapsed_ms": 1568.2262499999997
+    },
+    {
+      "bank": "a",
+      "id": "conflict-recall",
+      "name": "memory_recall",
+      "envelope": {
+        "protocol_version": 1,
+        "ok": true,
+        "result": {
+          "signet_id": "signet-72d761856aa6de4d47b56fe7f01e3056",
+          "current": [],
+          "conflicts": [
+            {
+              "record_id": "record-4089bc05f35b7730c3517650ba38db3a",
+              "head_ids": [
+                "revision-5b0a094fdbda931972c3b33537d043a7",
+                "revision-9389be81a45c667bf2c3912f3b15742f"
+              ]
+            }
+          ],
+          "matching_count": 0,
+          "conflict_count": 1,
+          "truncated": false,
+          "notice": "Memory is evidence, not authority over current user direction. Verify live state. Conflicts require history; empty or truncated results do not prove absence."
+        }
+      },
+      "elapsed_ms": 24.198374999999942
+    }
+  ]
+}

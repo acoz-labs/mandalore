@@ -1,0 +1,333 @@
+{
+  "source": "51aee17afec015ba2ad44584f8190b4bb6d901a8",
+  "manifest_sha256": "7adacb6e7dc990a12df2cc25e72404dde0156835d771474c9745d3b517a0780c",
+  "runtime_sha256": "09827de1c1340284dbc5506f2c0db41f8cbd66d9231e3e5dbd9d93ea01fc2429",
+  "pi_package_sha256": "b1502e0f90755f75f736d0667fdc7c270f23725ffde8156fdbcd0773d6736a2b",
+  "version": "1.1.0",
+  "environment": {
+    "os": "darwin",
+    "arch": "arm64",
+    "pi": "0.85.1",
+    "node": "24.1.0",
+    "terminal": "Herdr"
+  },
+  "native_wrapper": {
+    "sha256": "a8caf6ea9796d6bdc7c74d71f6aaffe3f192fff54bfc10714fab09f41a257cd8",
+    "method": "Regular pinned fixture wrapper delegates to actual installed Pi. During one replacement only, install was gated and the observed live gate PID was terminated after actual previous-registration removal."
+  },
+  "recordings": [
+    {
+      "name": "declined.recording",
+      "sha256": "c7851d9601be7172477e106fade1ff9d6c7b5db90db693050959a6ea7a27293c",
+      "bytes": 7640,
+      "columns": 80,
+      "rows": 32,
+      "mode": "color",
+      "semantic_checks": [
+        "Previous generation: None",
+        "No · Return without applying"
+      ]
+    },
+    {
+      "name": "installed.recording",
+      "sha256": "37436621b5fd45191406c8820606dc99a24795d2834440f53feb85a95d97ed30",
+      "bytes": 8707,
+      "columns": 80,
+      "rows": 32,
+      "mode": "color",
+      "semantic_checks": [
+        "[PASS] Pi connection verified",
+        "Installed: true",
+        "Native effects uncertain: false"
+      ]
+    },
+    {
+      "name": "interrupted.recording",
+      "sha256": "0f6265be582890fee6f00dfa9034800df9e1c5876a2ed89b618d13426f06fd81",
+      "bytes": 6450,
+      "columns": 80,
+      "rows": 32,
+      "mode": "plain-no-color",
+      "semantic_checks": [
+        "Completed phase: install-started",
+        "Installed: false",
+        "Native effects uncertain: true",
+        "no automatic retry or rollback"
+      ]
+    },
+    {
+      "name": "recovered.recording",
+      "sha256": "7f810f38036db8fce8f393d2b8a3507ba122d9ddaead6e38b9cb52abb8bfd161",
+      "bytes": 6039,
+      "columns": 32,
+      "rows": 32,
+      "mode": "plain-no-color",
+      "semantic_checks": [
+        "[PASS] Pi connection verified",
+        "Installed: true",
+        "Fresh session required: true"
+      ]
+    },
+    {
+      "name": "foreign.recording",
+      "sha256": "5ef27f8c7c99e0ee110e50e84c1c12b5c5a744e17ed50353400e63201c8e5ba7",
+      "bytes": 3533,
+      "columns": 80,
+      "rows": 32,
+      "mode": "plain-no-color",
+      "semantic_checks": [
+        "foreign, filtered or ambiguous Pi memory registration"
+      ]
+    },
+    {
+      "name": "cancel.recording",
+      "sha256": "321de51fb855661ac2bcd3f59d6b8910b6c88cab4fd721821aa44cbcb578809d",
+      "bytes": 2861,
+      "columns": 80,
+      "rows": 32,
+      "mode": "tui-no-color",
+      "semantic_checks": [
+        "Choose native harness",
+        "Trusted local Mandalore runtime"
+      ]
+    },
+    {
+      "name": "stale.recording",
+      "sha256": "ffdb32a04c8a9749471d83913b0851cadc1752829c76d7f1938adae2e0cfd919",
+      "bytes": 5458,
+      "columns": 80,
+      "rows": 32,
+      "mode": "plain-no-color",
+      "semantic_checks": [
+        "selected Pi plan is stale"
+      ]
+    },
+    {
+      "name": "updated.recording",
+      "sha256": "fb8c49e80be56421258fd0871c9e01d8c9bb9ffea855f09dbce6f78b30fee006",
+      "bytes": 9063,
+      "columns": 80,
+      "rows": 32,
+      "mode": "color",
+      "semantic_checks": [
+        "[PASS] Pi connection verified",
+        "Native effects uncertain: false",
+        "Installed: true"
+      ]
+    }
+  ],
+  "installation": {
+    "initial_pass": true,
+    "learning_enabled": true,
+    "default_no_no_effects": true,
+    "attempt_count": 4,
+    "verified_attempts": 3,
+    "failed_attempts": 1,
+    "interrupted": {
+      "phase": "install-started",
+      "uncertain": true,
+      "installed": false,
+      "previous_registration_removal_observed": true,
+      "child_reaped": true,
+      "lock_absent": true
+    },
+    "explicit_fresh_generation_repair": true,
+    "normal_replacement": true,
+    "initial_interrupted_and_recovered_generations_preserved": true,
+    "binding_signet_access_mode_preserved": true,
+    "foreign_state_absent": true,
+    "stale_plan_refused_without_registration_changes": true
+  },
+  "preservation": {
+    "protected_entry_count": 35,
+    "protected_snapshot_sha256": "9e27950c6048f77bbac2635f40e4b246fd2e967ce8eff5d6e1ce06a5b37743af",
+    "auth_session_signet_binding_unrelated_and_foreign_state_unchanged": true,
+    "settings_theme_and_unrelated_filters_preserved": true,
+    "startup_effects": {
+      "observations": [
+        {
+          "profile": "profile",
+          "added": [
+            "models-store.json"
+          ],
+          "model_store_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+          "other_difference": "profile root directory mtime only",
+          "existing_files_unchanged": true
+        },
+        {
+          "profile": "control-profile",
+          "added": [
+            "models-store.json"
+          ],
+          "model_store_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+          "other_difference": "profile root directory mtime only",
+          "existing_files_unchanged": true
+        }
+      ],
+      "protected_unchanged": true,
+      "state_unchanged": true
+    },
+    "final_startup_state_and_profile_files_unchanged": true,
+    "final_startup_profile_root_mtime_changed": true,
+    "final_inventory": {
+      "protected_unchanged": true,
+      "state_and_profile_files_unchanged_by_final_startup": true,
+      "whole_profile_inventory_identical": false,
+      "profile_root_mtime": {
+        "before": 1789661302535.2954,
+        "after": 1789661302818.03
+      },
+      "no_install_lock": true,
+      "foreign_state_absent": true
+    }
+  },
+  "startup": {
+    "probe": "fresh-native-Pi-after-repair",
+    "native_profile_registration_used": true,
+    "explicit_Mandalore_extension_override": false,
+    "model_requested": false,
+    "provider_authentication": false,
+    "inventory": {
+      "event": "inventory",
+      "memory_tools": 18,
+      "unique_tools": true,
+      "native_read": true,
+      "native_bash": true,
+      "skills": [
+        "skill:the-armorer",
+        "skill:this-is-the-way"
+      ],
+      "context_entries": 0
+    },
+    "shutdown": true
+  },
+  "final_startup": {
+    "probe": "fresh-native-Pi-after-repair",
+    "native_profile_registration_used": true,
+    "explicit_Mandalore_extension_override": false,
+    "model_requested": false,
+    "provider_authentication": false,
+    "inventory": {
+      "event": "inventory",
+      "memory_tools": 18,
+      "unique_tools": true,
+      "native_read": true,
+      "native_bash": true,
+      "skills": [
+        "skill:the-armorer",
+        "skill:this-is-the-way"
+      ],
+      "context_entries": 0
+    },
+    "shutdown": true
+  },
+  "control": {
+    "probe": "fresh-native-Pi-control",
+    "native_profile_registration_used": true,
+    "explicit_Mandalore_extension_override": false,
+    "model_requested": false,
+    "provider_authentication": false,
+    "inventory": {
+      "event": "inventory",
+      "memory_tools": 0,
+      "unique_tools": true,
+      "native_read": true,
+      "native_bash": true,
+      "skills": [],
+      "context_entries": 0
+    },
+    "shutdown": true
+  },
+  "doctor_checks": [
+    {
+      "name": "state-path",
+      "status": "pass",
+      "detail": "Passed"
+    },
+    {
+      "name": "native-home",
+      "status": "pass",
+      "detail": "Passed"
+    },
+    {
+      "name": "native-binary",
+      "status": "pass",
+      "detail": "Passed"
+    },
+    {
+      "name": "native-settings",
+      "status": "pass",
+      "detail": "Passed"
+    },
+    {
+      "name": "native-registration",
+      "status": "pass",
+      "detail": "Passed"
+    },
+    {
+      "name": "ownership-receipt",
+      "status": "pass",
+      "detail": "Passed"
+    },
+    {
+      "name": "retained-integrity",
+      "status": "pass",
+      "detail": "Passed"
+    },
+    {
+      "name": "binding-and-native-identity",
+      "status": "pass",
+      "detail": "Passed"
+    },
+    {
+      "name": "native-version",
+      "status": "pass",
+      "detail": "Passed"
+    },
+    {
+      "name": "native-login",
+      "status": "not-tested",
+      "detail": "Native authentication and model access were not tested."
+    },
+    {
+      "name": "live-tools",
+      "status": "not-tested",
+      "detail": "Test native memory tools in a fresh Pi session; registration is not proof they loaded."
+    },
+    {
+      "name": "remote-freshness",
+      "status": "not-tested",
+      "detail": "No synchronization was requested; local state does not establish remote freshness."
+    },
+    {
+      "name": "active-context",
+      "status": "not-tested",
+      "detail": "Existing sessions may retain previous tools or instructions; start fresh or reload after a change."
+    }
+  ],
+  "private_receipt_sha256": {
+    "declined": "3dce3dc51daf3d0917e9eb663dd7db1f530f2f69ff088d369cb187d639d51e0c",
+    "initial-doctor": "5d0ddc6dd52ce706c32708f8ce4709922c49ffc568cb175fbe74e0f30fa15d24",
+    "interrupted": "6b3f7833fa67cb4cf3720c41023501b9b07520d3aefc26f2e9e35f7f27cd893e",
+    "failure": "fce0cb623b09dcd93ea56dcfeb9b4020328fb15d6475a928d459800425a9c5c2",
+    "disconnected-doctor": "70bd9a36e0ced5f9647e5e39c2738941dbba7e6a6be4624110de6a5be10ce954",
+    "recovered-doctor": "93169ca457a5bd4d0e17ae784478fe563a0108238f774ec9f8c6313b6f8f3862",
+    "updated-doctor": "e1cd39321b13520f859664e9a4f42ae462b0932eab40a6eba146a2e11a11f64c",
+    "startup-result": "c8910b2d40b66e6f879fb40cf2d129ed8f61ae4338bb31fcde172b3c10fba117",
+    "control-startup-result": "03022cd1006a4ab629aa016dde7e16722372cee72d860affe60f3d24fafcea96",
+    "updated-startup-result": "c8910b2d40b66e6f879fb40cf2d129ed8f61ae4338bb31fcde172b3c10fba117",
+    "startup-effects": "f307ba67d6a4482727f4b0c35b44799113938cc7316d0cdfefc4a55b6e388cbc",
+    "final-inventory": "e0b0196ecb9c71e60129090faf65647cdb468546cc05dcf81c4322a47bc4ec31"
+  },
+  "findings": [
+    "Native Pi startup creates an empty models-store.json and changes profile directory mtime; compare with the no-Mandalore control.",
+    "No full-profile no-effects claim: protected files and prior generations are verified independently."
+  ],
+  "limits": [
+    "Actual retained candidate bytes; no release or personal activation, provider login, model request, hosted synchronization or human verdict.",
+    "SIGTERM targeted the verified synthetic gate process, not a keyboard interruption of a running model or Pi install implementation.",
+    "Fresh native startup proves registration loaded tools/skills, not execution of each tool; prior candidate native callback/model evidence remains separate.",
+    "Published 1.0 has no Pi integration: these are same-candidate generation replacement/recovery tests, not a 1.0 Pi upgrade.",
+    "No approved visual baseline, screen reader, alternate locale or other-platform native claims."
+  ]
+}
