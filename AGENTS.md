@@ -56,6 +56,13 @@ scope. This supersedes only the independent-author rule in that case. It is not
 agent self-acceptance, an acceptance verdict, or permission to publish. All other
 evidence, checks, privacy and release gates remain in effect.
 
+On September 17, 2026 the owner extended engineering self-review to the scoped
+product-page changelog and release-checklist work (acoz#130/#132, Mandalore#109).
+It permits recorded exact-head design/implementation self-review and merges after
+checks, not independent product acceptance or production authorization. The
+website retains its own delivery gates; `docs/product-page-closeout.md` records
+the operational contract without adding cross-repository automation.
+
 On September 16, 2026 the owner explicitly extended personally performed owner
 acceptance to retained source `b89458617b49d2eb0a8686dcd75c26aa7ea6f6ba` and its
 exact artifact for nominated issues #13, #56, #57, #61, #65, #74, #85, #88 and #93.
