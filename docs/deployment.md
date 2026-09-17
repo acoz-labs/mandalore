@@ -49,6 +49,11 @@ engineering artifacts alone do not establish a successful hosted release.
    rebuild mutable source during promotion.
 6. Verify downloadable assets, checksums/manifests, fresh install, update and
    recovery before completing the issue/project release ledger.
+7. Complete the [product-page closeout](product-page-closeout.md): update the
+   public changelog and installation guidance through the website's own reviewed
+   delivery workflow, then record the verified live page. If pending, say
+   **product published; website update pending**. This does not undo artifact
+   publication or change its acceptance ledger.
 
 Repository creation does not authorize a release. `VERSION` declares the intended
 SemVer release, initially 1.0.0, with tag `vVERSION`. Candidate identity additionally
