@@ -22,12 +22,12 @@ Choose native harness
   1. Codex
   2. Pi
   3. Back
-> 
+>
 
 Trusted local Mandalore runtime (not a download)
   :back cancels; EOF exits.
   Default: /synthetic/lab/mandalore-next
-> 
+>
 
 Review Codex connection
   Apply executes the selected trusted binaries and manages this native plugin registration. A hash
@@ -69,7 +69,7 @@ Have all affected Codex sessions exited?
   Enter a number (default 1); :back cancels; EOF exits.
   1. No · Defer plugin update
   2. Yes · Sessions exited; apply this update
-> 
+>
 
 What would you like to do?
   Enter a number (default 10); :back cancels; EOF exits.
@@ -83,5 +83,4 @@ What would you like to do?
   8. Foundlings · Manage historical references
   9. CLI · Install, update or select a retained runtime
   10. Exit
-> 
-
+>

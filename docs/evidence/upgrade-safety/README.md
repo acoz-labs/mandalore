@@ -36,7 +36,8 @@ bytes and mtimes. The synthetic bank and binding remain byte-identical.
 
 [Actual plain-menu recording](menu-defer.txt), captured through macOS `script`
 in the designated terminal lab against the same candidate executable. Workstation
-paths were replaced by synthetic labels; text and entered choices are retained.
+paths were replaced by synthetic labels and trailing prompt whitespace normalized;
+text and entered choices are retained.
 The alternate source path selected identical executable bytes but produced a new
 connection plan, forcing the replacement guard instead of verified replay.
 
