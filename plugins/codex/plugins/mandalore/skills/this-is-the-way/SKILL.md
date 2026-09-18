@@ -39,6 +39,13 @@ bytes); expand when omissions or the task justify more. Use `memory_history`
 for provenance, superseded decisions or conflicting current heads. Conflicting
 heads are unresolved evidence, not interchangeable current guidance.
 
+Withdrawn or visibility-conflicted evidence is not current guidance. Do not use
+history, journals, old conversation context or foundlings to bypass withdrawal,
+or recreate the same knowledge under another record ID. Explicit historical
+inspection remains available. For a request to stop recalling or restore a
+record, read [visibility guidance](references/visibility.md); ordinary corrections
+are not restoration, and neither operation erases every copy.
+
 ## Consult historical references when relevant
 
 For linked old notes, imported-system experience or a gap in current knowledge,
