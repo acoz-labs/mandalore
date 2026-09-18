@@ -120,7 +120,7 @@ func TestRepairPreviewRefusesEditsAndMissingSourceButRecoversMissingCache(t *tes
 				t.Fatal("repair altered identity or reused damaged generation")
 			}
 			f.plan = next
-			if result, err := apply(context.Background(), next, f.run, noProbe); err != nil || !result.Installed {
+			if result, err := applyAcknowledged(context.Background(), next, true, f.run, noProbe); err != nil || !result.Installed {
 				t.Fatal("repair application", result, err)
 			}
 			if _, err := loadReceipt(p.Root); err != nil {

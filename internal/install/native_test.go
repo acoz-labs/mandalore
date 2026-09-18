@@ -230,7 +230,7 @@ func TestApplyNativeSuccessIdempotenceAndPartialRetry(t *testing.T) {
 		t.Fatal(err)
 	}
 	f.plan, f.fail = next, "plugin marketplace add"
-	partial, err := apply(context.Background(), next, f.run, noProbe)
+	partial, err := applyAcknowledged(context.Background(), next, true, f.run, noProbe)
 	if err == nil || partial.Installed || partial.PreviousRoot != oldRoot || partial.Phase != "registration-removed" {
 		t.Fatal("partial state not reported", partial, err)
 	}
@@ -241,7 +241,7 @@ func TestApplyNativeSuccessIdempotenceAndPartialRetry(t *testing.T) {
 		t.Fatal("new generation lost", err)
 	}
 	f.fail = ""
-	if result, err := apply(context.Background(), next, f.run, noProbe); err != nil || !result.Installed {
+	if result, err := applyAcknowledged(context.Background(), next, true, f.run, noProbe); err != nil || !result.Installed {
 		t.Fatal("partial retry", result, err)
 	}
 }
