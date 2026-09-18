@@ -68,11 +68,40 @@ and the menu returned to Exit. Existing long menu labels/help were ellipsized;
 the new safety question and choices were not. Paths/ANSI/trailing whitespace
 were normalized as above. No screen-reader or alternate-locale claim is made.
 
-This is **not** a model-driven agent-session test or independent product
-acceptance. The isolated native profile reports not logged in; no credential
-copying or live-profile activation was used to bypass that boundary. Complete
-session verification remains pending. The new hook is verified;
-fresh-session model/MCP attachment is not inferred from that component result.
+## Complete native-session verification
+
+After the owner completed native device login in the isolated profile, a separate
+model-driven run exercised the same executable and Codex version above. No
+credentials were copied from another profile. Both sessions used the native
+default model, read-only sandbox and no approval prompts. Invocation-local hook
+trust bypass was explicitly selected for these inspected synthetic hooks under
+the authorized lab workflow; this does not test normal hook-trust approval UX.
+
+1. Reinstalled the released 1.1.0 plugin with all synthetic consumers stopped.
+   Started a native session and called live `memory_inspect`: the synthetic
+   signet was healthy.
+2. Kept that session open and attempted candidate apply from a separate lab
+   shell, without acknowledgement. Receipt: `installed: false`,
+   `phase: deferred`, with the old registration retained.
+3. Prompted that same session again: live `memory_inspect` succeeded and returned
+   the same healthy signet. No hook failure appeared in either turn.
+4. Exited the old session, confirmed its pane was back at the shell and no
+   fixture runtime consumer remained, then applied with `--sessions-stopped`.
+   Receipt: `installed: true`, `phase: verified`.
+5. Started a fresh native session. Its actual MCP process used the retained
+   candidate executable with SHA256 listed above; its loaded skill path used
+   candidate generation
+   `711a39b63e28a5657194b8a0768bc803a0b06ebac258e1079c8bc2a0e9ceb24a`.
+   Live `memory_inspect` again returned the same healthy synthetic signet.
+   Exited the test session afterward.
+
+This completes engineering model-session verification, not independent product
+acceptance. All prompts prohibited saves, journals, synchronization and repair;
+no such calls were observed. Personal registration and signet were not targeted.
+The expected trust-bypass startup warning was visible; no live authentication
+material or private transcripts are included here. Partial-registration failure
+and recovery coverage remains simulated unit evidence, not an induced native
+failure. Other native platforms and screen readers remain unverified.
 
 Pinned full host CI passed at the product source above, as did hosted CI run
 35353790603. Plugin and Armorer skill validators passed. Cross-builds are not
