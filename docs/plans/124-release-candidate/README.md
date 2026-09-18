@@ -1,9 +1,9 @@
 # Solution Design: 1.2.0 retained candidate
 
-- Status: Draft
-- Issue: #124
-- Execution envelope: implementation
-- Repository basis: 947022b1c365c47305e4e2bef1319b8bdaf40ee0
+- **Status:** Draft
+- **Issue:** #124
+- **Execution envelope:** implementation
+- **Repository basis:** 947022b1c365c47305e4e2bef1319b8bdaf40ee0
 
 ## Decision
 
