@@ -12,6 +12,12 @@ checkpoints, journals or fetches. No corresponding everyday MCP tool is added.
 Resolve and hash the selected binding, open its guarded signet, validate memory,
 and build a bounded read-only snapshot. Read source twice and compare deterministic
 raw-file digests to reject a changing snapshot without creating a bank lockfile.
+Validate the exact decoded snapshot used for projection with engine validators;
+validation of separately reread live files is not proof about projected bytes.
+Bound source reads to 128 MiB, each existing file to the engine's 4 MiB limit,
+selection input to 128 record IDs/16 scopes/128 journal IDs, and total projected
+revisions plus journals to 128 items. Limit report bytes to 4 MiB and preview
+JSON to 24 KiB so it remains usable within the 32 KiB apply input budget.
 Bound cumulative reads and selected output; fail with a scope-narrowing message
 instead of returning an incomplete usable plan. Re-read identity and source after
 projection. The report is derived only from validated selected data, never from
@@ -59,10 +65,17 @@ binding-directory overlap and overlap with every configured local foundling root
 including disconnected sources. Malformed/uninspectable connection metadata
 fails closed. Do not read foundling content merely to validate a destination.
 Guard the parent with a directory handle and recheck its identity before writes.
-Create destination exclusively with mode0700 and report.json exclusively mode0600;
-write bounded reviewed bytes, sync file/directory. Never overwrite or delete.
+Create a randomly named private sibling staging directory with mode0700 and
+report.json exclusively mode0600; write only the final redacted bytes and sync.
+Revalidate source/binding/parent and publish the directory using the existing
+platform no-replace rename pattern (Darwin RENAME_EXCL, Linux RENAME_NOREPLACE).
+A concurrently created destination is preserved, never merged into or overwritten.
+Use directory-relative handles for writes/publication and inspect identity changes;
+do not reopen a replaced staging path and write into someone else's directory.
+Never automatically delete partial output. Do not claim a sandbox against an
+unrestricted filesystem owner modifying already-produced output.
 
-The result/error receipt names any created directory/file and completion phase,
+The result/error receipt names any staging or published directory/file and phase,
 including cancellation/partial writes. On post-write source drift, the partial
 artifact remains explicitly unconfirmed; no success/rollback claim. A retry needs
 a fresh destination and a newly reviewed plan. No source lockfile, receipt,
