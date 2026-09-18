@@ -138,6 +138,10 @@ func TestProjectionConflictFutureAndItemOmission(t *testing.T) {
 	if err != nil || len(p.RevisionIDs) != 1 || p.RevisionIDs[0] != a.ID || strings.Contains(string(raw), "Silver Heron") {
 		t.Fatal("future head treated as current", err)
 	}
+	_, raw, err = project(s, Selection{RecordIDs: []string{a.RecordID}, IncludeHistory: true})
+	if err != nil || !strings.Contains(string(raw), `"status": "future"`) {
+		t.Fatal("future revision mislabeled as history", err)
+	}
 }
 
 func TestProjectionIdentityAndContentOmitDependentProvenance(t *testing.T) {

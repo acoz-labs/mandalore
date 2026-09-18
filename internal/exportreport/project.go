@@ -160,7 +160,8 @@ func project(s memory.ReportSnapshot, in Selection) (Projection, []byte, error) 
 	for _, source := range s.Sources {
 		sources[source.ID] = source
 	}
-	heads := memory.EffectiveHeads(s.Revisions, time.Now().UTC())
+	now := time.Now().UTC()
+	heads := memory.EffectiveHeads(s.Revisions, now)
 	add := func(item map[string]any) {
 		item["ordinal"] = len(output.Items) + 1
 		output.Items = append(output.Items, item)
@@ -188,6 +189,9 @@ func project(s memory.ReportSnapshot, in Selection) (Projection, []byte, error) 
 				continue
 			}
 			status := "historical"
+			if at, _ := time.Parse(time.RFC3339Nano, r.EffectiveFrom); at.After(now) {
+				status = "future"
+			}
 			if current {
 				status = "current"
 				if len(hs) > 1 {
