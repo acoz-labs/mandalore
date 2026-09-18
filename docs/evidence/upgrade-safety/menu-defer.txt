@@ -1,0 +1,86 @@
+
+Mandalore
+  Memory across time and space. Opening this menu changes nothing. A signet is your private memory
+  bank.
+
+What would you like to do?
+  Enter a number (default 10); :back cancels; EOF exits.
+  1. Signet · Create a new local memory bank
+  2. Signet · Connect an existing local clone
+  3. Signet · Inspect selected memory and sync status
+  4. Signet · Synchronize with its configured remote
+  5. Connection · Connect or update Codex or Pi
+  6. The Armorer · Assess or inspect
+  7. The Armorer · Repair connection
+  8. Foundlings · Manage historical references
+  9. CLI · Install, update or select a retained runtime
+  10. Exit
+> 5
+
+Choose native harness
+  Enter a number (default 1); :back cancels; EOF exits.
+  1. Codex
+  2. Pi
+  3. Back
+>
+
+Trusted local Mandalore runtime (not a download)
+  :back cancels; EOF exits.
+  Default: /synthetic/lab/mandalore-next
+>
+
+Review Codex connection
+  Apply executes the selected trusted binaries and manages this native plugin registration. A hash
+  identifies bytes; it does not prove publisher trust. Retain old source/runtime copies; native
+  cache may be replaced. No signet edits or authentication setup. Review hooks and start a fresh
+  native session afterward.
+  Signet ID:               signet-dcb32f8054c0d7ab92cfb8cf3cbca8b6
+  Binding:                 /synthetic/lab/fixture/binding.json
+  Selected runtime:        /synthetic/lab/mandalore-next
+  Runtime SHA256:          7b45444c091a6aa3f40d1b05cabd77f2db4d82f228bd840a1f16e81602fb3b43
+  Pinned runtime:
+    /synthetic/lab/fixture/state/runtimes/sha256-7b45444c091a6aa3f40d1b05c
+    abd77f2db4d82f228bd840a1f16e81602fb3b43/mandalore
+  Native binary:
+    /synthetic/codex
+  Native SHA256:           4f85982624b3898c8991cb80c0981b2aa71070e3537046c9a95950318a95afcc
+  Native profile:          /synthetic/lab/fixture/profile
+  Installation state:      /synthetic/lab/fixture/state
+  Managed package:
+    /synthetic/lab/fixture/state/connections/fa8bfe48352ef40f3f834da05cbc8
+    6f6963c33c3aab0dab3425b09f4e4b84bff
+  Package version:
+    0.0.0-dev+codex.fa8bfe48352ef40f3f834da05cbc86f6963c33c3aab0dab3425b09f4e4b84bff
+  Embedded package SHA256: 20fe1cdee14d966ec4cc8b11ed54edd2e9f25474439fff469d84cf30ddd5cea4
+
+Apply these changes?
+  Enter a number (default 1); :back cancels; EOF exits.
+  1. No · Return without applying
+  2. Yes · Apply this reviewed plan
+> 2
+
+Connection update deferred
+  Replacing this plugin can remove files used by existing Codex sessions. Exit every Codex session
+  using this profile first; idle or paused is not enough. If this menu is running inside one of
+  those sessions, defer and run it from a separate terminal after exiting. Your CLI update, if
+  completed, remains installed.
+
+Have all affected Codex sessions exited?
+  Enter a number (default 1); :back cancels; EOF exits.
+  1. No · Defer plugin update
+  2. Yes · Sessions exited; apply this update
+>
+
+What would you like to do?
+  Enter a number (default 10); :back cancels; EOF exits.
+  1. Signet · Create a new local memory bank
+  2. Signet · Connect an existing local clone
+  3. Signet · Inspect selected memory and sync status
+  4. Signet · Synchronize with its configured remote
+  5. Connection · Connect or update Codex or Pi
+  6. The Armorer · Assess or inspect
+  7. The Armorer · Repair connection
+  8. Foundlings · Manage historical references
+  9. CLI · Install, update or select a retained runtime
+  10. Exit
+>

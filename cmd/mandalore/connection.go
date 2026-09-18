@@ -116,6 +116,10 @@ func runConnection(ctx context.Context, args []string, input io.Reader, out io.W
 	var profile install.Profile
 	var binary, path, root string
 	var applyRepair bool
+	var sessionsStopped bool
+	if sub == "apply" || sub == "repair" {
+		f.BoolVar(&sessionsStopped, "sessions-stopped", false, "Confirm all Codex sessions using the selected profile have exited")
+	}
 	if sub == "plan" || sub == "doctor" {
 		f.StringVar(&profile.StateDir, "state-dir", "", "Machine-local installation state directory")
 		f.StringVar(&profile.NativeHome, "native-home", "", "Existing native Codex profile")
@@ -149,6 +153,9 @@ func runConnection(ctx context.Context, args []string, input io.Reader, out io.W
 	}
 	if memoryReadOnly && *harness != "pi" {
 		return bad(out, "--memory-read-only is supported by the Pi connection.")
+	}
+	if sessionsStopped && (*harness != "codex" || sub == "repair" && !applyRepair) {
+		return bad(out, "--sessions-stopped applies only to Codex apply or repair --apply.")
 	}
 	if *readOnly && (sub == "apply" || applyRepair) {
 		return emit(out, api.Failure("operation.read_only", "Mutations are disabled for this task.", false))
@@ -206,9 +213,19 @@ func runConnection(ctx context.Context, args []string, input io.Reader, out io.W
 		}
 	}
 	a := api.New(nil, *readOnly)
+	if sub == "apply" && *harness == "codex" && sessionsStopped {
+		var p install.Plan
+		if err := strictjson.Decode(raw, &p, api.MaxInputBytes); err != nil {
+			return bad(out, "Expected an exact approved connection plan.")
+		}
+		raw, _ = json.Marshal(install.ApplyInput{Plan: p, SessionsStopped: true})
+	}
 	result := a.Call(ctx, name, raw)
 	if sub == "repair" && applyRepair && result.OK {
 		raw, _ = json.Marshal(result.Result)
+		if *harness == "codex" && sessionsStopped {
+			raw, _ = json.Marshal(install.ApplyInput{Plan: result.Result.(install.Plan), SessionsStopped: true})
+		}
 		applyName := "connection_apply"
 		if *harness == "pi" {
 			applyName = "pi_" + applyName

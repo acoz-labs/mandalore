@@ -82,4 +82,30 @@ func TestConnectionPlanCLIAndAgentCatalogShareTheContract(t *testing.T) {
 	if code != 1 || failed.OK || failed.Error.ConnectionResult == nil || failed.Error.ConnectionResult.Phase != "preflight" {
 		t.Fatal("missing failure receipt", failed, code)
 	}
+	acknowledged, code := cli(t, []string{"connection", "apply", "--sessions-stopped"}, string(envelope))
+	if code != 1 || acknowledged.Error == nil || acknowledged.Error.ConnectionResult == nil || acknowledged.Error.ConnectionResult.Phase != "preflight" {
+		t.Fatal("acknowledged plan did not reach the same validated boundary", acknowledged, code)
+	}
+	raw, _ = json.Marshal(install.ApplyInput{Plan: shared.Result.(install.Plan), SessionsStopped: true})
+	typed := api.New(nil, false).Call(context.Background(), "connection_apply", raw)
+	if typed.OK || typed.Error == nil || typed.Error.ConnectionResult == nil || typed.Error.ConnectionResult.Phase != "preflight" {
+		t.Fatal("typed acknowledgement rejected as schema input rather than native preflight", typed)
+	}
+}
+
+func TestSessionAcknowledgementIsNotAcceptedOnOtherJourneys(t *testing.T) {
+	for _, args := range [][]string{
+		{"connection", "plan", "--sessions-stopped"},
+		{"connection", "apply", "--harness", "pi", "--sessions-stopped"},
+		{"connection", "repair", "--sessions-stopped"},
+	} {
+		v, code := cli(t, args, "{}")
+		if code == 0 || v.OK {
+			t.Fatal("invalid acknowledgement accepted", args, v)
+		}
+	}
+	v, _ := cli(t, []string{"connection", "apply", "--sessions-stopped", "--read-only"}, "{}")
+	if v.Error == nil || v.Error.Code != "operation.read_only" {
+		t.Fatal("acknowledgement bypassed read-only", v)
+	}
 }

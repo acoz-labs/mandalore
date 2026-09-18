@@ -283,12 +283,29 @@ type Result struct {
 	Notice               string `json:"notice"`
 }
 
+// ApplyInput is deliberately not part of Plan or Receipt. A saved installation
+// must never confer stopped-session permission on a future invocation.
+type ApplyInput struct {
+	Plan
+	SessionsStopped bool `json:"sessions_stopped,omitempty"`
+}
+
 func Apply(ctx context.Context, p Plan) (Result, error) { return apply(ctx, p, native, probeRuntime) }
 
 func apply(ctx context.Context, p Plan, run runner, probe probeFunc) (result Result, resultErr error) {
+	return applyAcknowledged(ctx, p, false, run, probe)
+}
+
+// ApplyAcknowledged accepts an assertion about this invocation only. It is never
+// stored in a plan or receipt and is not proof of automatic session detection.
+func ApplyAcknowledged(ctx context.Context, p Plan, sessionsStopped bool) (Result, error) {
+	return applyAcknowledged(ctx, p, sessionsStopped, native, probeRuntime)
+}
+
+func applyAcknowledged(ctx context.Context, p Plan, sessionsStopped bool, run runner, probe probeFunc) (result Result, resultErr error) {
 	result = Result{Connection: p, RequiresFreshSession: true, Phase: "preflight"}
 	defer func() {
-		if resultErr != nil {
+		if resultErr != nil && result.Phase != "deferred" {
 			result.Notice = "Installation is incomplete. Retained copies and completed phases are preserved; inspect before retrying. No automatic rollback or authentication changes were attempted."
 		}
 	}()
@@ -334,6 +351,20 @@ func apply(ctx context.Context, p Plan, run runner, probe probeFunc) (result Res
 		return result, err
 	}
 	result.PreviousRoot = previous
+	verified, occupied, err := replacementState(ctx, p, run)
+	if err != nil {
+		return result, err
+	}
+	if verified {
+		result.Installed, result.Phase = true, "verified"
+		result.Notice = "The exact connection is already installed and verified; no native registration or cache was changed. This does not verify active-session context, hook trust or live MCP."
+		return result, nil
+	}
+	if occupied && !sessionsStopped {
+		result.Phase = "deferred"
+		result.Notice = "Connection replacement deferred; native registration and cache were not changed. Exit all Codex sessions using this profile (idle is insufficient), then explicitly acknowledge sessions_stopped for this apply. Restart sessions and review hook trust afterward."
+		return result, errors.New("connection replacement requires explicit stopped-session acknowledgement")
+	}
 	if err := stageRuntime(p); err != nil {
 		return result, err
 	}
@@ -353,6 +384,15 @@ func apply(ctx context.Context, p Plan, run runner, probe probeFunc) (result Res
 	}
 	if again != previous {
 		return result, errors.New("native registration changed during preparation; inspect and preview again")
+	}
+	_, occupiedNow, err := replacementState(ctx, p, run)
+	if err != nil {
+		return result, err
+	}
+	if occupiedNow && !sessionsStopped {
+		result.Phase = "deferred"
+		result.Notice = "Native registration appeared during preparation. Replacement deferred without native mutation; exit affected Codex sessions and explicitly acknowledge sessions_stopped before applying again."
+		return result, errors.New("connection replacement requires explicit stopped-session acknowledgement")
 	}
 	if previous != "" && previous != p.Root {
 		if _, err := run(ctx, p.Options, "plugin", "marketplace", "remove", p.Marketplace, "--json"); err != nil {
@@ -390,6 +430,34 @@ func apply(ctx context.Context, p Plan, run runner, probe probeFunc) (result Res
 		return result, err
 	}
 	result.Installed, result.Phase = true, "verified"
-	result.Notice = "Connected for fresh Codex sessions. Review native hook trust and MCP startup. Signet contents, synchronization, authentication, shell startup files and existing sessions were not changed. Explicit MANDALORE_BIN/BINDING overrides still take precedence."
+	result.Notice = "Connected for fresh Codex sessions. Native plugin cache may have been replaced; restart affected sessions and review native hook trust and MCP startup. Signet contents, synchronization, authentication and shell startup files were not changed. Explicit MANDALORE_BIN/BINDING overrides still take precedence."
 	return result, nil
+}
+
+// Call only after ownership/collision checks. Inventory alone is not sufficient
+// to call a repeat application a no-op: retained source and cache must verify.
+func replacementState(ctx context.Context, p Plan, run runner) (verified, occupied bool, err error) {
+	ms, ps, err := inventory(ctx, p.Options, run)
+	if err != nil {
+		return false, false, err
+	}
+	marketOK, pluginOK := false, false
+	for _, m := range ms {
+		if m.Name == p.Marketplace {
+			occupied = true
+			marketOK = m.Root == p.Root && m.Source.Path == p.Root && m.Source.Type == "local"
+		}
+	}
+	for _, v := range ps {
+		if v.ID == p.PluginID {
+			occupied = true
+			pluginOK = v.Enabled && v.Version == p.Version && v.Source.Path == p.Root && v.Source.Type == "local"
+		}
+	}
+	if marketOK && pluginOK {
+		if _, e := owned(p.Root, p, false); e == nil && verifyCache(p, false) == nil {
+			return true, occupied, nil
+		}
+	}
+	return false, occupied, nil
 }

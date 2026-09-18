@@ -79,6 +79,26 @@ new runtime's `connection_plan`/`connection_apply` so its own embedded plugin is
 used. Preserve the selected binding and native profile; do not substitute the
 old runtime's embedded package. Report CLI and connection outcomes separately.
 
+Native replacement can remove cached dependencies still used by existing Codex
+sessions. A `deferred` receipt is an intentional handoff, not a failed memory
+connection to repair. Exit all sessions using the selected native profile before
+replacement; idle, paused or between turns is insufficient. If this conversation
+uses that profile, leave a standalone terminal command for the user to run after
+exiting. Do not set `sessions_stopped` merely because update permission was given.
+
+Where advertised by the selected runtime's operation catalog, `connection_apply`
+accepts the exact raw plan plus `sessions_stopped: true` for this invocation only.
+Human equivalent: `connection apply --sessions-stopped` with the saved plan on
+stdin, or `connection repair --apply --sessions-stopped` for an approved repair.
+Older runtimes may not support that field or guard; do not send unsupported fields
+or assume their lack of a refusal means an active-session update is safe. Apply
+the same exited-session handoff before invoking an older installer. Native trust
+review and fresh-session verification follow activation; no hot reload is promised.
+
+A verified identical connection is returned without reinstalling. This proves
+installed bytes and registration, not the current conversation's runtime or hook
+trust. Acknowledgements are not stored in plans or receipts as future permission.
+
 For a pending activation, inspect its saved plan and partial receipt. Retry that
 same plan only after the cause is resolved; do not select another update or edit
 the pending record to force success. A retained CLI rollback does not rewrite

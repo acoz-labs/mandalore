@@ -40,7 +40,7 @@ type menu struct {
 	// Private test seams; never user-configurable scripts or operation names.
 	releaseInvoke             func(string, any) api.Envelope
 	prepareSelectedConnection func(context.Context, install.Options) (install.Plan, error)
-	applySelectedConnection   func(context.Context, install.Plan) (install.Result, error)
+	applySelectedConnection   func(context.Context, install.Plan, bool) (install.Result, error)
 	prepareSelectedPi         func(context.Context, install.PiOptions) (install.PiPlan, error)
 	applySelectedPi           func(context.Context, install.PiPlan) (install.PiResult, error)
 	nativeInspect             func(string, install.Profile) api.Envelope
@@ -514,12 +514,33 @@ func (m *menu) applyPlan(p install.Plan) error {
 		return err
 	}
 	v := m.call("connection_apply", p, false)
+	if !v.OK && v.Error != nil && v.Error.ConnectionResult != nil && v.Error.ConnectionResult.Phase == "deferred" {
+		if err := m.confirmStoppedSessions(); err != nil {
+			return err
+		}
+		v = m.call("connection_apply", install.ApplyInput{Plan: p, SessionsStopped: true}, false)
+	}
 	if err := m.outcome("Native connection verified", v); err != nil {
 		return err
 	}
 	m.connectionResult(v.Result.(install.Result))
 	m.binary = p.Binary
 	return nil
+}
+
+func (m *menu) confirmStoppedSessions() error {
+	m.block(console.Block{Title: "Connection update deferred", Body: "Replacing this plugin can remove files used by existing Codex sessions. Exit every Codex session using this profile first; idle or paused is not enough. If this menu is running inside one of those sessions, defer and run it from a separate terminal after exiting. Your CLI update, if completed, remains installed."})
+	if m.outputErr != nil {
+		return m.outputErr
+	}
+	n, err := m.selectItem("Have all affected Codex sessions exited?", []string{"No · Defer plugin update", "Yes · Sessions exited; apply this update"}, 0)
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return console.ErrBack
+	}
+	return m.ctx.Err()
 }
 
 func (m *menu) connectionPreview(p install.Plan) {

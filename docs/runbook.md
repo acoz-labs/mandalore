@@ -160,6 +160,32 @@ Changing plugin/runtime/connection may need a fresh session. Updated files do
 not automatically refresh context already read. An interrupted turn cannot
 guarantee persistence of unfinished work.
 
+### Deferred Codex upgrades
+
+Native marketplace replacement can delete cached hook scripts and skills used
+by existing sessions, even while an old MCP process remains alive. A healthy
+MCP alone is therefore not proof that an in-session update is safe.
+
+When apply reports phase `deferred`, keep using the old connection or finish and
+exit every session using the selected profile. An idle/paused agent still counts.
+From a separate shell, apply the reviewed plan with
+`mandalore connection apply --sessions-stopped < plan.json`. For an approved
+repair, add `--sessions-stopped` to `connection repair --apply`. The acknowledgement
+is an operator assertion for this invocation, not automatic session detection or
+permission inherited from a previous install. Then restart and review native
+hook trust/MCP startup. No hot reload is promised.
+
+In the menu, the separate handoff question defaults to defer. Declining it does
+not undo an already-completed CLI update. CLI update and plugin activation are
+separate outcomes. Agents running inside the affected profile should leave the
+standalone command for the user, not acknowledge their own session as stopped.
+
+A later failure with `registration-removed`, `marketplace-registered` or another
+partial phase is not the same as a safe initial deferral. Inspect native inventory
+and retained receipts before retrying; neither automatic rollback nor cache
+resurrection is attempted. Ownership, stale-plan and edited-file refusals still
+apply even with stopped-session acknowledgement.
+
 ### Pi-specific diagnosis
 
 Select Pi in the Armorer menu or use `connection armorer --harness pi` with the

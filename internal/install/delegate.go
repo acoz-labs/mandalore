@@ -78,6 +78,10 @@ func PrepareViaRuntime(ctx context.Context, o Options) (Plan, error) {
 }
 
 func ApplyViaRuntime(ctx context.Context, p Plan) (Result, error) {
+	return ApplyViaRuntimeAcknowledged(ctx, p, false)
+}
+
+func ApplyViaRuntimeAcknowledged(ctx context.Context, p Plan, sessionsStopped bool) (Result, error) {
 	if err := ctx.Err(); err != nil {
 		return Result{}, err
 	}
@@ -90,7 +94,18 @@ func ApplyViaRuntime(ctx context.Context, p Plan) (Result, error) {
 	if !reflect.DeepEqual(fresh, p) {
 		return Result{}, errors.New("selected runtime connection plan is stale; preview again")
 	}
-	b, _ := json.Marshal(p)
+	guarded, err := runtimeSupportsSessionGuard(ctx, p)
+	if err != nil {
+		return Result{}, err
+	}
+	if !guarded && !sessionsStopped {
+		return Result{Connection: p, RequiresFreshSession: true, Phase: "deferred", Notice: "Selected runtime does not advertise the stopped-session guard. No connection apply was invoked. Exit all Codex sessions using this profile, then explicitly acknowledge sessions_stopped; idle is insufficient."}, errors.New("legacy runtime connection activation deferred pending stopped-session acknowledgement")
+	}
+	var input any = p
+	if guarded {
+		input = ApplyInput{Plan: p, SessionsStopped: sessionsStopped}
+	}
+	b, _ := json.Marshal(input)
 	if len(b) > 32768 {
 		return Result{}, errors.New("connection plan exceeds the typed input limit")
 	}
@@ -124,4 +139,56 @@ func ApplyViaRuntime(ctx context.Context, p Plan) (Result, error) {
 		return result, errors.New("selected runtime did not verify a complete native connection")
 	}
 	return result, nil
+}
+
+// Negotiate the additive input through the selected trusted runtime's catalog.
+// Legacy strict decoders must never receive fields they did not advertise.
+// A missing/unreadable catalog is not permission to attempt an unguarded apply.
+func runtimeSupportsSessionGuard(ctx context.Context, p Plan) (bool, error) {
+	raw, err := execute(ctx, p.Binary, filepath.Dir(p.Binding), environment(nil), nil, "operations")
+	if err != nil {
+		return false, errors.New("cannot inspect selected runtime apply contract; no connection apply invoked")
+	}
+	var reply struct {
+		Protocol int  `json:"protocol_version"`
+		OK       bool `json:"ok"`
+		Result   struct {
+			Operations []struct {
+				Name  string          `json:"name"`
+				Input json.RawMessage `json:"input_schema"`
+			} `json:"operations"`
+		} `json:"result"`
+	}
+	if decodeNative(raw, &reply) != nil || reply.Protocol != 1 || !reply.OK {
+		return false, errors.New("invalid selected runtime operation catalog; no connection apply invoked")
+	}
+	found, guarded := false, false
+	for _, op := range reply.Result.Operations {
+		if op.Name != "connection_apply" {
+			continue
+		}
+		var input struct {
+			Type       string                     `json:"type"`
+			Properties map[string]json.RawMessage `json:"properties"`
+		}
+		if found || json.Unmarshal(op.Input, &input) != nil || input.Type != "object" || input.Properties == nil {
+			return false, errors.New("ambiguous selected runtime apply contract")
+		}
+		found = true
+		rawField, exists := input.Properties["sessions_stopped"]
+		var field struct {
+			Type string `json:"type"`
+		}
+		if exists && (json.Unmarshal(rawField, &field) != nil || field.Type != "boolean") {
+			return false, errors.New("unsupported stopped-session acknowledgement contract")
+		}
+		guarded = exists
+	}
+	if !found {
+		return false, errors.New("selected runtime has no connection apply contract")
+	}
+	if got, e := digest(p.Binary); e != nil || got != p.BinarySHA256 {
+		return false, errors.New("selected runtime changed during contract inspection")
+	}
+	return guarded, nil
 }
