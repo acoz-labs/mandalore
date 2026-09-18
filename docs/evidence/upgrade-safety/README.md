@@ -32,12 +32,26 @@ before/after a denied replacement. After closing the held process, an explicit
 acknowledged apply installs the new generation. Identical replay preserves cache
 bytes and mtimes. The synthetic bank and binding remain byte-identical.
 
+## Plain terminal deferral
+
+[Actual plain-menu recording](menu-defer.txt), captured through macOS `script`
+in the designated terminal lab against the same candidate executable. Workstation
+paths were replaced by synthetic labels; text and entered choices are retained.
+The alternate source path selected identical executable bytes but produced a new
+connection plan, forcing the replacement guard instead of verified replay.
+
+Observed: choose connection/update, select Codex, review the plan, approve the
+initial apply, receive the separate stopped-session question, accept its default
+No by pressing Enter, return to the main menu, exit. No successful native-update
+message is shown on this declined path. This is actual plain-terminal interaction,
+not a generated screenshot or a claim of TUI/narrow-width accessibility acceptance.
+
 ## Boundaries and remaining verification
 
 This is **not** a model-driven agent-session test or independent product
 acceptance. The isolated native profile reports not logged in; no credential
 copying or live-profile activation was used to bypass that boundary. Complete
-session and rendered-menu verification remain pending. The new hook is verified;
+session and remaining rendered-menu verification remain pending. The new hook is verified;
 fresh-session model/MCP attachment is not inferred from that component result.
 
 Pinned full host CI passed at the product source above, as did hosted CI run
