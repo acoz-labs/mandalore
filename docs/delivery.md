@@ -31,11 +31,12 @@ same accepted bytes, never a fresh build from moving main.
 
 Use `mise exec -- bin/build-artifacts --output NEW_DIRECTORY` from the selected
 clean source to produce retained platform/plugin assets and compatibility
-manifest. Retain a checksummed archive of that exact candidate directory for the
-portable SHA-256 receipt; preserve the product's own candidate identity and
-individual asset hashes inside it. Supply the retained archive with
-`--artifact-file`. The portable digest supplements, not replaces, product-level
-provenance and payload checks.
+manifest. Use the exact `manifest.json` SHA-256 as the portable artifact identity
+and supply that file with `--artifact-file`. The manifest binds every retained
+payload's size and digest; keep all eight files together outside source control.
+Preserve the product's `mandalore:SOURCE_SHA:sha256:MANIFEST_DIGEST` identity too.
+Run `mise exec -- bin/promote-local-candidate --verify-only --directory DIR
+--identity PRODUCT_IDENTITY` to verify every retained file without publication.
 
 - `issue-criteria`: exercise the assigned behavior and documented compatibility
   boundaries without exposing private memory or credentials.
@@ -50,10 +51,15 @@ provenance and payload checks.
 
 ## Publication and recovery
 
-Use the existing same-byte publisher/guarded local promotion described in
-`docs/development.md` and `docs/deployment.md`, supplying the independently
-accepted retained candidate. Replace the legacy workflow nomination/acceptance
-ledger with portable receipts for new work. Preserve publisher safeguards:
+After portable acceptance, use `mise exec -- bin/promote-local-candidate
+--directory DIR --identity PRODUCT_IDENTITY --issue ISSUE --expected-actor
+MAINTAINER`, supplying the independent maintainer's process-scoped credential.
+This command re-verifies every local payload, invokes the portable gate against
+the accepted manifest digest, then calls the existing same-byte publisher. It
+does not require an Actions transport receipt or rebuild product bytes. Preserve
+the returned publication receipt, including any uncertain pending operation.
+The legacy Actions-backed promoter remains a separate optional path. Preserve
+publisher safeguards:
 immutable release policy, exact version/tag identity, payload verification,
 scoped credentials and retry inspection. Historical owner exceptions do not
 authorize new self-acceptance. Do not rotate unrelated service credentials.
