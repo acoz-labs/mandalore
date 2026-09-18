@@ -270,6 +270,18 @@ func (s *Store) withExclusiveLock(allowPending bool, fn func() error) error {
 	return fn()
 }
 func (s *Store) checkDirectories() error {
+	if err := s.checkDirectoryLayout(); err != nil {
+		return err
+	}
+	if s.Signet.Version == 2 {
+		return s.validateUpgradeState()
+	}
+	return nil
+}
+
+// Layout-only validation lets bounded snapshot readers own all body reads and
+// their aggregate budget; it must not pre-read every upgrade receipt unbounded.
+func (s *Store) checkDirectoryLayout() error {
 	current, err := Open(s.Root)
 	if err != nil {
 		return err
@@ -305,9 +317,6 @@ func (s *Store) checkDirectories() error {
 		}); err != nil {
 			return err
 		}
-	}
-	if s.Signet.Version == 2 {
-		return s.validateUpgradeState()
 	}
 	return nil
 }

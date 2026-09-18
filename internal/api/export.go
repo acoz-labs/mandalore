@@ -21,7 +21,7 @@ func exportOperation[I, O any](name, description string, readOnly bool, fn func(
 }
 
 var exports = []Operation{
-	exportOperation("export_preview", "Preview an explicitly selected derived report without writing. Review metadata is sensitive. No default whole-bank export, synchronization or source changes.", true, func(ctx context.Context, in exportreport.Request) (exportreport.Plan, error) {
+	exportOperation("export_preview", "Preview an explicitly selected derived report without writing. Withheld records require both history and withdrawn opt-ins. Review metadata is sensitive. No default whole-bank export, synchronization or source changes.", true, func(ctx context.Context, in exportreport.Request) (exportreport.Plan, error) {
 		p, err := exportreport.Preview(ctx, in)
 		if err != nil {
 			return p, &exportFailure{err: err}

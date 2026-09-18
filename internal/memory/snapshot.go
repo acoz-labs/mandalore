@@ -10,12 +10,16 @@ import (
 // bounded strict decoding, canonical file paths and preservation of original
 // bytes. This validation API neither reads nor writes the filesystem. Foundling
 // registrations are deliberately outside the supported legacy import format.
+// Visibility and upgrade evidence are accepted only by the format2 report path;
+// their presence never silently expands the supported legacy import contract.
 type Snapshot struct {
-	Signet    Signet
-	Devices   []Device
-	Sources   []Source
-	Revisions []Revision
-	Journal   []JournalEntry
+	Signet     Signet
+	Devices    []Device
+	Sources    []Source
+	Revisions  []Revision
+	Journal    []JournalEntry
+	Visibility []VisibilityEvent
+	Upgrades   []UpgradeRecord
 }
 
 // ReportSnapshot adds historical registrations and a raw portable-data digest.
@@ -29,7 +33,7 @@ type ReportSnapshot struct {
 // ValidateReadLayout checks the engine-owned path/identity rules without reading
 // every object body. Bounded readers still validate their exact decoded snapshot.
 func (s *Store) ValidateReadLayout() error {
-	if err := s.checkDirectories(); err != nil {
+	if err := s.checkDirectoryLayout(); err != nil {
 		return err
 	}
 	return s.validateRootFiles()
@@ -46,7 +50,7 @@ func ValidateSnapshot(snapshot Snapshot) error {
 
 func validateSnapshot(snapshot Snapshot, registrations []FoundlingRegistration, origins bool) error {
 	s := snapshot.Signet
-	if s.Version != FormatVersion || !identifier.MatchString(s.ID) || !textWithin(s.Name, 256) || strings.ContainsAny(s.Name, "\r\n") {
+	if (s.Version != FormatVersion && (!origins || s.Version != 2)) || !identifier.MatchString(s.ID) || !textWithin(s.Name, 256) || strings.ContainsAny(s.Name, "\r\n") {
 		return errors.New("invalid snapshot signet")
 	}
 	devices := map[string]bool{}
@@ -61,6 +65,12 @@ func validateSnapshot(snapshot Snapshot, registrations []FoundlingRegistration, 
 			return fmt.Errorf("unknown snapshot device %s", id)
 		}
 		return nil
+	}
+	if err := ValidateUpgradeRecords(s, snapshot.Upgrades, device); err != nil {
+		return err
+	}
+	if s.Version == 1 && len(snapshot.Visibility) != 0 {
+		return errors.New("visibility evidence requires upgraded snapshot format")
 	}
 	if err := validateRegistrationGraph(registrations, device); err != nil {
 		return err
@@ -84,6 +94,9 @@ func validateSnapshot(snapshot Snapshot, registrations []FoundlingRegistration, 
 		}
 		return nil
 	}); err != nil {
+		return err
+	}
+	if _, err := ResolveVisibility(snapshot.Revisions, snapshot.Visibility, device); err != nil {
 		return err
 	}
 	entries := map[string]bool{}

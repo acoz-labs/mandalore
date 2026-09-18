@@ -25,6 +25,10 @@ type VisibilityState struct {
 	VisibilityHeads []string `json:"visibility_heads"`
 }
 
+// Withheld separates visibility policy from ordinary content conflicts. Unknown
+// or missing state is withheld rather than silently defaulting to visible.
+func (s VisibilityState) Withheld() bool { return visibilityWithheld(s.State) }
+
 // ResolveVisibility validates visibility metadata and the combined causal graph.
 // Callers must also validate the closed revision/source graph and enclosing format.
 // It considers all stored revisions, including future-effective revisions: a

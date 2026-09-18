@@ -14,28 +14,34 @@ import (
 var fieldCategories = []string{"identity", "content", "classification", "timestamps", "authorship", "citations", "change_history", "extensions"}
 
 type Selection struct {
-	RecordIDs      []string       `json:"record_ids,omitempty"`
-	Scopes         []memory.Scope `json:"scopes,omitempty"`
-	JournalIDs     []string       `json:"journal_ids,omitempty"`
-	IncludeHistory bool           `json:"include_history,omitempty"`
-	IncludeDetails bool           `json:"include_details,omitempty"`
-	OmitFields     []string       `json:"omit_fields,omitempty"`
-	OmitRecordIDs  []string       `json:"omit_record_ids,omitempty"`
-	OmitJournalIDs []string       `json:"omit_journal_ids,omitempty"`
+	RecordIDs        []string       `json:"record_ids,omitempty"`
+	Scopes           []memory.Scope `json:"scopes,omitempty"`
+	JournalIDs       []string       `json:"journal_ids,omitempty"`
+	IncludeHistory   bool           `json:"include_history,omitempty"`
+	IncludeWithdrawn bool           `json:"include_withdrawn,omitempty" jsonschema:"Explicitly include withheld records as history; requires include_history. Not current guidance."`
+	IncludeDetails   bool           `json:"include_details,omitempty"`
+	OmitFields       []string       `json:"omit_fields,omitempty"`
+	OmitRecordIDs    []string       `json:"omit_record_ids,omitempty"`
+	OmitJournalIDs   []string       `json:"omit_journal_ids,omitempty"`
 }
 type Conflict struct {
 	RecordID string   `json:"record_id"`
 	HeadIDs  []string `json:"head_ids"`
 }
 type Projection struct {
-	RecordIDs        []string   `json:"record_ids"`
-	RevisionIDs      []string   `json:"revision_ids"`
-	JournalIDs       []string   `json:"journal_ids"`
-	Conflicts        []Conflict `json:"conflicts"`
-	OmittedFields    []string   `json:"omitted_fields"`
-	OmittedRecords   int        `json:"omitted_records"`
-	OmittedJournals  int        `json:"omitted_journals"`
-	OmittedRevisions int        `json:"omitted_revisions"`
+	RecordIDs        []string         `json:"record_ids"`
+	RevisionIDs      []string         `json:"revision_ids"`
+	JournalIDs       []string         `json:"journal_ids"`
+	Conflicts        []Conflict       `json:"conflicts"`
+	OmittedFields    []string         `json:"omitted_fields"`
+	OmittedRecords   int              `json:"omitted_records"`
+	OmittedJournals  int              `json:"omitted_journals"`
+	OmittedRevisions int              `json:"omitted_revisions"`
+	Withheld         []WithheldRecord `json:"withheld_records,omitempty"`
+}
+type WithheldRecord struct {
+	RecordID string `json:"record_id"`
+	State    string `json:"state"`
 }
 type report struct {
 	Kind               string           `json:"kind"`
@@ -56,6 +62,9 @@ func project(s memory.ReportSnapshot, in Selection) (Projection, []byte, error) 
 		return p, nil, errors.New("invalid or oversized explicit report selection; inspect IDs and omission categories")
 	}
 	if len(in.RecordIDs)+len(in.Scopes)+len(in.JournalIDs) == 0 || len(in.RecordIDs) > 128 || len(in.Scopes) > 16 || len(in.JournalIDs) > 128 || len(in.OmitRecordIDs) > 128 || len(in.OmitJournalIDs) > 128 || len(in.OmitFields) > len(fieldCategories) {
+		return bad()
+	}
+	if in.IncludeWithdrawn && !in.IncludeHistory {
 		return bad()
 	}
 	if err := memory.ValidateReportSnapshot(s.Snapshot, s.Registrations); err != nil {
@@ -155,12 +164,24 @@ func project(s memory.ReportSnapshot, in Selection) (Projection, []byte, error) 
 		}
 	}
 	output := report{Kind: "mandalore-memory-report", Version: 1, Items: []map[string]any{}, OmittedFields: p.OmittedFields, Notice: "Derived selected report; not a restorable signet or safe-to-publish certification. Omitted fields and provenance are incomplete. Git, journals, original sources and other copies persist."}
+	if in.IncludeWithdrawn {
+		output.Notice += " Withheld records are included only as explicitly requested history, not current guidance."
+	}
 	if !omit["identity"] {
 		output.Identity = map[string]any{"signet_id": s.Signet.ID}
 	}
 	devices := map[string]memory.Device{}
 	for _, d := range s.Devices {
 		devices[d.ID] = d
+	}
+	states, err := memory.ResolveVisibility(s.Revisions, s.Visibility, func(id string) error {
+		if _, ok := devices[id]; !ok {
+			return errors.New("missing report device")
+		}
+		return nil
+	})
+	if err != nil {
+		return p, nil, errors.New("report visibility graph is not valid")
 	}
 	sources := map[string]memory.Source{}
 	for _, source := range s.Sources {
@@ -174,6 +195,10 @@ func project(s memory.ReportSnapshot, in Selection) (Projection, []byte, error) 
 	}
 	for _, id := range p.RecordIDs {
 		rs := byRecord[id]
+		withheld := states[id].Withheld()
+		if withheld {
+			p.Withheld = append(p.Withheld, WithheldRecord{RecordID: id, State: states[id].State})
+		}
 		sort.Slice(rs, func(i, j int) bool { return rs[i].ID < rs[j].ID })
 		hs := heads[id]
 		headIDs := []string{}
@@ -183,7 +208,7 @@ func project(s memory.ReportSnapshot, in Selection) (Projection, []byte, error) 
 		if len(hs) > 1 {
 			p.Conflicts = append(p.Conflicts, Conflict{RecordID: id, HeadIDs: headIDs})
 		}
-		if omitRecords[id] {
+		if omitRecords[id] || (withheld && !in.IncludeWithdrawn) {
 			p.OmittedRecords++
 			p.OmittedRevisions += len(rs)
 			continue
@@ -204,7 +229,13 @@ func project(s memory.ReportSnapshot, in Selection) (Projection, []byte, error) 
 					status = "conflicted"
 				}
 			}
+			if withheld {
+				status = "withheld-history"
+			}
 			item := map[string]any{"type": "record", "status": status}
+			if withheld {
+				item["visibility_state"] = states[id].State
+			}
 			if !omit["identity"] {
 				item["identity"] = map[string]any{"record_id": r.RecordID, "revision_id": r.ID, "scope": r.Scope}
 			}
