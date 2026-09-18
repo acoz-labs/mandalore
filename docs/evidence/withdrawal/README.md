@@ -45,9 +45,44 @@ The first attempted run refused export because the test placed the destination
 inside the binding directory. The corrected fixture uses a separate configuration
 directory; the export protection was not relaxed. Both fixtures were retained.
 
+## Native Codex conversation
+
+The same runtime/package was connected to the already-authenticated isolated
+lab profile through reviewed `connection_plan` / `connection_apply`, with the
+lab session stopped. The native result reported installed/verified and required
+a fresh session. No credentials were copied, and no personal connection was
+selected. Codex 0.155.0 (binary SHA256
+`b0b14f9c1901c1ec44671094b2dc18b39e4bd8d36a6dc2302cc9d961a7e2a197`)
+ran its configured gpt-6-astra model in the empty synthetic project. The directory
+and both candidate hooks were reviewed/trusted under standing test authority.
+
+Observed scenario, September 18, 2026:
+
+1. A read-only request for the fictional route caused skill loading and one
+   `memory_recall`. It returned Maple Quay from the correct synthetic signet.
+2. A conversational request to stop using that memory, preserve history, and
+   avoid journal/sync caused on-demand `visibility.md` loading,
+   `memory_visibility_history`, then `memory_withdraw` with the exact observed
+   content/visibility heads. The receipt reported withdrawn and durable locally.
+3. A read-only follow-up explicitly excluding withdrawn history and prior
+   conversation guidance caused a fresh empty-query recall. It returned no
+   current records. The agent declined to use any current route name, despite
+   Maple Quay remaining visible in its preceding conversation context.
+4. Explicit restoration of the latest recorded content caused content and
+   visibility history inspection, then `memory_restore` with the exact current
+   heads. It restored Maple Quay, not the older Orchid Pier revision, and reported
+   local durability without delivery.
+
+The observed calls contained no journal, sync, repair or configuration mutation.
+Synthetic Git status afterward showed exactly two new visibility files and no
+tracked-file changes. This is a specific, explicitly directed conversational
+scenario, not proof of every model, ambiguous user wording, spontaneous history
+suppression or fresh-session recall after withdrawal. No public raw native
+transcript or workstation path is retained here.
+
 ## Remaining evidence
 
-This compiled-CLI run does not establish conversational Codex/Pi behavior,
-new-release bootstrap compatibility, native Linux behavior or product acceptance.
+These runs do not establish Pi conversational behavior, new-release bootstrap
+compatibility, native Linux behavior or product acceptance.
 Those boundaries must not be inferred from unit tests or cross-built binaries.
 Final documentation reconciliation and exact-head review remain required.
