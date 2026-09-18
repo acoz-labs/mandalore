@@ -1,0 +1,18 @@
+{
+  "kind": "withdrawal-old-reader-characterization",
+  "version": "1.1.0",
+  "source_commit": "51aee17afec015ba2ad44584f8190b4bb6d901a8",
+  "binary_sha256": "09827de1c1340284dbc5506f2c0db41f8cbd66d9231e3e5dbd9d93ea01fc2429",
+  "platform": "darwin_arm64",
+  "direct_format_refusals": ["recall", "scopes", "history", "journal", "inspect", "sync"],
+  "refused_sync_state": "conflicted",
+  "refused_sync_phase": "validate",
+  "delivered": false,
+  "portable_source_unchanged": true,
+  "stale_clone_still_recalls_old_content": true,
+  "limitations": [
+    "Format-2 fixture is not an implemented migration",
+    "Old local evidence persists after refused sync",
+    "No personal bank, remote account or network host used"
+  ]
+}
