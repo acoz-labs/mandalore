@@ -116,7 +116,8 @@ func TestOwnerAcceptanceScope(t *testing.T) {
 	}
 }
 
-func TestOwnerAcceptanceRecorder(t *testing.T) {
+// Historical eligibility remains testable, but cannot authorize a new recording.
+func TestIndependentAcceptanceRecorderRetiresOwnerException(t *testing.T) {
 	candidates := []struct{ name, source, artifact, issue string }{{"original", ownerCandidate, ownerArtifact, "10"}, {"armorer", armorerCandidate, armorerArtifact, "45"}}
 	for _, issue := range roadmapIssues {
 		candidates = append(candidates, struct{ name, source, artifact, issue string }{"roadmap-" + strconv.Itoa(issue), roadmapCandidate, roadmapArtifact, strconv.Itoa(issue)})
@@ -174,8 +175,10 @@ esac
 					case "normal independent":
 						actor, allowed, confirmation = "example-reviewer", "example-reviewer", "false"
 					case "wrong nomination":
+						actor, allowed = "example-reviewer", "example-reviewer"
 						digest = strings.Repeat("a", 40)
 					case "gate failed":
+						actor, allowed = "example-reviewer", "example-reviewer"
 						gateFail = "true"
 					}
 					ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -184,7 +187,7 @@ esac
 					cmd.Dir = dir
 					cmd.Env = []string{"PATH=" + filepath.Join(dir, "bin") + ":" + os.Getenv("PATH"), "GITHUB_REPOSITORY=acoz-labs/mandalore", "GITHUB_ACTOR=" + actor, "GITHUB_RUN_ID=123", "ACCEPTANCE_ACTORS=" + allowed, "MVP_ACCEPTANCE_OWNER=example-owner", "MVP_OWNER_REVIEW_CONFIRMED=" + confirmation, "RELEASE_ARTIFACT=" + candidate.artifact, "TEST_CANDIDATE_AUTHOR=" + author, "TEST_SHA=" + candidate.source, "TEST_ISSUE=" + candidate.issue, "TEST_ARTIFACT_DIGEST=" + digest, "TEST_LOG=" + filepath.Join(dir, "calls"), "TEST_GATE_FAIL=" + gateFail}
 					out, err := cmd.CombinedOutput()
-					want := scenario == "owner candidate author" || scenario == "owner linked author" || scenario == "normal independent"
+					want := scenario == "normal independent"
 					if (err == nil) != want {
 						t.Fatalf("recorder=%v want success=%v: %s", err, want, out)
 					}
@@ -199,7 +202,7 @@ esac
 						t.Fatal("missing acceptance status writes", string(calls), readErr)
 					}
 					exception := strings.Contains(string(calls), "Owner acceptance under the candidate-specific exception")
-					if exception != (scenario != "normal independent") {
+					if exception {
 						t.Fatal("incorrect acceptance authority disclosure", string(calls))
 					}
 				})

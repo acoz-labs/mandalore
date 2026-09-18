@@ -1,30 +1,10 @@
-## Decision
+## Discovery
 
-- Recommended decision:
-- Confidence:
+Outcome, evidence and constraints:
 
-## Linked discovery
+Decision and rationale:
 
-Refs #
+Selected delivery issues and next actions:
 
-- Discovery directory: `docs/discovery/`
-- Repository basis:
-- Exact head:
-
-## Evidence and outcomes
-
-- Sanitized evidence basis:
-- Assumptions and unknowns:
-- Competing options:
-- Selected or deliberately deferred outcome keys:
-- Private evidence: `none` / `opaque-references`
-
-## Gate 1 state
-
-- [ ] Candidate preflight passes on the exact current head
-- [ ] Pull request changes exactly one discovery directory
-- [ ] Repository and GitHub text surfaces contain no private URLs or paths
-- [ ] Final product-authority signal is still required
-- [ ] Authorized maintainer approval must target the exact final head
-
-Project fields, issue comments, labels, and this checklist do not grant authority.
+No routine owner sign-off is required; escalate only unresolved blockers that
+cannot be resolved from the available product direction.

@@ -1,0 +1,78 @@
+{
+  "schema": 1,
+  "version": "2026.09.18.1",
+  "files": {
+    "AGENTS.md": {
+      "sha256": "e11fb1efe1f668ee245b66313508b3b75e5cb84231994c37bdcfcf7aa0860b32",
+      "mode": "644"
+    },
+    "CONTRIBUTING.md": {
+      "sha256": "7c07c60fb5db88c3b135142c83105fb44caeb27dfa691ba46ccb990831815c6e",
+      "mode": "644"
+    },
+    ".github/ISSUE_TEMPLATE/feature.yml": {
+      "sha256": "9ac6dab66d71cc24852b92d06f7cb01add134eeb70cd5d9d2e2e07b441083399",
+      "mode": "644"
+    },
+    "bin/sdlc": {
+      "sha256": "1e97bd3766553a18c975f33497aad2fc870d21fd55aa868610e46877cc6b98df",
+      "mode": "755"
+    },
+    "bin/validate-solution-plans": {
+      "sha256": "dd6018b07b61c3d56d386e9263df82418ae82cdfe621384cff26372e5ad86b8e",
+      "mode": "755"
+    },
+    "bin/dependency-merge-steward": {
+      "sha256": "97eaf3411df65f2f556a0533e657a9cd8ceb2be767e7110d3a02cce7ed17ff19",
+      "mode": "755"
+    },
+    "tests/test_sdlc.py": {
+      "sha256": "5d82ded0aa7ee7b95c9861588d86a847b6625ffb5d3f7ee62fcf98d8065cdcc1",
+      "mode": "644"
+    },
+    "docs/operations/sdlc.md": {
+      "sha256": "a5b36d131543efecd0e4b03f3ad2e5a5fe693730e6a8e1dc14f2d60e08bab499",
+      "mode": "644"
+    },
+    "docs/operations/repo-standard.md": {
+      "sha256": "875f42b6a1c539f3c1b92fb2311a82344b6c692950311d5b675d17adc26993e7",
+      "mode": "644"
+    },
+    "docs/plans/README.md": {
+      "sha256": "453ac20483ab843608d584dc35e9f62a09e21326ef66a66912971202d135180d",
+      "mode": "644"
+    },
+    "docs/plans/_template/README.md": {
+      "sha256": "80c807067d674e09f3e916afd3bb92d746e18fda98b0c9ccc03cf3bdeefd48f2",
+      "mode": "644"
+    },
+    "docs/discovery/README.md": {
+      "sha256": "9493b8177e5436bac4144dd286fa7396679d1af22cde7e41a2c11bed7da4de43",
+      "mode": "644"
+    },
+    "docs/discovery/_template/README.md": {
+      "sha256": "69b15541db1c95fa8ef253aef0fa2bf890f1d2983c6ed5d4702d7368339bdbe3",
+      "mode": "644"
+    },
+    ".github/PULL_REQUEST_TEMPLATE.md": {
+      "sha256": "e95b5c7a9869640ec7905862d21759e20e10f355d2ab3a2ef7ab014d70b82ce9",
+      "mode": "644"
+    },
+    ".github/PULL_REQUEST_TEMPLATE/product-discovery.md": {
+      "sha256": "80ab9a3860a041cd2aca81a9ef27492ca2b4f95b01b265b17ef62f85ada6dbea",
+      "mode": "644"
+    },
+    ".github/PULL_REQUEST_TEMPLATE/solution-design.md": {
+      "sha256": "dfdf6defe7a4a13aff9b5ea06a97d47d2a5b863a89d99ba08666c367c1211031",
+      "mode": "644"
+    },
+    ".github/workflows/sdlc.yml": {
+      "sha256": "f50dea1933faa1a48e2c819269ed1a903ae39cda6f15b88c015c2376272bd936",
+      "mode": "644"
+    },
+    ".github/workflows/main-branch-audit.yml": {
+      "sha256": "29f4a2011199fb4c707c6956bb7bb6fff0e6665b5d7b3edab997bf9247f7745c",
+      "mode": "644"
+    }
+  }
+}

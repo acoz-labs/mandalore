@@ -1,109 +1,39 @@
-# Managed Repo Standard
+# Managed repository standard
 
-SDLC template version: `2026.08.13.1`
+SDLC template version: `2026.09.18.1`.
 
-This repository was created from or adopted into the managed software-repository
-standard.
+The template owns the files enumerated in `.sdlc/managed.json`. Their hashes
+identify the installed content. `bin/sdlc check` verifies them. Application
+configuration lives in `.sdlc/config.json`, outside the managed-file set.
+Product instructions, code, tests and deployment commands remain repo-specific.
 
-## Expected Baseline
+Use `bin/sdlc apply --source PATH --target PATH` to update an already managed
+checkout. Initial adoption requires `--adopt`. Edited managed files cause a
+conflict; review and reconcile them rather than overwriting them silently.
+A template maintainer updates source files, runs `bin/sdlc stamp`, tests, and
+publishes a reviewed version. `bin/sdlc inventory --org ORG` discovers all active
+repositories. Cascade every target and reread the live inventory at completion.
+For a complete operation use:
 
-- `AGENTS.md`
-- issue templates
-- pull request template
-- `bin/ci`
-- `bin/container`
-- `bin/validate-solution-plans`
-- `Dockerfile.dev`
-- every GitHub Actions job uses the required configurable `CI_RUNNER` label
-- no workflow silently falls back to a GitHub-hosted runner
-- main-branch audit workflow with bounded retry for GitHub's eventually
-  consistent squash-merge association
-- dependency update policy and Dependabot configuration
-- dependency merge steward workflow and `bin/dependency-merge-steward`
-- daily dependency-steward recovery sweep; event-driven checks remain primary
-- dependency review workflow, or a documented repo-specific deviation
-- docs for development, architecture, capability architecture, temporary
-  solution plans, deployment, runbook, decisions, and SDLC
-- product-design gate for substantive user-facing changes, including
-  implementation evidence and accessibility review expectations
-- UI Acceptance Evidence contract separating functional coverage,
-  visual-regression detection, and product judgment, with durable exact-head
-  PR artifacts and fresh exact-candidate acceptance evidence
-- one contributor-authored, independently reviewed solution-design planning PR
-  before `Ready`, plus implementation reconciliation and durable documentation
-  promotion before review
-- one compact Decision Spotlight exposing consequential product, UX, data,
-  automation, permission, privacy, and trust defaults at the final plan gate
-- machine-checked implementation reconciliation bound to the current draft PR
-  head, exact planning PR, and removed plan directory
-- temporary issue plan packs under `docs/plans/`, with an explicit execution
-  envelope and deletion after the shipped contract is promoted
-- purpose-based documentation promotion that keeps final flows, data models,
-  contracts, authority, failure, and operational knowledge coherent rather than
-  copying one permanent document per design stage
-- explicit `Acceptance` and `Ready for Production` delivery states
-- linked issues remain open until their documented delivery profile is complete
-- issue-, commit-, artifact-, implementation-set-, and acceptor-specific
-  product-acceptance evidence independent of the implementer, including
-  workflow-authored durable statuses that issue comments or labels cannot forge
-- on-demand private development previews for bounded in-progress decisions
-- automatic staging of immutable `main` candidates when a staging target exists
-- active-candidate nomination from service staging or staging-free artifact
-  validation that prevents stale acceptance while preserving evidence-only
-  reruns of an already accepted exact candidate; release gates authenticate the
-  workflow author and recheck the latest application nomination
-- production promotion of the accepted artifact, followed by smoke verification,
-  an immutable Git tag, and a GitHub Release ledger entry
-- executable production readiness covering named secret slots, deploy,
-  activation, exact-artifact verification, rollback, and project-specific checks
-- an exact promoted-candidate probe that resolves the deploy/receipt crash
-  window into active, conclusively inactive, or inconclusive; only a
-  conclusively inactive result permits an ordinary retry deployment
-- an exact production receipt containing application SHA, artifact, deployment
-  id, control revision, linked issues, and rollback target
-- shared, retry-safe release finalization that rejects omitted release-ready
-  issues and stale candidate evidence, propagates GitHub API failures, reuses
-  matching Git tags and Releases, and clears transient delivery labels before
-  applying `delivery:released`
-- evidence/finalization retries resume a promoted receipt without redeploying;
-  forced re-promotion is a separate explicit operation
-- explicit `service`, `artifact`, or `non-deployable` delivery profile so a repo
-  never pretends to have an environment that does not exist
-- exact mise runtime pins when the repository supports host-local language
-  execution
-- private-repository and trusted-contributor boundaries for self-hosted jobs
-- unchanged permission, secret, environment, and manual-attestation gates for
-  privileged workflows
+```sh
+bin/sdlc cascade --source /path/to/reviewed-template --workspace /path/to/cascade --org ORGANIZATION --adopt
+# Publish prepared changes through contributor PRs and maintainer review.
+bin/sdlc cascade --source /path/to/reviewed-template --workspace /path/to/cascade --org ORGANIZATION --verify
+```
 
-## Repo-Specific Deviations
+The source must be a clean reviewed commit. The receipt tracks every active
+repository, source identity, prepared branch or verified published head and
+unresolved errors. Preparation is not completion. Verification rereads published
+files/modes/config and organization inventory; any failure or newly active repo
+keeps the operation incomplete. Reuse the workspace to resume the same source.
+No pilot, waves or optional lagging adoption. No unrelated production deployment.
 
-Record intentional deviations here with rationale.
+Configuration declares `delivery_profile`, `validation` and `required_checks`.
+Service/artifact profiles keep their real candidate acceptance/release machinery;
+non-deployable explicitly means no release target. Missing deployment capability
+must be documented as a gap, never disguised as non-deployable to pass a check.
+New repositories adopt the standard at creation and join every future cascade.
 
-- Current MVP engineering work uses owner-authorized self-review and delegated
-  ordinary design decisions. See [the decision](../decisions/0001-mvp-self-review.md).
-  This does not manufacture independent acceptance or change release automation.
-
-- Bootstrap basis: template `feeb93836b967d6c100e58b4384fc067e73a0ac9`.
-  Generic files were privacy-reviewed before seeding fresh history. The first
-  commit initializes the repository; subsequent changes use reviewed PRs.
-- Public CI explicitly uses `CI_RUNNER=ubuntu-latest`. No self-hosted runner or
-  automatic fallback is used for public code.
-- Project #35 was copied from the organization's Repo Project Template with
-  matching fields/views. The new public copy replaces personal Owner options
-  with generic roles; the private template remains unchanged. See `project.md`.
-- Artifact profile, no staging service. Product-specific distribution is tracked,
-  not operational merely because template workflows exist.
-- Host `bin/ci` is supported when Docker is unavailable; exact runtime pins are
-  required before adding language builds.
-- No private control plane is required for the issue/project/release ledger.
-
-`ACCEPTANCE_REQUIRED_CHECKS` may name one check exactly, including punctuation
-such as a comma. For multiple checks, use the legacy comma-separated form only
-when none of the individual names contains a comma.
-
-Set `DELIVERY_PROFILE` to `service`, `artifact`, or `non-deployable`. A service
-with no production target may set `ACCEPTANCE_COMPLETES_DELIVERY=true`; accepted
-artifacts otherwise become ready for release, while production services become
-ready for production. In completion-on-acceptance mode, an exact approval retry
-is idempotent after closure and an authenticated later rejection reopens the
-issue with blocking evidence.
+Personal account names and credentials are never managed template content.
+See `docs/operations/sdlc.md` for delegated authority, role separation and the
+three workflows. CI and workflow checks are evidence, not substitutes for review.

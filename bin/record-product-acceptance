@@ -53,21 +53,12 @@ if [[ "$actor_allowed" != "1" ]]; then
   exit 1
 fi
 
-owner_exception_eligible=0
-owner_exception_used=0
-if bash bin/mvp-owner-acceptance "$repo" "$sha" "$issue_number" "$release_artifact" "$actor"; then
-  owner_exception_eligible=1
-fi
-
 pulls="$(gh api "repos/$repo/commits/$sha/pulls?per_page=100")"
 if jq -e --arg actor "$actor" \
   'any(.[]; (.merged_at != null) and ((.user.login | ascii_downcase) == ($actor | ascii_downcase)))' \
   <<< "$pulls" >/dev/null; then
-  if [[ "$owner_exception_eligible" != 1 ]]; then
-    echo "The implementing pull-request author cannot be the sole product acceptor." >&2
-    exit 1
-  fi
-  owner_exception_used=1
+  echo "The implementing pull-request author cannot be the sole product acceptor." >&2
+  exit 1
 fi
 
 issue_json="$(gh api "repos/$repo/issues/$issue_number")"
@@ -105,11 +96,8 @@ while IFS= read -r implementation_pr; do
   fi
   implementation_author="$(jq -r '.user.login | ascii_downcase' <<< "$implementation_json")"
   if [[ "$implementation_author" == "$actor_normalized" ]]; then
-    if [[ "$owner_exception_eligible" != 1 ]]; then
-      echo "An issue's implementing pull-request author cannot accept that issue." >&2
-      exit 1
-    fi
-    owner_exception_used=1
+    echo "An issue's implementing pull-request author cannot accept that issue." >&2
+    exit 1
   fi
 done <<< "$implementation_prs"
 implementation_digest="$(printf '%s\n' "$implementation_prs" | git hash-object --stdin)"
@@ -197,9 +185,6 @@ if [[ "$reopen_issue" == "1" ]]; then
 fi
 if [[ "$has_retry_marker" != "1" ]]; then
   authority="Independent-author acceptance policy."
-  if [[ "$owner_exception_used" == 1 ]]; then
-    authority="Owner acceptance under the candidate-specific exception (docs/decisions/0002-mvp-owner-acceptance.md); personally confirmed review, not independent-author approval."
-  fi
   body="$(jq -n -r \
     --arg decision "$decision" \
     --arg sha "$sha" \

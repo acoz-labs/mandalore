@@ -1,57 +1,31 @@
 name: Feature
-description: Shape a new behavior or workflow.
+description: Define an executable outcome without a mandatory planning ceremony.
 title: ""
 labels: ["enhancement"]
 body:
   - type: textarea
-    id: problem
-    attributes:
-      label: Problem or opportunity
-    validations:
-      required: true
-  - type: textarea
     id: outcome
     attributes:
-      label: Desired outcome
-    validations:
-      required: true
-  - type: textarea
-    id: user_context
-    attributes:
-      label: User and task context
-      description: Who is affected, what are they trying to accomplish, and in what context?
-    validations:
-      required: true
-  - type: textarea
-    id: design_impact
-    attributes:
-      label: Product design impact
-      description: >-
-        Note whether this changes a user flow, hierarchy, interaction, visual
-        foundation, accessibility, or localization behavior and whether product
-        design review is required.
+      label: Outcome and scope
+      description: Who benefits, what should change, and what is outside scope?
     validations:
       required: true
   - type: textarea
     id: acceptance
     attributes:
       label: Acceptance criteria
-      placeholder: |
-        -
+      description: Observable behavior the maintainer will verify against the candidate.
     validations:
       required: true
   - type: textarea
-    id: ui_evidence
+    id: constraints
     attributes:
-      label: UI acceptance evidence
-      description: >-
-        Classify rendered impact and name the routes or screens, states,
-        viewports, browsers or platforms, accessibility checks, and retained
-        artifacts required by docs/operations/ui-acceptance.md. Explain when
-        there is no rendered impact.
-    validations:
-      required: true
+      label: Constraints and risks
+      description: Include real dependencies and an optional plan when complexity warrants one.
   - type: textarea
     id: validation
     attributes:
-      label: Tests, docs, and deploy notes
+      label: Validation and delivery
+      description: Tests, documentation, rendered evidence when relevant, release expectations and any explicit stopping point.
+    validations:
+      required: true
