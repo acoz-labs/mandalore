@@ -1,6 +1,7 @@
 package signetsync
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -31,6 +32,10 @@ var ErrUpgradeSource = errors.New("upgrade requires a valid format1 signet with 
 // temporary candidate is created. Actual file bytes are compared with Git blobs;
 // assume-unchanged, skip-worktree and filemode configuration cannot hide changes.
 func (s *Synchronizer) UpgradeSource(ctx context.Context) (out UpgradeSource, err error) {
+	return s.upgradeSource(ctx, nil)
+}
+
+func (s *Synchronizer) upgradeSource(ctx context.Context, change *upgradeChange) (out UpgradeSource, err error) {
 	defer func() {
 		if err != nil {
 			out = UpgradeSource{}
@@ -44,17 +49,19 @@ func (s *Synchronizer) UpgradeSource(ctx context.Context) (out UpgradeSource, er
 	if err = ctx.Err(); err != nil {
 		return
 	}
-	if s.store.Signet.Version != 1 {
+	if change == nil && s.store.Signet.Version != 1 {
 		return out, ErrUpgradeSource
 	}
 	if err = s.boundary(ctx); err != nil {
 		return
 	}
-	if err = s.store.Validate(); err != nil {
-		return
-	}
-	if err = s.validateWorktree(); err != nil {
-		return
+	if change == nil {
+		if err = s.store.Validate(); err != nil {
+			return
+		}
+		if err = s.validateWorktree(); err != nil {
+			return
+		}
 	}
 	head, err := s.head(ctx)
 	if err != nil || head == "" {
@@ -119,7 +126,8 @@ func (s *Synchronizer) UpgradeSource(ctx context.Context) (out UpgradeSource, er
 			return nil
 		}
 		oid, exists := expected[path]
-		if !exists || !d.Type().IsRegular() {
+		isReceipt := change != nil && path == change.path
+		if (!exists && !isReceipt) || !d.Type().IsRegular() {
 			return ErrUpgradeSource
 		}
 		before, err := root.Lstat(path)
@@ -147,11 +155,31 @@ func (s *Synchronizer) UpgradeSource(ctx context.Context) (out UpgradeSource, er
 			return closeErr
 		}
 		total += int64(len(data))
-		if len(data) > 4<<20 || total > 128<<20 || blobID(data, len(oid)) != oid {
+		if len(data) > 4<<20 || total > 128<<20 {
 			return ErrUpgradeSource
 		}
 		after, err := root.Lstat(path)
 		if err != nil || !after.Mode().IsRegular() || !os.SameFile(before, after) {
+			return ErrUpgradeSource
+		}
+		if isReceipt {
+			if exists || !bytes.Equal(data, change.receipt) {
+				return ErrUpgradeSource
+			}
+			change.state.Published = true
+			return nil
+		}
+		if change != nil && path == "signet.json" {
+			switch {
+			case bytes.Equal(data, change.old):
+			case bytes.Equal(data, change.next):
+				change.state.Activated = true
+				data = change.old
+			default:
+				return ErrUpgradeSource
+			}
+		}
+		if blobID(data, len(oid)) != oid {
 			return ErrUpgradeSource
 		}
 		fmt.Fprintf(inventory, "%d:%s:%d:", len(path), path, len(data))
@@ -167,6 +195,9 @@ func (s *Synchronizer) UpgradeSource(ctx context.Context) (out UpgradeSource, er
 		return
 	}
 	if len(seen) != len(expected) || manifestHash == "" {
+		return out, ErrUpgradeSource
+	}
+	if change != nil && change.state.Activated && !change.state.Published {
 		return out, ErrUpgradeSource
 	}
 	current, err := os.Lstat(s.store.Root)

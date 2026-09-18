@@ -30,3 +30,20 @@ precede merge. Product acceptance and immutable-candidate release remain separat
 No new rendered menu is required; native model behavior needs actual observation.
 Production readiness preflight is not applicable to the implementation-only
 envelope. Production migration requires separate explicit authority and evidence.
+
+## Implementation slice: local activation and recovery
+
+The format-upgrade package now tests explicit stopped-writer acknowledgement,
+strict preparation serialization, refusal to use recovery to start a new upgrade,
+and interruption/cancellation at preparation, receipt publication/durability and
+manifest replacement/durability. Recovery reuses the prepared evidence identity;
+binding/source drift refuses continuation. Successful local activation separately
+reports that neither a Git checkpoint nor delivery occurred. Original portable
+evidence and existing Git metadata are compared byte-for-byte after activation.
+
+The transition inspector validates the original immutable Git candidate in an
+owned temporary directory and permits only the prepared receipt and reviewed
+manifest replacement in the live tree. Ordinary preview remains read-only and
+does not create that temporary candidate. These are synthetic package tests, not
+native acceptance, completed synchronization support or authorization to upgrade
+a personal signet. Full sync transition/adoption and typed interface work remain.

@@ -87,9 +87,13 @@ func Preview(ctx context.Context, in Request) (out Plan, err error) {
 	if err = ctx.Err(); err != nil {
 		return
 	}
+	return planFor(path, pin, root, source), nil
+}
+
+func planFor(path, pin, root string, source signetsync.UpgradeSource) Plan {
 	return Plan{Version: 1, BindingPath: path, BindingSHA256: pin, Root: root, Source: source, FromVersion: 1, ToVersion: 2, RequiresStoppedWriters: true,
 		Effects: []string{"append immutable upgrade evidence", "atomically activate format2 in the same signet", "preserve existing memory, journals, provenance and Git history", "leave checkpoint and delivery for separate operations"},
-		Notice:  "Sensitive review metadata only. Apply requires explicit acknowledgement that affected writers are stopped. Older clients refuse upgraded banks; offline copies and prior model context cannot be revoked. No automatic upgrade, rollback, downgrade or erasure."}, nil
+		Notice:  "Sensitive review metadata only. Apply requires explicit acknowledgement that affected writers are stopped. Older clients refuse upgraded banks; offline copies and prior model context cannot be revoked. No automatic upgrade, rollback, downgrade or erasure."}
 }
 
 func readBinding(path string) (string, binding.Binding, string, error) {
