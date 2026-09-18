@@ -1,7 +1,8 @@
 # Runbook
 
-The Codex-first [v1.0.0 release](releases/1.0.0.md) is published. Subsequent
-development builds, including the Pi work, are not accepted production upgrades.
+The [v1.1.0 release](releases/1.1.0.md) is published with Codex and Pi support.
+Subsequent development builds, including format2 withdrawal, are not accepted
+production upgrades.
 See the [setup guide](setup.md), [Codex guide](../plugins/codex/README.md) and
 [Pi development guide](../plugins/pi/README.md) for the respective boundaries.
 Archiving My Friday neither migrates nor removes existing pinned installations.
@@ -25,8 +26,8 @@ Corrections and foundling disconnection preserve historical evidence. A local
 deletion does not erase Git, remote, backup or native-session copies; append-only
 sync is not a redaction transport. Review exact cleanup targets, backup exposure
 and recovery authority separately. Do not force-push, prune history or remove
-evidence as a routine repair. Export/withdrawal designs in that guide are deferred,
-not available commands. Normal authorized learning remains enabled.
+evidence as a routine repair. Current-source export and withdrawal preserve source
+history; neither is erasure. Normal authorized learning remains enabled.
 
 ### Implemented library behavior
 
@@ -58,6 +59,48 @@ inspect its phase/head and native origin/auth configuration. If conflicted,
 preserve both histories; do not force, reset, remove another writer's lock, or
 rewrite evidence to hide it. A malformed local status receipt is not repaired by
 inspection. No-save/read-only tasks must not trigger synchronization.
+
+### Format2 activation and visibility recovery
+
+First install a trusted compatible runtime on each intended machine. The released
+1.1.0 updater cannot validate a new manifest declaring formats1/2; use the reviewed
+new-release bootstrap or verified new executable, not a modified old manifest.
+This installs tooling only and does not authorize bank migration.
+
+Stop writers to the selected clone, including the current agent if it uses that
+bank. Do not claim stopped writers merely because a local lock is available.
+With an explicit binding in JSON, call `signet_upgrade_preview` and review its
+identity, clean Git checkpoint, manifest and inventory pins. Then call
+`signet_upgrade_apply` with that exact plan and `stopped_writers: true`. See the
+[cataloged inputs](interface.md) instead of editing `signet.json` manually.
+
+Activation preserves original records, journals, signet identity and Git history.
+Its receipt reports evidence publication, activation and local durability
+separately; no checkpoint or delivery is performed. If interrupted, inspect the
+partial `upgrade_result` and retained preparation. Explicit
+`signet_upgrade_recover` continues the same plan/evidence identity and cannot
+start a new upgrade. Changed binding/source/HEAD pins refuse recovery. Preserve
+the files for diagnosis; do not delete the receipt, downgrade the manifest or
+blindly repeat apply.
+
+After successful activation, start fresh compatible sessions. Synchronization is
+a separate authorized action. A format1 clone seeing an upgraded remote reports
+`upgrade-required`; review and upgrade that clone locally before retrying sync.
+Independent upgrade receipts can converge. No operation upgrades every offline
+copy or retracts content already read into a native session.
+
+For an explicit withdrawal or restoration, inspect `memory_visibility_history`
+and submit exact current content/visibility heads. `memory.stale_heads` requires
+fresh inspection, not guessed retries. On a failed mutation, inspect
+`visibility_result`, the event ID and history before doing anything again: a
+cancelled call may already have published. A correction is not restoration;
+concurrent visibility decisions remain withheld until explicitly reconciled.
+Never use a new record or foundling promotion to bypass a withdrawal.
+
+Retention review uses CLI-only `retention_preview` with explicit policy and
+selection. It neither writes nor applies anything, and its metadata may still be
+sensitive. There is no retention cleanup/TTL command. Journals and external
+sources must be considered separately, not inferred from record selection.
 
 ### Legacy conversion recovery
 

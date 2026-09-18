@@ -22,13 +22,16 @@ release-ledger finalization outside the memory MCP surface.
 `internal/memorycontext` shares bounded local evidence assembly across harnesses.
 Claude Code remains a later target after Pi acceptance. [Codex](codex-native-evidence.md)
 and [Pi engineering evidence](evidence/pi/README.md) are separate from product
-acceptance. Published v1.0.0 is Codex-first; Pi development code is not an accepted
-production upgrade.
+acceptance. Published v1.1.0 includes Codex and Pi. Subsequent source changes,
+including format2 withdrawal, require their own candidate acceptance and release.
 
 | Location | Responsibility |
 | --- | --- |
 | `cmd/mandalore` | Human CLI/menu and machine-readable commands |
 | `internal/memory` | Records, journals, scoped retrieval, provenance, supersession |
+| `internal/formatupgrade` | Explicit pinned in-place format transition and retained recovery, without checkpoint or delivery |
+| `internal/exportreport` | Bounded source snapshots, scoped derived reports and no-replace publication |
+| `internal/retention` | Read-only explicit policy/selection metadata review; no expiry or apply |
 | `internal/api`, `internal/strictjson` | Shared operations, bounded strict schemas, receipts and errors |
 | `internal/sync` | Local checkpoints and recoverable Git synchronization |
 | `internal/binding` | Local signet selection and originating-device identity |
@@ -157,6 +160,22 @@ subprocess execution, networking or synchronization dependency. `net/url` is use
 only to parse portable reference identities. A regression check rejects direct
 process/network or other product-package imports. Machine-local state is ignored
 by Git and not necessary for reads; a writer creates its local lock directory.
+
+Format2 visibility is a causal graph alongside content supersession, not an
+extension interpreted only by a plugin. The shared engine resolves it before
+ordinary recall/context/export. Withdraw/restore compare both current content
+and visibility heads under the writer lock; new content revisions acknowledge
+observed visibility without implicitly restoring a withdrawn record. Concurrent
+visibility heads and unreviewed content are withheld. Explicit history preserves
+evidence; independent journals and reference documents are not silently removed.
+
+Format upgrade is CLI-only administration with explicit stopped writers and a
+reviewed source/binding/Git checkpoint. Prepared local state supports recovery of
+the same receipt identity; a canonical manifest transition is the only protected
+edit allowed by sync, which validates its ancestor proof and evidence preservation.
+Each clone opts in separately. Old readers refuse format2; offline old copies and
+already-read context are not revoked. Retention preview reuses bounded report
+snapshots but emits policy/relationship metadata only, without a lock or apply.
 
 Corrections preserve history through supersession edges. Concurrent heads remain
 conflicts; a successful Git merge does not prove semantic agreement. Reads must

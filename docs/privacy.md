@@ -16,7 +16,7 @@ privacy controls added to the immutable v1.0.0 release.
 | Portable signet | Plain JSON records and every revision/branch; source reasons/citations; semantic journals; signet identity; device labels/IDs; actor/harness and optional model/session provenance; foundling registrations | Structural validation is not encryption, secret detection or recipient authorization |
 | Git | Checkpoints include valid portable data, including historical revisions and journals. Commits also contain Git author metadata | Authorized sync delivers to the configured origin; copies can persist in other clones and backups |
 | Machine-local state | Ignored `.mandalore/` lock, sync receipt and foundling connections; separate bindings and native installation configuration | Mandalore checkpoints exclude these; external backup tools or ordinary Git use are outside that guarantee |
-| Ordinary recall | Current non-conflicting heads in the explicitly selected scope; bounded count/bytes | Sensitivity labels do not filter content. Conflicts and omissions must be inspected, not silently resolved |
+| Ordinary recall | Current non-conflicting, non-withheld heads in the explicitly selected scope; bounded count/bytes | Sensitivity labels do not filter content. Conflicts and omissions must be inspected, not silently resolved |
 | Native context and tools | Prompt integration supplies bounded bank-wide evidence and scope routing; tools can read selected scopes, history, journals and foundlings | Returned content is available to the invoking harness/model, including during read-only tasks |
 | Foundlings | Portable registration/pin and promoted citations; original reference files stay outside the signet; local connection holds the machine path | Retrieval does not clone/fetch or import everything. Promotion explicitly saves adapted memory |
 | Native sessions/providers | May retain prompts, returned memory and tool results under their own settings | Mandalore cannot retract already-returned text, erase native sessions or control provider retention |
@@ -155,30 +155,49 @@ source IDs, paths and hashes that the eventual report may omit. See
 [interface](interface.md#scoped-report-export) and
 [recovery](runbook.md#export-failure-and-partial-output).
 
-## Designed future operations — not available commands
+## Withdrawal and explicit retention review
 
-### Recall withdrawal and retention preview — #81
+The current source supports withdrawal and restoration in explicitly upgraded
+format2 signets. These are not commands supplied by the immutable 1.1.0 release.
+A withdrawal names a stable record and expected content/visibility heads; its
+reason need not repeat the content. It appends a visibility decision, removes the
+record from ordinary recall/context, and preserves history. A correction is a
+different operation and does not restore a withdrawn record.
 
-A future withdrawal targets stable record IDs and expected heads; its reason
-need not repeat content. It should be portable and append-only, hide withdrawn
-content from ordinary recall/context, preserve explicit history and support an
-explicit restore decision. It is not factual correction or global deletion.
+Concurrent visibility decisions and unreviewed concurrent content are withheld,
+not resolved by timestamp. Explicit restoration reviews the current heads and
+does not resolve content conflicts. Counts expose withheld state; content and
+visibility history remain available for intentional inspection. Default export
+excludes withheld content. Disclosure requires both `include_history` and
+`include_withdrawn`, and remains historical evidence, not current guidance.
+Exact same-origin foundling re-promotion cannot bypass withdrawal; unrelated
+journals, original reference documents and semantically similar records are not
+implicitly withdrawn. This is not access control or automatic duplicate detection.
 
-Older clients must not silently ignore withdrawal and return the content.
-Concurrent withdrawal/correction/restore needs an inspectable conflict rule, not
-a timestamp winner. Scope counts, history, export, foundling re-promotion and
-independent journal/source content all need specified behavior. Do not smuggle
-new semantics into an unconstrained extension field.
+Upgrade is explicit for each local clone and preserves signet identity and Git
+history. Old clients refuse upgraded banks. Old offline copies and already-read
+conversation context cannot be revoked. A runtime update does not itself migrate
+a signet. See [format](signet-format.md#explicit-format-transition) and
+[interface](interface.md) for preview/apply/recovery and partial-outcome rules.
 
-Retention preview may enumerate affected IDs and relationships under an explicit
-user policy. Age alone never grants deletion authority. No default TTL is chosen;
-an initial retention action, if later selected, should be semantic withdrawal,
-not destructive purge. [#81](https://github.com/acoz-labs/mandalore/issues/81)
-requires compatibility/concurrency design and material data-model review first.
+CLI-only `retention_preview` requires explicit record/scope/journal selection and
+a policy. It produces bounded metadata, not memory bodies or an applied change:
+selected IDs, current visibility/heads, revision/source relationships, matched
+status and source/policy pins. Shared-source relationships may expose IDs outside
+the selected records; previews therefore remain sensitive.
+
+An optional absolute age cutoff must name the timestamp being compared. All
+structural heads must satisfy it, including conflicting or future-effective
+heads. Missing or inapplicable timestamps are reported rather than guessed.
+Journals require separate IDs; source relationships do not imply journal links
+or availability of external copies. Oversized reviews refuse instead of silently
+truncating. There is no retention apply, TTL, background expiry or deletion.
+Age alone never grants withdrawal or erasure authority.
 
 ## Evidence and limits
 
 [Privacy regression evidence](evidence/privacy/README.md) records synthetic
-service/API/Git tests and their limits. They prove specific storage and denial
+service/API/Git tests and their limits. [Withdrawal evidence](evidence/withdrawal/README.md)
+records the implemented format transition and native checks. They prove specific storage and denial
 behavior, not third-party erasure or protection from a filesystem owner.
 No user signet, real credential or native provider transcript was used.

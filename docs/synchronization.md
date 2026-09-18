@@ -78,6 +78,30 @@ No force-push, destructive reset, stash, automatic conflict editing or deletion 
 user history occurs. A valid Git merge can still contain competing memory heads.
 Those remain conflicts until an explicit superseding decision names the predecessors.
 
+## Opt-in format transitions
+
+Format2 adds portable visibility events and append-only upgrade receipts.
+Ordinary sync does not opt a format1 clone into that format. After fetching an
+upgraded remote, it reports `upgrade-required` and preserves the local bank/HEAD.
+The user must stop writers, preview and explicitly apply that clone's local
+upgrade, then separately synchronize. Runtime installation is not bank migration.
+
+The only allowed protected-manifest edit is the validated format1-to-format2
+transition with the same signet identity/name. Each receipt must identify an
+ancestor format1 Git commit, match its original manifest and raw portable
+inventory hashes, and preserve all original protected evidence. Unknown edits,
+missing/forged proof, unrelated base commits and downgrades refuse integration.
+Validation of historical base bytes is bounded to 64 MiB. Independent upgrades
+can converge while retaining both receipts; one receipt never authorizes another
+clone's local upgrade.
+
+Visibility events merge as append-only evidence. Delivery can succeed while
+concurrent visibility heads or unreviewed content remain withheld conflicts.
+Neither sync nor a successful push selects a semantic winner or restores a
+withdrawn record. See [the format](signet-format.md) for causal visibility rules
+and [the runbook](runbook.md) for stopped-writer recovery. Old offline clones and
+already-read model context remain outside revocation.
+
 ## Reading the result
 
 | State | Meaning |
@@ -85,6 +109,7 @@ Those remain conflicts until an explicit superseding decision names the predeces
 | `local-only` | Local checkpoint exists; no remote delivery was established |
 | `pending` | Work remains local, the remote is unavailable, delivery is unconfirmed, or local state changed |
 | `conflicted` | A Git/data candidate needs reconciliation, or delivered memory has competing semantic heads |
+| `upgrade-required` | A format1 local clone observed an upgraded remote; explicit local upgrade is required before adoption |
 | `synchronized` | The receipt's exact head was delivered to its selected remote at its recorded time |
 
 Receipts separate `head`, `remote_head`, `checkpointed`, `delivered`, phase and
