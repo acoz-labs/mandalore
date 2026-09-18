@@ -146,6 +146,32 @@ or change configuration. The result accurately separated local durability from
 delivery. This closes the demonstrated ID-discovery gap for the tested Codex and
 Pi flows, not every possible model or phrasing.
 
+## Isolated runtime-format installation transition
+
+The committed `install-driver.mjs` exercised source
+`a06e057efacba8b50c7d58a7cce36f59d73ac722` on macOS arm64 using the pinned
+build toolchain. The engineering artifact retained the development version
+1.1.0; it is not a replacement for the immutable published release.
+Candidate manifest SHA256:
+`7d336c413d9ffb755bd417f4885344e42b3aaaca9da84b34ffa818f838668b43`;
+native binary SHA256:
+`f406d7856e30039fa2df61b5528e95e12a41e22dbd488b373c5afa768d4db1eb`;
+driver SHA256:
+`7c6ae6f4025542efd00e88f6b9378afa248a6b206cca69769bab25ea10684aaa`.
+
+The driver installed the published 1.1.0 runtime into a disposable prefix.
+That old updater refused the candidate's expanded format declaration with
+`release.failed`, leaving its launcher and installation receipt unchanged.
+The verified new executable then planned and applied the candidate successfully.
+The old runtime and unrelated sentinel survived; the synthetic format-1 bank's
+bytes and modes and its binding were unchanged. Runtime installation did not
+activate a signet-format upgrade. The run ended with
+`RUNTIME_FORMAT_COMPATIBILITY_PASSED`.
+
+This verifies the new-executable installation route, not public bootstrap download
+of an unpublished candidate. No personal installation, plugin, memory bank or
+credentials changed. These are engineering results, not product acceptance.
+
 ## Remaining evidence
 
 These runs do not establish new-release bootstrap compatibility, native Linux

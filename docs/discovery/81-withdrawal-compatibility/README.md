@@ -43,8 +43,8 @@ provenance and registrations: an ordinary synchronization cannot silently modify
 the manifest. A format transition therefore needs a separately reviewed,
 explicitly authorized upgrade path, not a relaxed general append-only check.
 
-The [released-reader probe](old-reader-probe.mjs) ran in the designated native
-Herdr lab on September 18, 2026. [Retained results](old-reader-result.json) pin
+The [released-reader probe](../../evidence/withdrawal/design-model/old-reader-probe.mjs) ran in the designated native
+Herdr lab on September 18, 2026. [Retained results](../../evidence/withdrawal/design-model/old-reader-result.json) pin
 the real 1.1.0 binary and source identity. Direct recall/scopes/history/journal/
 inspect/sync refused a disposable manifest-version-2 fixture without disclosing
 the canary or changing portable files. A local bare-remote fixture showed that
@@ -108,7 +108,7 @@ Proposed conservative resolution:
 - No evidence is deleted. Content conflicts and visibility conflicts are distinct
   inspectable states, neither resolved by wall-clock order.
 
-The [executable design model](model.mjs) and [nine tests](model.test.mjs) exercise
+The [executable design model](../../evidence/withdrawal/design-model/model.mjs) and [nine tests](../../evidence/withdrawal/design-model/model.test.mjs) exercise
 these rules, including all 120 permutations of a five-object concurrent scenario.
 They pass with Node 24.1.0. The model validates combined content/visibility causal
 cycles, missing or wrong-kind references, cross-record inputs, stale expected
@@ -123,7 +123,7 @@ prefixes are invalid and must never produce guidance. Production content writes
 must capture visibility heads under the writer lock; importing missing metadata
 as though a writer had observed a restore would invalidate the argument.
 
-Reproduce with `mise exec -- node --test docs/discovery/81-withdrawal-compatibility/model.test.mjs`.
+Reproduce with `mise exec -- node --test docs/evidence/withdrawal/design-model/model.test.mjs`.
 
 ## Surface contract to prove
 
