@@ -18,7 +18,33 @@ type Snapshot struct {
 	Journal   []JournalEntry
 }
 
+// ReportSnapshot adds historical registrations and a raw portable-data digest.
+// It contains no local binding, operational state, Git history or source files.
+type ReportSnapshot struct {
+	Snapshot
+	Registrations []FoundlingRegistration
+	Digest        string
+}
+
+// ValidateReadLayout checks the engine-owned path/identity rules without reading
+// every object body. Bounded readers still validate their exact decoded snapshot.
+func (s *Store) ValidateReadLayout() error {
+	if err := s.checkDirectories(); err != nil {
+		return err
+	}
+	return s.validateRootFiles()
+}
+
+// ValidateReportSnapshot validates the closed portable objects used by reports.
+func ValidateReportSnapshot(snapshot Snapshot, registrations []FoundlingRegistration) error {
+	return validateSnapshot(snapshot, registrations, true)
+}
+
 func ValidateSnapshot(snapshot Snapshot) error {
+	return validateSnapshot(snapshot, nil, false)
+}
+
+func validateSnapshot(snapshot Snapshot, registrations []FoundlingRegistration, origins bool) error {
 	s := snapshot.Signet
 	if s.Version != FormatVersion || !identifier.MatchString(s.ID) || !textWithin(s.Name, 256) || strings.ContainsAny(s.Name, "\r\n") {
 		return errors.New("invalid snapshot signet")
@@ -36,12 +62,18 @@ func ValidateSnapshot(snapshot Snapshot) error {
 		}
 		return nil
 	}
+	if err := validateRegistrationGraph(registrations, device); err != nil {
+		return err
+	}
 	sources := map[string]bool{}
 	for _, source := range snapshot.Sources {
-		if sources[source.ID] || source.ExternalOrigin != nil {
+		if sources[source.ID] || (!origins && source.ExternalOrigin != nil) {
 			return errors.New("duplicate or unsupported snapshot source")
 		}
 		if err := validateSourceMetadata(source, device); err != nil {
+			return err
+		}
+		if err := validateOriginAgainst(source.ExternalOrigin, registrations); err != nil {
 			return err
 		}
 		sources[source.ID] = true

@@ -117,6 +117,10 @@ func validateFoundlingSource(source FoundlingSource, pin SourcePin) error {
 }
 
 func (s *Store) validateRegistrations(items []FoundlingRegistration) error {
+	return validateRegistrationGraph(items, s.deviceExists)
+}
+
+func validateRegistrationGraph(items []FoundlingRegistration, device func(string) error) error {
 	byID := map[string]FoundlingRegistration{}
 	roots := map[string]int{}
 	for _, r := range items {
@@ -126,7 +130,7 @@ func (s *Store) validateRegistrations(items []FoundlingRegistration) error {
 		if _, err := time.Parse(time.RFC3339Nano, r.RecordedAt); err != nil {
 			return errors.New("invalid registration time")
 		}
-		if err := s.ValidateAuthorship(r.Authorship); err != nil {
+		if err := validateAuthorship(r.Authorship, device); err != nil {
 			return err
 		}
 		if err := validateFoundlingSource(r.Source, r.Pin); err != nil {
@@ -238,6 +242,17 @@ func (s *Store) validateOrigin(origin *ExternalOrigin) error {
 	if origin == nil {
 		return nil
 	}
+	items, err := s.FoundlingRegistrations()
+	if err != nil {
+		return err
+	}
+	return validateOriginAgainst(origin, items)
+}
+
+func validateOriginAgainst(origin *ExternalOrigin, items []FoundlingRegistration) error {
+	if origin == nil {
+		return nil
+	}
 	if !identifier.MatchString(origin.FoundlingID) || !identifier.MatchString(origin.RegistrationRevisionID) || !relativeLocator(origin.RelativeLocator) || strings.Contains(origin.RelativeLocator, ":") || len(origin.ContentSHA256) != 64 || !hexDigest.MatchString(origin.ContentSHA256) {
 		return errors.New("invalid external-source citation")
 	}
@@ -248,10 +263,6 @@ func (s *Store) validateOrigin(origin *ExternalOrigin) error {
 		if _, err := time.Parse(time.RFC3339Nano, origin.OriginalRecordedAt); err != nil {
 			return errors.New("invalid original source time")
 		}
-	}
-	items, err := s.FoundlingRegistrations()
-	if err != nil {
-		return err
 	}
 	for _, r := range items {
 		if r.ID == origin.RegistrationRevisionID && r.FoundlingID == origin.FoundlingID && r.Source == origin.SourceIdentity && r.Pin == origin.SourcePin {

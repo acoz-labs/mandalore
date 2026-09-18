@@ -1,6 +1,9 @@
 package memory
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func validSnapshot() Snapshot {
 	a := revision("revision-root")
@@ -48,5 +51,24 @@ func TestSnapshotValidationHasNoFilesystemFallback(t *testing.T) {
 				t.Fatal("invalid snapshot accepted")
 			}
 		})
+	}
+}
+
+func TestReportSnapshotValidatesHistoricalOriginWithoutDisk(t *testing.T) {
+	s := validSnapshot()
+	r := FoundlingRegistration{Version: 1, ID: "registration-original", FoundlingID: "foundling-original", Name: "Archive", Description: "Synthetic reference", Source: FoundlingSource{Kind: "local", Locator: "source-original"}, Pin: SourcePin{Algorithm: "sha256", Value: strings.Repeat("a", 64)}, State: "active", RecordedAt: s.Revisions[0].RecordedAt, Authorship: s.Revisions[0].Authorship, Supersedes: []string{}, ChangeReason: "Registered"}
+	s.Sources[0].ExternalOrigin = &ExternalOrigin{FoundlingID: r.FoundlingID, RegistrationRevisionID: r.ID, SourceIdentity: r.Source, SourcePin: r.Pin, RelativeLocator: "notes.md", ContentSHA256: strings.Repeat("b", 64)}
+	if err := ValidateReportSnapshot(s, []FoundlingRegistration{r}); err != nil {
+		t.Fatal(err)
+	}
+	if err := ValidateSnapshot(s); err == nil {
+		t.Fatal("legacy importer unexpectedly accepted origins")
+	}
+	r.Pin.Value = strings.Repeat("c", 64)
+	if err := ValidateReportSnapshot(s, []FoundlingRegistration{r}); err == nil {
+		t.Fatal("mismatched origin accepted")
+	}
+	if err := ValidateReportSnapshot(s, nil); err == nil {
+		t.Fatal("missing registration accepted")
 	}
 }

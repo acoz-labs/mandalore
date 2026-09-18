@@ -373,6 +373,13 @@ func (s *Store) Recall(q Query, now time.Time) (Packet, error) {
 	if err = s.validateGraph(records); err != nil {
 		return p, err
 	}
+	heads := EffectiveHeads(records, now)
+	return s.recallHeads(q, p, heads), nil
+}
+
+// EffectiveHeads resolves validated revisions at a point in time without
+// selecting among concurrent branches. Callers must validate the closed graph.
+func EffectiveHeads(records []Revision, now time.Time) map[string][]Revision {
 	applicable := map[string]Revision{}
 	superseded := map[string]bool{}
 	for _, r := range records {
@@ -391,6 +398,13 @@ func (s *Store) Recall(q Query, now time.Time) (Packet, error) {
 			heads[r.RecordID] = append(heads[r.RecordID], r)
 		}
 	}
+	for id := range heads {
+		sort.Slice(heads[id], func(i, j int) bool { return heads[id][i].ID < heads[id][j].ID })
+	}
+	return heads
+}
+
+func (s *Store) recallHeads(q Query, p Packet, heads map[string][]Revision) Packet {
 	// Scores belong to this fresh read, not a persistent index. Tokenizing the
 	// same bodies inside the sort comparator makes broad recalls needlessly
 	// expensive as a bank grows; compute each candidate's relevance only once.
@@ -432,5 +446,5 @@ func (s *Store) Recall(q Query, now time.Time) (Packet, error) {
 	if len(p.Current) > limit {
 		p.Current = p.Current[:limit]
 	}
-	return p, nil
+	return p
 }
