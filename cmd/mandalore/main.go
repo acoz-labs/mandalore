@@ -41,6 +41,7 @@ const help = `Mandalore — durable memory across tools
   mandalore memory visibility-history --binding FILE --record-id ID [--offset N] [--limit N]
   mandalore memory withdraw|restore --binding FILE < reviewed-heads.json
   mandalore call signet_upgrade_preview|signet_upgrade_apply|signet_upgrade_recover < input.json
+  mandalore call retention_preview --read-only < explicit-policy-selection.json
   mandalore memory remember|journal-append --binding FILE < input.json
   mandalore memory remember-and-sync|journal-append-and-sync --binding FILE < input.json
   mandalore memory git-init|checkpoint|sync-status --binding FILE
@@ -286,6 +287,9 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 	}
 	if strings.HasPrefix(name, "signet_upgrade_") && *path != "" {
 		return bad(failureOut, "Upgrade operations take their explicit binding inside reviewed JSON input, not --binding.")
+	}
+	if name == "retention_preview" && *path != "" {
+		return bad(failureOut, "Retention preview takes its explicit binding inside JSON input, not --binding.")
 	}
 	guard := binding.Guard{SHA256: *bindingSHA, SignetID: *signetID}
 	guardRequested := false

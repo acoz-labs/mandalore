@@ -103,6 +103,58 @@ to open the new installer's preview. Do not weaken the old verifier or alter an
 immutable release. Installing the new runtime still does not upgrade a bank or
 refresh an already-open native connection automatically.
 
+## Retention review without expiry or deletion
+
+`retention_preview` is a typed CLI-only, read-only operation. It has no apply
+counterpart and does not withdraw records, expire anything, initialize Git,
+checkpoint or synchronize. Supply an explicit binding inside JSON, not a
+`--binding` flag or ambient default:
+
+```sh
+mandalore call retention_preview --read-only < review.json
+```
+
+```json
+{
+  "binding_path": "/example/binding.json",
+  "selection": {"record_ids": ["record-example"]},
+  "policy": {
+    "id": "policy-review",
+    "visibility": "any",
+    "age": {"timestamp": "recorded_at", "before": "2026-01-01T00:00:00Z"}
+  }
+}
+```
+
+Selection requires record IDs, exact stored scopes, or separately named journal
+IDs. There is no implicit whole-bank selection or record-to-journal inference.
+Limits are 128 records after scope expansion, 16 scope selectors, 128 journal
+IDs, and 32 KiB for the complete result. Unknown/duplicate selectors and oversized
+results are refused rather than silently truncated. Source reads reuse the bounded
+128 MiB portable snapshot reader and recheck its digest and pinned binding.
+
+Policy requires an identifier and `visibility` of `any` or `withheld`. Optional
+`age` requires an absolute RFC3339 cutoff and `timestamp` of `recorded_at`,
+`effective_from`, or `last_verified_at`. Every structural current content head,
+including future-effective and conflicting heads, must strictly precede the
+cutoff; equality is not a match. Missing verification timestamps are reported as
+`timestamp-missing`, never guessed. No current clock or default TTL is involved.
+
+Visibility filtering applies only to records. Explicit journals remain separate;
+only `recorded_at` is applicable to them, and another age field yields
+`timestamp-not-applicable`. With no age rule, an explicitly selected journal
+matches independently of record visibility.
+
+The result pins source identity/data digest, binding bytes, selection and policy.
+It reports selected IDs, match reasons, visibility/current heads, revision/source
+IDs, shared source references and known foundling/registration IDs. It excludes
+bodies, summaries, decision reasons, authorship and external locators. Metadata is
+still sensitive. Foundling relationships are historical attribution, not a check
+of external availability. Git history, external originals, offline copies and
+prior model context persist; unmodeled relationships are not inferred. This is a
+review report, not authority to erase data or an atomic snapshot against arbitrary
+external filesystem changes.
+
 ## MCP result presentation
 
 MCP returns the same complete envelope in `structuredContent` and a JSON text

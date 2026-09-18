@@ -66,3 +66,12 @@ and MCP error-schema validation. Only visibility mutation tools advertise their
 extra receipt schema. Runtime, readiness and newly built distribution declarations
 list formats1/2; immutable format1 release manifests remain supported. These are
 automated component checks, not the remaining native product acceptance.
+
+Retention preview is a CLI-only, read-only metadata operation, with no apply.
+Tests cover explicit selection/policy, record/scope and separate journal routing,
+strict absolute cutoff equality, missing/nonapplicable timestamps, all conflicting
+and future-effective heads, shared sources/foundling attribution without raw
+locators or content, source/binding/policy pins, symlink/cancellation refusal,
+complete source invariance and refusal of oversized output rather than truncation.
+It reuses the bounded report snapshot reader. Native scenarios, final durable
+documentation reconciliation and exact-candidate acceptance remain separate.
