@@ -141,7 +141,10 @@ func TestReleaseMenuConnectionGetsNewRuntimeAndSeparateConsent(t *testing.T) {
 			}
 			return install.Plan{Options: options, BinarySHA256: strings.Repeat("d", 64), PackageSHA256: strings.Repeat("c", 64), PackageVersion: "1.0.0"}, nil
 		}
-		m.applySelectedConnection = func(_ context.Context, p install.Plan) (install.Result, error) {
+		m.applySelectedConnection = func(_ context.Context, p install.Plan, stopped bool) (install.Result, error) {
+			if stopped {
+				t.Fatal("fresh installation inferred stopped-session acknowledgement")
+			}
 			applies++
 			return install.Result{Connection: p, Installed: true, RequiresFreshSession: true, Phase: "verified"}, nil
 		}
@@ -161,12 +164,40 @@ func TestReleaseMenuRefusesOldPackageAndKeepsCLISuccessVisible(t *testing.T) {
 	m.prepareSelectedConnection = func(_ context.Context, options install.Options) (install.Plan, error) {
 		return install.Plan{Options: options, BinarySHA256: strings.Repeat("d", 64), PackageSHA256: strings.Repeat("e", 64), PackageVersion: "1.0.0"}, nil
 	}
-	m.applySelectedConnection = func(context.Context, install.Plan) (install.Result, error) {
+	m.applySelectedConnection = func(context.Context, install.Plan, bool) (install.Result, error) {
 		t.Fatal("old package applied")
 		return install.Result{}, nil
 	}
 	if err := m.installRelease(o); err == nil || !strings.Contains(out.String(), "CLI installation verified") {
 		t.Fatal("package mismatch or prior success lost", err, out.String())
+	}
+}
+
+func TestReleaseMenuDeferredHandoffRequiresSeparateAcknowledgement(t *testing.T) {
+	for _, choice := range []string{"\n", "2\n"} {
+		m, out, _, o := releaseMenuFixture(t, "2\n2\n\n\n\n\n2\n"+choice)
+		m.prepareSelectedConnection = func(_ context.Context, options install.Options) (install.Plan, error) {
+			return install.Plan{Options: options, BinarySHA256: strings.Repeat("d", 64), PackageSHA256: strings.Repeat("c", 64), PackageVersion: "1.0.0"}, nil
+		}
+		calls := []bool{}
+		m.applySelectedConnection = func(_ context.Context, p install.Plan, stopped bool) (install.Result, error) {
+			calls = append(calls, stopped)
+			if !stopped {
+				return install.Result{Connection: p, Phase: "deferred"}, errors.New("handoff required")
+			}
+			return install.Result{Connection: p, Installed: true, RequiresFreshSession: true, Phase: "verified"}, nil
+		}
+		err := m.installRelease(o)
+		if choice == "\n" {
+			if !errors.Is(err, console.ErrBack) || len(calls) != 1 || calls[0] || strings.Contains(out.String(), "[PASS] Native connection verified") {
+				t.Fatal("defer applied or reported success", err, calls, out.String())
+			}
+		} else if err != nil || len(calls) != 2 || calls[0] || !calls[1] {
+			t.Fatal("explicit handoff not forwarded exactly once", err, calls)
+		}
+		if !strings.Contains(out.String(), "idle or paused is not enough") || !strings.Contains(out.String(), "CLI installation verified") {
+			t.Fatal("handoff lost safety or completed CLI status", out.String())
+		}
 	}
 }
 
@@ -202,7 +233,7 @@ func TestReleaseMenuNativePartialRetainsCLISuccessAndPhase(t *testing.T) {
 	m.prepareSelectedConnection = func(_ context.Context, options install.Options) (install.Plan, error) {
 		return install.Plan{Options: options, BinarySHA256: strings.Repeat("d", 64), PackageSHA256: strings.Repeat("c", 64), PackageVersion: "1.0.0"}, nil
 	}
-	m.applySelectedConnection = func(_ context.Context, p install.Plan) (install.Result, error) {
+	m.applySelectedConnection = func(_ context.Context, p install.Plan, _ bool) (install.Result, error) {
 		return install.Result{Connection: p, Phase: "registration-removed", PreviousRoot: "/synthetic/previous"}, errors.New("synthetic native failure")
 	}
 	err := m.installRelease(o)

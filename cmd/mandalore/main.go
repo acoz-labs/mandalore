@@ -27,6 +27,7 @@ const help = `Mandalore — durable memory across tools
 
   mandalore menu [--plain]                       Guided setup, inspection and recovery
   mandalore operations                          JSON schemas and implemented operations
+  mandalore connection apply --sessions-stopped  Apply a reviewed plan after affected Codex sessions exit
   mandalore version                             Runtime/protocol version
   mandalore release inspect [--version VERSION | --candidate DIR]
   mandalore release plan [--version VERSION | --candidate DIR | --retained SHA256] --prefix DIR

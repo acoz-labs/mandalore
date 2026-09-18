@@ -275,9 +275,15 @@ func (m *menu) offerReleaseConnection(p distribution.InstallPlan, r distribution
 	}
 	apply := m.applySelectedConnection
 	if apply == nil {
-		apply = install.ApplyViaRuntime
+		apply = install.ApplyViaRuntimeAcknowledged
 	}
-	native, err := apply(m.ctx, c)
+	native, err := apply(m.ctx, c, false)
+	if err != nil && native.Phase == "deferred" {
+		if handoffErr := m.confirmStoppedSessions(); handoffErr != nil {
+			return handoffErr
+		}
+		native, err = apply(m.ctx, c, true)
+	}
 	if err != nil {
 		if native.Phase != "" {
 			m.connectionResult(native)

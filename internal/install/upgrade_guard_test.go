@@ -122,3 +122,22 @@ func TestMissingCacheIsNotVerifiedReplay(t *testing.T) {
 	}
 	assertInventoryOnly(t, f.calls)
 }
+
+func TestRegistrationAppearingDuringStagingCannotBypassGuard(t *testing.T) {
+	p, err := Prepare(fixture(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := &fakeNative{plan: p}
+	probe := func(context.Context, Plan) error {
+		// A plugin can appear without the marketplace root returned by collision
+		// inspection changing. The final occupancy check must still defer.
+		f.enabled, f.pluginRoot, f.version = true, p.Root, p.Version
+		return nil
+	}
+	r, err := apply(context.Background(), p, f.run, probe)
+	if err == nil || r.Phase != "deferred" || r.Installed {
+		t.Fatal(r, err)
+	}
+	assertInventoryOnly(t, f.calls)
+}
