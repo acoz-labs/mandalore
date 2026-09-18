@@ -5,6 +5,8 @@ import (
 	"io"
 	"os"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/charmbracelet/x/ansi"
 	"github.com/charmbracelet/x/term"
@@ -17,6 +19,9 @@ type Block struct {
 	Fields      []Field
 	Choices     []string
 	Tone        Tone
+	// Command is trusted application-assembled shell text, not prose. Preserve
+	// one logical line for copying; terminal soft wrapping remains terminal-owned.
+	Command string
 }
 
 // Measure for each report, so resizing between operations is respected. Cap
@@ -62,6 +67,16 @@ func RenderBlock(b Block, theme Theme, width int) string {
 			for _, line := range strings.Split(ansi.Hardwrap(value, width-4, true), "\n") {
 				lines = append(lines, "    "+line)
 			}
+		}
+	}
+	if b.Command != "" {
+		if !utf8.ValidString(b.Command) || strings.IndexFunc(b.Command, func(r rune) bool {
+			return unicode.IsControl(r) || unicode.Is(unicode.Cf, r) || r == '\u2028' || r == '\u2029'
+		}) >= 0 {
+			appendText("Recovery command unavailable: unsafe display characters. Inspect the machine-readable receipt instead.", 2, Warning)
+		} else {
+			appendText("Command (copy the whole logical line):", 2, Muted)
+			lines = append(lines, b.Command)
 		}
 	}
 	return strings.Join(lines, "\n") + "\n"

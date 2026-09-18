@@ -73,3 +73,27 @@ func TestPlainChoicesWrapAsProseNotLiteralPaths(t *testing.T) {
 		}
 	}
 }
+
+func TestCommandRemainsOneUnstyledLogicalLine(t *testing.T) {
+	command := "mandalore release apply < '/synthetic/owner'\"'\"'s two  spaces/" + strings.Repeat("long-", 25) + "pending.json'"
+	for _, width := range []int{24, 32, 80} {
+		for _, colored := range []bool{false, true} {
+			got := RenderBlock(Block{Title: "Recovery", Body: "Inspect the plan first.", Command: command}, Theme{Color: colored}, width)
+			if strings.Count(got, "\n"+command+"\n") != 1 {
+				t.Fatalf("literal command altered at width %d: %q", width, got)
+			}
+		}
+	}
+}
+
+func TestUnsafeCommandSuppressedNotRewritten(t *testing.T) {
+	for _, bad := range []string{"\n", "\r", "\t", "\x1b[31m", "\x00", "\xff", "\u202e", "\u2028", "\u2029"} {
+		got := RenderBlock(Block{Title: "Recovery", Command: "mandalore " + bad + " release apply"}, Theme{}, 32)
+		if strings.Contains(got, "mandalore") || !strings.Contains(strings.ReplaceAll(got, "\n", " "), "unavailable") {
+			t.Fatalf("unsafe command not refused: %q", got)
+		}
+	}
+	if got := RenderBlock(Block{Title: "Complete"}, Theme{}, 32); strings.Contains(got, "Command") {
+		t.Fatal(got)
+	}
+}
