@@ -34,7 +34,17 @@ func visibilityDecision(action string) func(context.Context, *memory.Service, me
 	}
 }
 
+type WithheldInput struct {
+	Query  string        `json:"query,omitempty"`
+	Scope  *memory.Scope `json:"scope,omitempty"`
+	Offset int           `json:"offset,omitempty"`
+	Limit  *int          `json:"limit,omitempty"`
+}
+
 var visibilityOperations = []Operation{
+	operation("memory_withheld", "Discover withdrawn/conflicted/unreviewed record IDs only for explicit historical inspection or restoration, never ordinary recall. Scoped like recall; query matches current-head summaries/IDs, not bodies. Returns routing metadata only, no current guidance. Page offsets may shift; inspect visibility/content history before deciding.", true, func(_ context.Context, s *memory.Service, in WithheldInput) (memory.Page[memory.WithheldRecord], error) {
+		return s.WithheldRecords(in.Query, in.Scope, in.Offset, number(in.Limit, 5))
+	}),
 	operation("memory_visibility_history", "Inspect a record's current content/visibility heads and paged visibility decisions. Metadata includes reasons and authorship; content history is separate. Read before withdrawing or restoring. Pages may shift after writes.", true, func(_ context.Context, s *memory.Service, in HistoryInput) (memory.VisibilityHistory, error) {
 		return s.VisibilityHistory(in.RecordID, in.Offset, number(in.Limit, 5))
 	}),

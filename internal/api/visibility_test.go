@@ -61,6 +61,10 @@ func TestVisibilityAPIAuthorityAndTypedRoundTrip(t *testing.T) {
 	if !w.DurableLocally || w.State.State != "withdrawn" || w.Synchronization != "not-requested" {
 		t.Fatal(w)
 	}
+	discovered := inlineCall(t, New(a.service, true), "memory_withheld", WithheldInput{Query: "Synthetic record"}).Result.(memory.Page[memory.WithheldRecord])
+	if len(discovered.Items) != 1 || discovered.Items[0].RecordID != r.RecordID || discovered.Items[0].State != "withdrawn" {
+		t.Fatal(discovered)
+	}
 	data, _ := json.Marshal(in)
 	stale := a.Call(context.Background(), "memory_restore", data)
 	if stale.OK || stale.Error.Code != "memory.stale_heads" || stale.Error.WriteMayHaveOccurred || stale.Error.VisibilityResult == nil {

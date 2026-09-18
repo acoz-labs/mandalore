@@ -37,7 +37,7 @@ func TestMCPUsesSharedContractAndRejectsDuplicates(t *testing.T) {
 	}
 	defer client.Close()
 	list, err := client.ListTools(ctx, nil)
-	if err != nil || len(list.Tools) != 21 {
+	if err != nil || len(list.Tools) != 22 {
 		t.Fatal(list, err)
 	}
 	for _, tool := range list.Tools {

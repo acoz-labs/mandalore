@@ -6,6 +6,13 @@ usually needs a superseding revision. A request to stop using a memory can use
 the target or intended effect is unclear. Do not withdraw merely because a
 record is old, irrelevant to this turn, or absent from a narrow search.
 
+If the record ID is no longer in context, use `memory_withheld` in the intended
+scope to discover it for this explicit historical inspection or restoration.
+Query matches current-head summaries/IDs, not bodies; an empty query lists the
+scope's withheld records. Page as needed and inspect candidates rather than
+guessing IDs or scanning signet files. Do not use this route merely to fill an
+ordinary recall gap: withheld history is not current guidance.
+
 Inspect `memory_visibility_history` for the selected stable record ID. Supply
 its current content and visibility heads to `memory_withdraw` or
 `memory_restore`, with a reason that need not repeat the content. Inspect content

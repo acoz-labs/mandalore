@@ -45,9 +45,24 @@ See [delivery semantics](synchronization.md#save-triggered-delivery).
 
 ## Explicit withdrawal, restoration and format upgrades
 
-Development format2 adds `memory_visibility_history`, `memory_withdraw` and
+Development format2 adds `memory_withheld`, `memory_visibility_history`,
+`memory_withdraw` and
 `memory_restore` to the shared CLI/MCP/Pi contract. Ordinary format1 use remains
 supported. These operations do not automatically upgrade a bank.
+
+For explicit historical inspection/restoration when the ID is unknown,
+`memory_withheld` returns only record IDs, scopes, kinds and visibility states.
+It includes withdrawn, visibility-conflicted and unreviewed-content records,
+never visible records or ordinary content conflicts. Like recall, omitted scope
+selects only bank-wide memory; discover stored scope IDs before selecting others.
+An optional query (up to 2048 bytes) matches case-insensitive substrings for all
+whitespace-separated terms within one current structural head's summary/record
+ID, not bodies or superseded summaries. Empty query lists that scope's withheld
+records. Results sort by record ID, with default limit5, maximum50 and a32KiB
+page ceiling. Page offsets can shift after writes. This is intentional historical
+routing, not a fallback for ordinary empty recall; use content/visibility history
+to inspect candidates and fresh heads before deciding. Human equivalent:
+`mandalore memory withheld --query TEXT --scope-kind KIND --scope-id ID`.
 
 ```sh
 mandalore memory visibility-history --binding /example/binding.json --record-id record-example
@@ -856,7 +871,7 @@ selects the owned generation's intact retained runtime, falling back only to its
 matching source bytes. Existing threads need restart or native reload to load
 changed code; the next-turn memory packet is independently read fresh.
 
-The native extension exposes the same 21 bound operations as MCP with sequential
+The native extension exposes the same 22 bound operations as MCP with sequential
 tool execution, shell-free arguments, binding guards and `pi` provenance.
 One complete envelope is returned in text, with only operation/ok metadata.
 Read nested delivery errors even if the outer save succeeded. Input/output bounds

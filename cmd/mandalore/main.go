@@ -39,6 +39,7 @@ const help = `Mandalore — durable memory across tools
   mandalore memory recall --binding FILE [--query TEXT] [--scope-kind KIND --scope-id ID]
   mandalore memory scopes|history|journal|inspect --binding FILE [options]
   mandalore memory visibility-history --binding FILE --record-id ID [--offset N] [--limit N]
+  mandalore memory withheld --binding FILE [--query TEXT] [--scope-kind KIND --scope-id ID] [--offset N] [--limit N]
   mandalore memory withdraw|restore --binding FILE < reviewed-heads.json
   mandalore call signet_upgrade_preview|signet_upgrade_apply|signet_upgrade_recover < input.json
   mandalore call retention_preview --read-only < explicit-policy-selection.json
@@ -243,6 +244,12 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 		case "memory_journal":
 			f.StringVar(&query, "query", "", "Query")
 			f.IntVar(&limit, "limit", 5, "Result limit")
+		case "memory_withheld":
+			f.StringVar(&query, "query", "", "Current-head summary/ID query for explicit historical inspection")
+			f.StringVar(&kind, "scope-kind", "", "Scope kind")
+			f.StringVar(&scopeID, "scope-id", "", "Stable scope ID")
+			f.IntVar(&limit, "limit", 5, "Page limit")
+			f.IntVar(&offset, "offset", 0, "Page offset")
 		case "memory_sync":
 			f.IntVar(&timeout, "timeout-seconds", 10, "Sync budget, 1–30 seconds")
 		case "foundling_list", "foundling_history":
@@ -360,6 +367,12 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 			value = v
 		case "memory_scopes":
 			value = api.PageInput{Offset: offset, Limit: &limit}
+		case "memory_withheld":
+			v := api.WithheldInput{Query: query, Offset: offset, Limit: &limit}
+			if kind != "" {
+				v.Scope = &memory.Scope{Kind: kind, ID: scopeID}
+			}
+			value = v
 		case "memory_history", "memory_visibility_history":
 			value = api.HistoryInput{RecordID: recordID, Offset: offset, Limit: &limit}
 		case "memory_journal":

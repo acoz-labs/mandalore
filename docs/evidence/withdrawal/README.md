@@ -80,9 +80,33 @@ scenario, not proof of every model, ambiguous user wording, spontaneous history
 suppression or fresh-session recall after withdrawal. No public raw native
 transcript or workstation path is retained here.
 
+## Pi baseline and discovered restoration gap
+
+Pi 0.85.1 with pinned Node24.1.0 and gpt-6-astra/high used the same synthetic
+bank through candidate package
+`05ab1aa8ad6c6da027958408769593c55e91e620d35de93abb62a5a397b81b6c`.
+A disposable managed connection was installed and explicitly loaded into a native
+test process, with ambient extensions/skills/context discovery disabled and the
+two candidate skills explicitly supplied. Existing native authentication stayed
+in place; this was not a personal-profile installation or credential isolation.
+
+Pi recalled Maple Quay, used the visibility guide and exact-head withdrawal, then
+started a fresh native session. The same ordinary read-only route question (no
+withdrawal reminder) returned no available current name after two recall queries.
+No historical body was surfaced as an answer. Explicit restoration inspected
+the current content and visibility heads and restored Maple Quay successfully.
+
+However, that fresh session had no retained record ID. It used `memory_inspect`
+and two filesystem listings to discover one before using the historical tools.
+This is a discovery gap, not accepted ergonomic behavior. The subsequent
+`memory_withheld` operation supplies bounded scoped routing metadata for explicit
+inspection/restoration; ordinary recall remains unchanged. Its tests cover
+scope, summary-only matching, withheld-state routing and refreshed visibility.
+The updated native behavior must be repeated before closing this gap.
+
 ## Remaining evidence
 
-These runs do not establish Pi conversational behavior, new-release bootstrap
-compatibility, native Linux behavior or product acceptance.
+These runs do not establish the corrected fresh-session discovery flow,
+new-release bootstrap compatibility, native Linux behavior or product acceptance.
 Those boundaries must not be inferred from unit tests or cross-built binaries.
 Final documentation reconciliation and exact-head review remain required.
