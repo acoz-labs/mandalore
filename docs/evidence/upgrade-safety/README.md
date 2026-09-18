@@ -49,6 +49,16 @@ not a generated screenshot or a claim of TUI/narrow-width accessibility acceptan
 
 ## Boundaries and remaining verification
 
+The [TUI transcript](menu-tui.txt) records actual arrow/Enter interaction in the
+same native terminal: default-No deferral returned to the main menu, then a
+second reviewed attempt with explicit stopped-session confirmation installed the
+selected generation and displayed the verified phase plus restart/trust notice.
+Workstation paths and trailing whitespace were normalized and ANSI cursor/color
+controls removed for the public text transcript; repeated redraw text is retained.
+It is not a replayable raw recording or pixel screenshot. The raw capture remains
+local. This verifies the normal-width task flow, not narrow-width or screen-reader
+behavior.
+
 This is **not** a model-driven agent-session test or independent product
 acceptance. The isolated native profile reports not logged in; no credential
 copying or live-profile activation was used to bypass that boundary. Complete
