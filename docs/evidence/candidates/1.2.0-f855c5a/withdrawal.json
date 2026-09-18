@@ -1,0 +1,25 @@
+{
+  "kind": "mandalore-synthetic-withdrawal-evidence",
+  "source_commit": "f855c5a7c05ffc9fbdb87bdb564d79c542bb26f6",
+  "binary_sha256": "cddf47c21315a3db59d6ac6c7470737a2ec522f910a1231c329de133e2713cdf",
+  "plugin_sha256": "ad991e55cf3e30479db45cc6a77b67af16c9745ef2b43062c6ca63cae06afa6b",
+  "driver_sha256": "51de1e95bcb280f5e54c5ec30bbcef52be85269c8c2cd27914e148519583d90b",
+  "legacy_source_commit": "51aee17afec015ba2ad44584f8190b4bb6d901a8",
+  "legacy_binary_sha256": "09827de1c1340284dbc5506f2c0db41f8cbd66d9231e3e5dbd9d93ea01fc2429",
+  "platform": "darwin",
+  "arch": "arm64",
+  "node": "v24.1.0",
+  "checks": [
+    "explicit preview/acknowledgement/activation/recovery; original evidence preserved; no implicit checkpoint",
+    "released old reader refuses upgraded bank; offline old clone still reads historical content",
+    "withdrawal omitted from recall/context, counted explicitly; stale restore refuses; retention is metadata-only/read-only",
+    "default export withholds; double historical opt-in discloses preserved history; journal remains independent",
+    "format1 clone preserves head and reports upgrade-required; explicit independent upgrade converges with both receipts",
+    "correction remains withdrawn; stale content restore refuses; explicit restore and cross-clone delivery retain history"
+  ],
+  "limitations": [
+    "Compiled CLI engineering evidence, not Codex/Pi model behavior or product acceptance",
+    "Only synthetic banks and local bare Git remote; no personal memory, account or network host",
+    "Old offline copies and already-read context remain outside revocation; no erasure claim"
+  ]
+}

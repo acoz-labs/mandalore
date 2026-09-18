@@ -1,0 +1,78 @@
+40 32
+=== RUN   TestReleaseQuotaNativePresentation
+
+Synthetic quota presentation
+  Real menu rendering;
+  simulated API results. No
+  network, installation, memory
+  or credentials are used.
+
+Checking source and
+installation
+  Verifying the selected
+  manifest and destination.
+  Planning does not execute a
+  binary or change this
+  machine.
+
+Review CLI installation
+  Official immutable release
+  metadata checked. Apply still
+  verifies downloaded bytes and
+  executes the selected
+  runtime's version probe.
+  Version:          1.0.0
+  Source:
+    https://github.com/acoz-lab
+    s/mandalore/releases/tag/v1
+    .0.0
+  Platform:
+    darwin/arm64
+  Prefix:
+    /synthetic/quota-prefix
+  Launcher:
+    /synthetic/quota-prefix/bin
+    /mandalore
+  Previous runtime:
+    Not installed in this prefi
+    x
+  Selected runtime:
+    /synthetic/new
+
+Artifact identity and effects
+  Only this CLI installation
+  changes. Native connections,
+  memory, credentials and shell
+  settings remain unchanged;
+  previous runtimes remain
+  retained.
+  Source commit:
+    bbbbbbbbbbbbbbbbbbbbbbbbbbb
+    bbbbbbbbbbbbb
+  Manifest SHA256:
+    aaaaaaaaaaaaaaaaaaaaaaaaaaa
+    aaaaaaaaaaaaaaaaaaaaaaaaaaa
+    aaaaaaaaaa
+  Binary SHA256:
+    ddddddddddddddddddddddddddd
+    ddddddddddddddddddddddddddd
+    dddddddddd
+  Embedded plugin SHA256:
+    ccccccccccccccccccccccccccc
+    ccccccccccccccccccccccccccc
+    cccccccccc
+  Retained target reusable:
+    false
+  Protocol / signet schema:
+    1 / read 1, write 1
+Apply these changes?
+
+› No · Return without applying
+  Yes · Apply this reviewed p…
+
+↑/↓ or j/k move · Enter/l sel…Apply these changes? › No · Ret…
+
+Stopped
+  No apply was invoked.
+--- PASS: TestReleaseQuotaNativePresentation (12.10s)
+PASS

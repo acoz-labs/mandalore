@@ -1,0 +1,48 @@
+{
+  "source": "f855c5a7c05ffc9fbdb87bdb564d79c542bb26f6",
+  "kind": "exact-source-renderer-not-release-binary",
+  "results": [
+    {
+      "scenario": "plain32",
+      "passed": true,
+      "raw_sha256": "7d7046f636a8d6dc979b8b311cb23aec678d378455907768c648d3cf7b2cab23",
+      "text_sha256": "f50cb02735f189382cec45281900cd26e3440902529df5b37e5626506a608dbe",
+      "command_count": 1
+    },
+    {
+      "scenario": "plain80",
+      "passed": true,
+      "raw_sha256": "a2cbe9bb0e1f65b7c512c162e2ecd85d6168490841cda55e9345be4ea90ca2ce",
+      "text_sha256": "be49af018d6c290ce9044a4a77edaa7cb74eaa05128e5a0de4e5f07e49ede407",
+      "command_count": 1
+    },
+    {
+      "scenario": "tui80",
+      "passed": true,
+      "raw_sha256": "587d9f5a230464ff69ec0e84f541a4a57caa685fe47e7b6b6c73bc883423697b",
+      "text_sha256": "5915f3a1a1e1809f72bf5de97cc8fc751c2b7e118ca4a65ca5cf9e7c43e838c1",
+      "command_count": 1
+    },
+    {
+      "scenario": "tui32",
+      "passed": true,
+      "raw_sha256": "d1f389ca696457afcacfcb2d35c4794988665221573db169b1af4e3344648763",
+      "text_sha256": "d84c998e27e7eb62b674fb97429a31828df72f462ee9129b8e80011bc7baa2c1",
+      "command_count": 1
+    },
+    {
+      "scenario": "default32",
+      "passed": true,
+      "raw_sha256": "b0e22aecb5749e3fcb68b76851c4db0626cad2d42ef4cd3d1256bd7b803ec1eb",
+      "text_sha256": "407731abfd911b18dfe62ea77d0f380e96623fcba58f42fc00fb8af1d6adabea",
+      "command_count": 0
+    },
+    {
+      "scenario": "back32",
+      "passed": true,
+      "raw_sha256": "7876c0b8316f631a946b6910df5593580191f8fb8504902e84a5e9184f9ff03b",
+      "text_sha256": "2663bf04174d896cafeca969c4c9740c4dc988a4cd88b6c64e0b1d7b09497818",
+      "command_count": 0
+    }
+  ]
+}

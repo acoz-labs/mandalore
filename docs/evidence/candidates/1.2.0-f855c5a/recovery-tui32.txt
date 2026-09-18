@@ -1,0 +1,146 @@
+40 32
+=== RUN   TestReleaseQuotaNativePresentation
+
+Synthetic quota presentation
+  Real menu rendering;
+  simulated API results. No
+  network, installation, memory
+  or credentials are used.
+
+Checking source and
+installation
+  Verifying the selected
+  manifest and destination.
+  Planning does not execute a
+  binary or change this
+  machine.
+
+Review CLI installation
+  Official immutable release
+  metadata checked. Apply still
+  verifies downloaded bytes and
+  executes the selected
+  runtime's version probe.
+  Version:          1.0.0
+  Source:
+    https://github.com/acoz-lab
+    s/mandalore/releases/tag/v1
+    .0.0
+  Platform:
+    darwin/arm64
+  Prefix:
+    /synthetic/quota-prefix
+  Launcher:
+    /synthetic/quota-prefix/bin
+    /mandalore
+  Previous runtime:
+    /synthetic/old
+  Selected runtime:
+    /synthetic/new
+
+Artifact identity and effects
+  Only this CLI installation
+  changes. Native connections,
+  memory, credentials and shell
+  settings remain unchanged;
+  previous runtimes remain
+  retained.
+  Source commit:
+    bbbbbbbbbbbbbbbbbbbbbbbbbbb
+    bbbbbbbbbbbbb
+  Manifest SHA256:
+    aaaaaaaaaaaaaaaaaaaaaaaaaaa
+    aaaaaaaaaaaaaaaaaaaaaaaaaaa
+    aaaaaaaaaa
+  Binary SHA256:
+    ddddddddddddddddddddddddddd
+    ddddddddddddddddddddddddddd
+    dddddddddd
+  Embedded plugin SHA256:
+    ccccccccccccccccccccccccccc
+    ccccccccccccccccccccccccccc
+    cccccccccc
+  Retained target reusable:
+    false
+  Protocol / signet schema:
+    1 / read 1, write 1
+Apply these changes?
+
+› No · Return without applying
+  Yes · Apply this reviewed p…
+
+↑/↓ or j/k move · Enter/l sel…Apply these changes? › Yes · Ap…
+
+Installing verified CLI
+  Rechecking the reviewed plan,
+  retaining the runtime and
+  activating only its owned
+  launcher. Native connections
+  remain unchanged.
+
+CLI receipt
+  Native connections remain
+  unchanged. Retained runtimes
+  and completed phases are
+  preserved. Activation is
+  incomplete. Inspect the
+  pending record and reapply
+  only the same reviewed plan;
+  do not remove or replace
+  unfamiliar files.
+  Phase:
+    launcher-activated
+  Installation complete: false
+  Already current:       false
+  Launcher:
+    /synthetic/quota-prefix/bin
+    /mandalore
+  Selected runtime:
+    /synthetic/new
+  Previous runtime:
+    /synthetic/old
+  Pending record:
+    /synthetic/owner's two  spa
+    ces/long-long-long-long-lon
+    g-long-long-long-long-long-
+    long-long-long-long-long-lo
+    ng-pending.json
+
+Recover the reviewed
+installation
+  Inspect the pending record
+  and resolve the reported
+  problem first. Then use the
+  original Mandalore executable
+  you launched, not an
+  incomplete new launcher. This
+  retries the stored plan and
+  rechecks ownership and
+  retained bytes; it does not
+  create a fresh plan or change
+  memory connections. The
+  command below is one logical
+  line; your terminal may
+  visually wrap it. Copy the
+  whole line without adding
+  newlines.
+  Command (copy the whole
+  logical line):
+mandalore release apply < '/synthetic/owner'"'"'s two  spaces/long-long-long-long-long-long-long-long-long-long-long-long-long-long-long-long-pending.json'
+
+[FAIL] Needs attention
+  The release request was rate-
+  limited. Retry timing is
+  unavailable; wait before
+  explicitly retrying. No
+  automatic retry was
+  attempted. Inspect any
+  installation receipt before
+  explicitly retrying. Changes
+  may have occurred; inspect
+  the retained paths and
+  receipt before retrying. No
+  automatic rollback was
+  performed.
+--- PASS: TestReleaseQuotaNativePresentation (15.46s)
+PASS
