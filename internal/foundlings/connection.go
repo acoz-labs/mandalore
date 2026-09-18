@@ -130,11 +130,15 @@ func (m *Manager) load(id string) (*Connection, error) {
 	if err != nil {
 		return nil, ErrConnection
 	}
+	return decodeConnection(data, id, m.memory.ID())
+}
+
+func decodeConnection(data []byte, id, signetID string) (*Connection, error) {
 	var c Connection
 	if err := strictjson.Decode(data, &c, 16384); err != nil {
 		return nil, ErrConnection
 	}
-	if c.Version != 1 || !connectionID.MatchString(c.ID) || c.ID != connectionFingerprint(c) || c.SignetID != m.memory.ID() || c.FoundlingID != id || !registrationID.MatchString(c.RegistrationID) || memory.ValidateFoundlingIdentity(c.Source, c.Pin) != nil || !filepath.IsAbs(c.Root) || filepath.Clean(c.Root) != c.Root || len(c.Root) > 4096 || !utf8.ValidString(c.Root) || strings.IndexFunc(c.Root, unicode.IsControl) >= 0 {
+	if c.Version != 1 || !connectionID.MatchString(c.ID) || c.ID != connectionFingerprint(c) || c.SignetID != signetID || c.FoundlingID != id || !registrationID.MatchString(id) || !registrationID.MatchString(c.RegistrationID) || memory.ValidateFoundlingIdentity(c.Source, c.Pin) != nil || !filepath.IsAbs(c.Root) || filepath.Clean(c.Root) != c.Root || len(c.Root) > 4096 || !utf8.ValidString(c.Root) || strings.IndexFunc(c.Root, unicode.IsControl) >= 0 {
 		return nil, ErrConnection
 	}
 	return &c, nil
