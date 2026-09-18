@@ -1,13 +1,23 @@
 # Discovery: compatible withdrawal and retention preview
 
-- Status: investigation; not an implemented feature or accepted migration.
+- Status: owner-selected direction; not an implemented feature or accepted migration.
 - Issue: #81, selected for investigation by the current owner roadmap goal.
 - Basis: `d7690a55315a7f7c1ce69c3df9bee895a45b1b79`.
 - Authority: engineering self-review under ADR0003; material data-model choice
   returns to the owner before implementation, as required by #16 O3.
 - Private evidence: none. All proposed probes use fresh synthetic banks.
 
-## Decision to resolve
+## Owner decision
+
+On September 18, 2026 the owner approved the recommended explicit, opt-in upgrade
+within the existing signet/repository after reviewing the compatibility cost.
+Preserve signet identity, memory, journals and Git history. Older clients must
+refuse an upgraded bank; offline old copies and past context cannot be revoked.
+This authorizes building and testing the feature, not migration of a personal
+bank, live installation, deletion, automatic expiry, history rewriting, product
+acceptance or public release. The separate-new-bank alternative is not selected.
+
+## Problem to resolve
 
 Withdraw a stable record from ordinary current recall without rewriting its
 history, turning an ordinary correction into a privacy decision, or letting a
@@ -211,7 +221,7 @@ and synchronized. No automatic ability to enumerate or stop all machines exists.
 | Sync path allowlist/candidate validation/append-only checks | Monotonic consented transition only; all concurrent content/events validated before adoption; old-client and no-downgrade tests |
 | Typed API/MCP/CLI and native tool discovery | Strict schemas, bounded metadata-only retention preview, read-only denial, partial/delivery receipts; no automatic expiry |
 
-Materializing these implementation tasks follows the owner format decision and
+Materializing these implementation tasks follows the recorded owner decision and
 exact-head discovery review. Passing the design model does not close runtime
 acceptance criteria or authorize a production migration.
 
