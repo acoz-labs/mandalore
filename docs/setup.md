@@ -110,6 +110,12 @@ No assistant launcher, capability framework or live predecessor import is added.
 
 ### Pi
 
+For Codex updates, replacement is deferred until affected sessions have exited.
+The menu offers a separate default-No handoff confirmation; paused/idle is not
+enough. A completed CLI update stays installed if plugin activation is deferred.
+See [deferred Codex upgrades](runbook.md#deferred-codex-upgrades) for the standalone
+apply command and restart/trust checks. This does not change Pi's reload contract.
+
 Pi setup asks for a trusted Mandalore executable, binding, native profile,
 installation state, native executable and memory access mode. Ordinary learning
 is the default; enforced read-only is an explicit connection choice, not a mode

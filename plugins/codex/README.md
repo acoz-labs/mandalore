@@ -26,6 +26,13 @@ resolution before moving to managed installation. Inspection and repair inspect
 retained receipts, and successful activation still requires a fresh session.
 See [actual managed native tests](../../docs/setup-native-evidence.md).
 
+Replacing an existing connection requires an explicit exited-session handoff;
+otherwise apply returns a deferred receipt without changing native registration
+or cache. Verified identical replay does not reinstall. See
+[upgrade safety evidence](../../docs/evidence/upgrade-safety/README.md) and the
+[recovery procedure](../../docs/runbook.md#deferred-codex-upgrades). These source
+changes are not yet a released artifact or a promise of hot reload.
+
 ## Source-checkout connection for plugin development
 
 Build the CLI and create/bind a synthetic signet using [the CLI guide](../../docs/interface.md).

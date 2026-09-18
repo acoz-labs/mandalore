@@ -588,6 +588,30 @@ identifies the runtime, native executable, binding and embedded package bytes;
 the selected runtime must also pass machine/protocol and read-only hook probes.
 Checksums establish identity, not publisher trust.
 
+Codex replacement/repair defaults to `connection.failed` with
+`error.connection_result.phase: "deferred"` when an existing registration would
+need mutation. No native registration/cache mutation occurs in that refusal.
+Inventory may create native logs, and a late refusal can retain staged copies;
+this is not a filesystem-wide read-only operation. Exit all sessions using the
+selected Codex profile, then use `connection apply --sessions-stopped` with the
+reviewed plan on stdin. Repair-and-apply also accepts this flag. Idle sessions
+are not stopped. The flag is rejected for Pi and preview-only journeys.
+
+The typed `connection_apply` input remains the flattened plan fields, with an
+optional `sessions_stopped` boolean. It belongs only to that invocation, never
+to the plan identity or installation receipt. Existing raw plans still work for
+fresh installation and verified identical replay. An identical registration with
+verified retained source/runtime/cache returns `installed: true`, `phase:
+"verified"` without reinstalling; this does not prove live-session readiness.
+Missing dependencies are not accepted as a successful no-op.
+
+The release menu delegates to the selected runtime's own embedded package.
+It inspects that runtime's operation catalog first. A runtime advertising the
+boolean accepts the acknowledgement; a legacy runtime receives only its original
+raw plan and requires an explicit stopped-session handoff before any delegated
+apply, because it cannot enforce the new guard itself. An unreadable or ambiguous
+catalog is a refusal, not permission to attempt legacy apply.
+
 `connection doctor` returns structural checks and explicit `not-tested` entries
 for native login, hook trust, live MCP, remote freshness and active-session
 context. An unhealthy report has a nonzero exit and `error.connection_report`.
