@@ -98,9 +98,22 @@ Proposed conservative resolution:
 - No evidence is deleted. Content conflicts and visibility conflicts are distinct
   inspectable states, neither resolved by wall-clock order.
 
-The causal predicate and all event-order permutations need an executable model
-before this is selected. In particular, correction/restore concurrency cannot be
-solved by keeping a boolean only on a record or by comparing timestamps.
+The [executable design model](model.mjs) and [nine tests](model.test.mjs) exercise
+these rules, including all 120 permutations of a five-object concurrent scenario.
+They pass with Node 24.1.0. The model validates combined content/visibility causal
+cycles, missing or wrong-kind references, cross-record inputs, stale expected
+heads and replay. It demonstrates that a correction concurrent with restore stays
+withheld until a new restore explicitly observes it; an aware later correction
+can be current. Two concurrent restore heads are a visibility conflict, not a
+timestamp tie-break. Existing content conflicts remain conflicts after restore.
+
+This is a single-record state-machine proof, not a production schema validator,
+file transaction, scale test or complete formal proof. Incomplete delivery
+prefixes are invalid and must never produce guidance. Production content writes
+must capture visibility heads under the writer lock; importing missing metadata
+as though a writer had observed a restore would invalidate the argument.
+
+Reproduce with `mise exec -- node --test docs/discovery/81-withdrawal-compatibility/model.test.mjs`.
 
 ## Surface contract to prove
 
@@ -151,6 +164,56 @@ leaving the old bank/remote untouched. That avoids a mixed-client transition but
 introduces a second bank and a deliberate continuity handoff. Neither path is
 authorized against a live bank by this investigation. The choice is material and
 must return to the owner with compatibility evidence and operational tradeoffs.
+
+### Recommended upgrade recovery contract
+
+Subject to that decision, prefer the same signet/repository over a second bank:
+it preserves established scope IDs, bindings, Git history and remote continuity.
+Require explicit preview/apply plus acknowledgement that affected writers are
+stopped. Preview pins source/binding/HEAD and the proposed monotonic transition.
+No implicit upgrade during launch, recall, export or background sync.
+
+Preserve all existing revision/source/journal bytes. New-format readers support
+legacy records within the upgraded bank, while new writes carry the required
+visibility references. A portable upgrade record precedes the manifest flip;
+the final manifest replacement is atomic under the writer lock and occurs only
+after the prepared new state validates. Do not allow withdrawal writes before
+that format gate is active. These transaction details require implementation
+fault tests, not inference from the state-machine model.
+
+Interrupted pre-flip preparation leaves old semantics plus inspectable pending
+metadata; it cannot claim withdrawal succeeded. Post-flip failure leaves a valid
+new-format bank or an explicit fail-closed repair condition, never an automatic
+downgrade. Git checkpoint/delivery and local format activation are separate
+receipts. No history rewrite, force push or automatic cleanup is permitted.
+
+Upgraded synchronization must allow only the reviewed 1-to-2 transition with
+unchanged signet identity, exact preserved evidence and a valid upgrade record.
+It must not weaken append-only enforcement for ordinary records or permit 2-to-1
+downgrade. A format-1 clone needs explicit transition consent before adopting a
+format-2 remote; old clients retain their generic conflict/refusal behavior.
+Offline-old-clone recall remains outside the withdrawal guarantee until upgraded
+and synchronized. No automatic ability to enumerate or stop all machines exists.
+
+## Integration and implementation acceptance map
+
+| Integration point | Required proof before shipping runtime behavior |
+| --- | --- |
+| `memory.Open`, manifest/schema validation, runtime metadata | Format-1 unchanged; unsupported/new format refused by old readers; no pre-gate visibility mutation |
+| `Service.Remember` and `RememberFromFoundling` | Capture visibility context with expected-head CAS; stale write cannot fabricate awareness of restore |
+| `Store.Recall` / shared current-head selection | Withdrawn, visibility-conflicted and unreviewed-content states excluded before scoring/output |
+| `Store.Scopes` / `Service.ScopePage` | Counts agree with recall; no withheld summaries in routing; legacy scope IDs retained |
+| `Service.HistoryPage` plus explicit visibility history | Full content/events retained with distinct status, bounded output and provenance |
+| `memorycontext.Build`, Codex hook and Pi startup/turn context | Same exclusion after fresh reads and after sync; no stale cached guidance claim |
+| `exportreport` snapshot/projection/preview/apply | Visibility files validated/pinned; default exclusion and explicit withdrawn-history opt-in; stale plan refuses |
+| `foundlings.Manager.Promote` | Withdrawn target and same exact known origin cannot silently create fresh guidance |
+| Journal and source APIs | Independent evidence stays accessible explicitly; no invented record association or erasure claim |
+| Sync path allowlist/candidate validation/append-only checks | Monotonic consented transition only; all concurrent content/events validated before adoption; old-client and no-downgrade tests |
+| Typed API/MCP/CLI and native tool discovery | Strict schemas, bounded metadata-only retention preview, read-only denial, partial/delivery receipts; no automatic expiry |
+
+Materializing these implementation tasks follows the owner format decision and
+exact-head discovery review. Passing the design model does not close runtime
+acceptance criteria or authorize a production migration.
 
 ## Required evidence and completion gates
 
