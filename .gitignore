@@ -12,3 +12,5 @@ __pycache__/
 .ruby-lsp/
 vendor/bundle/
 /mandalore
+
+*.py[cod]
