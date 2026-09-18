@@ -126,8 +126,25 @@ Together with the baseline's ordinary fresh-session withheld recall, this verifi
 the specific tested discovery/restoration flow without relying on retained IDs.
 It does not imply that historical queries are current guidance, or that all
 ambiguous wording/model combinations are covered. The Codex fresh-session
-discovery path still needs repetition on this new package; its earlier directed
-withdraw/restore results remain evidence for their explicitly pinned source.
+discovery path is recorded below; the earlier directed withdraw/restore results
+remain evidence for their explicitly pinned source.
+
+## Codex fresh-session discovery after the fix
+
+The same `59025e5` runtime was installed into the stopped synthetic Codex profile;
+the reviewed generation reported installed/verified. Its embedded Codex package
+SHA256 was `3ac5538e4fdf47b8c2baa4d68ec46375ad095aa3e44d601ca1237b6afc0c7e0a`.
+Native Codex remained 0.155.0 with its configured gpt-6-astra model. The selected
+record was withdrawn through the exact-head CLI before starting a fresh session.
+
+The restoration prompt supplied neither ID nor remembered name nor discovery
+sequence. Codex loaded the packaged memory and visibility instructions, used
+`memory_withheld` with a summary query in the explicit signet scope, inspected
+content/visibility history and restored Maple Quay using the exact observed heads.
+It did not inspect signet files, manufacture another record, journal, synchronize
+or change configuration. The result accurately separated local durability from
+delivery. This closes the demonstrated ID-discovery gap for the tested Codex and
+Pi flows, not every possible model or phrasing.
 
 ## Remaining evidence
 
