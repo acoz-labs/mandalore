@@ -41,6 +41,9 @@ func TestMCPUsesSharedContractAndRejectsDuplicates(t *testing.T) {
 		t.Fatal(list, err)
 	}
 	for _, tool := range list.Tools {
+		if tool.Name == "export_preview" || tool.Name == "export_apply" {
+			t.Fatal("export maintenance exposed in everyday memory catalog")
+		}
 		if tool.InputSchema == nil || tool.OutputSchema == nil {
 			t.Fatal("missing schema")
 		}
@@ -54,6 +57,9 @@ func TestMCPUsesSharedContractAndRejectsDuplicates(t *testing.T) {
 		data, err := json.Marshal(tool.OutputSchema)
 		if err != nil {
 			t.Fatal(err)
+		}
+		if bytes.Contains(data, []byte(`"export_result"`)) {
+			t.Fatal("export receipt inflated everyday memory schema")
 		}
 		if bytes.Contains(data, []byte(`"connection_result"`)) || bytes.Contains(data, []byte(`"connection_report"`)) || bytes.Contains(data, []byte(`"migration_result"`)) || bytes.Contains(data, []byte(`"foundling_result"`)) || bytes.Contains(data, []byte(`"release_result"`)) {
 			t.Fatal("installation-only schemas consume memory-tool context", tool.Name, len(data))

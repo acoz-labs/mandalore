@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	"github.com/acoz-labs/mandalore/internal/distribution"
+	"github.com/acoz-labs/mandalore/internal/exportreport"
 	"github.com/acoz-labs/mandalore/internal/install"
 	"github.com/acoz-labs/mandalore/internal/memory"
 	"github.com/acoz-labs/mandalore/internal/migration"
@@ -43,6 +44,7 @@ type Error struct {
 	MigrationResult    *migration.Result           `json:"migration_result,omitempty"`
 	ReleaseResult      *distribution.InstallResult `json:"release_result,omitempty"`
 	ReleaseRetry       *distribution.ReleaseRetry  `json:"release_retry,omitempty"`
+	ExportResult       *exportreport.Receipt       `json:"export_result,omitempty"`
 }
 type Envelope struct {
 	ProtocolVersion int    `json:"protocol_version"`
@@ -173,7 +175,7 @@ var operations = []Operation{
 
 func Catalog() []Operation {
 	var result []Operation
-	for _, group := range [][]Operation{operations, administration, synchronization, connections, migrations, foundlingOperations, releases, saveAndDelivery, nativeContext, piAdministration, readinessOperations} {
+	for _, group := range [][]Operation{operations, administration, synchronization, connections, migrations, foundlingOperations, releases, saveAndDelivery, nativeContext, piAdministration, readinessOperations, exports} {
 		result = append(result, group...)
 	}
 	return result
@@ -253,6 +255,17 @@ func (a *API) failure(op Operation, err error) Envelope {
 		return foundlingFailureEnvelope(reference)
 	}
 	var migration *migrationFailure
+	var export *exportFailure
+	if errors.As(err, &export) {
+		code := "export.failed"
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			code = "operation.cancelled"
+		}
+		mayWrite := export.result != nil && export.result.StagingDirectory != ""
+		out := Failure(code, export.Error(), mayWrite)
+		out.Error.ExportResult = export.result
+		return out
+	}
 	if errors.As(err, &migration) {
 		code := "migration.failed"
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {

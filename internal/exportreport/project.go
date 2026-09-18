@@ -135,6 +135,12 @@ func project(s memory.ReportSnapshot, in Selection) (Projection, []byte, error) 
 		omit["citations"] = true
 		omit["change_history"] = true
 	}
+	// Sources and historical origins carry their own author, timestamp and
+	// classification values. Omit the complete citation group rather than
+	// silently retaining alternate disclosures of an omitted category.
+	if omit["authorship"] || omit["timestamps"] || omit["classification"] {
+		omit["citations"] = true
+	}
 	if !in.IncludeDetails {
 		for _, k := range []string{"authorship", "citations", "change_history", "extensions"} {
 			omit[k] = true

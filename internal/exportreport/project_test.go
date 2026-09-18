@@ -3,6 +3,7 @@ package exportreport
 import (
 	"context"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -70,6 +71,22 @@ func TestProjectionSelectionDefaultsAndOptIns(t *testing.T) {
 	}
 	if strings.Contains(string(raw), "UNSELECTED_MARKER") {
 		t.Fatal("expanded selection")
+	}
+}
+
+func TestOmissionsCloseOverNestedCitationMetadata(t *testing.T) {
+	s, a, _, _ := reportFixture(t)
+	for _, category := range []string{"authorship", "timestamps", "classification"} {
+		p, raw, err := project(s, Selection{RecordIDs: []string{a.RecordID}, IncludeDetails: true, IncludeHistory: true, OmitFields: []string{category}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		// Citations contain device IDs, source kind/recorded time and imported
+		// author/time metadata. Omitting a parent category must not leave those
+		// alternate disclosure routes behind.
+		if !slices.Contains(p.OmittedFields, "citations") || strings.Contains(string(raw), `"citations":`) {
+			t.Fatal("dependent citation surface retained", category)
+		}
 	}
 }
 

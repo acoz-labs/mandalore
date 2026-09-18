@@ -55,6 +55,8 @@ const help = `Mandalore — durable memory across tools
   mandalore connection repair --connection-root DIR [--apply]
   mandalore migration preflight --source DIR --output NEW-DIR --device-label LABEL --actor NAME
   mandalore migration apply --writers-stopped < reviewed-preflight.json
+  mandalore export preview [--binding PATH] < selection.json
+  mandalore export apply [--read-only] < reviewed-preview.json
 
 Profile options: --state-dir DIR, --native-home DIR, --native-binary FILE.
 Connection harness: --harness codex|pi (required for assess; otherwise default codex).
@@ -103,6 +105,9 @@ func bad(out io.Writer, message string) int {
 
 func run(ctx context.Context, args []string, input io.Reader, out, errout io.Writer) int {
 	ctx = readiness.WithBuild(ctx, version, sourceCommit)
+	if len(args) > 0 && args[0] == "export" {
+		return runExport(ctx, args[1:], input, out)
+	}
 	if len(args) > 0 && args[0] == "release" {
 		return runRelease(ctx, args[1:], input, out)
 	}
@@ -272,6 +277,9 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 	}
 	if f.NArg() != 0 {
 		return bad(failureOut, "Unexpected positional arguments.")
+	}
+	if (name == "export_preview" || name == "export_apply") && *path != "" {
+		return bad(failureOut, "Typed export operations take the binding inside their JSON input, not --binding.")
 	}
 	guard := binding.Guard{SHA256: *bindingSHA, SignetID: *signetID}
 	guardRequested := false

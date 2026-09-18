@@ -193,7 +193,35 @@ and retained receipts before retrying; neither automatic rollback nor cache
 resurrection is attempted. Ownership, stale-plan and edited-file refusals still
 apply even with stopped-session acknowledgement.
 
-### Pi-specific diagnosis
+## Export failure and partial output
+
+Export preview is read-only; it does not synchronize to establish remote freshness.
+If freshness matters, perform separately authorized synchronization before choosing
+the source. Never export a user's bank merely to test installation health.
+
+On `export.failed` or cancellation, inspect `error.export_result` when present.
+It reports phase, staging/destination/report paths, bytes written, publication and
+durability separately. A stage or published report may remain even though the
+operation failed. Paths name the locations selected at the time of the attempt;
+external directory moves can make those locations stale. Preserve evidence and
+inspect filesystem identity before any manually authorized cleanup.
+
+Mandalore never deletes partial exports, rolls them back or retries automatically.
+A published-but-not-durable receipt is not a claim of successful persistence.
+A retained stage is unconfirmed output, not an accepted report. Do not publish it
+without review. A retry requires a fresh destination and newly reviewed preview;
+the same plan cannot replace an existing artifact. Source/binding changes require
+new preview, not editing hashes in the old one. No provider errors or source text
+are needed in a public diagnostic issue.
+
+Malformed or unavailable configured-reference paths require explicit inspection,
+even for disconnected references; do not bypass the guard by deleting local
+configuration. Export neither repairs references nor reads their contents for
+destination validation. Prior reports, Git history, backups and native/provider
+copies remain outside this operation's effects. An unrestricted filesystem owner
+can still alter produced files; these guards are not a sandbox against that owner.
+
+## Pi-specific diagnosis
 
 Select Pi in the Armorer menu or use `connection armorer --harness pi` with the
 actual native profile/executable/state paths. Inspect `error.pi_connection_report`
