@@ -161,6 +161,9 @@ func apply(ctx context.Context, reviewed Plan, phaseHook func(string) error) (re
 			err = io.ErrShortWrite
 			return
 		}
+		if err = check("writing"); err != nil {
+			return
+		}
 	}
 	if err = f.Sync(); err != nil {
 		return

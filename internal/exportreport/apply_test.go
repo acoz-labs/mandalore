@@ -3,6 +3,7 @@ package exportreport
 import (
 	"context"
 	"errors"
+	"github.com/acoz-labs/mandalore/internal/memory"
 	"os"
 	"path/filepath"
 	"strings"
@@ -39,6 +40,34 @@ func TestApplyPublishesOnlyReviewedReportPrivately(t *testing.T) {
 	}
 	if _, err := Apply(context.Background(), p); err == nil {
 		t.Fatal("replay overwrote report")
+	}
+}
+
+func TestApplyReportsActualPartialWrite(t *testing.T) {
+	in, s := previewFixture(t)
+	for i := 0; i < 16; i++ {
+		r, err := s.Remember(memory.Write{Kind: "fact", Summary: "Synthetic large report", Body: strings.Repeat("x", 4096), Basis: "observation", Reason: "Partial write fixture"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		in.Selection.RecordIDs = append(in.Selection.RecordIDs, r.RecordID)
+	}
+	p, err := Preview(context.Background(), in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, err := apply(context.Background(), p, func(phase string) error {
+		if phase == "writing" {
+			return errors.New("injected write interruption")
+		}
+		return nil
+	})
+	if err == nil || r.BytesWritten <= 0 || r.BytesWritten >= p.ReportBytes || r.Published || r.Durable {
+		t.Fatal("partial write not retained", r, err)
+	}
+	st, e := os.Stat(r.ReportPath)
+	if e != nil || st.Size() != int64(r.BytesWritten) {
+		t.Fatal("receipt disagrees with written bytes", e)
 	}
 }
 

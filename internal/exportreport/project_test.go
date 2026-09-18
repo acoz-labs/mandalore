@@ -2,6 +2,7 @@ package exportreport
 
 import (
 	"context"
+	"encoding/json"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -107,6 +108,79 @@ func TestProjectionOmissionsCoverEverySurface(t *testing.T) {
 	}
 	if !strings.Contains(string(raw), "not a restorable signet") {
 		t.Fatal("boundary missing")
+	}
+}
+
+func TestEveryFieldRedactionWithHistoricalOriginsAndOpaqueExtensions(t *testing.T) {
+	s, a, b, j := reportFixture(t)
+	model, session := "MODEL_CANARY", "SESSION_CANARY"
+	for i := range s.Revisions {
+		s.Revisions[i].Authorship.Model = &model
+		s.Revisions[i].Authorship.SessionID = &session
+		s.Revisions[i].Extensions = map[string]any{"test.opaque": map[string]any{"secret": "EXTENSION_CANARY"}}
+	}
+	r := memory.FoundlingRegistration{Version: 1, ID: "registration-original", FoundlingID: "foundling-original", Name: "REGISTRATION_CANARY", Description: "Reference", Source: memory.FoundlingSource{Kind: "local", Locator: "source-original"}, Pin: memory.SourcePin{Algorithm: "sha256", Value: strings.Repeat("a", 64)}, State: "active", RecordedAt: a.RecordedAt, Authorship: a.Authorship, Supersedes: []string{}, ChangeReason: "Registered"}
+	s.Registrations = []memory.FoundlingRegistration{r}
+	for i := range s.Sources {
+		s.Sources[i].ExternalOrigin = &memory.ExternalOrigin{FoundlingID: r.FoundlingID, RegistrationRevisionID: r.ID, SourceIdentity: r.Source, SourcePin: r.Pin, RelativeLocator: "ORIGIN_CANARY.md", ContentSHA256: strings.Repeat("b", 64), OriginalAuthor: "AUTHOR_CANARY", OriginalRecordedAt: a.RecordedAt}
+	}
+	in := Selection{RecordIDs: []string{a.RecordID}, JournalIDs: []string{j.ID}, IncludeDetails: true, IncludeHistory: true}
+	if err := memory.ValidateReportSnapshot(s.Snapshot, s.Registrations); err != nil {
+		t.Fatal("synthetic fixture", err)
+	}
+	_, visible, err := project(s, in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, marker := range []string{"MODEL_CANARY", "SESSION_CANARY", "EXTENSION_CANARY", "ORIGIN_CANARY", "AUTHOR_CANARY", a.ID, b.ID, j.ID, a.RecordedAt} {
+		if !strings.Contains(string(visible), marker) {
+			t.Fatal("fixture omitted intended marker", marker)
+		}
+	}
+	if strings.Contains(string(visible), "REGISTRATION_CANARY") {
+		t.Fatal("copied unrelated registration content")
+	}
+	in.OmitFields = append([]string{}, fieldCategories...)
+	_, raw, err := project(s, in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var report map[string]any
+	if err := json.Unmarshal(raw, &report); err != nil {
+		t.Fatal(err)
+	}
+	for _, value := range report["items"].([]any) {
+		for key := range value.(map[string]any) {
+			if key != "ordinal" && key != "type" && key != "status" {
+				t.Fatal("unexpected disclosure surface", key)
+			}
+		}
+	}
+	if _, ok := report["identity"]; ok {
+		t.Fatal("report identity survived omission")
+	}
+	for _, category := range fieldCategories {
+		in.OmitFields = []string{category}
+		p, raw, err := project(s, in)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var v struct {
+			Items []map[string]any `json:"items"`
+		}
+		if err := json.Unmarshal(raw, &v); err != nil {
+			t.Fatal(err)
+		}
+		for _, item := range v.Items {
+			for _, omitted := range p.OmittedFields {
+				if _, exists := item[omitted]; exists {
+					t.Fatal("effective omission retained", category, omitted)
+				}
+			}
+		}
+		if strings.Contains(string(raw), "EXTENSION_CANARY") {
+			t.Fatal("opaque extension survived omission", category)
+		}
 	}
 }
 
