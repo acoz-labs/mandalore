@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+[[ "$(go env GOVERSION)" == "go1.26.4" ]] || {
+  echo 'Go 1.26.4 is required; use mise exec -- bin/promote-local-candidate.' >&2
+  exit 1
+}
+# Compile trusted maintainer control tooling, never rebuild the retained product.
+exec go run ./cmd/promote-local-candidate "$@"
