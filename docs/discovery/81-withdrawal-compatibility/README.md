@@ -33,8 +33,23 @@ provenance and registrations: an ordinary synchronization cannot silently modify
 the manifest. A format transition therefore needs a separately reviewed,
 explicitly authorized upgrade path, not a relaxed general append-only check.
 
-These are source observations, not yet executable old-release compatibility
-evidence. Required probes below must establish actual refusal and invariance.
+The [released-reader probe](old-reader-probe.mjs) ran in the designated native
+Herdr lab on September 18, 2026. [Retained results](old-reader-result.json) pin
+the real 1.1.0 binary and source identity. Direct recall/scopes/history/journal/
+inspect/sync refused a disposable manifest-version-2 fixture without disclosing
+the canary or changing portable files. A local bare-remote fixture showed that
+old sync refuses adoption in `state: conflicted`, `phase: validate`, with
+`delivered: false`, preserving the original HEAD and portable tree. Subsequent
+old-local recall still returned the old canary, demonstrating the stale-copy
+boundary rather than claiming revocation.
+
+The first probe correctly reached remote validation but its assertion expected
+an outer protocol error. Inspection confirmed sync deliberately returns an outer
+successful envelope containing the conflicted delivery state. The corrected
+assertion checks that state, non-delivery and unchanged HEAD/tree; it passed on a
+fresh fixture. No validation rule or released binary was changed. Original test
+fixtures are retained outside the repository. This is format-gate characterization,
+not proof that an actual format-2 migration or withdrawal implementation exists.
 
 ## Candidate options
 
