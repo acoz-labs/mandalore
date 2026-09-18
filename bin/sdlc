@@ -2,20 +2,22 @@
 """Repository-native standards checks. Credentials are supplied by the caller."""
 import argparse
 import hashlib
+import importlib.machinery
+import importlib.util
 import json
 import os
 from pathlib import Path, PurePosixPath
 import subprocess
 import sys
 
-VERSION = "2026.09.18.1"
+VERSION = "2026.09.18.3"
 MANIFEST = ".sdlc/managed.json"
 CONFIG = ".sdlc/config.json"
 MANAGED = [
     "AGENTS.md", "CONTRIBUTING.md",
     ".github/ISSUE_TEMPLATE/feature.yml",
-    "bin/sdlc", "bin/validate-solution-plans", "bin/dependency-merge-steward", "tests/test_sdlc.py",
-    "docs/operations/sdlc.md", "docs/operations/repo-standard.md",
+    "bin/sdlc", "bin/sdlc-evidence", "bin/sdlc-release", "bin/validate-solution-plans", "bin/dependency-merge-steward", "tests/test_sdlc.py", "tests/test_sdlc_evidence.py", "tests/test_sdlc_release.py",
+    "docs/operations/sdlc.md", "docs/operations/repo-standard.md", "docs/operations/local-verification.md",
     "docs/plans/README.md", "docs/plans/_template/README.md",
     "docs/discovery/README.md", "docs/discovery/_template/README.md",
     ".github/PULL_REQUEST_TEMPLATE.md",
@@ -26,6 +28,32 @@ MANAGED = [
 
 class Failure(Exception):
     pass
+
+def evidence_module():
+    loader = importlib.machinery.SourceFileLoader("sdlc_evidence", str(Path(__file__).resolve().with_name("sdlc-evidence")))
+    spec = importlib.util.spec_from_loader(loader.name, loader)
+    module = importlib.util.module_from_spec(spec)
+    loader.exec_module(module)
+    return module
+
+def validate_config(config):
+    if config.get("delivery_profile") not in ("service", "artifact", "non-deployable"):
+        raise Failure("Declare a real delivery_profile")
+    commands = config.get("validation")
+    if not isinstance(commands, list) or not commands or any(not isinstance(c, str) or not c.strip() for c in commands):
+        raise Failure("Declare meaningful validation commands")
+    mode = config.get("verification_mode", "actions")
+    if mode not in {"local", "actions"}:
+        raise Failure("Unknown verification_mode")
+    if mode == "actions" and not config.get("required_checks"):
+        raise Failure("Declare required_checks for Actions verification")
+    if mode == "local" and config["delivery_profile"] in {"service", "artifact"}:
+        for key in ("acceptance_criteria", "release_criteria"):
+            values = config.get(key)
+            if not isinstance(values, list) or not values or any(not isinstance(v, str) or not v.strip() for v in values):
+                raise Failure(f"Declare concrete {key}; missing delivery capability is not success")
+        if not config.get("delivery_runbook"):
+            raise Failure("Declare the repository's actual delivery_runbook")
 
 def run(*args, cwd=None):
     result = subprocess.run(args, cwd=cwd, capture_output=True, text=True)
@@ -100,10 +128,7 @@ def check(root):
     if bad:
         raise Failure("Managed drift: " + ", ".join(bad))
     config = json.loads(path(root, CONFIG).read_text())
-    if config.get("delivery_profile") not in ("service", "artifact", "non-deployable"):
-        raise Failure("Declare a real delivery_profile")
-    if not config.get("validation") or not config.get("required_checks"):
-        raise Failure("Declare validation and required_checks; missing checks are not success")
+    validate_config(config)
     print(json.dumps({"version": manifest["version"], "conforms": True}))
 
 def apply(source, target, adopt=False):
@@ -190,6 +215,19 @@ def approval(pr, reviews, permissions):
     if not any(r["state"] == "APPROVED" and r.get("commit_id") == pr["head"]["sha"]
                for r in eligible.values()):
         raise Failure("No independent authorized approval on current head")
+    return [u for u, r in eligible.items() if r["state"] == "APPROVED" and r.get("commit_id") == pr["head"]["sha"]]
+
+def published_local_evidence(repo, pr, reviewers):
+    import base64
+    remote = gh(f"repos/{repo}/contents/{CONFIG}?ref={pr['head']['sha']}")
+    config = json.loads(base64.b64decode(remote["content"]))
+    if config.get("verification_mode") == "local":
+        evidence = evidence_module()
+        try:
+            evidence.trusted_receipt(repo, pr["number"], pr["head"]["sha"], config,
+                                     "validation", [pr["user"]["login"]], eligible=reviewers)
+        except evidence.Failure as error:
+            raise Failure(str(error))
 
 def checks_pass(required, checks, statuses):
     # GitHub lists newest first, but select explicitly by timestamp/id.
@@ -204,7 +242,7 @@ def checks_pass(required, checks, statuses):
         if not outcomes or any(x != "success" for x in outcomes):
             raise Failure(f"Required check is missing or not successful: {name}")
 
-def review(repo, number, required, expected_actor=None, merged=False):
+def review(repo, number, required, expected_actor=None, merged=False, config=None):
     actor = gh("user")["login"]
     if expected_actor and actor.lower() != expected_actor.lower():
         raise Failure("Authenticated actor mismatch")
@@ -227,15 +265,27 @@ def review(repo, number, required, expected_actor=None, merged=False):
     if own_permission not in {"write", "maintain", "admin"}:
         raise Failure("Actor cannot maintain this repository")
     sha = pr["head"]["sha"]
-    check_runs = []
-    for page in range(1, 10001):
-        data = gh(f"repos/{repo}/commits/{sha}/check-runs?per_page=100&page={page}")
-        check_runs.extend(data["check_runs"])
-        if len(check_runs) >= data["total_count"]:
-            break
+    if config and config.get("verification_mode") == "local":
+        import base64
+        remote = gh(f"repos/{repo}/contents/{CONFIG}?ref={sha}")
+        if json.loads(base64.b64decode(remote["content"])) != config:
+            raise Failure("Local configuration differs from PR head")
+        evidence = evidence_module()
+        try:
+            evidence.trusted_receipt(repo, number, sha, config, "validation",
+                                     [pr["user"]["login"]] if lane == "code" else [], eligible=[actor])
+        except evidence.Failure as e:
+            raise Failure(str(e))
     else:
-        raise Failure("Check pagination limit exceeded")
-    checks_pass(required, check_runs, pages(f"repos/{repo}/commits/{sha}/statuses"))
+        check_runs = []
+        for page in range(1, 10001):
+            data = gh(f"repos/{repo}/commits/{sha}/check-runs?per_page=100&page={page}")
+            check_runs.extend(data["check_runs"])
+            if len(check_runs) >= data["total_count"]:
+                break
+        else:
+            raise Failure("Check pagination limit exceeded")
+        checks_pass(required, check_runs, pages(f"repos/{repo}/commits/{sha}/statuses"))
     current = gh(f"repos/{repo}/pulls/{number}")
     if current["head"]["sha"] != sha or (not current.get("merged") if merged else current["state"] != "open") or current["draft"]:
         raise Failure("PR changed during verification")
@@ -266,7 +316,7 @@ def pushed_commits(repo, before, after):
     raise Failure("Push range exceeds audit limit")
 
 def audit(repo, before, after):
-    actor = os.environ.get("GITHUB_ACTOR", "")
+    actor = os.environ.get("GITHUB_ACTOR") or gh("user")["login"]
     if not actor or gh(f"repos/{repo}/collaborators/{actor}/permission")["permission"] not in {"write", "maintain", "admin"}:
         raise Failure("Push requires an authorized repository maintainer")
     for sha in pushed_commits(repo, before, after):
@@ -284,7 +334,8 @@ def audit(repo, before, after):
             try:
                 reviews = pages(f"repos/{repo}/pulls/{pr['number']}/reviews")
                 permissions = {r["user"]["login"].lower(): gh(f"repos/{repo}/collaborators/{r['user']['login']}/permission")["permission"] for r in reviews}
-                approval(pr, reviews, permissions)
+                reviewers = approval(pr, reviews, permissions)
+                published_local_evidence(repo, pr, reviewers)
                 accepted = True
                 break
             except Failure:
@@ -342,8 +393,7 @@ def cascade(source, workspace, org, adopt=False, verify=False):
                     if mode != "100"+entry["mode"]:
                         raise Failure("Published managed mode differs: "+name)
                 config=json.loads(run("git","show",remote_ref+":"+CONFIG,cwd=target))
-                if config.get("delivery_profile") not in {"service","artifact","non-deployable"} or not config.get("validation") or not config.get("required_checks"):
-                    raise Failure("Published repository configuration incomplete")
+                validate_config(config)
                 results[repo]={"state":"verified", "head":run("git","rev-parse",remote_ref,cwd=target).strip()}
             else:
                 previous=results.get(repo,{})
@@ -380,7 +430,8 @@ def verify_approval(repo, number):
         raise Failure("Requires open ready PR")
     reviews=pages(f"repos/{repo}/pulls/{number}/reviews")
     permissions={r["user"]["login"].lower():gh(f"repos/{repo}/collaborators/{r['user']['login']}/permission")["permission"] for r in reviews}
-    approval(pr,reviews,permissions)
+    reviewers = approval(pr,reviews,permissions)
+    published_local_evidence(repo,pr,reviewers)
     # Return the exact reviewed SHA for compare-and-swap merge by the caller.
     print(pr["head"]["sha"])
 
@@ -409,8 +460,8 @@ def main():
         elif args.command=="verify-approval":verify_approval(args.repo,args.pr)
         elif args.command=="review":
             config=json.loads(path(args.root,CONFIG).read_text())
-            if not config.get("required_checks"):raise Failure("No required checks configured")
-            review(args.repo,args.pr,config["required_checks"],args.expected_actor)
+            validate_config(config)
+            review(args.repo,args.pr,config.get("required_checks",[]),args.expected_actor,config=config)
     except (Failure, OSError, ValueError, KeyError) as e:
         print(f"sdlc: {e}",file=sys.stderr);return 1
     return 0

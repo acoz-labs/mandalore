@@ -14,8 +14,9 @@ concurrency:
 
 jobs:
   ci:
+    if: ${{ vars.SDLC_ACTIONS_ENABLED == 'true' }}
     name: ci
-    runs-on: ${{ vars.CI_RUNNER }}
+    runs-on: [self-hosted, trusted-linux-x64]
 
     steps:
       - name: Checkout code

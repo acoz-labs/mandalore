@@ -1,10 +1,25 @@
 {
   "delivery_profile": "artifact",
   "validation": [
-    "bin/ci"
+    "bin/sdlc check",
+    "python3 -m unittest discover -s tests -p 'test_sdlc*.py'",
+    "mise exec -- bin/ci"
   ],
   "required_checks": [
     "ci",
     "sdlc"
-  ]
+  ],
+  "verification_mode": "local",
+  "acceptance_criteria": [
+    "issue-criteria",
+    "retained-distribution",
+    "native-runtime-and-plugin",
+    "installation-and-recovery"
+  ],
+  "release_criteria": [
+    "published-same-bytes",
+    "public-installation",
+    "immutable-release-and-recovery"
+  ],
+  "delivery_runbook": "docs/delivery.md"
 }

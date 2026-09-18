@@ -1,7 +1,12 @@
+# Historical repository delivery instructions
+
+Superseded by `../delivery.md` and the shared portable SDLC. Historical
+workflow/owner/staging gates below are not current authority.
+
 # Repository-specific instructions
 
 Shared delivery rules are in `docs/operations/sdlc.md`. They supersede older
-mandatory planning/owner gates and prospective self-review exceptions. Local verification and `docs/delivery.md` supersede Actions-only and mandatory staging instructions. Historical
+mandatory planning/owner gates and prospective self-review exceptions. Historical
 records remain evidence. Product behavior, privacy boundaries and actual
 validation/release requirements remain in force.
 
@@ -30,10 +35,7 @@ bin/ci
 
 Document any required deviation in `docs/development.md`.
 
+## Delivery configuration
 
-## Current delivery
-
-Profile: `artifact`. Follow [the local delivery runbook](delivery.md)
-and [portable evidence commands](operations/local-verification.md). All configured
-application validation remains required. Persistent staging and Actions are
-optional; independent acceptance and exact-artifact verification are mandatory.
+Delivery profile: `artifact`.
+The actual candidate, verification and rollback contract is in `docs/deployment.md`.

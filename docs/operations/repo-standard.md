@@ -1,6 +1,6 @@
 # Managed repository standard
 
-SDLC template version: `2026.09.18.1`.
+SDLC template version: `2026.09.18.3`.
 
 The template owns the files enumerated in `.sdlc/managed.json`. Their hashes
 identify the installed content. `bin/sdlc check` verifies them. Application
@@ -28,7 +28,18 @@ files/modes/config and organization inventory; any failure or newly active repo
 keeps the operation incomplete. Reuse the workspace to resume the same source.
 No pilot, waves or optional lagging adoption. No unrelated production deployment.
 
-Configuration declares `delivery_profile`, `validation` and `required_checks`.
+Configuration declares `delivery_profile`, `verification_mode` and `validation`.
+The default mode is `local`: independent maintainer receipts satisfy the merge
+gate, regardless of runner availability. `required_checks` describes the optional
+Actions profile and is enforced only when `verification_mode` is `actions`.
+Service/artifact repos declare concrete `acceptance_criteria` and `release_criteria`
+with procedures in `docs/delivery.md`. Automated artifact checks may additionally
+use `acceptance` commands. Scripted promotion declares real `promotion`,
+`release_verification` and `rollback` commands; native/provider runbooks use the
+maintainer-attested `sdlc-release record` path. Acceptance and release commands
+receive `RELEASE_SHA` and immutable `RELEASE_ARTIFACT`. Hooks must verify the
+artifact itself, not just an unrelated healthy service. Missing deployment
+capability remains an explicit gap; commands must never be placeholder successes.
 Service/artifact profiles keep their real candidate acceptance/release machinery;
 non-deployable explicitly means no release target. Missing deployment capability
 must be documented as a gap, never disguised as non-deployable to pass a check.
