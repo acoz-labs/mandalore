@@ -20,8 +20,8 @@ permissions:
 jobs:
   dependency_review:
     name: dependency_review
-    runs-on: ${{ vars.CI_RUNNER }}
-    if: vars.ENABLE_DEPENDENCY_REVIEW == 'true'
+    runs-on: [self-hosted, trusted-linux-x64]
+    if: ${{ vars.SDLC_ACTIONS_ENABLED == 'true' && (vars.ENABLE_DEPENDENCY_REVIEW == 'true') }}
 
     steps:
       - name: Review dependency changes

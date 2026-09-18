@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": "2026.09.18.1",
+  "version": "2026.09.18.3",
   "files": {
     "AGENTS.md": {
       "sha256": "e11fb1efe1f668ee245b66313508b3b75e5cb84231994c37bdcfcf7aa0860b32",
@@ -15,7 +15,15 @@
       "mode": "644"
     },
     "bin/sdlc": {
-      "sha256": "1e97bd3766553a18c975f33497aad2fc870d21fd55aa868610e46877cc6b98df",
+      "sha256": "4e35918762b71542af7909a88f8d6d4827ee0827acba629fe06bb2daa597d377",
+      "mode": "755"
+    },
+    "bin/sdlc-evidence": {
+      "sha256": "337c39c641c4635535753538d8bde88ba484ef5e4499d9454f78b061f8a4855b",
+      "mode": "755"
+    },
+    "bin/sdlc-release": {
+      "sha256": "7a1cf279a40e2ea4b775257ad4676402028fba0aa40a60d12b85db047920e651",
       "mode": "755"
     },
     "bin/validate-solution-plans": {
@@ -23,19 +31,31 @@
       "mode": "755"
     },
     "bin/dependency-merge-steward": {
-      "sha256": "97eaf3411df65f2f556a0533e657a9cd8ceb2be767e7110d3a02cce7ed17ff19",
+      "sha256": "58cfd5139b19873eb01c008eeeef475139c1131765f651150b02b410a6531d92",
       "mode": "755"
     },
     "tests/test_sdlc.py": {
-      "sha256": "5d82ded0aa7ee7b95c9861588d86a847b6625ffb5d3f7ee62fcf98d8065cdcc1",
+      "sha256": "e51444ee28017744c073275d88645aefc6fb77d66f202be0f0b8b71ca06053a7",
+      "mode": "644"
+    },
+    "tests/test_sdlc_evidence.py": {
+      "sha256": "c074f92d82a947b4c84fd9f7c37a539f7dff449154176921fd15bae834ce1e0b",
+      "mode": "644"
+    },
+    "tests/test_sdlc_release.py": {
+      "sha256": "3342a77e37e7bc0895900b92fd796296b411720ebedc123aed1ce36caefe1e35",
       "mode": "644"
     },
     "docs/operations/sdlc.md": {
-      "sha256": "a5b36d131543efecd0e4b03f3ad2e5a5fe693730e6a8e1dc14f2d60e08bab499",
+      "sha256": "b5a86fc81a3e2df6e7118bff75b3e7ed10d15d406b8115d71467dea9bbbacab2",
       "mode": "644"
     },
     "docs/operations/repo-standard.md": {
-      "sha256": "875f42b6a1c539f3c1b92fb2311a82344b6c692950311d5b675d17adc26993e7",
+      "sha256": "b379c321c6af890d49323c68e00dc873d3192dd071f1e3e625cb05030d9f2139",
+      "mode": "644"
+    },
+    "docs/operations/local-verification.md": {
+      "sha256": "cda3933bfa46667240329565a1d96cb3b169ea22c136fc7f7bdd48682dbaf100",
       "mode": "644"
     },
     "docs/plans/README.md": {
@@ -67,11 +87,11 @@
       "mode": "644"
     },
     ".github/workflows/sdlc.yml": {
-      "sha256": "f50dea1933faa1a48e2c819269ed1a903ae39cda6f15b88c015c2376272bd936",
+      "sha256": "5ce81f6ec13e1a0d508d65af5b6335e94348b7853587d59ea9e9f50f0e1d5252",
       "mode": "644"
     },
     ".github/workflows/main-branch-audit.yml": {
-      "sha256": "29f4a2011199fb4c707c6956bb7bb6fff0e6665b5d7b3edab997bf9247f7745c",
+      "sha256": "299687fc1b365ef3102670a2b515d0b802de78d1d8f6881fb3cb480a939a0f76",
       "mode": "644"
     }
   }

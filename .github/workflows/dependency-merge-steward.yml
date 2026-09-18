@@ -24,9 +24,9 @@ permissions:
 jobs:
   classify:
     name: classify
-    runs-on: ${{ vars.CI_RUNNER }}
+    runs-on: [self-hosted, trusted-linux-x64]
     timeout-minutes: 10
-    if: github.event_name == 'pull_request_target' && github.actor == 'dependabot[bot]'
+    if: ${{ vars.SDLC_ACTIONS_ENABLED == 'true' && (github.event_name == 'pull_request_target' && github.actor == 'dependabot[bot]') }}
     outputs:
       eligible: ${{ steps.classify.outputs.eligible }}
 
@@ -55,10 +55,10 @@ jobs:
 
   merge_pr_event:
     name: merge_pr_event
-    runs-on: ${{ vars.CI_RUNNER }}
+    runs-on: [self-hosted, trusted-linux-x64]
     timeout-minutes: 10
     needs: classify
-    if: github.event_name == 'pull_request_target' && needs.classify.outputs.eligible == 'true'
+    if: ${{ vars.SDLC_ACTIONS_ENABLED == 'true' && (github.event_name == 'pull_request_target' && needs.classify.outputs.eligible == 'true') }}
 
     steps:
       - name: Checkout trusted base
@@ -73,9 +73,9 @@ jobs:
 
   merge_after_checks:
     name: merge_after_checks
-    runs-on: ${{ vars.CI_RUNNER }}
+    runs-on: [self-hosted, trusted-linux-x64]
     timeout-minutes: 15
-    if: github.event_name == 'check_suite' && github.event.check_suite.conclusion == 'success'
+    if: ${{ vars.SDLC_ACTIONS_ENABLED == 'true' && (github.event_name == 'check_suite' && github.event.check_suite.conclusion == 'success') }}
 
     steps:
       - name: Checkout trusted base
@@ -90,9 +90,9 @@ jobs:
 
   sweep_candidates:
     name: sweep_candidates
-    runs-on: ${{ vars.CI_RUNNER }}
+    runs-on: [self-hosted, trusted-linux-x64]
     timeout-minutes: 20
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: ${{ vars.SDLC_ACTIONS_ENABLED == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
 
     steps:
       - name: Checkout trusted base

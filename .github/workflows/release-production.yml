@@ -48,10 +48,8 @@ concurrency:
 jobs:
   release:
     name: release_production
-    if: >-
-      github.ref == format('refs/heads/{0}', github.event.repository.default_branch) &&
-      vars.PRODUCTION_ENABLED == 'true'
-    runs-on: ${{ vars.CI_RUNNER }}
+    if: ${{ vars.SDLC_ACTIONS_ENABLED == 'true' && vars.SDLC_LEGACY_RELEASE == 'true' && (github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && vars.PRODUCTION_ENABLED == 'true') }}
+    runs-on: [self-hosted, trusted-linux-x64]
     environment:
       name: production
       url: ${{ vars.PRODUCTION_URL }}

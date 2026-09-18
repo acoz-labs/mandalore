@@ -1,6 +1,7 @@
 import importlib.machinery
 import importlib.util
 import json
+import base64
 import os
 from pathlib import Path
 import subprocess
@@ -52,6 +53,41 @@ class ReviewTests(unittest.TestCase):
         self.assertEqual(sdlc.classify(['README.md','docs/architecture.md']),'documentation')
         for name in ['AGENTS.md','CLAUDE.md','docs/operations/sdlc.md','docs/example.py','docs/page.mdx','.github/workflows/ci.yml','bin/run','docs/SKILL.md']:
             self.assertEqual(sdlc.classify(['README.md',name]),'code')
+    def test_local_approval_helper_requires_published_independent_evidence(self):
+        from unittest.mock import Mock
+        config = {'verification_mode': 'local', 'validation': ['bin/ci']}
+        module = Mock()
+        module.Failure = RuntimeError
+        module.trusted_receipt.side_effect = RuntimeError('missing evidence')
+        pr = dict(self.pr, number=3)
+        with patch.object(sdlc, 'gh', return_value={'content': base64.b64encode(json.dumps(config).encode()).decode()}), \
+             patch.object(sdlc, 'evidence_module', return_value=module):
+            with self.assertRaisesRegex(sdlc.Failure, 'missing evidence'):
+                sdlc.published_local_evidence('o/r', pr, ['reviewer'])
+        self.assertEqual(module.trusted_receipt.call_args.args[-1], ['Builder'])
+        self.assertEqual(module.trusted_receipt.call_args.kwargs['eligible'], ['reviewer'])
+    def test_documentation_author_can_validate_own_documentation_pr(self):
+        from unittest.mock import Mock
+        config = {'verification_mode': 'local', 'validation': ['bin/ci']}
+        pr = dict(self.pr, state='open', draft=False)
+        module = Mock()
+        module.Failure = RuntimeError
+        def api(endpoint):
+            if endpoint == 'user': return {'login': 'Builder'}
+            if endpoint.endswith('/permission'): return {'permission': 'maintain'}
+            if '/contents/' in endpoint: return {'content': base64.b64encode(json.dumps(config).encode()).decode()}
+            if endpoint == 'repos/o/r/pulls/3': return pr
+            raise AssertionError(endpoint)
+        with patch.object(sdlc, 'gh', side_effect=api), patch.object(sdlc, 'pages', return_value=[{'filename': 'README.md'}]), \
+             patch.object(sdlc, 'evidence_module', return_value=module):
+            sdlc.review('o/r', 3, [], 'Builder', config=config)
+        self.assertEqual(module.trusted_receipt.call_args.args[-1], [])
+    def test_local_service_requires_actual_acceptance_and_release_contract(self):
+        config = {'verification_mode': 'local', 'delivery_profile': 'service', 'validation': ['bin/ci']}
+        with self.assertRaises(sdlc.Failure):
+            sdlc.validate_config(config)
+        config.update(acceptance_criteria=['runtime'], release_criteria=['deployed-digest'], delivery_runbook='docs/delivery.md')
+        sdlc.validate_config(config)
 
 class ApplyTests(unittest.TestCase):
     def setUp(self):

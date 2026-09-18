@@ -197,7 +197,11 @@ merge_pr() {
     return 0
   fi
 
-  wait_for_checks "$pr" || return 0
+  # Local evidence is the default authority. Optional Actions results cannot
+  # replace it, and an unavailable runner must not stall verified local work.
+  if [[ "$(python3 -c 'import json; print(json.load(open(".sdlc/config.json")).get("verification_mode", "actions"))')" != "local" ]]; then
+    wait_for_checks "$pr" || return 0
+  fi
   wait_for_clean_merge_state "$pr" || return 0
 
   # Passing tests do not replace independent maintainer review. Bind the merge

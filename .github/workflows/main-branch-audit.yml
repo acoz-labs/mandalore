@@ -8,7 +8,8 @@ permissions:
 jobs:
   direct_push_audit:
     name: direct_push_audit
-    runs-on: ${{ vars.CI_RUNNER }}
+    if: ${{ vars.SDLC_ACTIONS_ENABLED == 'true' }}
+    runs-on: [self-hosted, trusted-linux-x64]
     steps:
       - uses: actions/checkout@v7
       - name: Verify documentation authority or independent code review
