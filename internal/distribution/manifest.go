@@ -98,9 +98,9 @@ func (m Manifest) Validate() error {
 	if !validHex(m.SourceCommit, 40) || len(m.GoVersion) > 32 || !goVersionPattern.MatchString(m.GoVersion) || !validHex(m.PluginSHA256, 64) {
 		return errors.New("release source, pinned toolchain or embedded plugin identity is invalid")
 	}
-	// Format v1 is deliberately scoped to the current protocol/schema. Reject new
-	// compatibility claims instead of silently treating a new schema as readable.
-	if m.ProtocolVersion != 1 || len(m.SignetReadVersions) != 1 || m.SignetReadVersions[0] != 1 || len(m.SignetWriteVersions) != 1 || m.SignetWriteVersions[0] != 1 {
+	// Retain support for immutable format1 releases and the explicit format2
+	// extension. Unknown, duplicate or noncanonical claims still fail closed.
+	if m.ProtocolVersion != 1 || !supportedSignetVersions(m.SignetReadVersions) || !supportedSignetVersions(m.SignetWriteVersions) {
 		return errors.New("release protocol or signet compatibility is unsupported by this installer")
 	}
 	if len(m.Assets) != 6 {
@@ -133,6 +133,10 @@ func (m Manifest) Validate() error {
 	}
 	// Exactly six unique allowed names implies the complete fixed v1 matrix.
 	return nil
+}
+
+func supportedSignetVersions(v []int) bool {
+	return (len(v) == 1 && v[0] == 1) || (len(v) == 2 && v[0] == 1 && v[1] == 2)
 }
 
 func ParseManifest(data []byte) (ParsedManifest, error) {

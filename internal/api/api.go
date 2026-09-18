@@ -11,6 +11,7 @@ import (
 
 	"github.com/acoz-labs/mandalore/internal/distribution"
 	"github.com/acoz-labs/mandalore/internal/exportreport"
+	"github.com/acoz-labs/mandalore/internal/formatupgrade"
 	"github.com/acoz-labs/mandalore/internal/install"
 	"github.com/acoz-labs/mandalore/internal/memory"
 	"github.com/acoz-labs/mandalore/internal/migration"
@@ -45,6 +46,8 @@ type Error struct {
 	ReleaseResult      *distribution.InstallResult `json:"release_result,omitempty"`
 	ReleaseRetry       *distribution.ReleaseRetry  `json:"release_retry,omitempty"`
 	ExportResult       *exportreport.Receipt       `json:"export_result,omitempty"`
+	VisibilityResult   *memory.VisibilityReceipt   `json:"visibility_result,omitempty"`
+	UpgradeResult      *formatupgrade.Receipt      `json:"upgrade_result,omitempty"`
 }
 type Envelope struct {
 	ProtocolVersion int    `json:"protocol_version"`
@@ -159,7 +162,7 @@ var operations = []Operation{
 	operation("memory_scopes", "List stable routing scopes without promoting their content into guidance.", true, func(_ context.Context, s *memory.Service, in PageInput) (memory.Page[memory.ScopeInfo], error) {
 		return s.ScopePage(in.Offset, number(in.Limit, 5))
 	}),
-	operation("memory_history", "Inspect provenance, correction reasons and all competing revisions. Page offsets may shift after concurrent writes.", true, func(_ context.Context, s *memory.Service, in HistoryInput) (memory.Page[memory.Revision], error) {
+	operation("memory_history", "Inspect provenance, correction reasons and all competing revisions, including withdrawn evidence. History is not current guidance; inspect memory_visibility_history for visibility decisions. Page offsets may shift after concurrent writes.", true, func(_ context.Context, s *memory.Service, in HistoryInput) (memory.Page[memory.Revision], error) {
 		return s.HistoryPage(in.RecordID, in.Offset, number(in.Limit, 5))
 	}),
 	operation("memory_journal", "Search recent semantic journal entries, not authoritative current facts or raw transcripts.", true, func(_ context.Context, s *memory.Service, in JournalInput) (memory.Page[memory.JournalEntry], error) {
@@ -175,7 +178,7 @@ var operations = []Operation{
 
 func Catalog() []Operation {
 	var result []Operation
-	for _, group := range [][]Operation{operations, administration, synchronization, connections, migrations, foundlingOperations, releases, saveAndDelivery, nativeContext, piAdministration, readinessOperations, exports} {
+	for _, group := range [][]Operation{operations, administration, synchronization, connections, migrations, foundlingOperations, releases, saveAndDelivery, nativeContext, piAdministration, readinessOperations, exports, visibilityOperations, upgradeOperations} {
 		result = append(result, group...)
 	}
 	return result
@@ -225,6 +228,14 @@ func (a *API) Call(ctx context.Context, name string, data []byte) Envelope {
 
 // failure is shared by standalone operations and delivery after a durable save.
 func (a *API) failure(op Operation, err error) Envelope {
+	var upgrade *upgradeFailure
+	if errors.As(err, &upgrade) {
+		return upgradeFailureEnvelope(upgrade)
+	}
+	var visibility *visibilityFailure
+	if errors.As(err, &visibility) {
+		return visibilityFailureEnvelope(visibility)
+	}
 	var release *releaseFailure
 	if errors.As(err, &release) {
 		code := "release.failed"

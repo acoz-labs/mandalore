@@ -118,7 +118,7 @@ func TestCompiledFoundlingCLIAndMCP(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = client.Close() })
 	tools, err := client.ListTools(ctx, nil)
-	if err != nil || len(tools.Tools) != 18 {
+	if err != nil || len(tools.Tools) != 21 {
 		t.Fatal(tools, err)
 	}
 	inputBytes, outputBytes, descriptionBytes := 0, 0, 0

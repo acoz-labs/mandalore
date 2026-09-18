@@ -37,7 +37,7 @@ func runtimeMetadata() (map[string]any, error) {
 		"name": "mandalore", "version": version, "source_commit": sourceCommit,
 		"protocol_version": api.ProtocolVersion, "codex_hook_protocol": 1,
 		"os": runtime.GOOS, "arch": runtime.GOARCH, "go_version": runtime.Version(),
-		"signet_read_versions": []int{1}, "signet_write_versions": []int{1},
+		"signet_read_versions": []int{1, 2}, "signet_write_versions": []int{1, 2},
 		"plugin_version": plugin.Version, "plugin_sha256": hex.EncodeToString(h[:]),
 	}, nil
 }

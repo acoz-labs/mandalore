@@ -41,7 +41,7 @@ func TestVersionReportsActualEmbeddedPackageAndBuildSource(t *testing.T) {
 	}
 	for _, key := range []string{"signet_read_versions", "signet_write_versions"} {
 		values, ok := r[key].([]any)
-		if !ok || len(values) != 1 || values[0] != float64(1) {
+		if !ok || len(values) != 2 || values[0] != float64(1) || values[1] != float64(2) {
 			t.Fatal("missing schema compatibility", r)
 		}
 	}

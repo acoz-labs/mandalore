@@ -37,7 +37,7 @@ func TestMCPUsesSharedContractAndRejectsDuplicates(t *testing.T) {
 	}
 	defer client.Close()
 	list, err := client.ListTools(ctx, nil)
-	if err != nil || len(list.Tools) != 18 {
+	if err != nil || len(list.Tools) != 21 {
 		t.Fatal(list, err)
 	}
 	for _, tool := range list.Tools {
@@ -61,6 +61,13 @@ func TestMCPUsesSharedContractAndRejectsDuplicates(t *testing.T) {
 		if bytes.Contains(data, []byte(`"export_result"`)) {
 			t.Fatal("export receipt inflated everyday memory schema")
 		}
+		if bytes.Contains(data, []byte(`"upgrade_result"`)) {
+			t.Fatal("upgrade receipt inflated everyday memory schema")
+		}
+		visibilityMutation := tool.Name == "memory_withdraw" || tool.Name == "memory_restore"
+		if bytes.Contains(data, []byte(`"visibility_result"`)) != visibilityMutation {
+			t.Fatal("visibility receipt must appear only on its mutation tools", tool.Name)
+		}
 		if bytes.Contains(data, []byte(`"connection_result"`)) || bytes.Contains(data, []byte(`"connection_report"`)) || bytes.Contains(data, []byte(`"migration_result"`)) || bytes.Contains(data, []byte(`"foundling_result"`)) || bytes.Contains(data, []byte(`"release_result"`)) {
 			t.Fatal("installation-only schemas consume memory-tool context", tool.Name, len(data))
 		}
@@ -76,6 +83,9 @@ func TestMCPUsesSharedContractAndRejectsDuplicates(t *testing.T) {
 			t.Fatalf("unresolvable %s output schema: %v", tool.Name, err)
 		}
 		input := []byte(`{}`)
+		if visibilityMutation {
+			input = []byte(`{"record_id":"record-test","expected_content_heads":["revision-test"],"expected_visibility_heads":[],"reason":"Explicit synthetic decision"}`)
+		}
 		if tool.Name == "memory_remember" {
 			input = []byte(`{"kind":"fact","summary":"Schema fixture","body":"Example","basis":"user-direction","reason":"Confirmed"}`)
 		}

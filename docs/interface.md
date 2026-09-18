@@ -43,6 +43,66 @@ credential enrollment, rollback, tight retry or background worker is implicit.
 Use local-only tools for no-sync tasks, and neither type under no-save/read-only.
 See [delivery semantics](synchronization.md#save-triggered-delivery).
 
+## Explicit withdrawal, restoration and format upgrades
+
+Development format2 adds `memory_visibility_history`, `memory_withdraw` and
+`memory_restore` to the shared CLI/MCP/Pi contract. Ordinary format1 use remains
+supported. These operations do not automatically upgrade a bank.
+
+```sh
+mandalore memory visibility-history --binding /example/binding.json --record-id record-example
+mandalore memory withdraw --binding /example/binding.json < reviewed-heads.json
+mandalore memory restore --binding /example/binding.json < reviewed-heads.json
+```
+
+Mutation input contains `record_id`, explicit `expected_content_heads` and
+`expected_visibility_heads` arrays, and a `reason`. Read visibility history first;
+the supplied heads must still match under the writer lock. Each head list is
+bounded to 256 IDs and the reason to 4096 bytes. An empty visibility list must be
+supplied explicitly. Stale decisions fail with `memory.stale_heads`, not an
+automatic retry or timestamp winner. These are non-idempotent local saves;
+request `memory_sync` separately when allowed. Read-only rejects them before
+decoding. The receipt distinguishes event identity, resulting visibility,
+confirmed local durability and whether publication may have occurred. Partial or
+cancelled writes retain `error.visibility_result`; inspect the exact event before
+retrying. Only these two MCP tools advertise the additional error receipt schema.
+
+Withdrawal preserves content, provenance and Git history. It does not delete
+journals or source references, revoke offline copies, or remove already-read
+model context. Restore resolves the selected visibility heads, not conflicting
+content revisions. `memory_history` still exposes historical content; visibility
+history supplies the separate decisions and their provenance, paged under a
+32 KiB result bound. Neither kind of history is automatically current guidance.
+
+Upgrade maintenance is CLI-only and takes explicit JSON, without `--binding`:
+
+```sh
+mandalore call signet_upgrade_preview < explicit-binding.json
+mandalore call signet_upgrade_apply < reviewed-upgrade.json
+mandalore call signet_upgrade_recover < reviewed-upgrade.json
+```
+
+Preview input is `{"binding_path":"/example/binding.json"}`. Apply/recover input
+contains the exact returned `plan` and `stopped_writers: true`, acknowledging that
+affected writers are stopped. Inspect the effects before applying: older clients
+refuse format2. Preview requires a valid clean format1 Git checkpoint and does
+not checkpoint or fetch. Activation retains the same bank/repository and private
+recovery preparation, publishes upgrade evidence and atomically changes the
+manifest. It does not checkpoint or deliver; those are separate operations.
+Partial failures retain `error.upgrade_result`. Recovery requires the original
+pins and existing preparation; it does not start an absent upgrade, downgrade,
+delete evidence or automatically roll back. Changed binding/source/HEAD requires
+inspection. A format1 clone seeing a format2 remote reports `upgrade-required`;
+explicitly upgrade the local clone before requesting synchronization again.
+
+Runtime installation and bank upgrade remain separate. The released 1.1.0
+installer accepts only format1 compatibility declarations, so its built-in
+release updater cannot accept a release declaring formats1/2. For that runtime
+transition, use the reviewed release bootstrap or its verified platform binary
+to open the new installer's preview. Do not weaken the old verifier or alter an
+immutable release. Installing the new runtime still does not upgrade a bank or
+refresh an already-open native connection automatically.
+
 ## MCP result presentation
 
 MCP returns the same complete envelope in `structuredContent` and a JSON text
@@ -744,7 +804,7 @@ selects the owned generation's intact retained runtime, falling back only to its
 matching source bytes. Existing threads need restart or native reload to load
 changed code; the next-turn memory packet is independently read fresh.
 
-The native extension exposes the same 18 bound operations as MCP with sequential
+The native extension exposes the same 21 bound operations as MCP with sequential
 tool execution, shell-free arguments, binding guards and `pi` provenance.
 One complete envelope is returned in text, with only operation/ok metadata.
 Read nested delivery errors even if the outer save succeeded. Input/output bounds

@@ -56,3 +56,13 @@ base bytes are bounded and original evidence must survive. The actual local
 activation transaction is also followed by ordinary sync/checkpoint in a package
 integration test. Concurrent visibility decisions must be delivered as conflicts
 without exposing their content in recall, while explicit history remains intact.
+
+The typed-interface slice adds local-only withdraw/restore with explicit current
+content and visibility heads, visibility-history paging, and CLI-only upgrade
+preview/apply/recover. Tests exercise stale/legacy/cancelled/invalid decisions,
+ambiguous post-publication failure, late cancellation with a durable receipt,
+read-only refusal before input decode, API round trips through real activation,
+and MCP error-schema validation. Only visibility mutation tools advertise their
+extra receipt schema. Runtime, readiness and newly built distribution declarations
+list formats1/2; immutable format1 release manifests remain supported. These are
+automated component checks, not the remaining native product acceptance.

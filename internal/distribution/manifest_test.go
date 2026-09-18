@@ -58,6 +58,17 @@ func TestManifestRoundTripBindsExactBytes(t *testing.T) {
 	}
 }
 
+func TestManifestSupportsExplicitFormatExtensionWithoutUnknownClaims(t *testing.T) {
+	for _, versions := range [][]int{{1}, {1, 2}, {2}, {1, 3}, {1, 2, 2}, {2, 1}} {
+		m := fixtureManifest()
+		m.SignetReadVersions, m.SignetWriteVersions = versions, versions
+		want := reflect.DeepEqual(versions, []int{1}) || reflect.DeepEqual(versions, []int{1, 2})
+		if err := m.Validate(); (err == nil) != want {
+			t.Fatalf("versions %v: %v", versions, err)
+		}
+	}
+}
+
 func TestManifestRejectsInvalidContracts(t *testing.T) {
 	cases := map[string]func(*Manifest){
 		"format":                func(m *Manifest) { m.FormatVersion = 2 },

@@ -282,7 +282,7 @@ func Build(ctx context.Context, o BuildOptions) (ParsedManifest, error) {
 	if err := os.WriteFile(piManifest, piStamped, 0600); err != nil {
 		return ParsedManifest{}, err
 	}
-	m := Manifest{FormatVersion: 1, Product: "mandalore", Version: releaseVersion, Tag: "v" + releaseVersion, SourceCommit: commit, GoVersion: PinnedGo, ProtocolVersion: 1, SignetReadVersions: []int{1}, SignetWriteVersions: []int{1}, PluginSHA256: p.SHA256}
+	m := Manifest{FormatVersion: 1, Product: "mandalore", Version: releaseVersion, Tag: "v" + releaseVersion, SourceCommit: commit, GoVersion: PinnedGo, ProtocolVersion: 1, SignetReadVersions: []int{1, 2}, SignetWriteVersions: []int{1, 2}, PluginSHA256: p.SHA256}
 	for _, target := range [][2]string{{"darwin", "amd64"}, {"darwin", "arm64"}, {"linux", "amd64"}, {"linux", "arm64"}} {
 		a := Asset{Kind: "cli", OS: target[0], Arch: target[1], Name: "mandalore_" + releaseVersion + "_" + target[0] + "_" + target[1]}
 		file := filepath.Join(payload, a.Name)
