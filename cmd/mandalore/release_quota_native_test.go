@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/acoz-labs/mandalore/internal/api"
@@ -67,7 +68,11 @@ func TestReleaseQuotaNativePresentation(t *testing.T) {
 		if scenario == "partial" {
 			// Composition coverage only: production release reads occur before
 			// activation. This does not assert a real post-activation quota call.
-			v.Error.ReleaseResult = &distribution.InstallResult{Phase: "launcher-activated", Prefix: "/synthetic/quota-prefix", Launcher: "/synthetic/quota-prefix/bin/mandalore", Pending: "/synthetic/pending.json", PreviousRuntime: "/synthetic/old", Runtime: "/synthetic/new", Connections: "unchanged", DestinationChanged: true}
+			pending := "/synthetic/pending.json"
+			if os.Getenv("MANDALORE_RECOVERY_NATIVE_LONG") == "1" {
+				pending = "/synthetic/owner's two  spaces/" + strings.Repeat("long-", 16) + "pending.json"
+			}
+			v.Error.ReleaseResult = &distribution.InstallResult{Phase: "launcher-activated", Prefix: "/synthetic/quota-prefix", Launcher: "/synthetic/quota-prefix/bin/mandalore", Pending: pending, PreviousRuntime: "/synthetic/old", Runtime: "/synthetic/new", Connections: "unchanged", DestinationChanged: true}
 		}
 		return v
 	}
