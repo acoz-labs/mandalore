@@ -13,7 +13,7 @@ func delegatedFixture(t *testing.T) (Options, Plan) {
 	t.Helper()
 	o := fixture(t)
 	o.Binary = filepath.Join(filepath.Dir(o.Binding), "selected new runtime")
-	script := "#!/bin/sh\ncase \"$*\" in\n'call connection_plan --read-only') /bin/cat \"$DELEGATE_PLAN_FIXTURE\";;\n'call connection_apply') /bin/cat \"$DELEGATE_RESULT_FIXTURE\"; exit \"${DELEGATE_EXIT:-0}\";;\n*) exit 99;;\nesac\n"
+	script := "#!/bin/sh\ncase \"$*\" in\n'operations') /bin/cat \"$DELEGATE_CATALOG_FIXTURE\";;\n'call connection_plan --read-only') /bin/cat \"$DELEGATE_PLAN_FIXTURE\";;\n'call connection_apply') if [ -n \"${DELEGATE_INPUT_FIXTURE:-}\" ]; then /bin/cat > \"$DELEGATE_INPUT_FIXTURE\"; fi; /bin/cat \"$DELEGATE_RESULT_FIXTURE\"; exit \"${DELEGATE_EXIT:-0}\";;\n*) exit 99;;\nesac\n"
 	if err := os.WriteFile(o.Binary, []byte(script), 0700); err != nil {
 		t.Fatal(err)
 	}
@@ -31,9 +31,78 @@ func delegatedFixture(t *testing.T) (Options, Plan) {
 	resultFile := filepath.Join(filepath.Dir(o.Binding), "reply-result.json")
 	t.Setenv("DELEGATE_PLAN_FIXTURE", planFile)
 	t.Setenv("DELEGATE_RESULT_FIXTURE", resultFile)
+	catalogFile := filepath.Join(filepath.Dir(o.Binding), "catalog.json")
+	t.Setenv("DELEGATE_CATALOG_FIXTURE", catalogFile)
+	writeDelegateCatalog(t, catalogFile, true)
 	writeDelegateReply(t, planFile, map[string]any{"protocol_version": 1, "ok": true, "result": p})
 	writeDelegateReply(t, resultFile, map[string]any{"protocol_version": 1, "ok": true, "result": Result{Connection: p, Installed: true, RequiresFreshSession: true, Phase: "verified"}})
 	return o, p
+}
+
+func writeDelegateCatalog(t *testing.T, path string, guarded bool) {
+	props := map[string]any{"schema_version": map[string]string{"type": "integer"}}
+	if guarded {
+		props["sessions_stopped"] = map[string]string{"type": "boolean"}
+	}
+	writeDelegateReply(t, path, map[string]any{"protocol_version": 1, "ok": true, "result": map[string]any{"operations": []any{map[string]any{"name": "connection_apply", "input_schema": map[string]any{"type": "object", "properties": props}}}}})
+}
+
+func TestLegacyDelegationDefersUntilExplicitHandoff(t *testing.T) {
+	o, p := delegatedFixture(t)
+	writeDelegateCatalog(t, os.Getenv("DELEGATE_CATALOG_FIXTURE"), false)
+	inputFile := filepath.Join(filepath.Dir(o.Binding), "apply-input.json")
+	t.Setenv("DELEGATE_INPUT_FIXTURE", inputFile)
+	r, err := ApplyViaRuntime(context.Background(), p)
+	if err == nil || r.Phase != "deferred" || r.Installed {
+		t.Fatal(r, err)
+	}
+	if _, err := os.Stat(inputFile); !os.IsNotExist(err) {
+		t.Fatal("legacy apply ran before handoff", err)
+	}
+	r, err = ApplyViaRuntimeAcknowledged(context.Background(), p, true)
+	if err != nil || !r.Installed {
+		t.Fatal(r, err)
+	}
+	raw, err := os.ReadFile(inputFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(raw), "sessions_stopped") {
+		t.Fatal("new field leaked into legacy strict decoder")
+	}
+}
+
+func TestDelegatedGuardNegotiationPreservesAcknowledgement(t *testing.T) {
+	for _, stopped := range []bool{false, true} {
+		o, p := delegatedFixture(t)
+		inputFile := filepath.Join(filepath.Dir(o.Binding), "apply-input.json")
+		t.Setenv("DELEGATE_INPUT_FIXTURE", inputFile)
+		r, err := ApplyViaRuntimeAcknowledged(context.Background(), p, stopped)
+		if err != nil || !r.Installed {
+			t.Fatal(r, err)
+		}
+		raw, err := os.ReadFile(inputFile)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var input ApplyInput
+		if json.Unmarshal(raw, &input) != nil || input.Plan != p || input.SessionsStopped != stopped {
+			t.Fatal("wrong invocation consent")
+		}
+	}
+}
+
+func TestUnreadableCatalogNeverFallsThroughToApply(t *testing.T) {
+	o, p := delegatedFixture(t)
+	inputFile := filepath.Join(filepath.Dir(o.Binding), "apply-input.json")
+	t.Setenv("DELEGATE_INPUT_FIXTURE", inputFile)
+	t.Setenv("DELEGATE_CATALOG_FIXTURE", filepath.Join(filepath.Dir(o.Binding), "missing-catalog"))
+	if _, err := ApplyViaRuntimeAcknowledged(context.Background(), p, true); err == nil {
+		t.Fatal("unreadable catalog accepted")
+	}
+	if _, err := os.Stat(inputFile); !os.IsNotExist(err) {
+		t.Fatal("apply ran without usable contract", err)
+	}
 }
 
 func writeDelegateReply(t *testing.T, path string, v any) {

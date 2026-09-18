@@ -283,6 +283,13 @@ type Result struct {
 	Notice               string `json:"notice"`
 }
 
+// ApplyInput is deliberately not part of Plan or Receipt. A saved installation
+// must never confer stopped-session permission on a future invocation.
+type ApplyInput struct {
+	Plan
+	SessionsStopped bool `json:"sessions_stopped,omitempty"`
+}
+
 func Apply(ctx context.Context, p Plan) (Result, error) { return apply(ctx, p, native, probeRuntime) }
 
 func apply(ctx context.Context, p Plan, run runner, probe probeFunc) (result Result, resultErr error) {
@@ -377,6 +384,15 @@ func applyAcknowledged(ctx context.Context, p Plan, sessionsStopped bool, run ru
 	}
 	if again != previous {
 		return result, errors.New("native registration changed during preparation; inspect and preview again")
+	}
+	_, occupiedNow, err := replacementState(ctx, p, run)
+	if err != nil {
+		return result, err
+	}
+	if occupiedNow && !sessionsStopped {
+		result.Phase = "deferred"
+		result.Notice = "Native registration appeared during preparation. Replacement deferred without native mutation; exit affected Codex sessions and explicitly acknowledge sessions_stopped before applying again."
+		return result, errors.New("connection replacement requires explicit stopped-session acknowledgement")
 	}
 	if previous != "" && previous != p.Root {
 		if _, err := run(ctx, p.Options, "plugin", "marketplace", "remove", p.Marketplace, "--json"); err != nil {

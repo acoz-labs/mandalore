@@ -42,8 +42,8 @@ var connections = []Operation{
 		p, err := install.Prepare(in)
 		return p, connectionError(err, nil, nil)
 	}),
-	connectionOperation("connection_apply", "Apply an explicitly approved connection plan. Executes selected trusted binaries, retains runtime/plugin copies and manages only a proven native registration. No signet writes or native authentication changes.", false, func(ctx context.Context, in install.Plan) (install.Result, error) {
-		r, err := install.Apply(ctx, in)
+	connectionOperation("connection_apply", "Apply an approved connection plan. Replacement requires sessions_stopped=true after all Codex sessions using the selected profile have exited; idle is insufficient. Omit to defer replacement. A verified identical connection is not reinstalled. No signet writes or native authentication changes.", false, func(ctx context.Context, in install.ApplyInput) (install.Result, error) {
+		r, err := install.ApplyAcknowledged(ctx, in.Plan, in.SessionsStopped)
 		return r, connectionError(err, &r, nil)
 	}),
 	connectionOperation("connection_doctor", "Inspect structure and native plugin inventory. Does not test login, hook trust, live MCP, remote freshness or active context. No repair or synchronization.", true, func(ctx context.Context, in install.Profile) (install.Report, error) {
