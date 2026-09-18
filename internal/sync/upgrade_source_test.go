@@ -86,3 +86,31 @@ func TestUpgradeSourceRejectsStagingAndCancellation(t *testing.T) {
 		t.Fatal("cancellation lost", err)
 	}
 }
+
+func TestUpgradeInventoryIncludesPortableMetadataNotLocalState(t *testing.T) {
+	s, a := fixture(t)
+	if _, err := s.Initialize(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	before, err := s.UpgradeSource(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(a.Root(), "README.md"), []byte("Synthetic portable metadata"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.Checkpoint(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	after, err := s.UpgradeSource(context.Background())
+	if err != nil || after.PortableSHA256 == before.PortableSHA256 || after.Head == before.Head || after.ManifestSHA256 != before.ManifestSHA256 {
+		t.Fatal("portable metadata not pinned separately from manifest", before, after, err)
+	}
+	if err := os.WriteFile(filepath.Join(a.Root(), ".mandalore/private-note"), []byte("Ignored local state"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	local, err := s.UpgradeSource(context.Background())
+	if err != nil || local != after {
+		t.Fatal("machine-local state entered portable digest", local, err)
+	}
+}

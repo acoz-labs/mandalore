@@ -65,6 +65,14 @@ the new upgrade object itself and machine-local files. Independent upgrades on
 two clones may produce two valid receipts; neither receipt is a visibility vote.
 The manifest changes only its schema version, retaining all other fields.
 
+The upgrade inventory digest frames each checkpointed portable file as path-byte
+length, path, content-byte length and raw content, in lexical path order. It
+includes README, `.gitignore` and tracked placeholders, unlike the narrower
+report-data digest. Git objects, machine-local state and root `.DS_Store` are
+excluded. Verify actual file bytes against the checkpoint's blob IDs; index flags
+must not hide edits. Apply/recovery and transition validation must use this same
+inventory definition, not substitute the report-data digest.
+
 Preview requires a valid, Git-backed, checkpointed format1 source. It is read-only
 and pins the exact binding, root identity, HEAD, original manifest bytes and
 portable inventory. Dirty evidence must be explicitly checkpointed first; preview
