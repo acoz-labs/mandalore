@@ -1,0 +1,10 @@
+{
+  "delivery_profile": "artifact",
+  "validation": [
+    "bin/ci"
+  ],
+  "required_checks": [
+    "ci",
+    "sdlc"
+  ]
+}

@@ -30,11 +30,6 @@ on:
         description: Durable links to exact-candidate screenshots, logs, traces, or other evidence
         required: true
         type: string
-      owner_review_confirmed:
-        description: I personally performed this review under the documented candidate-specific owner exception
-        required: false
-        default: false
-        type: boolean
 
 permissions:
   checks: read
@@ -58,8 +53,6 @@ jobs:
         env:
           ACCEPTANCE_COMPLETES_DELIVERY: ${{ vars.ACCEPTANCE_COMPLETES_DELIVERY }}
           ACCEPTANCE_ACTORS: ${{ vars.ACCEPTANCE_ACTORS }}
-          MVP_ACCEPTANCE_OWNER: ${{ vars.MVP_ACCEPTANCE_OWNER }}
-          MVP_OWNER_REVIEW_CONFIRMED: ${{ inputs.owner_review_confirmed }}
           ACCEPTANCE_REQUIRED_CHECKS: ${{ vars.ACCEPTANCE_REQUIRED_CHECKS }}
           DELIVERY_PROFILE: ${{ vars.DELIVERY_PROFILE }}
           GH_TOKEN: ${{ github.token }}

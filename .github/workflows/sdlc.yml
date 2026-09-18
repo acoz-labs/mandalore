@@ -1,0 +1,17 @@
+name: SDLC conformity
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  sdlc:
+    name: sdlc
+    runs-on: ${{ vars.CI_RUNNER }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Verify managed standard and regression tests
+        run: |
+          bin/sdlc check
+          python3 -m unittest discover -s tests -p test_sdlc.py

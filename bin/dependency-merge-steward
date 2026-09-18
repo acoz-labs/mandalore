@@ -200,15 +200,24 @@ merge_pr() {
   wait_for_checks "$pr" || return 0
   wait_for_clean_merge_state "$pr" || return 0
 
+  # Passing tests do not replace independent maintainer review. Bind the merge
+  # to its exact reviewed head so a concurrent dependency refresh cannot race it.
+  local reviewed_head
+  reviewed_head="$(bin/sdlc verify-approval --repo "$REPO" --pr "$pr")" || return 0
+  if [[ "$reviewed_head" != "$(jq -r '.headRefOid' <<< "$json")" ]]; then
+    echo "::notice::PR head changed during check/review verification; retry on the new head."
+    return 0
+  fi
+
   case "$MERGE_METHOD" in
     squash)
-      gh pr merge "$pr" --repo "$REPO" --squash --delete-branch
+      gh pr merge "$pr" --repo "$REPO" --squash --delete-branch --match-head-commit "$reviewed_head"
       ;;
     rebase)
-      gh pr merge "$pr" --repo "$REPO" --rebase --delete-branch
+      gh pr merge "$pr" --repo "$REPO" --rebase --delete-branch --match-head-commit "$reviewed_head"
       ;;
     merge)
-      gh pr merge "$pr" --repo "$REPO" --merge --delete-branch
+      gh pr merge "$pr" --repo "$REPO" --merge --delete-branch --match-head-commit "$reviewed_head"
       ;;
     *)
       echo "::error::Unsupported DEPENDENCY_STEWARD_MERGE_METHOD: $MERGE_METHOD"
