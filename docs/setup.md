@@ -108,13 +108,15 @@ Codex is required only for Codex journeys, not opening the menu or memory setup.
 Current exact-candidate acceptance is recorded in [the v1.1.0 release record](releases/1.1.0.md).
 No assistant launcher, capability framework or live predecessor import is added.
 
-### Pi
+### Codex update handoff
 
 For Codex updates, replacement is deferred until affected sessions have exited.
 The menu offers a separate default-No handoff confirmation; paused/idle is not
 enough. A completed CLI update stays installed if plugin activation is deferred.
 See [deferred Codex upgrades](runbook.md#deferred-codex-upgrades) for the standalone
 apply command and restart/trust checks. This does not change Pi's reload contract.
+
+### Pi
 
 Pi setup asks for a trusted Mandalore executable, binding, native profile,
 installation state, native executable and memory access mode. Ordinary learning
