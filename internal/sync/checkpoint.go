@@ -141,9 +141,9 @@ func allowedPath(path string) bool {
 
 var portablePaths = []*regexp.Regexp{
 	regexp.MustCompile(`^(memory|provenance|foundlings)/\.gitkeep$`),
-	regexp.MustCompile(`^(memory/(records|events|sources)|provenance/devices|foundlings/registrations)/\.gitkeep$`),
-	regexp.MustCompile(`^(memory/records|foundlings/registrations)/[a-z][a-z0-9-]{2,127}/([a-z][a-z0-9-]{2,127}\.json|\.gitkeep)$`),
-	regexp.MustCompile(`^(memory/sources|provenance/devices)/[a-z][a-z0-9-]{2,127}\.json$`),
+	regexp.MustCompile(`^(memory/(records|events|sources|visibility)|provenance/(devices|upgrades)|foundlings/registrations)/\.gitkeep$`),
+	regexp.MustCompile(`^(memory/(records|visibility)|foundlings/registrations)/[a-z][a-z0-9-]{2,127}/([a-z][a-z0-9-]{2,127}\.json|\.gitkeep)$`),
+	regexp.MustCompile(`^(memory/sources|provenance/(devices|upgrades))/[a-z][a-z0-9-]{2,127}\.json$`),
 	regexp.MustCompile(`^memory/events/[0-9]{4}/[0-9]{2}/[a-z][a-z0-9-]{2,127}\.json$`),
 }
 
@@ -195,7 +195,10 @@ func (s *Synchronizer) appendOnly(ctx context.Context, revisions ...string) erro
 		return err
 	}
 	if changed != "" {
-		return ErrHistory
+		if changed != "signet.json" {
+			return ErrHistory
+		}
+		return s.permittedManifestChange(ctx, revisions)
 	}
 	return nil
 }

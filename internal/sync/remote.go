@@ -13,7 +13,10 @@ import (
 	"time"
 
 	"github.com/acoz-labs/mandalore/internal/memory"
+	"github.com/acoz-labs/mandalore/internal/strictjson"
 )
+
+var errUpgradeRequired = errors.New("explicit local format upgrade required")
 
 var endpointName = regexp.MustCompile(`^[A-Za-z0-9_][A-Za-z0-9_.+-]*$`)
 
@@ -118,6 +121,11 @@ func (s *Synchronizer) Sync(parent context.Context, timeout time.Duration) (Stat
 				if ctx.Err() != nil {
 					return ctx.Err()
 				}
+				if errors.Is(err, errUpgradeRequired) {
+					out.State = "upgrade-required"
+					out.Notice = "Remote uses format2. Local format1 was not upgraded or replaced. Explicitly preview and apply a local format upgrade, then request synchronization again."
+					return nil
+				}
 				out.State = "conflicted"
 				out.Notice = "Remote candidate could not be safely reconciled; inspect both histories. Local work was not discarded."
 				return nil
@@ -191,6 +199,17 @@ func (s *Synchronizer) reconcile(ctx context.Context, out *Status) error {
 	if err := s.validateCandidate(ctx, out.RemoteHead); err != nil {
 		return err
 	}
+	manifest, err := s.gitOutput(ctx, 4<<20, "show", out.RemoteHead+":signet.json")
+	if err != nil {
+		return err
+	}
+	var remote memory.Signet
+	if err := strictjson.Decode([]byte(manifest), &remote, 4<<20); err != nil {
+		return err
+	}
+	if s.store.Signet.Version == 1 && remote.Version == 2 {
+		return errUpgradeRequired
+	}
 	if _, err := s.git(ctx, "merge-base", "--is-ancestor", out.RemoteHead, out.Head); err == nil {
 		return nil
 	} else if !isExit(err, 1) {
@@ -233,6 +252,10 @@ func (s *Synchronizer) semanticConflicts(ctx context.Context) (int, error) {
 	for _, scope := range scopes {
 		if err := ctx.Err(); err != nil {
 			return 0, err
+		}
+		if scope.Visibility != nil {
+			count += scope.Visibility.Conflicted
+			continue
 		}
 		packet, err := s.store.Recall(memory.Query{Scope: scope.Scope, ExactScope: true, Limit: 1}, time.Now())
 		if err != nil {

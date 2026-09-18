@@ -8,10 +8,39 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/acoz-labs/mandalore/internal/memory"
 	"github.com/acoz-labs/mandalore/internal/strictjson"
+	signetsync "github.com/acoz-labs/mandalore/internal/sync"
 )
+
+func TestAppliedUpgradeCanCheckpointThroughNormalSync(t *testing.T) {
+	in, service := fixture(t)
+	p, err := Preview(context.Background(), in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, err := Apply(context.Background(), ApplyRequest{Plan: p, StoppedWriters: true})
+	if err != nil || !r.DurableLocally {
+		t.Fatal(r, err)
+	}
+	sy, err := signetsync.Open(service.Root(), service.ID())
+	if err != nil {
+		t.Fatal(err)
+	}
+	out, err := sy.Sync(context.Background(), 30*time.Second)
+	if err != nil || !out.Checkpointed || out.Delivered || out.Head == p.Source.Head {
+		t.Fatal(out, err)
+	}
+	if _, err := Recover(context.Background(), ApplyRequest{Plan: p, StoppedWriters: true}); err == nil {
+		t.Fatal("recovery ignored advanced checkpoint")
+	}
+	s, err := memory.Open(service.Root())
+	if err != nil || s.Signet.Version != 2 {
+		t.Fatal("stale recovery downgraded bank", err)
+	}
+}
 
 func TestPreparedRoundTrip(t *testing.T) {
 	in, _ := fixture(t)

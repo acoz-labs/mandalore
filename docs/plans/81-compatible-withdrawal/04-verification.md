@@ -46,4 +46,13 @@ owned temporary directory and permits only the prepared receipt and reviewed
 manifest replacement in the live tree. Ordinary preview remains read-only and
 does not create that temporary candidate. These are synthetic package tests, not
 native acceptance, completed synchronization support or authorization to upgrade
-a personal signet. Full sync transition/adoption and typed interface work remain.
+a personal signet. Typed interface and native acceptance work remain.
+
+The sync slice adds synthetic checkpoint/delivery tests for upgraded banks,
+explicit local opt-in before remote adoption, independent receipts converging,
+forged hashes or bases, old-evidence edits, identity changes and downgrades. Each
+receipt is checked against its ancestor format1 commit and raw portable inventory;
+base bytes are bounded and original evidence must survive. The actual local
+activation transaction is also followed by ordinary sync/checkpoint in a package
+integration test. Concurrent visibility decisions must be delivered as conflicts
+without exposing their content in recall, while explicit history remains intact.
