@@ -1,62 +1,19 @@
-## Summary
+## Outcome
 
--
-
-## Linked Issue
+Describe the problem and resulting behavior.
 
 Refs #
 
-## Solution Design And Reconciliation
-
-- Planning pull request:
-- Plan directory removed from this implementation:
-- Reconciled head:
-- Reconciliation verdict: `Conforms` / `Justified drift` / `Returned to design`
-- [ ] Reconciliation has no unexplained drift
-- [ ] Durable documentation reflects the shipped behavior
-- [ ] Temporary plan removed
-- [ ] An independent maintainer reviewed the current reconciliation and diff
-
 ## Validation
 
-- [ ] `bin/container bin/ci`
-- [ ] Other:
+Commands/scenarios exercised and their results. Link rendered evidence when relevant.
 
-## UI Acceptance Evidence
+## Documentation and specification
 
-- UI acceptance classification: `no-rendered-impact` / `in-pattern-visual-change` / `new-or-materially-changed-experience`
-- Evidence manifest commit:
-- Scenario, state, and viewport matrix:
-- Openable screenshot / recording / trace / visual-diff links:
-- Functional and console/network result:
-- Accessibility result and manual limitations:
-- [ ] Product design review completed for a new or materially changed experience
-- [ ] Independent reviewer assessed the rendered result against design intent or the approved baseline
-- [ ] UI evidence does not apply, with a concrete no-rendered-impact rationale
+Documentation updated (or why unnecessary); relevant plan only if one exists.
+Explain any material deviation from the issue's acceptance criteria.
 
-Design notes, deviations, unreviewed surfaces, or rationale:
+## Delivery
 
--
-
-## Docs Impact
-
-- [ ] Updated docs
-- [ ] Promoted diagrams describe the shipped model
-- [ ] Linked authoritative generated contracts instead of duplicating them
-- [ ] Docs not needed, with rationale below
-
-Documentation promotion destinations / ADRs / rationale:
-
--
-
-## Deploy Impact
-
-No production deploy was run.
-
-- Delivery profile: `service` / `artifact` / `non-deployable`
-- Staging or acceptance path:
-- Production release required: yes / no
-
-## Risk / Rollback
-
--
+Delivery profile and release impact; rollback when applicable.
+For standards maintenance, link the shared template decision and source revision.

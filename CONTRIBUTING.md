@@ -1,25 +1,13 @@
 # Contributing
 
-Use discovery issues and proportional `docs/discovery/` pull requests for
-ambiguous product decisions. Exact-head approval and merge authorize selected
-or deliberately deferred delivery outcomes. Use bounded issues for lifecycle
-state, planning pull requests for Solution Design, and implementation pull
-requests for shipped changes.
+Follow [software delivery](docs/operations/sdlc.md).
 
-Pull requests should include:
+Documentation: write, validate and publish; no mandatory delivery issue or plan.
+Code: implement a bounded issue, test, open a contributor-authored PR and obtain
+current-head review by a different authorized maintainer. Plans are optional.
+Maintainers own planning and docs, resolve findings with contributors, perform
+acceptance and deliver without routine owner approval.
 
-- linked issue
-- linked approved planning PR, execution envelope, and current reconciliation
-- durable documentation promotion and temporary plan-removal status
-- summary
-- tests/checks run
-- documentation promotion destinations, ADRs, or a docs-not-needed rationale
-- deploy impact
-- known risks or rollback notes when relevant
-- UI acceptance classification and an openable evidence manifest for meaningful
-  rendered changes, following `docs/operations/ui-acceptance.md`
-
-Use `Refs #<issue>` for changes whose issue remains open through staging,
-product acceptance, or production release. Use `Closes #<issue>` only when
-merge itself completes the issue under the repository's documented delivery
-profile.
+PRs explain behavior, validation, documentation impact and applicable release or
+rollback details. Use `Refs #N` when the issue stays open through release and
+`Closes #N` only when merge completes the documented delivery profile.

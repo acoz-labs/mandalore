@@ -1,44 +1,14 @@
-# Discovery: <decision>
+# Discovery: TITLE
 
-- **Status:** Draft
-- **Discovery issue:** #<issue>
-- **Discovery PR:** #<pr>
-- **Repository basis:** <full-sha>
-- **Recommended decision:** <approve/follow-up/park/stop>
-- **Gate 1:** awaiting-authority
-- **Confidence:** <High/Medium/Low>
-- **Private evidence:** none
+## Outcome
 
-## Decision sought
+Audience, problem, desired result and constraints.
 
-## Audience and critical tasks
+## Evidence and decision
 
-## Evidence
+What is known, alternatives, selected direction and reasons.
 
-## Assumptions
+## Delivery
 
-## Unknowns
-
-## Competing options
-
-## Decision
-
-## Success and stop signals
-
-## Candidate outcome map
-
-### O1 — <title>
-- Disposition: selected
-- Outcome:
-- Acceptance:
-- Dependencies:
-- Sequence:
-
-## Privacy and evidence handling
-
-## Decision Spotlight
-
-## Gate 1
-
-The final candidate awaits product authority and an authorized approval on the
-exact pull-request head.
+Selected issue(s), criteria, dependencies and next action. Record only genuine
+unresolved blockers; do not invent a human approval gate.
