@@ -19,7 +19,7 @@ func ValidateConnectionMetadata(s Signet, d Device, a Authorship) error {
 }
 
 func validateSignetMetadata(s Signet) error {
-	if s.Version != FormatVersion {
+	if s.Version != FormatVersion && s.Version != 2 {
 		return errors.New("unsupported signet format")
 	}
 	if !identifier.MatchString(s.ID) || !textWithin(s.Name, 256) || strings.ContainsAny(s.Name, "\r\n") {

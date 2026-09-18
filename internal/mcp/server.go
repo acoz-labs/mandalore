@@ -29,8 +29,15 @@ func New(a *api.API) *sdk.Server {
 		}
 		no := false
 		network := op.Network
+		toolErrorSchema := errorSchema
+		if op.Name == "memory_withdraw" || op.Name == "memory_restore" {
+			toolErrorSchema, err = strictjson.Schema(new(api.VisibilityError))
+			if err != nil {
+				panic("invalid visibility error schema")
+			}
+		}
 		outputSchema := map[string]any{"type": "object", "additionalProperties": false, "required": []string{"protocol_version", "ok"}, "properties": map[string]any{
-			"protocol_version": map[string]any{"const": api.ProtocolVersion}, "ok": map[string]any{"type": "boolean"}, "result": op.OutputSchema, "error": errorSchema,
+			"protocol_version": map[string]any{"const": api.ProtocolVersion}, "ok": map[string]any{"type": "boolean"}, "result": op.OutputSchema, "error": toolErrorSchema,
 		}, "oneOf": []any{
 			map[string]any{"properties": map[string]any{"ok": map[string]any{"const": true}}, "required": []string{"result"}, "not": map[string]any{"required": []string{"error"}}},
 			map[string]any{"properties": map[string]any{"ok": map[string]any{"const": false}}, "required": []string{"error"}, "not": map[string]any{"required": []string{"result"}}},

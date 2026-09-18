@@ -19,10 +19,12 @@
     }
   ],
   "signet_read_versions": [
-    1
+    1,
+    2
   ],
   "signet_write_versions": [
-    1
+    1,
+    2
   ],
   "memory_protocol": 1,
   "codex_hook_protocol": 1,

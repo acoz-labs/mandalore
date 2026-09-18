@@ -126,7 +126,7 @@ func (s *Synchronizer) loadStatus() (*Status, error) {
 		return nil, ErrBoundary
 	}
 	switch stored.Status.State {
-	case "local-only", "pending", "conflicted", "synchronized":
+	case "local-only", "pending", "conflicted", "synchronized", "upgrade-required":
 	default:
 		return nil, ErrBoundary
 	}
@@ -141,6 +141,9 @@ func (s *Synchronizer) loadStatus() (*Status, error) {
 		return nil, ErrBoundary
 	}
 	if r.State == "synchronized" && !r.Delivered {
+		return nil, ErrBoundary
+	}
+	if r.State == "upgrade-required" && (r.Delivered || r.Phase != "validate" || r.RemoteHead == "") {
 		return nil, ErrBoundary
 	}
 	switch r.Phase {
@@ -193,7 +196,9 @@ func (s *Synchronizer) Inspect(parent context.Context) (Inspection, error) {
 		return out, remoteErr
 	}
 	if remoteErr == nil && out.LastAttempt != nil && out.LastAttempt.RemoteID == remoteID(remote) && out.Head == out.LastAttempt.Head && !out.Dirty {
-		if out.LastAttempt.State == "conflicted" {
+		if out.LastAttempt.State == "upgrade-required" && s.store.Signet.Version == 1 {
+			out.State = "upgrade-required"
+		} else if out.LastAttempt.State == "conflicted" {
 			out.State = "conflicted"
 		} else if out.LastAttempt.Delivered {
 			out.State = "synchronized"

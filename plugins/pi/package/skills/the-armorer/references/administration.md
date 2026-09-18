@@ -106,6 +106,40 @@ same plan only after the cause is resolved; do not select another update or edit
 the pending record to force success. A retained CLI rollback does not rewrite
 memory or roll back an independently installed plugin.
 
+## Bank format and retention review
+
+Where advertised, `signet_upgrade_preview` takes an explicit `binding_path`
+inside JSON, without a CLI `--binding` flag. It requires a valid, clean format1
+Git checkpoint and does not fetch or checkpoint for the user. Review the returned
+plan and explain that older clients will refuse the upgraded bank. This is
+separate from installing a runtime; ordinary recall or an upgrade-required error
+does not authorize a migration.
+
+For an authorized upgrade, use `signet_upgrade_apply` with the exact raw `plan`
+and `stopped_writers: true` only after affected writers are stopped. If the current
+conversation uses that bank, leave a standalone after-exit command instead of
+claiming its writer is stopped. The transaction preserves the same bank, evidence
+and Git history, retains preparation and activates format2. It does not checkpoint
+or deliver. Reconnect affected clients before further use.
+
+Inspect partial `upgrade_result` receipts. `signet_upgrade_recover` uses the same
+plan and acknowledgement only when retained preparation exists and its pins still
+match. Changed binding/source/HEAD needs diagnosis, not forced replay, deletion or
+rollback. A format1 clone encountering a format2 remote requires its own explicit
+local upgrade before sync; there is no ambient permission to adopt upgrades.
+
+The released 1.1.0 runtime updater rejects formats1/2 release declarations. Use
+the reviewed new release bootstrap or verified platform binary for that runtime
+transition, not an edited old verifier. Runtime, native connection and bank
+format changes are separate outcomes.
+
+`retention_preview` is CLI-only and read-only: supply `binding_path`, explicit
+record IDs/scopes or separate journal IDs, and a named policy. Discover its schema
+for visibility and optional absolute timestamp cutoff. It reports bounded metadata
+and shared relationships, not content or deletion authority. There is no retention
+apply, automatic TTL or inferred record-to-journal linkage. Metadata and exported
+reports remain sensitive; do not publish them merely because bodies are omitted.
+
 ## Historical reference administration
 
 Use `foundling_preview` for an explicitly chosen local directory or existing Git

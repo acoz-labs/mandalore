@@ -65,6 +65,24 @@ func TestCLIUsageDoesNotFallThrough(t *testing.T) {
 	}
 }
 
+func TestCLIVisibilityAndUpgradeReadOnlyBeforeInput(t *testing.T) {
+	for _, args := range [][]string{
+		{"memory", "withdraw", "--read-only"},
+		{"memory", "restore", "--read-only"},
+		{"call", "signet_upgrade_apply", "--read-only"},
+		{"call", "signet_upgrade_recover", "--read-only"},
+	} {
+		out, code := cli(t, args, "invalid")
+		if code != 2 || out.OK || out.Error.Code != "operation.read_only" || out.Error.WriteMayHaveOccurred {
+			t.Fatal(args, out, code)
+		}
+	}
+	out, code := cli(t, []string{"call", "signet_upgrade_apply", "--binding", "/synthetic/ignored.json"}, "{}")
+	if code != 2 || out.OK || out.Error.Code != "input.invalid" {
+		t.Fatal("silently ignored binding flag", out, code)
+	}
+}
+
 func TestVersionDeclaresMachineAndHookCompatibility(t *testing.T) {
 	v, code := cli(t, []string{"version"}, "")
 	if code != 0 || !v.OK {

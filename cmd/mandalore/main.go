@@ -38,6 +38,11 @@ const help = `Mandalore — durable memory across tools
   mandalore signet bind --repository DIR --binding FILE --device-label LABEL --actor NAME
   mandalore memory recall --binding FILE [--query TEXT] [--scope-kind KIND --scope-id ID]
   mandalore memory scopes|history|journal|inspect --binding FILE [options]
+  mandalore memory visibility-history --binding FILE --record-id ID [--offset N] [--limit N]
+  mandalore memory withheld --binding FILE [--query TEXT] [--scope-kind KIND --scope-id ID] [--offset N] [--limit N]
+  mandalore memory withdraw|restore --binding FILE < reviewed-heads.json
+  mandalore call signet_upgrade_preview|signet_upgrade_apply|signet_upgrade_recover < input.json
+  mandalore call retention_preview --read-only < explicit-policy-selection.json
   mandalore memory remember|journal-append --binding FILE < input.json
   mandalore memory remember-and-sync|journal-append-and-sync --binding FILE < input.json
   mandalore memory git-init|checkpoint|sync-status --binding FILE
@@ -230,15 +235,21 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 			f.StringVar(&scopeID, "scope-id", "", "Stable scope ID")
 			f.IntVar(&limit, "limit", 5, "Result limit")
 			f.IntVar(&budget, "budget-bytes", 8192, "Semantic result budget")
-		case "memory_scopes", "memory_history":
+		case "memory_scopes", "memory_history", "memory_visibility_history":
 			f.IntVar(&limit, "limit", 5, "Page limit")
 			f.IntVar(&offset, "offset", 0, "Page offset")
-			if name == "memory_history" {
+			if name == "memory_history" || name == "memory_visibility_history" {
 				f.StringVar(&recordID, "record-id", "", "Stable record ID")
 			}
 		case "memory_journal":
 			f.StringVar(&query, "query", "", "Query")
 			f.IntVar(&limit, "limit", 5, "Result limit")
+		case "memory_withheld":
+			f.StringVar(&query, "query", "", "Current-head summary/ID query for explicit historical inspection")
+			f.StringVar(&kind, "scope-kind", "", "Scope kind")
+			f.StringVar(&scopeID, "scope-id", "", "Stable scope ID")
+			f.IntVar(&limit, "limit", 5, "Page limit")
+			f.IntVar(&offset, "offset", 0, "Page offset")
 		case "memory_sync":
 			f.IntVar(&timeout, "timeout-seconds", 10, "Sync budget, 1–30 seconds")
 		case "foundling_list", "foundling_history":
@@ -280,6 +291,12 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 	}
 	if (name == "export_preview" || name == "export_apply") && *path != "" {
 		return bad(failureOut, "Typed export operations take the binding inside their JSON input, not --binding.")
+	}
+	if strings.HasPrefix(name, "signet_upgrade_") && *path != "" {
+		return bad(failureOut, "Upgrade operations take their explicit binding inside reviewed JSON input, not --binding.")
+	}
+	if name == "retention_preview" && *path != "" {
+		return bad(failureOut, "Retention preview takes its explicit binding inside JSON input, not --binding.")
 	}
 	guard := binding.Guard{SHA256: *bindingSHA, SignetID: *signetID}
 	guardRequested := false
@@ -350,7 +367,13 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 			value = v
 		case "memory_scopes":
 			value = api.PageInput{Offset: offset, Limit: &limit}
-		case "memory_history":
+		case "memory_withheld":
+			v := api.WithheldInput{Query: query, Offset: offset, Limit: &limit}
+			if kind != "" {
+				v.Scope = &memory.Scope{Kind: kind, ID: scopeID}
+			}
+			value = v
+		case "memory_history", "memory_visibility_history":
 			value = api.HistoryInput{RecordID: recordID, Offset: offset, Limit: &limit}
 		case "memory_journal":
 			value = api.JournalInput{Query: query, Limit: &limit}

@@ -1,9 +1,11 @@
-# Signet format 1
+# Signet formats
 
 A signet is an explicitly selected directory independent of the calling cwd.
 It stores structured evidence, not executable policy, credentials or transcripts.
-The current library supports format 1 only. Protocol and release versions are
-separate concerns; no migration or downgrade is inferred from similar filenames.
+The library reads formats 1 and 2. New signets still start in format 1; format 2
+requires an explicit local upgrade for withdrawal and restoration. Protocol and
+release versions are separate concerns; no migration or downgrade is inferred
+from similar filenames or ordinary startup, recall or synchronization.
 
 ## Layout
 
@@ -12,7 +14,9 @@ signet.json
 memory/records/<record-id>/<revision-id>.json
 memory/sources/<source-id>.json
 memory/events/<UTC-year>/<UTC-month>/<event-id>.json
+memory/visibility/<record-id>/<event-id>.json  # format 2 only
 provenance/devices/<device-id>.json
+provenance/upgrades/<upgrade-id>.json         # explicit transition evidence
 foundlings/registrations/<foundling-id>/<revision-id>.json
 .mandalore/                 # ignored machine-local locks/state
 ```
@@ -20,8 +24,10 @@ foundlings/registrations/<foundling-id>/<revision-id>.json
 Creation publishes a new directory exclusively and never replaces an existing
 target. JSON files are strict about unknown fields, trailing JSON, nonregular
 files and the 4 MiB file-size ceiling. IDs match `^[a-z][a-z0-9-]{2,127}$` and
-must match canonical paths. Files are append-only; new JSON is synced, hard-linked
-without replacing an existing destination, then its parent directory is synced.
+must match canonical paths. Evidence files are append-only; new JSON is synced,
+hard-linked without replacing an existing destination, then its parent directory
+is synced. The explicit format transition is the narrow manifest-replacement
+exception described below, not a general evidence-edit mechanism.
 This is not a multi-file transaction or protection from an actively hostile
 local filesystem owner. Symlink checks do not turn the library into a sandbox.
 
@@ -33,7 +39,8 @@ new-device enrollment, validation and no-overwrite publication.
 Writes share a nonblocking local file lock. A busy writer reports a retryable
 error; it does not overwrite the other writer. Reads do not create locks, local
 directories, journals or indexes. A replaced signet ID invalidates existing store
-handles. `.mandalore` is absent in a normal Git clone until the first write.
+handles. A changed format also invalidates cached store handles. `.mandalore` is
+absent in a normal Git clone until the first write.
 
 The manifest contains `schema_version`, opaque `id`, and one-line `name`
 (1–256 bytes). Device records contain `schema_version`, `id`, and an explicitly
@@ -71,6 +78,68 @@ Service writes require summary 1–256 bytes, body 1–8192 bytes, reason 1–10
 bytes and at most 32 predecessors. Default sensitivity is private, volatility
 drift-prone and confidence medium; basis is explicitly supplied. The low-level
 schema and 4 MiB file bound remain distinct from service input budgets.
+
+## Format 2 visibility and preserved history
+
+The content supersession graph and visibility decisions are distinct. Existing
+format1 revisions retain their original bytes after upgrade. New format2
+revisions use revision schema 2 and require `visibility_refs` (an explicit array,
+possibly empty), recording the visibility heads observed by that write.
+
+Visibility events use event schema 1 and contain `id`, `record_id`, `action`
+(`withdraw` or `restore`), `observed_content_heads`, `parent_visibility_heads`,
+`reason`, `recorded_at` and `authorship`. Event and revision references are typed,
+must belong to the same record, and form one validated acyclic causal graph.
+Missing references, duplicate references, cycles and unknown devices refuse
+validation. Format1 banks cannot contain visibility events.
+
+No visibility events means ordinary visibility. A single withdrawal head
+withholds the record. Multiple visibility heads are a visibility conflict,
+including two concurrent restores; there is no timestamp winner. Restoration
+covers its reviewed content ancestry and later revisions that acknowledge it.
+Concurrent unreviewed content remains withheld. Content conflicts are preserved,
+not resolved by restoration.
+
+The service compares both current content heads and visibility heads under the
+shared writer lock before appending a decision. Stale input refuses. A correction
+does not implicitly restore a withdrawn record. Publication or cancellation may
+leave a durable event even when the call fails; inspect its receipt and history
+before retrying. Local durability and Git delivery are separate outcomes.
+
+Recall and context exclude withheld records before ranking or returning content.
+Scope counts disclose their state. Explicit content/visibility history retains
+the evidence. Default export withholds it; historical disclosure requires both
+`include_history` and `include_withdrawn`. Journals and external foundling files
+remain independent evidence. Re-promoting the same exact withdrawn foundling
+origin is refused, but this is not semantic duplicate detection or erasure.
+
+## Explicit format transition
+
+Upgrade preview requires an explicit binding and clean Git checkpoint. It pins
+the binding, root identity, manifest, HEAD and raw portable inventory without
+writing. Apply requires the exact plan and actual stopped writers. Machine-local
+preparation is retained under `.mandalore/format-upgrade/`; publication places
+append-only transition evidence before atomically replacing the manifest.
+
+Upgrade evidence records schema 1, identity, `from_version: 1`, `to_version: 2`,
+`original_manifest_sha256`, `base_head`, `portable_sha256`, time and authorship.
+It is not permission to upgrade another clone or proof of delivery. Format2
+requires valid transition evidence. A format1 manifest with already-published
+evidence is a pending transition requiring explicit recovery, not normal use.
+
+Recovery continues the retained preparation and evidence identity, refuses
+changed pins and cannot start a new upgrade. Apply/recover do not checkpoint,
+synchronize, downgrade or erase history. Original signet identity, revision and
+journal bytes survive. Synchronization validates each transition against its
+ancestor format1 commit and original protected evidence, not just receipt syntax.
+Independent local upgrades may converge with both receipts preserved.
+
+An old client refuses format2. A compatible client with a still-format1 local
+clone reports upgrade-required when the remote is upgraded; it does not silently
+adopt it. Every clone requires explicit opt-in. Offline copies and content already
+read into a conversation remain outside revocation. Installing a compatible
+runtime is separate from upgrading a bank; see [the interface](interface.md) for
+upgrade operations and the released 1.1.0 updater compatibility limitation.
 
 ## Journals and retrieval
 

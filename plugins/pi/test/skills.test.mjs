@@ -18,8 +18,8 @@ test('Pi discovers two packaged skills and every local reference resolves', asyn
   }
 });
 
-test('neutral foundling and delivery contracts stay byte-identical across harnesses', async () => {
-  for (const reference of ['foundlings.md', 'delivery.md']) {
+test('neutral memory references stay byte-identical across harnesses', async () => {
+  for (const reference of ['foundlings.md', 'delivery.md', 'visibility.md']) {
     const relative = `this-is-the-way/references/${reference}`;
     assert.deepEqual(await readFile(new URL(`skills/${relative}`, pkg)), await readFile(new URL(relative, codex)));
   }

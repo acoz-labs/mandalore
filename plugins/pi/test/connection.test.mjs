@@ -64,7 +64,7 @@ test('actual runtime/package identities agree; native calls share memory and pro
   assert.deepEqual(readConnection(f.pkg).config, f.config);
   const connection = await openConnection(f.pkg);
   t.after(() => connection.close());
-  assert.equal(connection.operations.length, 18);
+  assert.equal(connection.operations.length, 22);
   assert.ok(connection.operations.every(op => op.requires_binding && !op.cli_only));
   assert.equal(connection.operations.find(op => op.name === 'memory_context'), undefined);
   const saved = await connection.call('memory_remember', {kind: 'preference', summary: 'Answer style', body: 'Prefer concise answers.', basis: 'user-direction', reason: 'Confirmed'});

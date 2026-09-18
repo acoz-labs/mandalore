@@ -229,6 +229,18 @@ func (s *Store) withLock(fn func() error) error {
 // The callback must not invoke another locking memory mutation. It does not
 // authorize changing the signet identity or bypassing data validation.
 func (s *Store) WithExclusiveLock(fn func() error) error {
+	return s.withExclusiveLock(false, fn)
+}
+
+// WithFormatUpgradeLock permits inspection/recovery of a validated pending
+// transition under the ordinary writer lock. The callback must verify its exact
+// source/HEAD/binding pins; this is not permission to skip malformed evidence,
+// reinterpret historical digests, downgrade or activate an unreviewed plan.
+func (s *Store) WithFormatUpgradeLock(fn func() error) error {
+	return s.withExclusiveLock(true, fn)
+}
+
+func (s *Store) withExclusiveLock(allowPending bool, fn func() error) error {
 	if err := s.checkDirectories(); err != nil {
 		return err
 	}
@@ -252,15 +264,33 @@ func (s *Store) WithExclusiveLock(fn func() error) error {
 	if err := s.checkDirectories(); err != nil {
 		return err
 	}
+	if err := s.validateUpgradeState(); err != nil && !(allowPending && errors.Is(err, ErrUpgradePending)) {
+		return err
+	}
 	return fn()
 }
 func (s *Store) checkDirectories() error {
+	if err := s.checkDirectoryLayout(); err != nil {
+		return err
+	}
+	if s.Signet.Version == 2 {
+		return s.validateUpgradeState()
+	}
+	return nil
+}
+
+// Layout-only validation lets bounded snapshot readers own all body reads and
+// their aggregate budget; it must not pre-read every upgrade receipt unbounded.
+func (s *Store) checkDirectoryLayout() error {
 	current, err := Open(s.Root)
 	if err != nil {
 		return err
 	}
 	if current.Signet.ID != s.Signet.ID {
 		return ErrIdentityChanged
+	}
+	if current.Signet.Version != s.Signet.Version {
+		return errors.New("signet format changed; reopen the connection before continuing")
 	}
 	for _, dir := range directories {
 		info, err := os.Lstat(filepath.Join(s.Root, dir))

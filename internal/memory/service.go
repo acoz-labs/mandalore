@@ -92,6 +92,9 @@ func (s *Service) RememberFromFoundling(input Write, verify func() error) (Revis
 		if r.State != "active" || len(r.HeadIDs) != 1 || r.HeadIDs[0] != o.RegistrationRevisionID {
 			return errors.New("foundling registration changed before promotion")
 		}
+		if err := s.store.checkFoundlingVisibility(input.RecordID, o); err != nil {
+			return err
+		}
 		return verify()
 	})
 }
@@ -132,7 +135,7 @@ func (s *Service) remember(input Write, verify func() error) (Revision, error) {
 		Evidence:   Evidence{Basis: input.Basis, Confidence: input.Confidence, SourceRefs: []string{source.ID}},
 		Supersedes: input.Supersedes, ChangeReason: input.Reason,
 	}
-	if err := s.store.putSourced(r, source, verify); err != nil {
+	if err := s.store.putSourced(&r, source, verify); err != nil {
 		return Revision{}, err
 	}
 	return r, nil

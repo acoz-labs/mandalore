@@ -78,8 +78,8 @@ func decodeCatalog(raw []byte) (Catalog, error) {
 	if strictjson.Decode(raw, &c, 64<<10) != nil || c.SchemaVersion != 1 ||
 		c.MemoryProtocol != 1 || c.CodexHookProtocol != 1 || c.PiHarnessProtocol != 1 ||
 		len(c.Targets) != 4 || len(c.Components) != 4 || len(c.Evidence) < 1 || len(c.Evidence) > 32 ||
-		len(c.SignetReadVersions) != 1 || c.SignetReadVersions[0] != 1 ||
-		len(c.SignetWriteVersions) != 1 || c.SignetWriteVersions[0] != 1 {
+		len(c.SignetReadVersions) != 2 || c.SignetReadVersions[0] != 1 || c.SignetReadVersions[1] != 2 ||
+		len(c.SignetWriteVersions) != 2 || c.SignetWriteVersions[0] != 1 || c.SignetWriteVersions[1] != 2 {
 		return Catalog{}, ErrCatalogInvalid
 	}
 	targets := map[Platform]bool{}
