@@ -1,0 +1,87 @@
+{
+  "identity": "mandalore:f855c5a7c05ffc9fbdb87bdb564d79c542bb26f6:sha256:38266a4a3656f06ef62331bbcbb5f96c721fa1eb0315b87d5a8600e17ace3804",
+  "transport": {
+    "source_commit": "f855c5a7c05ffc9fbdb87bdb564d79c542bb26f6",
+    "run_id": 35381453879,
+    "artifact_id": 10563155886,
+    "format_version": 1,
+    "repository": "acoz-labs/mandalore",
+    "repository_id": 1368471870,
+    "default_branch": "main",
+    "workflow": ".github/workflows/build-candidate.yml",
+    "workflow_id": 357752917,
+    "run_attempt": 1,
+    "artifact_name": "mandalore-candidate-f855c5a7c05ffc9fbdb87bdb564d79c542bb26f6-1",
+    "archive_size": 72526829,
+    "archive_sha256": "ab2fb1a6edb5ba24c340f06bcd214f9de0f28e144d919da6fdd96abecf5abb72",
+    "created_at": "2026-09-18T18:42:37Z",
+    "expires_at": "2026-12-17T18:39:29Z"
+  },
+  "manifest": {
+    "manifest": {
+      "format_version": 1,
+      "product": "mandalore",
+      "version": "1.2.0",
+      "tag": "v1.2.0",
+      "source_commit": "f855c5a7c05ffc9fbdb87bdb564d79c542bb26f6",
+      "go_version": "go1.26.4",
+      "protocol_version": 1,
+      "signet_read_versions": [
+        1,
+        2
+      ],
+      "signet_write_versions": [
+        1,
+        2
+      ],
+      "plugin_sha256": "ad991e55cf3e30479db45cc6a77b67af16c9745ef2b43062c6ca63cae06afa6b",
+      "assets": [
+        {
+          "kind": "cli",
+          "name": "mandalore_1.2.0_darwin_amd64",
+          "os": "darwin",
+          "arch": "amd64",
+          "size": 18916576,
+          "sha256": "04164c438941f8ed90fe870af94933fcb0b2278de3902587b099bcadab73878e"
+        },
+        {
+          "kind": "cli",
+          "name": "mandalore_1.2.0_darwin_arm64",
+          "os": "darwin",
+          "arch": "arm64",
+          "size": 17760690,
+          "sha256": "cddf47c21315a3db59d6ac6c7470737a2ec522f910a1231c329de133e2713cdf"
+        },
+        {
+          "kind": "cli",
+          "name": "mandalore_1.2.0_linux_amd64",
+          "os": "linux",
+          "arch": "amd64",
+          "size": 18523815,
+          "sha256": "20cb11c26225036b98a4e7793b3704fc84a2130ce39bcb64da479a574b0c6306"
+        },
+        {
+          "kind": "cli",
+          "name": "mandalore_1.2.0_linux_arm64",
+          "os": "linux",
+          "arch": "arm64",
+          "size": 17279334,
+          "sha256": "b439b2e4d715e01793c4e84a94d3ea2ebc8ef70977c70bbffa33c3181dac1569"
+        },
+        {
+          "kind": "codex-plugin",
+          "name": "mandalore_1.2.0_codex.zip",
+          "size": 38328,
+          "sha256": "655aa64f91234c9365710329ab7bbb20b19f38100c5a16a8d7b403a46b327c8c"
+        },
+        {
+          "kind": "bootstrap",
+          "name": "install.sh",
+          "size": 4673,
+          "sha256": "7ab59a860694bec4dab9fab22f2d65e26ef88c79377547bfb78ff1826eacab52"
+        }
+      ]
+    },
+    "sha256": "38266a4a3656f06ef62331bbcbb5f96c721fa1eb0315b87d5a8600e17ace3804"
+  }
+}

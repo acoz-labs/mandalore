@@ -1,0 +1,19 @@
+[
+  {
+    "check": "deferred_with_live_consumers",
+    "old_cache_unchanged": true,
+    "old_hook_working": true,
+    "old_mcp_working": true
+  },
+  {
+    "check": "acknowledged_activation_and_replay",
+    "new_hook_working": true,
+    "replay_cache_bytes_and_mtimes_unchanged": true,
+    "bank_and_binding_unchanged": true
+  },
+  {
+    "check": "COMPLETE",
+    "passed": true,
+    "scope": "native installer and hook/MCP components; no model session"
+  }
+]

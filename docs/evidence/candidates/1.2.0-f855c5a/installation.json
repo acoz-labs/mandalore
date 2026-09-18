@@ -1,0 +1,23 @@
+{
+  "kind": "mandalore-runtime-format-compatibility",
+  "source_commit": "f855c5a7c05ffc9fbdb87bdb564d79c542bb26f6",
+  "manifest_sha256": "38266a4a3656f06ef62331bbcbb5f96c721fa1eb0315b87d5a8600e17ace3804",
+  "binary_sha256": "cddf47c21315a3db59d6ac6c7470737a2ec522f910a1231c329de133e2713cdf",
+  "legacy_source_commit": "51aee17afec015ba2ad44584f8190b4bb6d901a8",
+  "legacy_binary_sha256": "09827de1c1340284dbc5506f2c0db41f8cbd66d9231e3e5dbd9d93ea01fc2429",
+  "driver_sha256": "7c6ae6f4025542efd00e88f6b9378afa248a6b206cca69769bab25ea10684aaa",
+  "platform": "darwin",
+  "arch": "arm64",
+  "old_refusal_code": "release.failed",
+  "checks": [
+    "published old runtime installed in disposable prefix",
+    "old updater refuses new format declaration without activation",
+    "verified new runtime plans/applies candidate preserving old runtime and unrelated files",
+    "runtime update does not migrate format1 bank or change binding"
+  ],
+  "limitations": [
+    "engineering evidence, not candidate acceptance or public release",
+    "verified-new-executable route; not download of an unpublished release through public bootstrap",
+    "no personal CLI, plugin, signet or credentials changed"
+  ]
+}

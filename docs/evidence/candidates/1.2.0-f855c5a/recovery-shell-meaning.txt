@@ -1,0 +1,9 @@
+=== RUN   TestRecoveryCommandCopyPreservesShellMeaning
+=== RUN   TestRecoveryCommandCopyPreservesShellMeaning/owner's_tools
+=== RUN   TestRecoveryCommandCopyPreservesShellMeaning/two__spaces
+=== RUN   TestRecoveryCommandCopyPreservesShellMeaning/$(false);_`false`_&_café
+--- PASS: TestRecoveryCommandCopyPreservesShellMeaning (0.02s)
+    --- PASS: TestRecoveryCommandCopyPreservesShellMeaning/owner's_tools (0.01s)
+    --- PASS: TestRecoveryCommandCopyPreservesShellMeaning/two__spaces (0.01s)
+    --- PASS: TestRecoveryCommandCopyPreservesShellMeaning/$(false);_`false`_&_café (0.01s)
+PASS

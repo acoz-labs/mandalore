@@ -1,0 +1,17 @@
+{
+  "source_commit": "f855c5a7c05ffc9fbdb87bdb564d79c542bb26f6",
+  "run_id": 35381453879,
+  "artifact_id": 10563155886,
+  "format_version": 1,
+  "repository": "acoz-labs/mandalore",
+  "repository_id": 1368471870,
+  "default_branch": "main",
+  "workflow": ".github/workflows/build-candidate.yml",
+  "workflow_id": 357752917,
+  "run_attempt": 1,
+  "artifact_name": "mandalore-candidate-f855c5a7c05ffc9fbdb87bdb564d79c542bb26f6-1",
+  "archive_size": 72526829,
+  "archive_sha256": "ab2fb1a6edb5ba24c340f06bcd214f9de0f28e144d919da6fdd96abecf5abb72",
+  "created_at": "2026-09-18T18:42:37Z",
+  "expires_at": "2026-12-17T18:39:29Z"
+}
