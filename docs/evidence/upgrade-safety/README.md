@@ -59,10 +59,19 @@ It is not a replayable raw recording or pixel screenshot. The raw capture remain
 local. This verifies the normal-width task flow, not narrow-width or screen-reader
 behavior.
 
+The [48-column TUI transcript](menu-narrow.txt) is a separate actual run in a
+macOS script PTY configured and checked with `stty size` (24 rows, 48 columns).
+The terminal itself remained in the existing lab pane; this is a constrained
+PTY rendering test, not a physical display resize. The warning wrapped fully,
+both complete handoff choices remained visible, Enter selected default defer,
+and the menu returned to Exit. Existing long menu labels/help were ellipsized;
+the new safety question and choices were not. Paths/ANSI/trailing whitespace
+were normalized as above. No screen-reader or alternate-locale claim is made.
+
 This is **not** a model-driven agent-session test or independent product
 acceptance. The isolated native profile reports not logged in; no credential
 copying or live-profile activation was used to bypass that boundary. Complete
-session and remaining rendered-menu verification remain pending. The new hook is verified;
+session verification remains pending. The new hook is verified;
 fresh-session model/MCP attachment is not inferred from that component result.
 
 Pinned full host CI passed at the product source above, as did hosted CI run

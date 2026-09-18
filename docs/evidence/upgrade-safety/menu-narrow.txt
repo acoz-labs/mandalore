@@ -1,0 +1,118 @@
+24 48
+
+Mandalore
+  Memory across time and space. Opening this
+  menu changes nothing. A signet is your
+  private memory bank.
+What would you like to do?
+
+  Signet · Create a new local memory bank
+  Signet · Connect an existing local clone
+  Signet · Inspect selected memory and sync s…
+  Signet · Synchronize with its configured re…
+  Connection · Connect or update Codex or Pi
+  The Armorer · Assess or inspect
+  The Armorer · Repair connection
+  Foundlings · Manage historical references
+  CLI · Install, update or select a retained …
+› Exit
+
+↑/↓ or j/k move · Enter/l select · Esc/h back…What would you like to do? › Connection · Conne…
+Choose native harness
+
+› Codex
+  Pi
+Back
+
+↑/↓ or j/k move · Enter/l select · Esc/h back…Choose native harness › Codex
+Trusted local Mandalore runtime (not a downlo…
+
+› │
+Default: /synthetic/tmp/mandalore-112-native.ne…
+Enter save · Tab edit default · Esc back · Ct…Trusted local Mandalore runtime (not a download…
+
+Review Codex connection
+  Apply executes the selected trusted binaries
+  and manages this native plugin registration.
+  A hash identifies bytes; it does not prove
+  publisher trust. Retain old source/runtime
+  copies; native cache may be replaced. No
+  signet edits or authentication setup. Review
+  hooks and start a fresh native session
+  afterward.
+  Signet ID:
+    signet-dcb32f8054c0d7ab92cfb8cf3cbca8b6
+  Binding:
+    /synthetic/tmp/mandalore-112-native.neBDK8/fi
+    xture/binding.json
+  Selected runtime:
+    /synthetic/tmp/mandalore-112-native.neBDK8/ma
+    ndalore
+  Runtime SHA256:
+    7b45444c091a6aa3f40d1b05cabd77f2db4d82f228b
+    d840a1f16e81602fb3b43
+  Pinned runtime:
+    /synthetic/tmp/mandalore-112-native.neBDK8/fi
+    xture/state/runtimes/sha256-7b45444c091a6aa
+    3f40d1b05cabd77f2db4d82f228bd840a1f16e81602
+    fb3b43/mandalore
+  Native binary:
+    /synthetic/home/.codex/packages/standalone
+    /releases/0.154.0-aarch64-apple-darwin/bin/
+    codex
+  Native SHA256:
+    4f85982624b3898c8991cb80c0981b2aa71070e3537
+    046c9a95950318a95afcc
+  Native profile:
+    /synthetic/tmp/mandalore-112-native.neBDK8/fi
+    xture/profile
+  Installation state:
+    /synthetic/tmp/mandalore-112-native.neBDK8/fi
+    xture/state
+  Managed package:
+    /synthetic/tmp/mandalore-112-native.neBDK8/fi
+    xture/state/connections/711a39b63e28a565719
+    4b8a0768bc803a0b06ebac258e1079c8bc2a0e9ceb2
+    4a
+  Package version:
+    0.0.0-dev+codex.711a39b63e28a5657194b8a0768
+    bc803a0b06ebac258e1079c8bc2a0e9ceb24a
+  Embedded package SHA256:
+    20fe1cdee14d966ec4cc8b11ed54edd2e9f25474439
+    fff469d84cf30ddd5cea4
+Apply these changes?
+
+› No · Return without applying
+  Yes · Apply this reviewed plan
+
+↑/↓ or j/k move · Enter/l select · Esc/h back…Apply these changes? › Yes · Apply this reviewe…
+
+Connection update deferred
+  Replacing this plugin can remove files used
+  by existing Codex sessions. Exit every Codex
+  session using this profile first; idle or
+  paused is not enough. If this menu is running
+  inside one of those sessions, defer and run
+  it from a separate terminal after exiting.
+  Your CLI update, if completed, remains
+  installed.
+Have all affected Codex sessions exited?
+
+› No · Defer plugin update
+  Yes · Sessions exited; apply this update
+
+↑/↓ or j/k move · Enter/l select · Esc/h back…Have all affected Codex sessions exited? › No ·…
+What would you like to do?
+
+  Signet · Create a new local memory bank
+  Signet · Connect an existing local clone
+  Signet · Inspect selected memory and sync s…
+  Signet · Synchronize with its configured re…
+  Connection · Connect or update Codex or Pi
+  The Armorer · Assess or inspect
+  The Armorer · Repair connection
+  Foundlings · Manage historical references
+  CLI · Install, update or select a retained …
+› Exit
+
+↑/↓ or j/k move · Enter/l select · Esc/h back…What would you like to do? › Exit
