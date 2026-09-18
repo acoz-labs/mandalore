@@ -58,7 +58,7 @@ selects only bank-wide memory; discover stored scope IDs before selecting others
 An optional query (up to 2048 bytes) matches case-insensitive substrings for all
 whitespace-separated terms within one current structural head's summary/record
 ID, not bodies or superseded summaries. Empty query lists that scope's withheld
-records. Results sort by record ID, with default limit5, maximum50 and a32KiB
+records. Results sort by record ID, with default limit 5, maximum 50 and a 32 KiB
 page ceiling. Page offsets can shift after writes. This is intentional historical
 routing, not a fallback for ordinary empty recall; use content/visibility history
 to inspect candidates and fresh heads before deciding. Human equivalent:

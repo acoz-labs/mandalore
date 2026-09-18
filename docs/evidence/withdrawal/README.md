@@ -102,11 +102,36 @@ This is a discovery gap, not accepted ergonomic behavior. The subsequent
 `memory_withheld` operation supplies bounded scoped routing metadata for explicit
 inspection/restoration; ordinary recall remains unchanged. Its tests cover
 scope, summary-only matching, withheld-state routing and refreshed visibility.
-The updated native behavior must be repeated before closing this gap.
+The updated native behavior is recorded below.
+
+## Pi fresh-session restoration after discovery fix
+
+Runtime source `59025e54e726f988e6f9949adee448afb9afd476` was built with the same
+pinned toolchain and installed into the disposable Pi connection after the prior
+session exited. Binary SHA256:
+`c2265b4f1111e5bda577474b01d09d1a7ce2dea879751d1f213fcf6f3178c03b`;
+Pi package SHA256:
+`ebe44459a70d087f44a84d0ba4142e20eb96b244e672725aa4c4c77a2c35d0b8`.
+Native version, model and explicit-resource isolation were unchanged.
+
+A new conversational withdrawal passed. After `/new` confirmed a new native
+session, the restoration prompt supplied no ID, name, discovery tool or filesystem
+directions. Pi loaded the visibility guide, called `memory_withheld`, inspected
+content history and both visibility-history pages, then restored the exact
+current heads. Maple Quay became visible; all historical evidence remained.
+The only filesystem read in this restoration turn was the packaged guidance.
+There were no shell listings, journal, sync, repair or configuration operations.
+
+Together with the baseline's ordinary fresh-session withheld recall, this verifies
+the specific tested discovery/restoration flow without relying on retained IDs.
+It does not imply that historical queries are current guidance, or that all
+ambiguous wording/model combinations are covered. The Codex fresh-session
+discovery path still needs repetition on this new package; its earlier directed
+withdraw/restore results remain evidence for their explicitly pinned source.
 
 ## Remaining evidence
 
-These runs do not establish the corrected fresh-session discovery flow,
-new-release bootstrap compatibility, native Linux behavior or product acceptance.
+These runs do not establish new-release bootstrap compatibility, native Linux
+behavior or product acceptance.
 Those boundaries must not be inferred from unit tests or cross-built binaries.
 Final documentation reconciliation and exact-head review remain required.
