@@ -1,3 +1,9 @@
+> Current delivery authority: [local candidate delivery](delivery.md).
+> The specialized commands and historical evidence below remain reference;
+> Actions-only, numeric-run-ID, owner-exception and mandatory persistent-staging
+> instructions are superseded for new work. Preserve product-specific safety,
+> privacy, immutable-artifact and recovery checks.
+
 # Delivery and releases
 
 ## Current state

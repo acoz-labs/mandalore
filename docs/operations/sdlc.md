@@ -1,6 +1,6 @@
 # Software delivery
 
-Standard version: `2026.09.18.1`.
+Standard version: `2026.09.18.3`.
 
 ## Authority and roles
 
@@ -48,7 +48,9 @@ Mixed code/documentation changes follow the code workflow.
    knowledge and retire completed temporary plans.
 4. Maintainer reviews the current code and specification independently. A
    credential switch alone is not a review. Record findings and resolutions.
-   Changes after approval require review of the new head. Required checks pass.
+   Changes after approval require review of the new head. Required repository
+   commands pass in a clean checkout. The maintainer independently runs them and
+   publishes current-head evidence; an available Actions runner is not required.
 5. Maintainer merges and continues through candidate acceptance and release.
    Rejected acceptance returns to implementation, followed by retest and review.
    Do not ask the owner to approve normal transitions.
@@ -65,8 +67,13 @@ scenarios, results, reviewer and openable evidence. The code author cannot be th
 sole product acceptor. A maintainer or agent may dispatch acceptance and release
 workflows; workflow_dispatch does not imply mandatory human attendance.
 
-Service: build once, validate isolated staging, accept, promote the same artifact,
-verify production and record the release. Artifact: validate and nominate the
+Service: build once from a fixed merged commit, validate the retained artifact
+locally or in a temporary production-like environment, accept, promote that same
+artifact, verify production and record the release. Persistent staging is optional.
+A moving main branch, coverage percentage or contributor test report alone is not
+acceptance. Exercise migrations, configuration, permissions and integrations in an
+isolated environment when the change requires it. Never use production data for
+destructive acceptance. Retain backup/recovery plans for irreversible migrations. Artifact: validate and nominate the
 artifact without fictional staging, accept and publish/verify. Non-deployable:
 reviewed merge and checks complete delivery when no release target exists.
 Keep release-bearing issues open until their delivery profile is complete.
@@ -113,8 +120,16 @@ be changed through their authoritative source and publication process.
 
 Run `bin/sdlc check` for managed-file conformity and `bin/sdlc review` before a
 code merge. Review verification uses live GitHub identity, exact head, reviewer
-permission and passing configured checks. Documentation-only changes do not
+permission and an independent authenticated receipt for all configured commands.
+The receipt includes environment, command outcomes and openable sanitized logs.
+A changed configuration, stale run, failed latest run or altered log fails the gate.
+See `docs/operations/local-verification.md` for portable commands and release flow. Documentation-only changes do not
 need code approval. Maintainers still validate documentation and correct scope.
+Local execution is the default. Optional Actions run only on explicitly enabled
+trusted self-hosted runners; never fall back silently to paid hosted compute.
+GitHub authenticates the receipt publisher, not the machine execution. Two account
+authorship is not host isolation; use a fresh worktree/container for independent
+verification and do not expose operator credentials to untrusted test code.
 Use branch protection where supported; post-push audits detect rather than
 prevent unauthorized pushes. Record actual enforcement limitations honestly.
 Personal execution environments must verify Git authorship and authenticated
