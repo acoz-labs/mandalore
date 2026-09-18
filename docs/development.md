@@ -51,6 +51,12 @@ Release/acceptance workflows retain their separate permissions and checks.
 Local validation is not independent product acceptance. Record exact source and
 artifact identities, actual native results and pending checks in the issue/PR.
 
+After squashing a planning PR, merge the resulting main branch into any stacked
+implementation branch before final reconciliation. A deletion relative to the
+implementation working tree need not delete a separately introduced file under
+the merge base GitHub uses. Verify temporary-plan removal in the merged main
+tree as well as the reviewed source tree; branch cleanliness alone is not proof.
+
 Build the development executable with `go build -o ./mandalore ./cmd/mandalore`
 under the pinned toolchain. See [interface](interface.md) for synthetic examples.
 The compiled-process regression builds its own temporary executable and exercises
