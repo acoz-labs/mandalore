@@ -132,7 +132,7 @@ func (s *Service) remember(input Write, verify func() error) (Revision, error) {
 		Evidence:   Evidence{Basis: input.Basis, Confidence: input.Confidence, SourceRefs: []string{source.ID}},
 		Supersedes: input.Supersedes, ChangeReason: input.Reason,
 	}
-	if err := s.store.putSourced(r, source, verify); err != nil {
+	if err := s.store.putSourced(&r, source, verify); err != nil {
 		return Revision{}, err
 	}
 	return r, nil

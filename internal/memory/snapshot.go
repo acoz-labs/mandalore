@@ -78,7 +78,7 @@ func validateSnapshot(snapshot Snapshot, registrations []FoundlingRegistration, 
 		}
 		sources[source.ID] = true
 	}
-	if err := validateRevisionGraph(snapshot.Revisions, s.ID, device, func(id string) error {
+	if err := validateRevisionGraph(snapshot.Revisions, s.ID, s.Version, device, func(id string) error {
 		if !sources[id] {
 			return fmt.Errorf("unknown snapshot source %s", id)
 		}

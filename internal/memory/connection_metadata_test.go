@@ -9,8 +9,13 @@ func TestConnectionMetadataValidatesOnlySuppliedIdentity(t *testing.T) {
 	if err := ValidateConnectionMetadata(signet, device, author); err != nil {
 		t.Fatal(err)
 	}
+	upgraded := signet
+	upgraded.Version = 2
+	if err := ValidateConnectionMetadata(upgraded, device, author); err != nil {
+		t.Fatal(err)
+	}
 	for _, mutate := range []func(*Signet, *Device, *Authorship){
-		func(s *Signet, _ *Device, _ *Authorship) { s.Version = 2 },
+		func(s *Signet, _ *Device, _ *Authorship) { s.Version = 3 },
 		func(s *Signet, _ *Device, _ *Authorship) { s.ID = "../wrong" },
 		func(s *Signet, _ *Device, _ *Authorship) { s.Name = "two\nlines" },
 		func(_ *Signet, d *Device, _ *Authorship) { d.Version = 2 },

@@ -20,8 +20,15 @@ type Scope struct {
 // ScopeInfo is a routing inventory, not recalled guidance. Counts include all
 // stored records (including future-effective records), not revision counts.
 type ScopeInfo struct {
-	Scope       Scope `json:"scope"`
-	RecordCount int   `json:"record_count"`
+	Scope       Scope            `json:"scope"`
+	RecordCount int              `json:"record_count"`
+	Visibility  *ScopeVisibility `json:"visibility_counts,omitempty"`
+}
+
+type ScopeVisibility struct {
+	Visible    int `json:"visible"`
+	Withheld   int `json:"withheld"`
+	Conflicted int `json:"conflicted"`
 }
 
 func (s *Store) Scopes() ([]ScopeInfo, error) {
@@ -29,7 +36,8 @@ func (s *Store) Scopes() ([]ScopeInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := s.validateGraph(records); err != nil {
+	states, err := s.validateGraphState(records, nil)
+	if err != nil {
 		return nil, err
 	}
 	byScope := map[Scope]map[string]bool{}
@@ -41,7 +49,22 @@ func (s *Store) Scopes() ([]ScopeInfo, error) {
 	}
 	result := []ScopeInfo{}
 	for scope, records := range byScope {
-		result = append(result, ScopeInfo{Scope: scope, RecordCount: len(records)})
+		info := ScopeInfo{Scope: scope, RecordCount: len(records)}
+		if s.Signet.Version == 2 {
+			counts := &ScopeVisibility{}
+			for id := range records {
+				switch states[id].State {
+				case "visible":
+					counts.Visible++
+				case "content-conflict", "visibility-conflict":
+					counts.Conflicted++
+				default:
+					counts.Withheld++
+				}
+			}
+			info.Visibility = counts
+		}
+		result = append(result, info)
 	}
 	sort.Slice(result, func(i, j int) bool {
 		if result[i].Scope.Kind == result[j].Scope.Kind {
@@ -65,6 +88,7 @@ type Evidence struct {
 	SourceRefs []string `json:"source_refs"`
 }
 type Revision struct {
+	VisibilityRefs *[]string      `json:"visibility_refs,omitempty"`
 	Version        int            `json:"schema_version"`
 	ID             string         `json:"id"`
 	RecordID       string         `json:"record_id"`
@@ -122,12 +146,20 @@ func memoizeDeviceValidation(check func(string) error) func(string) error {
 }
 
 func (s *Store) validateGraphWithSources(records []Revision, pending map[string]Source) error {
+	_, err := s.validateGraphState(records, pending)
+	return err
+}
+
+func (s *Store) validateGraphState(records []Revision, pending map[string]Source) (map[string]VisibilityState, error) {
+	if err := s.validateUpgradeState(); err != nil {
+		return nil, err
+	}
 	// One graph validation shares successful device checks between revisions
 	// and their sources. Do not retain this memo on Store/Service: every later
 	// read or write must check current provenance again. Multi-file reads do
 	// not claim atomic snapshots against uncoordinated external filesystem edits.
 	device := memoizeDeviceValidation(s.deviceExists)
-	return validateRevisionGraph(records, s.Signet.ID, device, func(id string) error {
+	err := validateRevisionGraph(records, s.Signet.ID, s.Signet.Version, device, func(id string) error {
 		source, exists := pending[id]
 		if !exists {
 			if err := readJSON(filepath.Join(s.Root, "memory/sources", id+".json"), &source); err != nil {
@@ -139,11 +171,18 @@ func (s *Store) validateGraphWithSources(records []Revision, pending map[string]
 		}
 		return s.validateSourceWithDevice(source, device)
 	})
+	if err != nil {
+		return nil, err
+	}
+	return s.visibilityStates(records)
 }
 
 // Resolve provenance through caller-owned lookups so a migration preflight can
 // validate the same graph entirely in memory, without a filesystem fallback.
-func validateRevisionGraph(records []Revision, signetID string, device, source func(string) error) error {
+func validateRevisionGraph(records []Revision, signetID string, format int, device, source func(string) error) error {
+	if format != 1 && format != 2 {
+		return errors.New("unsupported revision graph format")
+	}
 	schema, err := memorySchema()
 	if err != nil {
 		return err
@@ -151,6 +190,9 @@ func validateRevisionGraph(records []Revision, signetID string, device, source f
 	byID := map[string]Revision{}
 	roots := map[string]int{}
 	for _, r := range records {
+		if format == 1 && r.Version != 1 {
+			return errors.New("revision requires upgraded signet format")
+		}
 		b, err := json.Marshal(r)
 		if err != nil {
 			return err
@@ -238,6 +280,16 @@ func (s *Store) Put(r Revision) error {
 	return s.withLock(func() error {
 		records, err := s.revisions()
 		if err != nil {
+			return err
+		}
+		var states map[string]VisibilityState
+		if s.Signet.Version == 2 {
+			states, err = s.validateGraphState(records, nil)
+			if err != nil {
+				return err
+			}
+		}
+		if err := prepareContentWrite(&r, s.Signet.Version, states); err != nil {
 			return err
 		}
 		if err = s.validateGraph(append(records, r)); err != nil {
@@ -370,10 +422,11 @@ func (s *Store) Recall(q Query, now time.Time) (Packet, error) {
 	if err != nil {
 		return p, err
 	}
-	if err = s.validateGraph(records); err != nil {
+	states, err := s.validateGraphState(records, nil)
+	if err != nil {
 		return p, err
 	}
-	heads := EffectiveHeads(records, now)
+	heads := RecallableHeads(records, states, now)
 	return s.recallHeads(q, p, heads), nil
 }
 

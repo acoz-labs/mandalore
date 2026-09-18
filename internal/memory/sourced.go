@@ -12,10 +12,10 @@ import (
 // under the same lock as synchronization. A disk failure between the writes
 // can leave unreferenced evidence, but never a revision with missing evidence.
 func (s *Store) PutSourced(r Revision, source Source) error {
-	return s.putSourced(r, source, nil)
+	return s.putSourced(&r, source, nil)
 }
 
-func (s *Store) putSourced(r Revision, source Source, verify func() error) error {
+func (s *Store) putSourced(r *Revision, source Source, verify func() error) error {
 	return s.withLock(func() error {
 		if err := s.validateSource(source); err != nil {
 			return err
@@ -27,7 +27,17 @@ func (s *Store) putSourced(r Revision, source Source, verify func() error) error
 		if err != nil {
 			return err
 		}
-		if err := s.validateGraphWithSources(append(records, r), map[string]Source{source.ID: source}); err != nil {
+		var states map[string]VisibilityState
+		if s.Signet.Version == 2 {
+			states, err = s.validateGraphState(records, nil)
+			if err != nil {
+				return err
+			}
+		}
+		if err := prepareContentWrite(r, s.Signet.Version, states); err != nil {
+			return err
+		}
+		if err := s.validateGraphWithSources(append(records, *r), map[string]Source{source.ID: source}); err != nil {
 			return err
 		}
 		// Size/encoding failures are invalid input, not ambiguous partial I/O.
