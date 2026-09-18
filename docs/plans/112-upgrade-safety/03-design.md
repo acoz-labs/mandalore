@@ -114,9 +114,23 @@ interface and plugin administration documentation. Reconcile the exact final hea
 record plan drift and remove this temporary plan before marking implementation
 ready. Required checks and reviewed merge do not equal product acceptance.
 
-## Needs attention / final gate
+## Compatibility decision
 
-Review precise apply-input compatibility and all menu/delegated-runtime call paths
-before finalizing. No implementation before a recorded exact-head planning review.
+Use a flattened apply input containing the existing plan fields plus an optional
+`sessions_stopped` boolean. Keep this separate from Plan, Options and receipts;
+existing raw plan objects remain valid inputs. The CLI adds `--sessions-stopped`
+only to apply and repair-apply, not preview. Unsupported harness use is rejected.
+The library retains Apply as the default-deny entrypoint and adds a separately
+acknowledged variant. CLI, typed operation and ordinary menu use the same guard.
+
+Release-menu delegation must guard the selected profile before calling an older
+runtime that lacks this behavior. Explicit stopped-session handoff is required
+before delegated native installation when replacement cannot be ruled out. Do not
+forward new JSON fields blindly to older strict decoders. Test delegated execution
+with a legacy input schema and failed native inventory; uncertainty must not fall
+through into an unguarded older apply. This is not permission to substitute the
+parent runtime's embedded package for the selected runtime.
+
+No implementation before a recorded exact-head planning review.
 No release, live activation, signet migration or subsequent roadmap issue is
 authorized by this plan. Stop after #112 and reassess the remaining roadmap.
