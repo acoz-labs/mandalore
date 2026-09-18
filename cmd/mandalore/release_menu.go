@@ -221,7 +221,7 @@ func (m *menu) releaseResult(r distribution.InstallResult) {
 	m.block(console.Block{Title: "CLI receipt", Body: body, Fields: []console.Field{{Label: "Phase", Value: r.Phase}, {Label: "Installation complete", Value: strconv.FormatBool(r.Installed)}, {Label: "Already current", Value: strconv.FormatBool(r.AlreadyCurrent)}, {Label: "Launcher", Value: r.Launcher}, {Label: "Selected runtime", Value: r.Runtime}, {Label: "Previous runtime", Value: previous}, {Label: "Pending record", Value: pending}}})
 	if r.Pending != "" {
 		quoted := "'" + strings.ReplaceAll(r.Pending, "'", "'\"'\"'") + "'"
-		m.block(console.Block{Title: "Recover the reviewed installation", Body: "Inspect the pending record and resolve the reported problem first. Then use the original Mandalore executable you launched, not an incomplete new launcher. This retries the stored plan and rechecks ownership and retained bytes; it does not create a fresh plan or change memory connections.", Fields: []console.Field{{Label: "Retry", Value: "mandalore release apply < " + quoted}}})
+		m.block(console.Block{Title: "Recover the reviewed installation", Body: "Inspect the pending record and resolve the reported problem first. Then use the original Mandalore executable you launched, not an incomplete new launcher. This retries the stored plan and rechecks ownership and retained bytes; it does not create a fresh plan or change memory connections. The command below is one logical line; your terminal may visually wrap it. Copy the whole line without adding newlines.", Command: "mandalore release apply < " + quoted})
 	}
 }
 

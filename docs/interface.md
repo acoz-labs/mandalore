@@ -208,6 +208,12 @@ can read it directly using the original Mandalore executable:
 mandalore release apply < /example/tools/lib/mandalore/pending.json
 ```
 
+The menu quotes its exact pending path and prints the command without hard line
+breaks, indentation or color escapes. Select the whole logical line even when a
+terminal visually wraps it; do not reconstruct a command from wrapped receipt
+fields. Control-bearing or invalid display text is suppressed, not sanitized into
+a different command. Typed receipts remain the automation source of truth.
+
 This extracts only its exact digest-matching reviewed plan; apply independently
 re-reads the current pending record and performs the existing ownership checks.
 Do not use a partially activated launcher or edit the record to force a retry.
