@@ -108,12 +108,12 @@ provider's current [sensitive-data guidance](https://docs.github.com/en/authenti
 not a generic force-push/prune recipe. This is operational guidance, not legal,
 compliance or physical-disk sanitization certification.
 
-## Designed future operations — not available commands
+## Scoped export and derived redaction
 
-These are deferred contracts from [#16's reviewed discovery](https://github.com/acoz-labs/mandalore/blob/b0e6880bc5f1e6f2085e26a093625ba69e2a0abb/docs/discovery/16-privacy-lifetime/README.md).
-They do not authorize action on a user's bank and are not features to invoke now.
-
-### Scoped export and derived redaction — #80
+The current source implements the report contract selected by
+[#16's reviewed discovery](https://github.com/acoz-labs/mandalore/blob/b0e6880bc5f1e6f2085e26a093625ba69e2a0abb/docs/discovery/16-privacy-lifetime/README.md).
+This is not a claim about the immutable 1.1.0 release. Export requires an explicit
+request; ordinary memory use does not create reports.
 
 A readable report is different from a restorable backup. Git-backed portability
 retains original history; an initial report must not impersonate a signet clone
@@ -138,11 +138,24 @@ that could reconnect or merge as its source.
   provenance redacted rather than claiming complete evidence. Disclose retained
   unredacted copies. Never infer source deletion or promise “safe to publish.”
 
-Before implementation, [#80](https://github.com/acoz-labs/mandalore/issues/80)
-must settle the consumer/format and provenance-disclosure questions. Verification
-must cover selected-only output, history/journal opt-ins, conflicts, source
-invariance, every sensitive field, stale inputs, unsafe/overlapping destinations,
-partial writes and denied actions. No automatic secret-detection guarantee.
+The artifact is indented JSON with `kind: mandalore-memory-report`, not a signet
+manifest. Field omissions are explicit categories: identity, content,
+classification, timestamps, authorship, citations, change_history and extensions.
+History and details are opt-ins. Identity omission also drops authorship,
+citations and change history; content omission drops citations and change history.
+Omitting authorship, timestamps or classification also drops citations, because
+source/origin metadata contains those values. Any field omission drops opaque
+extensions. The preview lists this effective policy; opt-ins never override it.
+Record/journal omissions apply only to explicitly selected IDs. Unknown categories
+or IDs are errors. No automatic secret-detection guarantee is provided.
+
+Even a fully field-redacted report retains fixed structure, item counts, derived
+revision status and report-local ordinals. Review previews separately: they retain
+source IDs, paths and hashes that the eventual report may omit. See
+[interface](interface.md#scoped-report-export) and
+[recovery](runbook.md#export-failure-and-partial-output).
+
+## Designed future operations — not available commands
 
 ### Recall withdrawal and retention preview — #81
 

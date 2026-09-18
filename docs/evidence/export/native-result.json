@@ -1,0 +1,20 @@
+{
+  "kind": "mandalore-synthetic-export-evidence",
+  "source_commit": "b50ed43dba87829da9231306a3189e6ba3c675b1",
+  "binary_sha256": "22a15a0218e56645a3d3608bf21ec8d0a7a7c67eab0322b133e005b2d15f90b9",
+  "driver_sha256": "651da427c03edec891b15f523c5ee0bba8552fd62e818a9fee9e4befdf30283d",
+  "platform": "darwin",
+  "arch": "arm64",
+  "node": "v24.1.0",
+  "checks": [
+    "preview metadata only; typed/wrapper parity; current supersession selected",
+    "reviewed apply exact hash; private modes; selected-only output; replay refuses overwrite",
+    "history and exact journal opt-ins; all-field omission leaves fixed structure only",
+    "read-only denied; bank overlap denied; existing destination preserved; complete bank bytes/modes/mtimes unchanged"
+  ],
+  "limitations": [
+    "Synthetic CLI engineering evidence, not product acceptance",
+    "No user memory, network, Git initialization or provider authentication",
+    "No secure-erasure or safe-publication certification"
+  ]
+}

@@ -661,7 +661,66 @@ Later implementation or local installation does not confer new-candidate
 acceptance. Native behavior evidence is retained separately for
 [Codex](codex-native-evidence.md) and [Pi](evidence/pi/README.md).
 
-### Pi connection differences
+## Scoped report export
+
+`export_preview` and `export_apply` are typed, CLI-only operations. They do not
+appear in the everyday MCP/Pi tool catalog. Agents can discover their schemas with
+`mandalore operations` and call them using JSON stdin. No menu, network operation,
+checkpoint, journal or source mutation is part of export.
+
+```sh
+mandalore export preview < selection.json > preview.json
+mandalore export apply < preview.json
+```
+
+Review the preview before apply; it is sensitive metadata, not the report itself.
+The preview request has `binding_path`, `destination` and `selection`, for example:
+
+```json
+{
+  "binding_path": "/tmp/synthetic/config/binding.json",
+  "destination": "/tmp/synthetic/reports/selected-report",
+  "selection": {
+    "record_ids": ["record-example"],
+    "omit_fields": ["authorship", "timestamps"]
+  }
+}
+```
+
+Use actual discovered IDs and an explicit binding; the example is not executable
+setup. At least one `record_ids`, `scopes` or `journal_ids` selection is required.
+Scopes are `{ "kind": "project", "id": "example" }` objects. Record/scope
+selection is a union; journals require exact IDs. `include_history` and
+`include_details` default false. `omit_record_ids`, `omit_journal_ids` and
+`omit_fields` further restrict disclosure. See [privacy](privacy.md) for field
+dependency rules. History labels future-effective and conflicting revisions;
+current-only export never picks a conflict winner.
+
+The wrapper accepts `--binding PATH` for preview only; a conflicting JSON binding
+is refused. Typed `call export_preview` takes the complete request in JSON, not
+the common `--binding` flag. Apply accepts the complete plan or a successful
+preview envelope in the wrapper; typed `call export_apply` takes the plan itself.
+`--read-only` refuses apply before reading input. Apply cannot override the binding,
+selection or destination from the reviewed plan.
+
+Preview pins source/binding/connection digests, canonical paths and directory
+identities, exact selected IDs/conflicts, effective omissions, report size/hash
+and filesystem effects. It never returns bodies, reasons or citation contents.
+Limits: 128 record IDs, 16 scopes, 128 journal IDs; 128 total report items;
+128 MiB portable-source reads, 4 MiB per source file/report, 24 KiB plan.
+Configured reference inspection allows 256 files of at most 16 KiB each.
+Oversized input is refused, not silently truncated. Common API input remains
+32 KiB. The report is written to disk, not returned inside the 64 KiB envelope.
+
+Apply reconstructs the plan from fresh validated bytes, writes only the final
+redacted report to a private sibling stage, and publishes the new directory
+without replacing existing entries. Destination parent must already exist.
+Bank, binding-directory and configured-reference overlap—including disconnected
+references and aliases—is refused. Uninspectable reference metadata/roots fail
+closed. Restrictive modes are 0700 for new directories and 0600 for `report.json`.
+The output is a derived report, not a restorable bank or safe-publication promise.
+
+## Pi connection differences
 
 Use `connection plan/apply/armorer/repair --harness pi` or the corresponding
 `pi_connection_*` operations. Pi defaults to `PI_CODING_AGENT_DIR`, otherwise
