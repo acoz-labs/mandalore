@@ -6,6 +6,8 @@ import (
 	"context"
 	"errors"
 	"io"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -128,6 +130,38 @@ func TestReleaseRecoveryInstructionQuotesPendingPath(t *testing.T) {
 	m.releaseResult(distribution.InstallResult{Pending: "/synthetic/owner's tools/pending.json"})
 	if !strings.Contains(out.String(), "'/synthetic/owner'\"'\"'s tools/pending.json'") || !strings.Contains(out.String(), "original Mandalore executable") {
 		t.Fatal("unsafe or ambiguous recovery instruction", out.String())
+	}
+}
+
+func TestRecoveryCommandCopyPreservesShellMeaning(t *testing.T) {
+	for _, name := range []string{"owner's tools", "two  spaces", "$(false); `false` & café"} {
+		t.Run(name, func(t *testing.T) {
+			dir := filepath.Join(t.TempDir(), strings.Repeat("long-", 20)+name)
+			if err := os.Mkdir(dir, 0700); err != nil {
+				t.Fatal(err)
+			}
+			pending := filepath.Join(dir, "pending.json")
+			if err := os.WriteFile(pending, []byte("synthetic reviewed plan"), 0600); err != nil {
+				t.Fatal(err)
+			}
+			m, out, _, _ := releaseMenuFixture(t, "")
+			m.releaseResult(distribution.InstallResult{Pending: pending})
+			var command string
+			for _, line := range strings.Split(out.String(), "\n") {
+				if strings.HasPrefix(line, "mandalore release apply < ") {
+					command = line
+				}
+			}
+			if command == "" {
+				t.Fatal("missing intact unindented recovery command")
+			}
+			// This function shadows the real CLI: no recovery or network is run.
+			script := "mandalore() { printf '%s\\n' \"$#\" \"$1\" \"$2\"; /bin/cat; };\n" + command
+			got, err := exec.Command("/bin/sh", "-c", script).CombinedOutput()
+			if err != nil || string(got) != "2\nrelease\napply\nsynthetic reviewed plan" {
+				t.Fatalf("copied command changed meaning: %q %v", got, err)
+			}
+		})
 	}
 }
 

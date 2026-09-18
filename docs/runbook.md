@@ -106,6 +106,13 @@ download error. See [the typed quota contract](interface.md#read-only-release-in
 for current-source metadata; inspect the receipt regardless of HTTP status.
 
 For a partial **CLI** activation, preserve the pending record and retained runtime.
+The menu prints its recovery command as one unstyled logical line, separately
+from wrapped receipt fields. Select the whole command; do not copy wrapped path
+fields or insert newlines where your terminal visually wraps. Terminal clipboard
+behavior varies. Automation should use the machine-readable pending path and
+its own argument-safe invocation. Unsafe display characters suppress the command
+rather than silently changing its meaning. The command is guidance, not permission
+to retry before inspecting the failure.
 The failure screen shows the pending path and retry command. Inspect the record,
 resolve the reported cause, then use the original Mandalore executable to run
 `release apply < PREFIX/lib/mandalore/pending.json`. This retries the exact recorded
