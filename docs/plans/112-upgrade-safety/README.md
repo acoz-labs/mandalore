@@ -1,6 +1,6 @@
 # Solution Design: safe deferred native upgrades
 
-- **Status:** Draft
+- **Status:** Final
 - **Issue:** #112
 - **Planning PR:** #114
 - **Repository basis:** c9e216fa2c9aec443a74a1b8696993780a6c63b2
@@ -23,8 +23,9 @@ decisions are in [Technical design](03-design.md).
 
 ## Needs Attention
 
-Complete exact-head engineering design review before implementation. Product
-acceptance, public release and live installation remain outside this envelope.
+No unresolved design blockers. Product acceptance, public release and live
+installation remain outside this envelope. Native and rendered evidence is
+required during implementation before readiness.
 
 ## Plan Map
 
