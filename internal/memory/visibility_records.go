@@ -11,9 +11,7 @@ import (
 func RecallableHeads(records []Revision, states map[string]VisibilityState, now time.Time) map[string][]Revision {
 	heads := EffectiveHeads(records, now)
 	for id := range heads {
-		switch states[id].State {
-		case "visible", "content-conflict":
-		default:
+		if visibilityWithheld(states[id].State) {
 			delete(heads, id)
 		}
 	}

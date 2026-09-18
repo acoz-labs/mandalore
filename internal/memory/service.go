@@ -92,6 +92,9 @@ func (s *Service) RememberFromFoundling(input Write, verify func() error) (Revis
 		if r.State != "active" || len(r.HeadIDs) != 1 || r.HeadIDs[0] != o.RegistrationRevisionID {
 			return errors.New("foundling registration changed before promotion")
 		}
+		if err := s.store.checkFoundlingVisibility(input.RecordID, o); err != nil {
+			return err
+		}
 		return verify()
 	})
 }
