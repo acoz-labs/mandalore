@@ -22,6 +22,27 @@ required operational closeout step, not an automatic Actions or deployment gate.
    Keep historical entries. Do not expand a tested setup-prompt claim merely
    because the native integration is available.
 
+   Audit the whole current-product page and directory, not only the release
+   catalog. Record the evidence or unchanged rationale for each surface:
+
+   - Supported integrations and future harnesses: check the introduction,
+     support labels, walkthrough and directory description together.
+   - Setup-prompt proof: label the tested setup journey separately from native
+     integration support; new harness support alone is not prompt acceptance.
+   - Prerequisites and setup routes: check each supported harness, its runtime
+     requirements, connection choice, guide link and fresh-session instructions.
+     Shared introductions and second-machine steps must not imply one harness
+     is the only supported option.
+   - Upgrade caveats: reconcile updater compatibility, active-session safety,
+     runtime versus bank migration, older-reader refusal and recovery limits.
+   - Capabilities and evidence: reconcile highlights with the accepted release,
+     including platform test boundaries and deferred features. Preserve dated
+     historical posts and release entries as history, not current support claims.
+
+   Update regression assertions for these surfaces and inspect their rendered
+   context. A passing version/link check is not evidence that support prose is
+   current. Include the completed surface audit in the website delivery evidence.
+
 ## Deliver and record
 
 5. Follow website design/review/CI, fresh exact-stage acceptance and explicitly
@@ -29,7 +50,8 @@ required operational closeout step, not an automatic Actions or deployment gate.
    those gates. No new cross-repository token or automatic deployment is implied.
 6. Verify the production page at <https://acoz.dev/projects/mandalore/>: version,
    changelog date/highlights, release links, copied download/install commands,
-   guide deep links and accurate harness support. Record the website commit,
+   guide deep links and every support/setup/upgrade surface audited above.
+   Record the website commit,
    accepted artifact, production release and verification evidence.
 7. Add the receipt below to the product release record and linked issue. Only
    mark website closeout complete when the live page was actually verified.
