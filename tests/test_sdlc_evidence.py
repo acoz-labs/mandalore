@@ -83,6 +83,82 @@ class ExecutionTests(unittest.TestCase):
             e.verify(self.root, "o/r", "acceptance", self.folder / "evidence", artifact_file=artifact)
         self.assertFalse(json.loads((self.folder / "evidence/receipt.json").read_text())["success"])
 
+    def test_pre_adoption_runs_original_source_with_pinned_separate_policy(self):
+        (self.root / "product.txt").write_text("original-product")
+        self.git("add", ".")
+        self.git("commit", "-qm", "Product before delivery adoption")
+        source_sha = self.git("rev-parse", "HEAD").stdout.decode().strip()
+        artifact = self.folder / "artifact"
+        artifact.write_bytes(b"retained-binary")
+        digest = "sha256:" + e.sha256(artifact.read_bytes())
+        command = 'test "$(cat product.txt)" = original-product && test ! -e .sdlc/config.json && printf original-source-tested'
+        policy = {"validation": ["policy-only-command"], "acceptance_criteria": ["runtime"],
+                  "retained_candidates": [{"sha": source_sha, "artifact": digest,
+                    "validation": [command], "reason": "Run original source in separate checkout"}]}
+        (self.root / ".sdlc/config.json").write_text(json.dumps(policy))
+        (self.root / "product.txt").write_text("newer-product")
+        self.git("add", ".")
+        self.git("commit", "-qm", "Reviewed transition policy")
+        policy_sha = self.git("rev-parse", "HEAD").stdout.decode().strip()
+        source = self.folder / "original"
+        self.git("worktree", "add", "--detach", str(source), source_sha)
+        candidate = self.folder / "candidate.json"
+        candidate.write_text(json.dumps({"repo": "o/r", "sha": source_sha, "artifact": digest,
+            "policy_sha": policy_sha, "config_sha256": e.sha256(e.encoded(e.retained_config(policy, source_sha, digest)))}))
+        report = self.folder / "report.json"
+        report.write_text(json.dumps({"repo": "o/r", "sha": source_sha, "artifact": digest,
+            "scenarios": [{"criterion": "runtime", "result": "passed", "observation": "Synthetic fixture",
+                           "evidence": ["https://github.com/o/r/issues/1"]}]}))
+        with self.assertRaisesRegex(e.Failure, "policy-root"):
+            e.verify(source, "o/r", "acceptance", self.folder / "missing-policy", digest, artifact, candidate, report)
+        result = e.verify(source, "o/r", "acceptance", self.folder / "accepted", digest, artifact,
+                          candidate, report, self.root)
+        self.assertEqual(result["sha"], source_sha)
+        self.assertEqual(result["policy_sha"], policy_sha)
+        self.assertTrue(result["success"])
+        self.assertEqual((self.folder / "accepted/command-1.log").read_text(), "original-source-tested")
+        self.assertEqual(artifact.read_bytes(), b"retained-binary")
+        (self.root / "untracked").touch()
+        with self.assertRaisesRegex(e.Failure, "clean checkout"):
+            e.verify(source, "o/r", "acceptance", self.folder / "dirty-policy", digest, artifact,
+                     candidate, report, self.root)
+
+
+class RetainedPolicyTests(unittest.TestCase):
+    def setUp(self):
+        self.sha = "a" * 40
+        self.artifact = "sha256:" + "b" * 64
+        self.policy = {
+            "validation": ["bin/sdlc check", "bin/ci"],
+            "acceptance_criteria": ["runtime", "recovery"],
+            "release_criteria": ["same-bytes"],
+            "retained_candidates": [{"sha": self.sha, "artifact": self.artifact,
+                                     "validation": ["bin/ci"],
+                                     "reason": "Source predates delivery tooling; run its full original suite."}]}
+
+    def test_explicit_transition_preserves_all_nonvalidation_policy(self):
+        original = copy.deepcopy(self.policy)
+        selected = e.retained_config(self.policy, self.sha, self.artifact)
+        self.assertEqual(selected["validation"], ["bin/ci"])
+        self.assertEqual(selected["acceptance_criteria"], ["runtime", "recovery"])
+        self.assertEqual(selected["release_criteria"], ["same-bytes"])
+        self.assertEqual(self.policy, original)
+
+    def test_no_fallback_for_unknown_or_changed_identity(self):
+        for sha, artifact in [("c" * 40, self.artifact), (self.sha, "sha256:" + "d" * 64),
+                              ("main", self.artifact), (self.sha, "latest")]:
+            with self.subTest(sha=sha, artifact=artifact), self.assertRaises(e.Failure):
+                e.retained_config(self.policy, sha, artifact)
+
+    def test_ambiguous_missing_commands_or_policy_override_rejected(self):
+        cases = [[], [self.policy["retained_candidates"][0]] * 2]
+        for mutation in [{"validation": []}, {"reason": ""}, {"acceptance_criteria": []},
+                         {"validation": "bin/ci"}, {"validation": [""]}]:
+            cases.append([dict(self.policy["retained_candidates"][0], **mutation)])
+        for entries in cases:
+            with self.subTest(entries=entries), self.assertRaises(e.Failure):
+                e.retained_config(dict(self.policy, retained_candidates=entries), self.sha, self.artifact)
+
 
 class ReceiptTests(unittest.TestCase):
     def setUp(self):

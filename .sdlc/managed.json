@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": "2026.09.18.3",
+  "version": "2026.09.21.1",
   "files": {
     "AGENTS.md": {
       "sha256": "e11fb1efe1f668ee245b66313508b3b75e5cb84231994c37bdcfcf7aa0860b32",
@@ -15,15 +15,15 @@
       "mode": "644"
     },
     "bin/sdlc": {
-      "sha256": "4e35918762b71542af7909a88f8d6d4827ee0827acba629fe06bb2daa597d377",
+      "sha256": "a4a15acd24959f4262af9e211bbd75eb445d28b51212ef77bb748591c5a964f5",
       "mode": "755"
     },
     "bin/sdlc-evidence": {
-      "sha256": "337c39c641c4635535753538d8bde88ba484ef5e4499d9454f78b061f8a4855b",
+      "sha256": "10b7e3539b9ae49b6a91e5800c8dc8a34321174f13666d26b7ff5b17e8b4bab1",
       "mode": "755"
     },
     "bin/sdlc-release": {
-      "sha256": "7a1cf279a40e2ea4b775257ad4676402028fba0aa40a60d12b85db047920e651",
+      "sha256": "c54ab6b07e802f17bb027f5b162bd62e486c1e65551dc75b2b47a59448853f20",
       "mode": "755"
     },
     "bin/validate-solution-plans": {
@@ -39,23 +39,23 @@
       "mode": "644"
     },
     "tests/test_sdlc_evidence.py": {
-      "sha256": "c074f92d82a947b4c84fd9f7c37a539f7dff449154176921fd15bae834ce1e0b",
+      "sha256": "75965379b355632e7c5801d44fff3d0e57ee73f6a08e63931983fc8e6e3e49df",
       "mode": "644"
     },
     "tests/test_sdlc_release.py": {
-      "sha256": "3342a77e37e7bc0895900b92fd796296b411720ebedc123aed1ce36caefe1e35",
+      "sha256": "f596fed57064280454ab3a838f2d847ac05b80b9413030d22d1f6de4c1b9fb36",
       "mode": "644"
     },
     "docs/operations/sdlc.md": {
-      "sha256": "b5a86fc81a3e2df6e7118bff75b3e7ed10d15d406b8115d71467dea9bbbacab2",
+      "sha256": "e067a4e24336a5445eaa9920d24bdd299f6275381ddf4f055f623ccf2c9edc28",
       "mode": "644"
     },
     "docs/operations/repo-standard.md": {
-      "sha256": "b379c321c6af890d49323c68e00dc873d3192dd071f1e3e625cb05030d9f2139",
+      "sha256": "cdd6ae3d2cafa8836278f94de3c325fee11f8c940fc069f3addbdc2e0715e24c",
       "mode": "644"
     },
     "docs/operations/local-verification.md": {
-      "sha256": "cda3933bfa46667240329565a1d96cb3b169ea22c136fc7f7bdd48682dbaf100",
+      "sha256": "e5391959567d42b508d63be595b64656b41bb585c562396051691d286e73574c",
       "mode": "644"
     },
     "docs/plans/README.md": {

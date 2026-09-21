@@ -86,6 +86,29 @@ def immutable(artifact):
     return bool(re.fullmatch(r"(?:[^\s]+@)?sha256:[0-9a-f]{64}", artifact or ""))
 
 
+def retained_config(policy, sha, artifact):
+    """Select only an explicit reviewed pre-adoption validation mapping.
+
+    Callers must separately prove policy ancestry and that the original source
+    lacks configuration. This does not authorize a nomination or execution.
+    """
+    if not re.fullmatch(r"[0-9a-f]{40}", sha or "") or not immutable(artifact):
+        raise Failure("Retained transition requires exact source and artifact")
+    entries = policy.get("retained_candidates")
+    if not isinstance(entries, list):
+        raise Failure("No reviewed retained-candidate transition")
+    matches = [entry for entry in entries if isinstance(entry, dict)
+               and entry.get("sha") == sha and entry.get("artifact") == artifact]
+    if len(matches) != 1:
+        raise Failure("Retained candidate is missing or ambiguous in reviewed policy")
+    entry = matches[0]
+    if set(entry) != {"sha", "artifact", "validation", "reason"} or not isinstance(entry["reason"], str) or not entry["reason"].strip():
+        raise Failure("Transition permits only documented source validation, not policy overrides")
+    config = dict(policy, validation=entry["validation"])
+    commands_for(config, "validation")
+    return config
+
+
 def clean_head(root):
     if run("git", "status", "--porcelain", "--untracked-files=normal", cwd=root):
         raise Failure("Verification requires a clean checkout, including untracked files")
@@ -112,7 +135,7 @@ def report_passes(report, criteria, repo, sha, artifact):
     return all(s["result"] == "passed" for s in scenarios)
 
 
-def verify(root, repo, phase, output, artifact=None, artifact_file=None, candidate_file=None, report_file=None):
+def verify(root, repo, phase, output, artifact=None, artifact_file=None, candidate_file=None, report_file=None, policy_root=None):
     root, output = root.resolve(), output.resolve()
     if output == root or root in output.parents:
         raise Failure("Evidence must be outside the checkout")
@@ -122,8 +145,6 @@ def verify(root, repo, phase, output, artifact=None, artifact_file=None, candida
     if origin not in {f"https://github.com/{repo}.git", f"https://github.com/{repo}", f"git@github.com:{repo}.git"}:
         raise Failure("Checkout origin does not match repository")
     head = clean_head(root)
-    config = config_at(root)
-    commands = commands_for(config, phase)
     if artifact_file:
         artifact_file = artifact_file.resolve()
         actual = "sha256:" + sha256(artifact_file.read_bytes())
@@ -137,6 +158,29 @@ def verify(root, repo, phase, output, artifact=None, artifact_file=None, candida
     candidate = json.loads(candidate_file.read_text()) if candidate_file else None
     if candidate and (candidate.get("repo") != repo or candidate.get("sha") != head or candidate.get("artifact") != artifact):
         raise Failure("Nomination differs from checkout or artifact")
+    policy_head = None
+    if policy_root is not None:
+        policy_root = policy_root.resolve()
+        if phase != "acceptance" or not candidate or not candidate.get("policy_sha"):
+            raise Failure("Separate policy requires a nominated pre-adoption acceptance")
+        if (root / CONFIG).exists() or (root / CONFIG).is_symlink():
+            raise Failure("Source already has delivery policy")
+        if output == policy_root or policy_root in output.parents:
+            raise Failure("Evidence must be outside policy checkout")
+        policy_head = clean_head(policy_root)
+        if policy_head != candidate["policy_sha"] or policy_head == head:
+            raise Failure("Policy checkout differs from nominated immutable revision")
+        if run("git", "remote", "get-url", "origin", cwd=policy_root) != origin:
+            raise Failure("Policy checkout origin differs from product source")
+        run("git", "merge-base", "--is-ancestor", head, policy_head, cwd=policy_root)
+        config = retained_config(config_at(policy_root), head, artifact)
+    else:
+        if candidate and candidate.get("policy_sha"):
+            raise Failure("Nominated transition requires --policy-root")
+        config = config_at(root)
+    if candidate and candidate.get("config_sha256") != sha256(encoded(config)):
+        raise Failure("Verification configuration differs from nomination")
+    commands = commands_for(config, phase)
     report = json.loads(report_file.read_text()) if report_file else None
     report_ok = True
     if phase == "acceptance" and config.get("acceptance_criteria"):
@@ -150,6 +194,8 @@ def verify(root, repo, phase, output, artifact=None, artifact_file=None, candida
                "commands": [], "clean_before": True, "success": False}
     if candidate:
         receipt["candidate_sha256"] = sha256(encoded(candidate))
+    if policy_head:
+        receipt["policy_sha"] = policy_head
     if report:
         receipt["acceptance_report"] = report
     env = os.environ.copy()
@@ -172,6 +218,8 @@ def verify(root, repo, phase, output, artifact=None, artifact_file=None, candida
             if p.returncode:
                 break
         receipt["clean_after"] = clean_head(root) == head
+        if policy_head and clean_head(policy_root) != policy_head:
+            raise Failure("Policy checkout changed during verification")
         if artifact_file and "sha256:" + sha256(artifact_file.read_bytes()) != artifact:
             raise Failure("Artifact changed during verification")
         receipt["success"] = (report_ok and receipt["clean_after"] and len(receipt["commands"]) == len(commands)
@@ -312,6 +360,7 @@ def main():
     v.add_argument("--artifact-file", type=Path)
     v.add_argument("--candidate", type=Path, help="Saved nomination JSON; required by the release gate")
     v.add_argument("--report", type=Path, help="Observed acceptance scenarios with openable evidence")
+    v.add_argument("--policy-root", type=Path, help="Clean checkout of nominated pre-adoption policy revision")
     v = sub.add_parser("publish")
     v.add_argument("--receipt", type=Path, required=True)
     v.add_argument("--subject", type=int, required=True)
@@ -321,7 +370,7 @@ def main():
     a = p.parse_args()
     try:
         if a.action == "run":
-            verify(a.root, a.repo, a.phase, a.output, a.artifact, a.artifact_file, a.candidate, a.report)
+            verify(a.root, a.repo, a.phase, a.output, a.artifact, a.artifact_file, a.candidate, a.report, a.policy_root)
         else:
             publish(a.receipt, a.subject, a.expected_actor, a.logs_reviewed, a.summary)
     except (Failure, OSError, ValueError, KeyError) as e:
