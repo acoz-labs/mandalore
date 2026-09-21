@@ -21,5 +21,15 @@
     "public-installation",
     "immutable-release-and-recovery"
   ],
-  "delivery_runbook": "docs/delivery.md"
+  "delivery_runbook": "docs/delivery.md",
+  "retained_candidates": [
+    {
+      "sha": "f855c5a7c05ffc9fbdb87bdb564d79c542bb26f6",
+      "artifact": "sha256:38266a4a3656f06ef62331bbcbb5f96c721fa1eb0315b87d5a8600e17ace3804",
+      "validation": [
+        "mise exec -- bin/ci"
+      ],
+      "reason": "The retained 1.2.0 source predates .sdlc/config.json and shared SDLC commands. Run its original complete pinned CI, including Pi tests, race-enabled Go tests, vet and all four target builds, without rebuilding or relabeling the retained distribution. All current acceptance and release criteria remain required."
+    }
+  ]
 }
