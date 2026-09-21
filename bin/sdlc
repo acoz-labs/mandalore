@@ -10,11 +10,11 @@ from pathlib import Path, PurePosixPath
 import subprocess
 import sys
 
-VERSION = "2026.09.21.1"
+VERSION = "2026.09.21.2"
 MANIFEST = ".sdlc/managed.json"
 CONFIG = ".sdlc/config.json"
 MANAGED = [
-    "AGENTS.md", "CONTRIBUTING.md",
+    "AGENTS.md", "CONTRIBUTING.md", "SDLC_VERSION",
     ".github/ISSUE_TEMPLATE/feature.yml",
     "bin/sdlc", "bin/sdlc-evidence", "bin/sdlc-release", "bin/validate-solution-plans", "bin/dependency-merge-steward", "tests/test_sdlc.py", "tests/test_sdlc_evidence.py", "tests/test_sdlc_release.py",
     "docs/operations/sdlc.md", "docs/operations/repo-standard.md", "docs/operations/local-verification.md",
@@ -146,6 +146,10 @@ def apply(source, target, adopt=False):
             raise Failure("Target managed drift requires reconciliation: " + ", ".join(bad))
     elif not adopt:
         raise Failure("Initial adoption requires --adopt after reviewing target content")
+    if prior and "SDLC_VERSION" in m["files"] and "SDLC_VERSION" not in prior["files"]:
+        marker = path(target, "SDLC_VERSION")
+        if marker.exists() and (not marker.is_file() or marker.read_bytes() != (prior["version"] + "\n").encode()):
+            raise Failure("Existing version marker requires explicit reconciliation before managed ownership")
     entries = set(m["files"]) | set(prior["files"] if prior else ()) | {MANIFEST}
     # Validate every destination before any mutation, including ancestor redirects.
     for name in entries:

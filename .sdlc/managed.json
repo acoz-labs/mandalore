@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": "2026.09.21.1",
+  "version": "2026.09.21.2",
   "files": {
     "AGENTS.md": {
       "sha256": "e11fb1efe1f668ee245b66313508b3b75e5cb84231994c37bdcfcf7aa0860b32",
@@ -10,12 +10,16 @@
       "sha256": "7c07c60fb5db88c3b135142c83105fb44caeb27dfa691ba46ccb990831815c6e",
       "mode": "644"
     },
+    "SDLC_VERSION": {
+      "sha256": "59f8208c5d4113c829412e7d397d978e32a50fcb80d20056e62509f977a2e655",
+      "mode": "644"
+    },
     ".github/ISSUE_TEMPLATE/feature.yml": {
       "sha256": "9ac6dab66d71cc24852b92d06f7cb01add134eeb70cd5d9d2e2e07b441083399",
       "mode": "644"
     },
     "bin/sdlc": {
-      "sha256": "a4a15acd24959f4262af9e211bbd75eb445d28b51212ef77bb748591c5a964f5",
+      "sha256": "2cae2cd4063a8bb32091f78dd3d7c8d7ba310e28d1b4dec1c857abcffab11a55",
       "mode": "755"
     },
     "bin/sdlc-evidence": {
@@ -35,7 +39,7 @@
       "mode": "755"
     },
     "tests/test_sdlc.py": {
-      "sha256": "e51444ee28017744c073275d88645aefc6fb77d66f202be0f0b8b71ca06053a7",
+      "sha256": "2ab56e458f6ea42a70babd119e6aa98b18935d838b26a19fd443c39d338f9a93",
       "mode": "644"
     },
     "tests/test_sdlc_evidence.py": {
@@ -47,11 +51,11 @@
       "mode": "644"
     },
     "docs/operations/sdlc.md": {
-      "sha256": "e067a4e24336a5445eaa9920d24bdd299f6275381ddf4f055f623ccf2c9edc28",
+      "sha256": "e6c9eef7ca0e61d8d49abf181b0562eadf1bfd090f24531b301aec37e99a9c76",
       "mode": "644"
     },
     "docs/operations/repo-standard.md": {
-      "sha256": "cdd6ae3d2cafa8836278f94de3c325fee11f8c940fc069f3addbdc2e0715e24c",
+      "sha256": "3242c4112139de1e1b259c014808c991b38ccf13bc43829c4c2895179e0d7639",
       "mode": "644"
     },
     "docs/operations/local-verification.md": {
