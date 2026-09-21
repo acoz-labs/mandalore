@@ -1,6 +1,6 @@
 # Software delivery
 
-Standard version: `2026.09.18.3`.
+Standard version: `2026.09.21.2`.
 
 ## Authority and roles
 

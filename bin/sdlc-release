@@ -26,6 +26,58 @@ def remote_config(repo, sha):
     return json.loads(base64.b64decode(content["content"]))
 
 
+def source_has_config(repo, sha):
+    # Inspect successful tree responses; auth/network errors must not mean absent.
+    tree = e.api(f"repos/{repo}/git/trees/{sha}")
+    if tree.get("truncated"):
+        raise e.Failure("Cannot establish complete source tree")
+    matches = [entry for entry in tree["tree"] if entry["path"] == ".sdlc"]
+    if not matches:
+        return False
+    if len(matches) != 1 or matches[0]["type"] != "tree":
+        raise e.Failure("Unexpected source policy path")
+    subtree = e.api(f"repos/{repo}/git/trees/{matches[0]['sha']}")
+    if subtree.get("truncated"):
+        raise e.Failure("Cannot establish complete source policy tree")
+    return any(entry["path"] == "config.json" for entry in subtree["tree"])
+
+
+def candidate_config(repo, sha, artifact, policy_sha=None):
+    if policy_sha is None:
+        return remote_config(repo, sha)
+    if not isinstance(policy_sha, str) or len(policy_sha) != 40 or any(c not in "0123456789abcdef" for c in policy_sha) or policy_sha == sha:
+        raise e.Failure("Transition policy must identify a distinct immutable revision")
+    on_default_branch(repo, policy_sha)
+    if e.api(f"repos/{repo}/compare/{sha}...{policy_sha}")["status"] != "ahead":
+        raise e.Failure("Transition policy must descend from product source")
+    if source_has_config(repo, sha):
+        raise e.Failure("Source already has delivery policy; transition is pre-adoption only")
+    reviewed_policy(repo, policy_sha)
+    return e.retained_config(remote_config(repo, policy_sha), sha, artifact)
+
+
+def reviewed_policy(repo, sha):
+    policy_tree = e.api(f"repos/{repo}/commits/{sha}")["commit"]["tree"]["sha"]
+    for linked in e.pages(f"repos/{repo}/commits/{sha}/pulls"):
+        pr = e.api(f"repos/{repo}/pulls/{linked['number']}")
+        if not pr.get("merged") or pr.get("draft") or pr["base"]["repo"]["full_name"].lower() != repo.lower() or pr["merge_commit_sha"] != sha:
+            continue
+        head = pr["head"]["sha"]
+        if e.api(f"repos/{repo}/commits/{head}")["commit"]["tree"]["sha"] != policy_tree:
+            continue
+        reviews = e.pages(f"repos/{repo}/pulls/{pr['number']}/reviews")
+        permissions = {item["user"]["login"].lower(): e.api(f"repos/{repo}/collaborators/{item['user']['login']}/permission")["permission"] for item in reviews}
+        try:
+            reviewers = review.approval(pr, reviews, permissions)
+            config = remote_config(repo, head)
+            e.trusted_receipt(repo, pr["number"], head, config, "validation",
+                              [pr["user"]["login"]], eligible=reviewers)
+        except (review.Failure, e.Failure):
+            continue
+        return {"number": pr["number"], "head": head, "merge": sha, "author": pr["user"]["login"]}
+    raise e.Failure("Transition policy requires a merged independently reviewed and verified PR with the exact policy tree")
+
+
 def maintainer(repo, login):
     return e.api(f"repos/{repo}/collaborators/{login}/permission")["permission"] in {"write", "maintain", "admin"}
 
@@ -59,7 +111,7 @@ def implementation(repo, sha, prs):
     return result
 
 
-def nominate(repo, issue, sha, artifact, prs, actor, output):
+def nominate(repo, issue, sha, artifact, prs, actor, output, policy_sha=None):
     e.identity(repo, actor)
     if not e.immutable(artifact) or len(sha) != 40 or any(c not in "0123456789abcdef" for c in sha):
         raise e.Failure("Full commit and immutable artifact digest required")
@@ -67,7 +119,7 @@ def nominate(repo, issue, sha, artifact, prs, actor, output):
     subject = e.api(f"repos/{repo}/issues/{issue}")
     if subject["state"] != "open" or "pull_request" in subject:
         raise e.Failure("Nomination requires an open delivery issue")
-    config = remote_config(repo, sha)
+    config = candidate_config(repo, sha, artifact, policy_sha)
     authority = config.get("release_authority_repository", repo)
     if authority != repo:
         raise e.Failure(f"Release authority belongs to {authority}; use its issue and candidate procedure")
@@ -82,6 +134,9 @@ def nominate(repo, issue, sha, artifact, prs, actor, output):
     candidate = {"schema": 1, "repo": repo, "issue": issue, "sha": sha, "artifact": artifact,
                  "implementation": impl, "spec_sha256": e.sha256((subject.get("body") or "").encode()),
                  "config_sha256": e.sha256(e.encoded(config))}
+    if policy_sha is not None:
+        candidate["policy_sha"] = policy_sha
+        candidate["policy_review"] = reviewed_policy(repo, policy_sha)
     if output.exists():
         raise e.Failure("Refusing to overwrite a retained nomination")
     result = e.api(f"repos/{repo}/issues/{issue}/comments", {"body": MARKER + "\n```json\n" + json.dumps(candidate, indent=2) + "\n```"})
@@ -118,7 +173,9 @@ def gate(repo, issue, sha, artifact, actor):
     subject = e.api(f"repos/{repo}/issues/{issue}")
     if subject["state"] != "open" or candidate["spec_sha256"] != e.sha256((subject.get("body") or "").encode()):
         raise e.Failure("Delivery issue closed or specification changed since nomination")
-    config = remote_config(repo, sha)
+    config = candidate_config(repo, sha, artifact, candidate.get("policy_sha"))
+    if candidate.get("policy_sha") and reviewed_policy(repo, candidate["policy_sha"]) != candidate.get("policy_review"):
+        raise e.Failure("Policy review provenance changed or is missing; nominate again")
     if e.sha256(e.encoded(config)) != candidate["config_sha256"]:
         raise e.Failure("Candidate configuration changed")
     actual = implementation(repo, sha, [p["number"] for p in candidate["implementation"]])
@@ -134,6 +191,8 @@ def gate(repo, issue, sha, artifact, actor):
 
 def release(root, repo, issue, sha, artifact, actor, output, resume=False):
     checked = gate(repo, issue, sha, artifact, actor)
+    if checked["candidate"].get("policy_sha"):
+        raise e.Failure("Retained transition requires the reviewed same-byte runbook and record path; generic promotion cannot run newer scripts in old source")
     root, output = root.resolve(), output.resolve()
     if root == output or root in output.parents:
         raise e.Failure("Release receipts must be outside checkout")
@@ -266,6 +325,7 @@ def main():
         p.add_argument("--artifact", required=True)
         p.add_argument("--expected-actor", required=True)
         if name == "nominate":
+            p.add_argument("--policy-sha", help="Reviewed immutable pre-adoption transition policy revision")
             p.add_argument("--pr", type=int, action="append", required=True)
             p.add_argument("--output", type=Path, required=True)
         if name == "promote":
@@ -280,7 +340,7 @@ def main():
         if args.action == "finalize":
             finalize(args.receipt, args.expected_actor, args.logs_reviewed, args.summary, args.close)
         elif args.action == "nominate":
-            nominate(args.repo, args.issue, args.sha, args.artifact, args.pr, args.expected_actor, args.output)
+            nominate(args.repo, args.issue, args.sha, args.artifact, args.pr, args.expected_actor, args.output, args.policy_sha)
         elif args.action == "gate":
             print(json.dumps(gate(args.repo, args.issue, args.sha, args.artifact, args.expected_actor)))
         elif args.action == "record":

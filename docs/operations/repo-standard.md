@@ -1,10 +1,15 @@
 # Managed repository standard
 
-SDLC template version: `2026.09.18.3`.
+SDLC template version: `2026.09.21.2`.
 
 The template owns the files enumerated in `.sdlc/managed.json`. Their hashes
-identify the installed content. `bin/sdlc check` verifies them. Application
-configuration lives in `.sdlc/config.json`, outside the managed-file set.
+identify the installed content. `bin/sdlc check` verifies them.
+The `SDLC_VERSION` marker is managed too, so propagation cannot leave the
+repository's visible version behind its installed commands and manifest.
+When taking ownership of a previously unmanaged marker, automatic updates accept
+only an absent file or the exact prior manifest version plus newline. Inspect and
+reconcile other content explicitly before applying; local edits are not discarded.
+Application configuration lives in `.sdlc/config.json`, outside the managed-file set.
 Product instructions, code, tests and deployment commands remain repo-specific.
 
 Use `bin/sdlc apply --source PATH --target PATH` to update an already managed
@@ -46,5 +51,9 @@ must be documented as a gap, never disguised as non-deployable to pass a check.
 New repositories adopt the standard at creation and join every future cascade.
 
 Personal account names and credentials are never managed template content.
+For an artifact whose source predates configuration adoption, the explicit
+`retained_candidates` transition is documented in
+`docs/operations/local-verification.md`. It binds a reviewed policy revision
+separately from original product bytes; it is not a general policy override.
 See `docs/operations/sdlc.md` for delegated authority, role separation and the
 three workflows. CI and workflow checks are evidence, not substitutes for review.

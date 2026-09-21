@@ -90,6 +90,32 @@ class ReviewTests(unittest.TestCase):
         sdlc.validate_config(config)
 
 class ApplyTests(unittest.TestCase):
+    def test_version_marker_is_managed(self):
+        self.assertIn('SDLC_VERSION', sdlc.MANAGED)
+    def test_version_marker_propagates_and_drift_is_detected(self):
+        with patch.object(sdlc,'VERSION','2026.09.18.3'):
+            self.write_source('first')
+        sdlc.apply(self.source,self.target,True)
+        (self.target/'SDLC_VERSION').write_text('2026.09.18.3\n')
+        (self.source/'SDLC_VERSION').write_text(sdlc.VERSION+'\n')
+        with patch.object(sdlc,'MANAGED',['docs/managed.md','SDLC_VERSION']):
+            sdlc.stamp(self.source)
+        sdlc.apply(self.source,self.target)
+        self.assertEqual((self.target/'SDLC_VERSION').read_text(),sdlc.VERSION+'\n')
+        (self.target/'SDLC_VERSION').write_text('stale\n')
+        self.assertIn('SDLC_VERSION',sdlc.differences(self.target,sdlc.load_manifest(self.target)))
+        with self.assertRaises(sdlc.Failure):sdlc.apply(self.source,self.target)
+    def test_new_marker_ownership_refuses_unknown_local_content_before_writes(self):
+        sdlc.apply(self.source,self.target,True)
+        (self.target/'SDLC_VERSION').write_text('local-customization\n')
+        (self.source/'SDLC_VERSION').write_text(sdlc.VERSION+'\n')
+        (self.source/'docs/managed.md').write_text('second')
+        with patch.object(sdlc,'MANAGED',['docs/managed.md','SDLC_VERSION']):
+            sdlc.stamp(self.source)
+        with self.assertRaisesRegex(sdlc.Failure,'reconciliation'):
+            sdlc.apply(self.source,self.target)
+        self.assertEqual((self.target/'SDLC_VERSION').read_text(),'local-customization\n')
+        self.assertEqual((self.target/'docs/managed.md').read_text(),'first')
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
         self.root=Path(self.temp.name);self.source=self.root/'source';self.target=self.root/'target'
