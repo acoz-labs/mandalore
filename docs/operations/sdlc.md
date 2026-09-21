@@ -1,6 +1,6 @@
 # Software delivery
 
-Standard version: `2026.09.21.2`.
+Standard version: `2026.09.21.3`.
 
 ## Authority and roles
 
@@ -42,18 +42,30 @@ Mixed code/documentation changes follow the code workflow.
    Use a plan only when risk or design complexity justifies one. Maintainer owns
    the plan, using contributor findings. A separate planning PR and six-file pack
    are not prerequisites for Ready or implementation.
-3. Contributor opens a PR linking the issue. Describe behavior, validation,
+3. Contributor opens a PR linking the issue and, when ready, requests the
+   designated independent maintainer through GitHub's native PR review request.
+   Describe behavior, validation,
    documentation impact and rollout/rollback when relevant. Reconcile against
    the issue and any actual plan; explain material deviations. Promote durable
    knowledge and retire completed temporary plans.
 4. Maintainer reviews the current code and specification independently. A
    credential switch alone is not a review. Record findings and resolutions.
-   Changes after approval require review of the new head. Required repository
+   Contributors address findings in the same PR and re-request review after
+   revisions. Changes after approval require review of the new head. Required repository
    commands pass in a clean checkout. The maintainer independently runs them and
    publishes current-head evidence; an available Actions runner is not required.
 5. Maintainer merges and continues through candidate acceptance and release.
    Rejected acceptance returns to implementation, followed by retest and review.
    Do not ask the owner to approve normal transitions.
+
+A finished coding turn starts the handoff; it does not establish acceptance.
+Keep review findings, responses and current-head evidence on the PR. For assigned
+agent work, the coordinator is responsible for noticing the handoff and continuing
+review without another owner prompt. A GitHub review request records assignment;
+it does not itself start an agent. Execution hosts may use their own bounded
+monitor or notification mechanism, without a mandatory UI or always-on backlog
+processor. Interrupted work must be inspected before retrying, and retries must
+not create duplicate implementers or lose the owning task.
 
 Meaningful rendered changes require functional, accessibility and visual evidence
 appropriate to their impact. Review the actual experience, not screenshots alone.
