@@ -1,10 +1,15 @@
 # Managed repository standard
 
-SDLC template version: `2026.09.21.1`.
+SDLC template version: `2026.09.21.2`.
 
 The template owns the files enumerated in `.sdlc/managed.json`. Their hashes
-identify the installed content. `bin/sdlc check` verifies them. Application
-configuration lives in `.sdlc/config.json`, outside the managed-file set.
+identify the installed content. `bin/sdlc check` verifies them.
+The `SDLC_VERSION` marker is managed too, so propagation cannot leave the
+repository's visible version behind its installed commands and manifest.
+When taking ownership of a previously unmanaged marker, automatic updates accept
+only an absent file or the exact prior manifest version plus newline. Inspect and
+reconcile other content explicitly before applying; local edits are not discarded.
+Application configuration lives in `.sdlc/config.json`, outside the managed-file set.
 Product instructions, code, tests and deployment commands remain repo-specific.
 
 Use `bin/sdlc apply --source PATH --target PATH` to update an already managed
