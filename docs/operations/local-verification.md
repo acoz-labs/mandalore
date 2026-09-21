@@ -161,6 +161,70 @@ proof inferred from tests. It must never be used to invent a deployment. Do not
 run both promotion paths. This supports existing native/provider runbooks without
 requiring another deployment service or routine owner approval.
 
+## Retained candidates built before SDLC adoption
+
+Do not rebuild an already retained artifact merely to add delivery configuration,
+or claim its binaries came from a newer commit. The normal path always uses the
+product source's own configuration. A narrowly scoped transition is available
+only when that source has no `.sdlc/config.json`.
+
+In an independently reviewed descendant commit on the same repository's default
+branch, add an explicit `retained_candidates` entry to `.sdlc/config.json`:
+
+```json
+{
+  "retained_candidates": [
+    {
+      "sha": "FULL_ORIGINAL_SOURCE_SHA",
+      "artifact": "sha256:EXACT_RETAINED_DIGEST",
+      "validation": ["REPOSITORY_ORIGINAL_FULL_VALIDATION_COMMAND"],
+      "reason": "Explain the original suite and why newer SDLC commands cannot run in this source."
+    }
+  ]
+}
+```
+
+This is an addition to the complete repository configuration, not a replacement.
+The entry may replace only validation commands; all acceptance/release criteria,
+delivery authority and other configuration remain those of the pinned policy.
+Review the commands against the original product: no placeholder success or
+substitution of template conformity for application tests. Policy/configuration
+changes use the code-review lane, not documentation-only approval.
+
+Nominate with `--policy-sha FULL_REVIEWED_POLICY_SHA`, preserving the original
+`--sha`, artifact and complete implementation PR set. The gate checks policy
+ancestry/default-branch reachability, original configuration absence and the
+exact entry; API failures are not absence. The policy must be the merge of a
+same-repository PR with independent exact-head approval and authenticated local
+validation evidence. Its complete tree must equal that reviewed head; merge-time
+changes require a newly reviewed policy PR. Nomination retains the policy PR's
+number, head, merge and author, and the gate rechecks that provenance and proof.
+Both policy identity and effective
+configuration are bound to the nomination and acceptance receipt. This is not
+permission to override an existing source policy or use moving `main`.
+
+For acceptance, use clean separate checkouts of original source and policy:
+pass `--root ORIGINAL_CHECKOUT --policy-root POLICY_CHECKOUT` to the current
+`sdlc-evidence run`, plus the saved nomination and scenario report. Commands run
+in the original source, not the policy checkout. The runner checks both heads,
+origins, policy ancestry and configuration identity, and refuses modified
+checkouts or artifact bytes. Keep the evidence directory outside both checkouts.
+Tools can be invoked from the reviewed control checkout without copying them
+into or dirtying the original source.
+
+Publication uses the repository's reviewed same-byte runbook, followed by
+`sdlc-release record` and `finalize`. Generic scripted `promote` intentionally
+refuses this transition: newer control scripts cannot silently execute as if
+they belonged to the old product checkout. Independently verify the retained
+payloads, run the gate, retain an attempt record, execute the actual publisher,
+verify downloaded bytes and recovery, then attest the observed results.
+
+The policy is immutable, not automatically refreshed. To replace or revoke a
+nomination, issue a new nomination under a reviewed policy and repeat acceptance;
+a newer failed acceptance also revokes readiness. Editing a policy elsewhere does
+not rewrite an existing pinned decision. Issue-specification changes invalidate
+the old nomination. Historical self-review never supplies independent acceptance.
+
 ## Optional automation
 
 Explicitly enable `SDLC_ACTIONS_ENABLED=true` only for approved self-hosted
