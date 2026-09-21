@@ -27,8 +27,10 @@ required operational closeout step, not an automatic Actions or deployment gate.
 
    - Supported integrations and future harnesses: check the introduction,
      support labels, walkthrough and directory description together.
-   - Setup-prompt proof: label the tested setup journey separately from native
-     integration support; new harness support alone is not prompt acceptance.
+   - Setup-prompt evidence: retain test scope in release documentation, not an
+     asterisk or testing disclosure on the product page. Do not reintroduce the
+     removed Hyperdrive caveat or replace it with a universal testing/guarantee
+     claim. Native harness support alone is not setup-prompt acceptance.
    - Prerequisites and setup routes: check each supported harness, its runtime
      requirements, connection choice, guide link and fresh-session instructions.
      Shared introductions and second-machine steps must not imply one harness
