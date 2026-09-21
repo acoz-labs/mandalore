@@ -1,17 +1,17 @@
 {
   "schema": 1,
-  "version": "2026.09.21.2",
+  "version": "2026.09.21.3",
   "files": {
     "AGENTS.md": {
       "sha256": "e11fb1efe1f668ee245b66313508b3b75e5cb84231994c37bdcfcf7aa0860b32",
       "mode": "644"
     },
     "CONTRIBUTING.md": {
-      "sha256": "7c07c60fb5db88c3b135142c83105fb44caeb27dfa691ba46ccb990831815c6e",
+      "sha256": "d83365b93124ec789809adf3878cf1568ddf0ef6e21f319f834b049ed80a77b0",
       "mode": "644"
     },
     "SDLC_VERSION": {
-      "sha256": "59f8208c5d4113c829412e7d397d978e32a50fcb80d20056e62509f977a2e655",
+      "sha256": "6f5f9ae27713cd40de21965cc0a736423b9f24329ba12f7bbc55087b2bdd2a96",
       "mode": "644"
     },
     ".github/ISSUE_TEMPLATE/feature.yml": {
@@ -19,7 +19,7 @@
       "mode": "644"
     },
     "bin/sdlc": {
-      "sha256": "2cae2cd4063a8bb32091f78dd3d7c8d7ba310e28d1b4dec1c857abcffab11a55",
+      "sha256": "2ff513bfa97756970695dec04d62d43018b998c2fc5cfba01d3a99f3a115dae0",
       "mode": "755"
     },
     "bin/sdlc-evidence": {
@@ -51,11 +51,11 @@
       "mode": "644"
     },
     "docs/operations/sdlc.md": {
-      "sha256": "e6c9eef7ca0e61d8d49abf181b0562eadf1bfd090f24531b301aec37e99a9c76",
+      "sha256": "85dc7a7f402a8b4881ab07646df6de6355246b39bf8f10e151c3c4366782afc7",
       "mode": "644"
     },
     "docs/operations/repo-standard.md": {
-      "sha256": "3242c4112139de1e1b259c014808c991b38ccf13bc43829c4c2895179e0d7639",
+      "sha256": "527a793300c40274fbc5a0a7c391647a3d48ecfe294c09a582786c874fe23af8",
       "mode": "644"
     },
     "docs/operations/local-verification.md": {
@@ -79,7 +79,7 @@
       "mode": "644"
     },
     ".github/PULL_REQUEST_TEMPLATE.md": {
-      "sha256": "e95b5c7a9869640ec7905862d21759e20e10f355d2ab3a2ef7ab014d70b82ce9",
+      "sha256": "d52702aa378112c93abbd20c4249a41ef5a2b1a499e4e028887a079d6bd620ab",
       "mode": "644"
     },
     ".github/PULL_REQUEST_TEMPLATE/product-discovery.md": {
