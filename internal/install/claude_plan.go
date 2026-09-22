@@ -46,6 +46,9 @@ func claudePlanKey(p ClaudePlan) string {
 // apply. The selected runtime must later prove this same embedded package.
 func PrepareClaude(o ClaudeOptions) (ClaudePlan, error) {
 	var p ClaudePlan
+	if o.SessionTransportVersion != 0 && o.SessionTransportVersion != 1 || o.ReadOnly && o.SessionTransportVersion != 0 {
+		return p, errors.New("session transport requires an explicitly enabled writable connection")
+	}
 	var err error
 	for _, path := range []*string{&o.StateDir, &o.NativeHome, &o.NativeBinary, &o.Binary, &o.Binding} {
 		*path, err = canonical(*path)
@@ -132,7 +135,7 @@ func PrepareClaude(o ClaudeOptions) (ClaudePlan, error) {
 			}
 		}
 		// A repair cannot implicitly select a new bank/writer or weaken read-only.
-		if o.RecoverFrom != "" && (receipt.Plan.BindingSHA256 != p.BindingSHA256 || receipt.Plan.SignetID != p.SignetID || receipt.Plan.ReadOnly != p.ReadOnly) {
+		if o.RecoverFrom != "" && (receipt.Plan.BindingSHA256 != p.BindingSHA256 || receipt.Plan.SignetID != p.SignetID || receipt.Plan.ReadOnly != p.ReadOnly || receipt.Plan.SessionTransportVersion != p.SessionTransportVersion) {
 			return ClaudePlan{}, errors.New("repair must preserve the selected binding and read-only mode")
 		}
 		data, e := readRegular(filepath.Join(previous, "receipt.json"), 65536)

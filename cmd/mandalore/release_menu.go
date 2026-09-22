@@ -265,7 +265,11 @@ func (m *menu) offerReleaseConnection(p distribution.InstallPlan, r distribution
 	if prepare == nil {
 		prepare = install.PrepareViaRuntime
 	}
-	c, err := prepare(m.ctx, install.Options{StateDir: m.profile.StateDir, NativeHome: m.profile.NativeHome, NativeBinary: m.profile.NativeBinary, Binary: r.Runtime, Binding: m.binding})
+	transport, err := m.selectSessionTransport("codex", m.profile)
+	if err != nil {
+		return err
+	}
+	c, err := prepare(m.ctx, install.Options{SessionTransportVersion: transport, StateDir: m.profile.StateDir, NativeHome: m.profile.NativeHome, NativeBinary: m.profile.NativeBinary, Binary: r.Runtime, Binding: m.binding})
 	if err != nil {
 		return fmt.Errorf("CLI installation remains complete; connection preview failed: %w", err)
 	}

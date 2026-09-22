@@ -19,7 +19,8 @@ export class TransportError extends Error {
 function decodeEnvelope(buffer, exitCode) {
   const value = JSON.parse(new TextDecoder('utf-8', {fatal: true}).decode(buffer));
   if (!value || typeof value !== 'object' || Array.isArray(value) || value.protocol_version !== 1 || typeof value.ok !== 'boolean') throw new Error('Invalid envelope');
-  if (Object.keys(value).some(key => !['protocol_version', 'ok', 'result', 'error'].includes(key))) throw new Error('Invalid envelope fields');
+  if (Object.keys(value).some(key => !['protocol_version', 'ok', 'result', 'error', 'session_sync'].includes(key))) throw new Error('Invalid envelope fields');
+  if (Object.hasOwn(value,'session_sync') && (!value.session_sync || typeof value.session_sync !== 'object' || Array.isArray(value.session_sync))) throw new Error('Invalid session receipt');
   if (value.ok) {
     if (exitCode !== 0 || !Object.hasOwn(value, 'result') || Object.hasOwn(value, 'error')) throw new Error('Contradictory success');
   } else if (!Number.isInteger(exitCode) || exitCode === 0 || !value.error || typeof value.error !== 'object' || typeof value.error.code !== 'string' || typeof value.error.message !== 'string' || Object.hasOwn(value, 'result')) {

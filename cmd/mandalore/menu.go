@@ -513,7 +513,11 @@ func (m *menu) connect() error {
 	if err != nil {
 		return err
 	}
-	v := m.call("connection_plan", install.Options{StateDir: m.profile.StateDir, NativeHome: m.profile.NativeHome, NativeBinary: m.profile.NativeBinary, Binary: binary, Binding: m.binding}, false)
+	transport, err := m.selectSessionTransport("codex", m.profile)
+	if err != nil {
+		return err
+	}
+	v := m.call("connection_plan", install.Options{SessionTransportVersion: transport, StateDir: m.profile.StateDir, NativeHome: m.profile.NativeHome, NativeBinary: m.profile.NativeBinary, Binary: binary, Binding: m.binding}, false)
 	if !v.OK {
 		return m.outcome("Connection preview", v)
 	}
@@ -557,7 +561,7 @@ func (m *menu) confirmStoppedSessions() error {
 
 func (m *menu) connectionPreview(p install.Plan) {
 	m.block(console.Block{Title: "Review Codex connection", Body: "Apply executes the selected trusted binaries and manages this native plugin registration. A hash identifies bytes; it does not prove publisher trust. Retain old source/runtime copies; native cache may be replaced. No signet edits or authentication setup. Review hooks and start a fresh native session afterward.", Fields: []console.Field{
-		{Label: "Signet ID", Value: p.SignetID}, {Label: "Binding", Value: p.Binding}, {Label: "Selected runtime", Value: p.Binary}, {Label: "Runtime SHA256", Value: p.BinarySHA256}, {Label: "Pinned runtime", Value: p.Runtime}, {Label: "Native binary", Value: p.NativeBinary}, {Label: "Native SHA256", Value: p.NativeSHA256}, {Label: "Native profile", Value: p.NativeHome}, {Label: "Installation state", Value: p.StateDir}, {Label: "Managed package", Value: p.Root}, {Label: "Package version", Value: p.Version}, {Label: "Embedded package SHA256", Value: p.PackageSHA256},
+		{Label: "Session transport", Value: sessionTransportLabel(p.SessionTransportVersion)}, {Label: "Signet ID", Value: p.SignetID}, {Label: "Binding", Value: p.Binding}, {Label: "Selected runtime", Value: p.Binary}, {Label: "Runtime SHA256", Value: p.BinarySHA256}, {Label: "Pinned runtime", Value: p.Runtime}, {Label: "Native binary", Value: p.NativeBinary}, {Label: "Native SHA256", Value: p.NativeSHA256}, {Label: "Native profile", Value: p.NativeHome}, {Label: "Installation state", Value: p.StateDir}, {Label: "Managed package", Value: p.Root}, {Label: "Package version", Value: p.Version}, {Label: "Embedded package SHA256", Value: p.PackageSHA256},
 	}})
 }
 
@@ -617,4 +621,33 @@ func (m *menu) repair() error {
 		return m.outcome("Repair preview", v)
 	}
 	return m.applyPlan(v.Result.(install.Plan))
+}
+
+func sessionTransportLabel(version int) string {
+	if version == 1 {
+		return "Enabled session · Automatic refresh before turns and delivery after saves"
+	}
+	return "Legacy connection · Model-directed delivery"
+}
+
+func (m *menu) selectSessionTransport(harness string, p install.Profile) (int, error) {
+	mode, _, exists, err := install.ExistingSessionMode(harness, p)
+	if err != nil {
+		return 0, err
+	}
+	if !exists {
+		return 1, nil
+	}
+	def := 0
+	if mode == 0 {
+		def = 1
+	}
+	n, err := m.selectItem("Session transport", []string{"Enabled session · Automatic refresh and delivery", "Preserve legacy · Model-directed delivery"}, def)
+	if err != nil {
+		return 0, err
+	}
+	if n == 0 {
+		return 1, nil
+	}
+	return 0, nil
 }

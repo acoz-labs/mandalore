@@ -65,7 +65,17 @@ func (m *menu) preparePi(binary string) (install.PiPlan, error) {
 	if err := m.piInputs(true); err != nil {
 		return install.PiPlan{}, err
 	}
-	n, err := m.selectItem("Pi memory access", []string{"Learning enabled · Allow authorized memory changes", "Read-only · Enforce no memory writes or synchronization"}, 0)
+	mode, readOnly, exists, err := install.ExistingSessionMode("pi", m.piProfile)
+	if err != nil {
+		return install.PiPlan{}, err
+	}
+	def := 0
+	if exists && readOnly {
+		def = 1
+	} else if exists && mode == 0 {
+		def = 2
+	}
+	n, err := m.selectItem("Pi memory access", []string{"Enabled session · Automatic refresh and delivery", "Read-only · Enforce no memory writes or synchronization", "Legacy writable · Model-directed delivery"}, def)
 	if err != nil {
 		return install.PiPlan{}, err
 	}
@@ -77,7 +87,11 @@ func (m *menu) preparePi(binary string) (install.PiPlan, error) {
 	if prepare == nil {
 		prepare = install.PreparePiViaRuntime
 	}
-	return prepare(m.ctx, install.PiOptions{Options: install.Options{Binary: binary, Binding: m.binding, StateDir: m.piProfile.StateDir, NativeHome: m.piProfile.NativeHome, NativeBinary: m.piProfile.NativeBinary}, ReadOnly: n == 1})
+	transport := 0
+	if n == 0 {
+		transport = 1
+	}
+	return prepare(m.ctx, install.PiOptions{Options: install.Options{SessionTransportVersion: transport, Binary: binary, Binding: m.binding, StateDir: m.piProfile.StateDir, NativeHome: m.piProfile.NativeHome, NativeBinary: m.piProfile.NativeBinary}, ReadOnly: n == 1})
 }
 
 func (m *menu) connectPi() error {
@@ -114,7 +128,10 @@ func (m *menu) applyPiPlan(p install.PiPlan) error {
 }
 
 func (m *menu) piPreview(p install.PiPlan) {
-	mode := "Learning enabled"
+	mode := "Legacy learning enabled · Model-directed delivery"
+	if p.SessionTransportVersion == 1 {
+		mode = "Enabled session · Automatic refresh before turns and delivery after saves"
+	}
 	previous := p.PreviousRoot
 	if previous == "" {
 		previous = "None"

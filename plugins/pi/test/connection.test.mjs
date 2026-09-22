@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { appendFileSync, chmodSync, copyFileSync, cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, chmodSync, copyFileSync, cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -17,8 +17,8 @@ const digest = data => createHash('sha256').update(data).digest('hex');
 before(() => execFileSync('go', ['build', '-o', compiled, './cmd/mandalore'], {cwd: sourceRoot, timeout: 120000, maxBuffer: 1048576}));
 after(() => rmSync(buildRoot, {recursive: true, force: true}));
 
-function fixture(t, readOnly = false) {
-  const root = mkdtempSync(join(tmpdir(), 'mandalore-pi-connection-'));
+function fixture(t, readOnly = false, sessionEnabled = false) {
+  const root = realpathSync(mkdtempSync(join(tmpdir(), 'mandalore-pi-connection-')));
   t.after(() => rmSync(root, {recursive: true, force: true}));
   const runtime = join(root, 'runtime');
   copyFileSync(compiled, runtime);
@@ -41,6 +41,13 @@ function fixture(t, readOnly = false) {
     native_home: join(root, 'native'), native_binary: join(root, 'pi'),
     state_dir: join(root, 'state'), connection_root: connectionRoot,
   };
+  if (sessionEnabled) {
+    mkdirSync(config.state_dir);
+    const policy = Buffer.from(JSON.stringify({schema_version:1,mode:'enabled-session',binding,binding_sha256:config.binding_sha256,signet_id:config.signet_id,runtime,runtime_sha256:config.runtime_sha256,state_dir:config.state_dir}));
+    config.session_policy = join(pkg,'session-policy.json');
+    config.session_policy_sha256 = digest(policy);
+    writeFileSync(config.session_policy,policy);
+  }
   writeFileSync(join(pkg, 'connection.json'), JSON.stringify(config));
   return {root, pkg, bank, binding, bound, config, invoke};
 }
@@ -205,4 +212,24 @@ test('real save-and-sync cancellation retains the saved receipt and reaps its Gi
     if (previousPath === undefined) delete process.env.PATH;
     else process.env.PATH = previousPath;
   }
+});
+
+
+test('enabled session catalog and ordinary save use software-controlled delivery', async t => {
+  const f=fixture(t,false,true);
+  const connection=await openConnection(f.pkg);
+  t.after(()=>connection.close());
+  assert.equal(connection.sessionEnabled,true);
+  assert.equal(connection.operations.find(op=>op.name==='memory_remember').network,true);
+  const startup=await connection.start({kind:'startup',session_id:'synthetic-session',event_key:''});
+  assert.ok(startup.synchronization);
+  const saved=await connection.call('memory_remember',{kind:'fact',summary:'Session transport convention',body:'Use the violet route.',basis:'user-direction',reason:'Synthetic session test'});
+  assert.equal(saved.ok,true,JSON.stringify(saved));
+  assert.ok(saved.session_sync,JSON.stringify(saved));
+  const packet=await connection.context('violet route',undefined,{kind:'turn',session_id:'synthetic-session',event_key:'turn-1'});
+  assert.match(packet.context,/violet route/);
+  assert.ok(packet.synchronization);
+  writeFileSync(f.config.session_policy, '{}');
+  const denied=await connection.call('memory_remember',{kind:'fact',summary:'Must not save',body:'Tampered policy',basis:'user-direction',reason:'Synthetic'});
+  assert.equal(denied.ok,false);
 });

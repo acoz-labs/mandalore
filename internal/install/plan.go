@@ -22,12 +22,13 @@ const maxBinary = 128 << 20
 const maxNativeBinary = 512 << 20 // The inspected native Codex executable exceeds 128 MiB.
 
 type Options struct {
-	StateDir     string `json:"state_dir"`
-	NativeHome   string `json:"native_home"`
-	NativeBinary string `json:"native_binary"`
-	Binary       string `json:"source_binary"`
-	Binding      string `json:"binding"`
-	Generation   string `json:"generation,omitempty"`
+	SessionTransportVersion int    `json:"session_transport_version,omitempty"`
+	StateDir                string `json:"state_dir"`
+	NativeHome              string `json:"native_home"`
+	NativeBinary            string `json:"native_binary"`
+	Binary                  string `json:"source_binary"`
+	Binding                 string `json:"binding"`
+	Generation              string `json:"generation,omitempty"`
 }
 
 type Plan struct {
@@ -133,6 +134,9 @@ func packageFiles() (map[string][]byte, error) {
 // belong to explicit apply, never preview. A digest is not publisher trust.
 func Prepare(o Options) (Plan, error) {
 	var p Plan
+	if o.SessionTransportVersion != 0 && o.SessionTransportVersion != 1 {
+		return p, errors.New("unsupported session transport policy")
+	}
 	var err error
 	for _, path := range []*string{&o.StateDir, &o.NativeHome, &o.NativeBinary, &o.Binary, &o.Binding} {
 		*path, err = canonical(*path)

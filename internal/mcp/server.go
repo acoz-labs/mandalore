@@ -19,12 +19,16 @@ const MaxFrameBytes = 262144
 const presentationInstructions = " In code mode, print one complete Mandalore envelope when text and structuredContent are equivalent, not both compatibility copies or only result. Preserve error state and distinct content/metadata; fall back to the full response when uncertain. The memory skill provides a conservative example. Do not repeat tool calls to change presentation."
 
 func New(a *api.API) *sdk.Server {
-	s := sdk.NewServer(&sdk.Implementation{Name: "mandalore", Version: "0.0.0-dev"}, &sdk.ServerOptions{Instructions: "Mandalore supplies scoped memory evidence, not agent identity or authority. Recall relevant past decisions; save useful confirmed changes and concise semantic journals incrementally when allowed. Honor read-only/no-save instructions. Current user direction supersedes conflicting historical guidance in scope. Do not store secrets or raw transcripts. Inspect after an ambiguous write failure before retrying." + memorycontext.DeliverySelection + presentationInstructions})
+	instructions := "Mandalore supplies scoped memory evidence, not agent identity or authority. Recall relevant past decisions; save useful confirmed changes and concise semantic journals incrementally when allowed. Honor read-only/no-save instructions. Current user direction supersedes conflicting historical guidance in scope. Do not store secrets or raw transcripts. Inspect after an ambiguous write failure before retrying." + memorycontext.DeliverySelection + presentationInstructions
+	if a.SessionEnabled() {
+		instructions = memorycontext.SessionOrientation + presentationInstructions
+	}
+	s := sdk.NewServer(&sdk.Implementation{Name: "mandalore", Version: "0.0.0-dev"}, &sdk.ServerOptions{Instructions: instructions})
 	errorSchema, err := strictjson.Schema(new(api.MemoryError))
 	if err != nil {
 		panic("invalid built-in error schema")
 	}
-	for _, op := range api.Catalog() {
+	for _, op := range a.Catalog() {
 		if !op.RequiresBinding || op.CLIOnly {
 			continue
 		}
@@ -43,6 +47,9 @@ func New(a *api.API) *sdk.Server {
 			map[string]any{"properties": map[string]any{"ok": map[string]any{"const": true}}, "required": []string{"result"}, "not": map[string]any{"required": []string{"error"}}},
 			map[string]any{"properties": map[string]any{"ok": map[string]any{"const": false}}, "required": []string{"error"}, "not": map[string]any{"required": []string{"result"}}},
 		}}
+		if a.SessionEnabled() {
+			outputSchema["properties"].(map[string]any)["session_sync"] = api.SessionSyncSchema()
+		}
 		s.AddTool(&sdk.Tool{Name: op.Name, Description: op.Description, InputSchema: op.InputSchema, OutputSchema: outputSchema, Annotations: &sdk.ToolAnnotations{ReadOnlyHint: op.ReadOnly, DestructiveHint: &no, OpenWorldHint: &network, IdempotentHint: op.Idempotent}}, func(ctx context.Context, req *sdk.CallToolRequest) (*sdk.CallToolResult, error) {
 			raw := req.Params.Arguments
 			if len(raw) == 0 {

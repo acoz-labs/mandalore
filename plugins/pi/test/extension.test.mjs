@@ -135,3 +135,38 @@ test('shutdown cancels in-flight startup and a late connection cannot register t
   await starting;
   assert.equal(closed, true);
 });
+
+test('enabled session awaits startup and refreshes each distinct top-level turn', async () => {
+  const f = fixture();
+  const boundaries = [];
+  f.ctx.sessionManager = {getSessionId: () => 'native-session'};
+  let release;
+  const gate = new Promise(resolve => { release = resolve; });
+  f.connection.start = async boundary => { boundaries.push(boundary); await gate; return {}; };
+  f.connection.context = async (_prompt, _signal, boundary) => { boundaries.push(boundary); return {context: 'refreshed'}; };
+  let ready = false;
+  const starting = f.handlers.get('session_start')({}, f.ctx).then(() => {ready = true;});
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(ready, false);
+  release(); await starting;
+  for (let i=0;i<2;i++) await f.handlers.get('before_agent_start')({prompt:'identical text',systemPrompt:'native'},f.ctx);
+  assert.deepEqual(boundaries[0],{kind:'startup',session_id:'native-session',event_key:''});
+  assert.equal(boundaries[1].session_id,'native-session');
+  assert.equal(boundaries[2].session_id,'native-session');
+  assert.match(boundaries[1].event_key,/:1$/);
+  assert.match(boundaries[2].event_key,/:2$/);
+  assert.notEqual(boundaries[1].event_key,boundaries[2].event_key);
+});
+
+
+test('two resumed Pi instances never reuse the same turn key', async () => {
+  const keys=[];
+  for (let i=0;i<2;i++) {
+    const f=fixture();
+    f.ctx.sessionManager={getSessionId:()=> 'same-persisted-session'};
+    f.connection.context=async (_p,_s,boundary)=>{ keys.push(boundary.event_key);return {context:'fresh'}; };
+    await f.handlers.get('session_start')({},f.ctx);
+    await f.handlers.get('before_agent_start')({prompt:'identical',systemPrompt:'native'},f.ctx);
+  }
+  assert.notEqual(keys[0],keys[1]);
+});

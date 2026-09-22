@@ -45,6 +45,9 @@ func claudeBundle(p ClaudePlan) (map[string][]byte, ClaudeReceipt, error) {
 		files["package/"+name] = raw
 	}
 	files["package/connection.json"], err = claudeConnection(p)
+	if err == nil && p.SessionTransportVersion == 1 {
+		files["package/session-policy.json"], err = sessionPolicy(p.Options, p.Runtime, p.BinarySHA256, p.BindingSHA256, p.SignetID)
+	}
 	if err == nil {
 		files["package/scripts/connection.sh"] = claudeBridge(p)
 		files[".claude-plugin/marketplace.json"], err = claudeMarketplace(p)
@@ -108,6 +111,13 @@ func decodeClaudeReceipt(root string, raw []byte) (ClaudeReceipt, error) {
 	if err != nil || hash(expected) != r.Files["package/connection.json"] {
 		return ClaudeReceipt{}, errors.New("Claude administrative context differs from receipt")
 	}
+	if err := validateSessionReceipt(p.Options, p.Runtime, p.BinarySHA256, p.BindingSHA256, p.SignetID, r.Files, "package/session-policy.json"); err != nil {
+		return ClaudeReceipt{}, err
+	}
+	if p.ReadOnly && p.SessionTransportVersion != 0 {
+		return ClaudeReceipt{}, errors.New("read-only receipt cannot authorize synchronization")
+	}
+
 	return r, nil
 }
 
@@ -155,7 +165,7 @@ func verifyClaudeTree(r ClaudeReceipt, allowMissing bool) error {
 			return errors.New("Claude package exceeds byte limit")
 		}
 		seen[name] = true
-		if name != "package/connection.json" && name != "package/scripts/connection.sh" && name != ".claude-plugin/marketplace.json" {
+		if name != "package/session-policy.json" && name != "package/connection.json" && name != "package/scripts/connection.sh" && name != ".claude-plugin/marketplace.json" {
 			if name == "package/.claude-plugin/plugin.json" {
 				var manifest map[string]any
 				if json.Unmarshal(raw, &manifest) != nil || manifest["version"] != r.Plan.nativeVersion() {
@@ -249,6 +259,8 @@ func (p ClaudePlan) nativeVersion() string {
 }
 func claudeBridge(p ClaudePlan) []byte {
 	args := " --binding " + quote(p.Binding) + " --binding-sha256 " + quote(p.BindingSHA256) + " --signet-id " + quote(p.SignetID)
+	transport, _ := sessionArgs(p.Options, filepath.Join(p.Root, "package"), p.Runtime, p.BinarySHA256, p.BindingSHA256, p.SignetID)
+	args += transport
 	readOnly := ""
 	if p.ReadOnly {
 		readOnly = " --read-only"
@@ -256,7 +268,11 @@ func claudeBridge(p ClaudePlan) []byte {
 	guard := "#!/bin/sh\nmandalore_runtime=" + quote(p.Runtime) + "\n" +
 		"if [ -x /usr/bin/sha256sum ]; then mandalore_digest=$(/usr/bin/sha256sum \"$mandalore_runtime\" 2>/dev/null); elif [ -x /usr/bin/shasum ]; then mandalore_digest=$(/usr/bin/shasum -a 256 \"$mandalore_runtime\" 2>/dev/null); else mandalore_digest=unavailable; fi\n" +
 		"mandalore_digest=${mandalore_digest%% *}\nif [ \"$mandalore_digest\" != " + quote(p.BinarySHA256) + " ]; then\n if [ \"${1:-}\" = hook ]; then printf '%s\\n' '{\"systemMessage\":\"Mandalore retained runtime integrity check failed; no memory was changed.\"}'; exit 0; fi\n printf '%s\\n' 'Mandalore retained runtime integrity check failed.' >&2; exit 1\nfi\n"
-	return []byte(guard + "case ${1:-} in\nhook)\n if value=$(" + quote(p.Runtime) + " claude-code-memory-hook" + args + " 2>/dev/null); then printf '%s\\n' \"$value\"; else printf '%s\\n' '{\"systemMessage\":\"Mandalore hook unavailable; no memory was changed.\"}'; fi\n ;;\nmcp) exec " + quote(p.Runtime) + " mcp --harness claude-code" + args + readOnly + " ;;\n*) exit 1 ;;\nesac\n")
+	fallback := "Mandalore hook unavailable; no memory was changed."
+	if p.SessionTransportVersion == 1 {
+		fallback = "Mandalore hook unavailable after a possible refresh attempt; freshness is unconfirmed."
+	}
+	return []byte(guard + "case ${1:-} in\nhook)\n if value=$(" + quote(p.Runtime) + " claude-code-memory-hook" + args + " 2>/dev/null); then printf '%s\\n' \"$value\"; else printf '%s\\n' '{\"systemMessage\":\"" + fallback + "\"}'; fi\n ;;\nmcp) exec " + quote(p.Runtime) + " mcp --harness claude-code" + args + readOnly + " ;;\n*) exit 1 ;;\nesac\n")
 }
 
 func (p ClaudePlan) cacheVersion() string { return strings.ReplaceAll(p.nativeVersion(), "+", "-") }

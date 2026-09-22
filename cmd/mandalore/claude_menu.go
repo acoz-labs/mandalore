@@ -45,7 +45,17 @@ func (m *menu) prepareClaude(binary string) (install.ClaudePlan, error) {
 	if err := m.claudeInputs(true); err != nil {
 		return install.ClaudePlan{}, err
 	}
-	n, err := m.selectItem("Claude Code memory access", []string{"Learning enabled · Allow authorized memory changes", "Read-only · Enforce no memory writes or synchronization"}, 0)
+	mode, readOnly, exists, err := install.ExistingSessionMode("claude-code", m.claudeProfile)
+	if err != nil {
+		return install.ClaudePlan{}, err
+	}
+	def := 0
+	if exists && readOnly {
+		def = 1
+	} else if exists && mode == 0 {
+		def = 2
+	}
+	n, err := m.selectItem("Claude Code memory access", []string{"Enabled session · Automatic refresh and delivery", "Read-only · Enforce no memory writes or synchronization", "Legacy writable · Model-directed delivery"}, def)
 	if err != nil {
 		return install.ClaudePlan{}, err
 	}
@@ -57,7 +67,11 @@ func (m *menu) prepareClaude(binary string) (install.ClaudePlan, error) {
 	if prepare == nil {
 		prepare = install.PrepareClaudeViaRuntime
 	}
-	return prepare(m.ctx, install.ClaudeOptions{Options: install.Options{Binary: binary, Binding: m.binding, StateDir: m.claudeProfile.StateDir, NativeHome: m.claudeProfile.NativeHome, NativeBinary: m.claudeProfile.NativeBinary}, ReadOnly: n == 1})
+	transport := 0
+	if n == 0 {
+		transport = 1
+	}
+	return prepare(m.ctx, install.ClaudeOptions{Options: install.Options{SessionTransportVersion: transport, Binary: binary, Binding: m.binding, StateDir: m.claudeProfile.StateDir, NativeHome: m.claudeProfile.NativeHome, NativeBinary: m.claudeProfile.NativeBinary}, ReadOnly: n == 1})
 }
 
 func (m *menu) connectClaude() error {
@@ -105,7 +119,10 @@ func (m *menu) applyClaudePlan(p install.ClaudePlan) error {
 }
 
 func (m *menu) claudePreview(p install.ClaudePlan) {
-	mode := "Learning enabled"
+	mode := "Legacy learning enabled · Model-directed delivery"
+	if p.SessionTransportVersion == 1 {
+		mode = "Enabled session · Automatic refresh before turns and delivery after saves"
+	}
 	previous := p.PreviousRoot
 	if previous == "" {
 		previous = "None"
