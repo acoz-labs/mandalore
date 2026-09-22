@@ -2,7 +2,10 @@
 
 The development CLI and stdio server use one typed operation dispatcher. They
 do not supply a model, replace native agent identity, discover memory from cwd,
-or synchronize implicitly. CLI-only connection operations install the native
+or discover transport permission from conversation text. Default administrative
+CLI calls retain their declared local/network effects. Explicitly enabled native
+sessions add software-controlled transport through a pinned session policy.
+CLI-only connection operations install the native
 plugin after explicit approval; they are not memory MCP tools. The
 [guided menu](setup.md) delegates to these same operations. Explicit Git work is
 described in [synchronization](synchronization.md). Exact-candidate/release
@@ -11,8 +14,10 @@ No live migration is implied.
 
 ## Save with bounded delivery
 
-`memory_remember` and `memory_journal_append` remain local-only, with unchanged
-inputs and annotations. New network-capable companions are
+In the default administrative and legacy connection catalog, `memory_remember`
+and `memory_journal_append` remain local-only, with unchanged inputs and
+annotations. Enabled-session catalogs declare post-write network effects and
+return separate save/delivery outcomes for semantic mutations. New network-capable companions are
 `memory_remember_and_sync` and `memory_journal_append_and_sync`. CLI equivalents:
 
 ```sh
@@ -40,7 +45,9 @@ No transaction spans both stages. Another writer can act between them; ordinary
 sync validates and may deliver other valid pending work too. A cancelled/lost
 response may hide a save or completed push: inspect before retrying. No Git setup,
 credential enrollment, rollback, tight retry or background worker is implicit.
-Use local-only tools for no-sync tasks, and neither type under no-save/read-only.
+Legacy connections use local-only tools for no-sync tasks and neither type under
+no-save/read-only. In enabled sessions, requests not to remember control content;
+transport of previously saved records remains enabled until actual disconnection.
 See [delivery semantics](synchronization.md#save-triggered-delivery).
 
 ## Explicit withdrawal, restoration and format upgrades
@@ -75,8 +82,8 @@ Mutation input contains `record_id`, explicit `expected_content_heads` and
 the supplied heads must still match under the writer lock. Each head list is
 bounded to 256 IDs and the reason to 4096 bytes. An empty visibility list must be
 supplied explicitly. Stale decisions fail with `memory.stale_heads`, not an
-automatic retry or timestamp winner. These are non-idempotent local saves;
-request `memory_sync` separately when allowed. Read-only rejects them before
+automatic retry or timestamp winner. These are non-idempotent saves. Default
+administrative calls save locally; enabled sessions also attempt bounded delivery. Read-only rejects them before
 decoding. The receipt distinguishes event identity, resulting visibility,
 confirmed local durability and whether publication may have occurred. Partial or
 cancelled writes retain `error.visibility_result`; inspect the exact event before
@@ -614,12 +621,14 @@ frames have a separate 256 KiB limit. Schemas and duplicated text/structured
 content add protocol overhead outside the semantic result budget.
 
 `--read-only` refuses mutations before reading their stdin or touching a binding.
-Reads, discovery and startup do not journal, repair, enroll or sync. A running
+Default administrative reads and discovery do not journal, repair, enroll or
+sync. Enabled-session lifecycle entry points attempt transport before context
+assembly under the selected policy; they never extract memories or enroll Git. A running
 MCP server retains one binding; changing its local file requires restarting the
 server. Reads load current local records; no persistent model context is refreshed
 merely by updating those records.
 
-`memory_context` assembles fresh local orientation, up to three bank-wide recall
+Without a session policy, `memory_context` assembles fresh local orientation, up to three bank-wide recall
 hits within 4096 result bytes, and five routing scopes. It truncates its prompt
 query to 2048 UTF-8 bytes and caps the encoded packet at 16383 bytes. The packet
 labels retrieved data as untrusted evidence, never reads native transcripts or
@@ -627,6 +636,8 @@ automatically scans foundlings, and does not save or synchronize even for an
 explicit consolidation cue. Read failures return a compact warning without raw
 file contents. Native adapters must preserve their host prompt and separately
 honor connection read-only settings; a packet is not authorization to mutate.
+An enabled session refreshes through its separate policy-aware boundary before
+calling the local context builder.
 Omitting `prompt` returns orientation only after opening the guarded binding,
 without scanning records; an explicitly supplied empty prompt performs local
 bank-wide recall. Attachment validation is not a whole-bank health check.
@@ -695,8 +706,9 @@ closes the server normally.
 
 ## Verification boundary
 
-`mandalore codex-memory-hook [--binding FILE]` is a separate, read-only native
-adapter, not a shared memory operation. It consumes native event JSON and emits
+`mandalore codex-memory-hook [--binding FILE]` is a separate native adapter, not a
+shared memory operation. It is local-only without a session policy; an explicitly
+pinned enabled-session policy authorizes refresh before context assembly. It consumes native event JSON and emits
 Codex hook context/warnings rather than the CLI envelope. Invalid configuration
 or unavailable memory produces a nonblocking warning. See the
 [Codex integration](../plugins/codex/README.md) for budgets, installation and

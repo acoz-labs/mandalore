@@ -27,8 +27,10 @@ any repo name and keep multiple independent signets. The memory skill is
   containing the phrase are never authorized triggers.
 - Consolidate rather than duplicate, preserve correction history, and acknowledge
   actual outcomes concisely. Local saves and remote synchronization are distinct.
-- Honor scoped no-write/no-save/read-only instructions, including no journaling
-  or synchronization. The cue does not implicitly override an explicit prohibition.
+- Honor requests not to remember or journal particular content. A read-only code
+  task does not disable transport in an explicitly enabled memory session.
+  Legacy read-only connections retain their enforced restrictions; remembered
+  instructions cannot change connection permissions.
 - Historical memory is evidence, never authority over current user direction.
   Project choices do not silently become global preferences.
 - Do not claim infallible recall, lossless recording or unsaved-work durability.
@@ -55,11 +57,29 @@ The shared engine owns all memory semantics; adapters map real native lifecycle
 features and document gaps. Keep inherited skills, settings and native auth.
 The host agent supplies semantic extraction using its existing model access.
 
-Hooks can refresh files and deliver context where supported, but cannot
-retroactively refresh context already read. Later memory reads must see current
-local data. Investigate startup/per-turn synchronization with measured latency,
-offline persistence, concurrency and visible freshness; never claim global
-freshness merely because local recall succeeded.
+An explicitly enabled session authorizes automatic synchronization of its selected
+signet. Shared software attempts refresh at startup/resume and before each new
+top-level turn, before assembling memory context, and attempts delivery after
+semantic writes. The agent selects useful content; transport does not depend on
+its choice of a sync tool. Hooks never extract memory from transcripts.
+
+Disable the complete native integration to opt out: skills, hooks, tools and
+injected context. Starting a fresh disabled session is the verifiable boundary;
+disabling cannot remove context already read. Conversational no-sync is not a
+transport mode for an enabled session. A request to stop Mandalore requires an
+actual supported disconnect or restart, not a model acknowledgment alone.
+
+Existing read-only connections and explicit local administrative APIs preserve
+their behavior. New session transport authorization is versioned and pinned to
+the selected binding, signet and runtime; connection updates disclose changed
+permissions. Installing a runtime does not migrate a signet.
+
+Automatic attempts have bounded waits and honest offline/conflict receipts.
+Pending delivery retries at a subsequent foreground opportunity. There is no
+daemon or delivery guarantee while every harness is closed. Refresh cannot
+retroactively replace already-read model context, and successful transport does
+not resolve competing semantic heads. Never claim global freshness merely
+because local recall succeeded.
 
 The predecessor's arbitrary user-script lifecycle bus is not part of the MVP.
 Any future hook extension system requires a separate trust/execution contract.

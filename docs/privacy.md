@@ -49,16 +49,26 @@ for recall. Compact recall results do not include the sensitivity field. Journal
 have neither a sensitivity label nor an entity-scope field. Do not save a secret
 and rely on `restricted` to hide it from the model.
 
-No-save/read-only direction prohibits saves, journals, checkpoints, Git
-initialization and synchronization within the task's scope. Explicit no-sync can
-allow a local save without delivery. Neither direction means existing content is
-hidden from recall or from the native model receiving its result.
+In an explicitly enabled session, requests not to remember or journal particular
+material control content selection. Software still attempts synchronization of
+previously saved records. A read-only code task does not switch off memory
+transport. Conversational no-sync is not an enabled-session transport mode.
 
-An enforced read-only connection rejects mutating API operations before input
-decoding. A conversational instruction is interpreted by the agent; it is not a
-universal sandbox against independent filesystem tools or another writable
-connection. Existing startup hooks perform local reads; this does not make an
-otherwise writable session read-only. Normal authorized learning is unchanged.
+To stop Mandalore activity, disable the complete native integration and start a
+fresh session without its skills, hooks, tools or context. Disabling only skills
+is insufficient; already-injected context cannot be recalled from the model.
+Native agent memory, logs and caches remain independently controlled by that
+harness. See [synchronization](synchronization.md#session-authorized-transport).
+
+Existing enforced read-only connections are not silently upgraded. They reject
+mutating API operations before input decoding and do not authorize automatic
+transport. Legacy connections without a session policy retain their prior
+no-save/read-only/no-sync guidance until explicitly updated. Ordinary local-only
+administrative commands also retain their declared effects.
+
+A conversational instruction is interpreted by the agent; it is not a universal
+sandbox against independent filesystem tools or another writable connection.
+Session transport policy controls the Mandalore runtime, not all machine activity.
 
 ## Correction, disconnection and retention
 

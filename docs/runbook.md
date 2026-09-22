@@ -58,7 +58,9 @@ provide [the synchronization backend](synchronization.md). If sync is pending,
 inspect its phase/head and native origin/auth configuration. If conflicted,
 preserve both histories; do not force, reset, remove another writer's lock, or
 rewrite evidence to hide it. A malformed local status receipt is not repaired by
-inspection. No-save/read-only tasks must not trigger synchronization.
+inspection. Legacy no-save/read-only tasks must not trigger synchronization.
+Enabled-session transport follows its reviewed policy independently of content
+selection; disable the full integration to stop its activity.
 
 ### Format2 activation and visibility recovery
 
@@ -183,13 +185,12 @@ PATH; it pins the approved runtime for the native connection. The separate
 activation, then optionally hands one connection to the verified new runtime.
 Exact-candidate acceptance and public release remain separately required.
 
-The development Codex plugin has read-only local hooks and a shared MCP
-connection. Read-only describes the hooks themselves, not the whole session:
-ordinary confirmed learning remains enabled unless the current user task
-prohibits it. When diagnosing a refusal to save, distinguish an instruction
-interpretation from unavailable tools or a verified storage error. Do not fix a
-prompt ambiguity by bypassing a real user no-save instruction. Restart after
-correcting loaded instructions; old context is not evidence for the new wording.
+Enabled native sessions use a pinned policy for automatic refresh before context
+and delivery after semantic writes. Existing legacy hooks remain local-only;
+read-only connections keep their restrictions. Distinguish content-level requests
+not to remember from disabling the complete integration. A model acknowledgment
+of “no sync” does not disconnect an enabled runtime; use the native disable
+boundary and start a fresh session. Existing model context remains independent.
 
 Inspect and trust the exact new hooks through native review, preserving other
 hooks. Do not overwrite trust state or use a blanket bypass as installation.
@@ -289,7 +290,8 @@ effects and do not repeat the save to retry delivery. Explicit synchronization
 can deliver the existing record. A delivered semantic conflict remains unresolved
 knowledge, not permission to select the newest timestamp.
 
-Pi reads current local memory each turn without saving or synchronizing. An
-externally superseded fact can appear next turn without restarting; previously
-read reasoning is not changed mid-turn. Reload or restart is still needed for
+Pi assembles current memory context each turn. An enabled session first attempts
+refresh; legacy connections read local records without synchronization. An
+externally superseded fact can appear next turn after successful refresh;
+previously read reasoning is not changed mid-turn. Reload or restart is still needed for
 changed extension/skill/connection code. Hooks do not promise an exit checkpoint.
