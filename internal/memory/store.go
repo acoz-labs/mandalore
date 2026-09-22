@@ -252,7 +252,9 @@ func (s *Store) withExclusiveLock(allowPending bool, fn func() error) error {
 		return errors.New("invalid machine-local state directory")
 	}
 	path := filepath.Join(s.Root, ".mandalore", "write.lock")
-	fd, err := syscall.Open(path, syscall.O_CREAT|syscall.O_RDWR|syscall.O_NOFOLLOW, 0600)
+	// Git subprocesses must not inherit this lock if the runtime is killed.
+	// Set close-on-exec atomically, avoiding a concurrent process-start race.
+	fd, err := syscall.Open(path, syscall.O_CREAT|syscall.O_RDWR|syscall.O_NOFOLLOW|syscall.O_CLOEXEC, 0600)
 	if err != nil {
 		return err
 	}
