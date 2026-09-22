@@ -22,3 +22,12 @@ func TestEncodedBudgetIncludesEscapingAndDoesNotLeakOversizedContext(t *testing.
 		}
 	}
 }
+
+func TestOrdinaryFreshnessGuidanceDoesNotNeedRemoteCue(t *testing.T) {
+	packet := Build(nil, "", false, Orientation)
+	for _, required := range []string{"At the start of ordinary memory work", "current task and connection permit synchronization", "Do not wait for a cross-machine cue", "Do not repeat for every lookup", "synchronization is prohibited or unavailable"} {
+		if !strings.Contains(packet.Context, required) {
+			t.Fatalf("shared orientation omits %q", required)
+		}
+	}
+}

@@ -166,3 +166,18 @@ func TestBoundIdentityMismatchProducesWarningWithoutEvidence(t *testing.T) {
 		t.Fatal("warning changed files")
 	}
 }
+
+func TestCodexOrdinaryFreshnessGuidanceRemainsReadOnly(t *testing.T) {
+	root, path := fixture(t)
+	before := snapshot(t, filepath.Dir(root))
+	result := invoke(t, path, `{"hook_event_name":"UserPromptSubmit","prompt":"What project convention did we choose?"}`)
+	raw, _ := json.Marshal(result)
+	for _, required := range []string{"At the start of ordinary memory work", "current task and connection permit synchronization", "Do not wait for a cross-machine cue", "Do not repeat for every lookup"} {
+		if !bytes.Contains(raw, []byte(required)) {
+			t.Fatalf("Codex context omits %q", required)
+		}
+	}
+	if !reflect.DeepEqual(before, snapshot(t, filepath.Dir(root))) {
+		t.Fatal("freshness guidance caused hook writes")
+	}
+}

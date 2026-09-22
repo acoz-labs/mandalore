@@ -21,11 +21,15 @@ no extra wrapper. Never repeat a tool call just to change its presentation.
 
 ## Recall what matters
 
-Read relevant memory before relying on past decisions. When synchronization is
-allowed and cross-machine freshness matters, request `memory_sync` with
-`timeout_seconds: 3` before recall. Offline/pending delivery does not prevent
-local recall; state the limitation if material. Do not repeatedly retry a failed
-sync during the same task without a relevant change.
+Read relevant memory before relying on past decisions. At the start of ordinary
+memory work, when the current task and connection permit synchronization, call
+`memory_sync` once with `timeout_seconds: 3` before treating local evidence as
+current. Do not wait for a cross-machine cue: an unseen remote update cannot be
+inferred from the prompt. Do not repeat synchronization for every lookup in the
+same task; retry only after a relevant change. Read-only/no-save/no-sync tasks
+do not synchronize; continue only with permitted local operations. Offline/pending
+delivery does not prevent local recall; state
+the freshness limitation when synchronization is prohibited or unavailable.
 
 An unscoped `memory_recall` searches only signet-wide knowledge. For projects,
 accounts or tasks, pass an explicit `scope`. Reuse a stable stored ID already

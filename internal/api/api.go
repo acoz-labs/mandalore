@@ -14,6 +14,7 @@ import (
 	"github.com/acoz-labs/mandalore/internal/formatupgrade"
 	"github.com/acoz-labs/mandalore/internal/install"
 	"github.com/acoz-labs/mandalore/internal/memory"
+	"github.com/acoz-labs/mandalore/internal/memorycontext"
 	"github.com/acoz-labs/mandalore/internal/migration"
 	"github.com/acoz-labs/mandalore/internal/readiness"
 	"github.com/acoz-labs/mandalore/internal/retention"
@@ -159,7 +160,7 @@ func number(n *int, fallback int) int {
 }
 
 var operations = []Operation{
-	operation("memory_recall", "Recall local scoped current evidence. Before cross-machine recall, call memory_sync with timeout_seconds: 3 when synchronization is allowed; otherwise state the local freshness limitation. Conflicting heads are not guidance; empty/truncated results do not prove absence.", true, func(_ context.Context, s *memory.Service, in RecallInput) (memory.RecallPacket, error) {
+	operation("memory_recall", "Recall local scoped current evidence."+memorycontext.RecallFreshness+" Conflicting heads are not guidance; empty/truncated results do not prove absence.", true, func(_ context.Context, s *memory.Service, in RecallInput) (memory.RecallPacket, error) {
 		return s.Recall(in.Query, in.Scope, number(in.Limit, 5), number(in.BudgetBytes, 8192))
 	}),
 	operation("memory_scopes", "List stable routing scopes without promoting their content into guidance.", true, func(_ context.Context, s *memory.Service, in PageInput) (memory.Page[memory.ScopeInfo], error) {

@@ -40,7 +40,7 @@ func TestMCPUsesSharedContractAndRejectsDuplicates(t *testing.T) {
 	// These instructions are delivered by initialize without requiring the model
 	// to choose/load a skill first. They guide selection, never dispatch a sync.
 	instructions := client.InitializeResult().Instructions
-	for _, required := range []string{"memory_sync with timeout_seconds: 3", "prefer memory_remember_and_sync", "prefer memory_journal_append_and_sync", "synchronization is prohibited", "delivery was not attempted", "Read-only/no-save"} {
+	for _, required := range []string{"At the start of ordinary memory work", "current task and connection permit synchronization", "Do not wait for a cross-machine cue", "Do not repeat for every lookup", "memory_sync with timeout_seconds: 3", "prefer memory_remember_and_sync", "prefer memory_journal_append_and_sync", "synchronization is prohibited", "delivery was not attempted", "Read-only/no-save"} {
 		if !strings.Contains(instructions, required) {
 			t.Fatalf("missing always-visible delivery guidance: %s", required)
 		}

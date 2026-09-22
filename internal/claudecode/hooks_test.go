@@ -215,7 +215,7 @@ func TestLifecycleContextOffersDeliveryChoiceWithoutWriting(t *testing.T) {
 		if !ok {
 			t.Fatal(output)
 		}
-		for _, required := range []string{"memory_sync with timeout_seconds: 3", "prefer memory_remember_and_sync", "prefer memory_journal_append_and_sync", "synchronization is prohibited", "delivery was not attempted", "Read-only/no-save"} {
+		for _, required := range []string{"At the start of ordinary memory work", "current task and connection permit synchronization", "Do not wait for a cross-machine cue", "Do not repeat for every lookup", "memory_sync with timeout_seconds: 3", "prefer memory_remember_and_sync", "prefer memory_journal_append_and_sync", "synchronization is prohibited", "delivery was not attempted", "Read-only/no-save"} {
 			if !strings.Contains(context, required) {
 				t.Fatalf("native context omits %q", required)
 			}
