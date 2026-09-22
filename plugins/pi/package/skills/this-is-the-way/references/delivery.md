@@ -1,3 +1,17 @@
+# Save and delivery by installed mode
+
+For an enabled-session policy, ordinary semantic save tools persist once and
+software attempts bounded delivery automatically. Inspect the original result or
+partial error receipt plus top-level `session_sync`; memory_context also includes
+its synchronization attempt. Local durability is not proof of remote delivery or
+semantic agreement. Combined tools remain compatible and make no duplicate attempt.
+Do not resubmit a save to retry delivery; inspect after ambiguous responses.
+Do-not-remember/no-journal governs content selection, while already-saved content
+continues to synchronize until the actual native session disable boundary.
+
+The instructions below apply only to legacy connections without enabled-session
+policy; do not use them to reinterpret an active session's authorization.
+
 # Save and delivery are separate outcomes
 
 When both are allowed, `memory_remember_and_sync` accepts the normal knowledge

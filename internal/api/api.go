@@ -17,6 +17,7 @@ import (
 	"github.com/acoz-labs/mandalore/internal/migration"
 	"github.com/acoz-labs/mandalore/internal/readiness"
 	"github.com/acoz-labs/mandalore/internal/retention"
+	"github.com/acoz-labs/mandalore/internal/sessionsync"
 	"github.com/acoz-labs/mandalore/internal/strictjson"
 	signetsync "github.com/acoz-labs/mandalore/internal/sync"
 	"github.com/google/jsonschema-go/jsonschema"
@@ -53,10 +54,11 @@ type Error struct {
 	UpgradeResult          *formatupgrade.Receipt      `json:"upgrade_result,omitempty"`
 }
 type Envelope struct {
-	ProtocolVersion int    `json:"protocol_version"`
-	OK              bool   `json:"ok"`
-	Result          any    `json:"result,omitempty"`
-	Error           *Error `json:"error,omitempty"`
+	SessionSync     *sessionsync.Attempt `json:"session_sync,omitempty"`
+	ProtocolVersion int                  `json:"protocol_version"`
+	OK              bool                 `json:"ok"`
+	Result          any                  `json:"result,omitempty"`
+	Error           *Error               `json:"error,omitempty"`
 }
 
 func Failure(code, message string, mayWrite bool) Envelope {
@@ -180,7 +182,7 @@ var operations = []Operation{
 }
 
 func Catalog() []Operation {
-	var result []Operation
+	result := []Operation{sessionCatalog}
 	for _, group := range [][]Operation{operations, administration, synchronization, connections, migrations, foundlingOperations, releases, saveAndDelivery, nativeContext, piAdministration, claudeAdministration, readinessOperations, exports, visibilityOperations, upgradeOperations, retentionOperations} {
 		result = append(result, group...)
 	}
@@ -188,6 +190,7 @@ func Catalog() []Operation {
 }
 
 type API struct {
+	session  *sessionsync.Coordinator
 	service  *memory.Service
 	ReadOnly bool
 }
@@ -197,6 +200,9 @@ func New(service *memory.Service, readOnly bool) *API {
 }
 
 func (a *API) Call(ctx context.Context, name string, data []byte) Envelope {
+	if a.session != nil {
+		return a.callSession(ctx, name, data)
+	}
 	if err := ctx.Err(); err != nil {
 		return Failure("operation.cancelled", "Operation cancelled before execution.", false)
 	}

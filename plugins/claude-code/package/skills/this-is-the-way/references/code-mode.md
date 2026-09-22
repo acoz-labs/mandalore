@@ -21,7 +21,7 @@ function mandaloreOutput(r) {
   const own = (x, k) => Object.prototype.hasOwnProperty.call(x, k);
   const s = r?.structuredContent;
   if (!only(r, ["content", "structuredContent", "isError"]) ||
-      !only(s, ["protocol_version", "ok", "result", "error"]) ||
+      !only(s, ["protocol_version", "ok", "result", "error", "session_sync"]) ||
       s.protocol_version !== 1 || typeof s.ok !== "boolean" ||
       (s.ok ? (!own(s, "result") || own(s, "error")) :
               (!object(s.error) || own(s, "result"))) ||

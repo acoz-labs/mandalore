@@ -5,10 +5,12 @@ import (
 
 	"github.com/acoz-labs/mandalore/internal/memory"
 	"github.com/acoz-labs/mandalore/internal/memorycontext"
+	"github.com/acoz-labs/mandalore/internal/sessionsync"
 )
 
 type NativeContextInput struct {
-	Prompt *string `json:"prompt,omitempty" jsonschema:"Omit for orientation only; supply a prompt (including empty) for local recall truncated to 2048 UTF-8 bytes. No transcript, writes or synchronization."`
+	Boundary *sessionsync.Boundary `json:"boundary,omitempty" jsonschema:"Native lifecycle identity for enabled session synchronization; ignored by legacy local-only context."`
+	Prompt   *string               `json:"prompt,omitempty" jsonschema:"Omit for orientation only; supply a prompt (including empty) for local recall truncated to 2048 UTF-8 bytes. No transcript, writes or synchronization."`
 }
 
 var nativeContext = []Operation{
