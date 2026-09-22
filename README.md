@@ -15,13 +15,14 @@ hooks and memory/administration skills, guided setup/local-artifact update/inspe
 memory-only migration, foundling consultation/selective promotion, retrieval
 evaluation and synthetic regression tests. Versioned candidate builds, guided
 CLI installation/update and guarded same-byte release tooling are implemented.
-[Mandalore v1.1.0](https://github.com/acoz-labs/mandalore/releases/tag/v1.1.0)
-is published from the exact owner-accepted retained candidate. See the
-[release record](docs/releases/1.1.0.md) for provenance, verification and limits.
+[Mandalore v1.2.0](https://github.com/acoz-labs/mandalore/releases/tag/v1.2.0)
+is published from the independently accepted retained candidate. See the
+[release record](docs/releases/1.2.0.md) for provenance, verification and limits.
 
-Codex and Pi integrations are available. Claude Code remains tracked follow-up
-work. Prior prototype evidence informs the port; it does not certify
-newly extracted code or renamed artifacts.
+Codex and Pi integrations are released. The development
+[Claude Code integration](plugins/claude-code/README.md) adds native setup,
+memory skills and guarded access to the same signet for the next release.
+Development and prototype evidence do not certify a published artifact.
 
 ## A small vocabulary
 
