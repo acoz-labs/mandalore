@@ -193,8 +193,8 @@ func claudeSettingsPreserved(before, after claudeSettings, _, _ string) bool {
 }
 
 func verifyClaudeCache(s claudeSettings, p ClaudePlan, allowMissing bool) error {
-	if s.Root != p.Root || !s.Enabled || s.Version != p.nativeVersion() || s.Cache != filepath.Join(p.NativeHome, "plugins", "cache", "mandalore", "mandalore", p.cacheVersion()) {
-		return errors.New("Claude cache or enabled registration differs from owned connection")
+	if s.Root != p.Root || s.Version != p.nativeVersion() || s.Cache != filepath.Join(p.NativeHome, "plugins", "cache", "mandalore", "mandalore", p.cacheVersion()) {
+		return errors.New("Claude cache registration differs from owned connection")
 	}
 	r, err := loadClaudeReceipt(p.Root)
 	if err != nil {

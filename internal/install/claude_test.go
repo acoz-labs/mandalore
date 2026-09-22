@@ -295,3 +295,35 @@ func TestClaudeBridgeFailsClosedAfterRuntimeEdit(t *testing.T) {
 		t.Fatal("MCP executed edited runtime", string(out), err)
 	}
 }
+
+func TestClaudeDisabledConnectionRequiresExplicitReenable(t *testing.T) {
+	o := ClaudeOptions{Options: fixture(t)}
+	p, err := PrepareClaude(o)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := &fakeClaude{}
+	if _, err := applyClaude(context.Background(), ClaudeApplyInput{Plan: p}, f.run, noClaudeProbe); err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(o.NativeHome, "settings.json")
+	raw, _ := os.ReadFile(path)
+	var settings map[string]any
+	_ = json.Unmarshal(raw, &settings)
+	settings["enabledPlugins"].(map[string]any)["mandalore@mandalore"] = false
+	raw, _ = json.Marshal(settings)
+	if err := os.WriteFile(path, raw, 0600); err != nil {
+		t.Fatal(err)
+	}
+	f.calls = nil
+	if _, err := applyClaude(context.Background(), ClaudeApplyInput{Plan: p}, f.run, noClaudeProbe); err == nil || len(f.calls) != 0 {
+		t.Fatal("disabled plugin implicitly enabled", err, f.calls)
+	}
+	repair, err := PrepareClaudeRepair(RepairInput{Root: p.Root})
+	if err != nil {
+		t.Fatal("explicit repair refused disabled cache", err)
+	}
+	if r, err := applyClaude(context.Background(), ClaudeApplyInput{Plan: repair, SessionsStopped: true}, f.run, noClaudeProbe); err != nil || !r.Installed {
+		t.Fatal("explicit re-enable failed", r, err)
+	}
+}

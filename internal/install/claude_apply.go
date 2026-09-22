@@ -182,6 +182,9 @@ func applyClaude(ctx context.Context, in ClaudeApplyInput, run runner, probe cla
 		return result, err
 	}
 	if selected == p.Root {
+		if !current.Enabled {
+			return result, errors.New("Claude memory plugin is disabled; explicitly preview reconnect or repair to re-enable it")
+		}
 		r, err := ownedClaude(p.Root, p.StateDir, p.NativeHome, false)
 		if err != nil || r.Plan != p {
 			return result, errors.New("installed Claude generation differs from this plan")

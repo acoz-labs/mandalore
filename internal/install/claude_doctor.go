@@ -88,6 +88,9 @@ func doctorClaude(ctx context.Context, profile Profile, run runner) (r ClaudeRep
 	_, err = ownedClaude(root, profile.StateDir, profile.NativeHome, false)
 	add("retained-integrity", err)
 	add("native-cache", verifyClaudeCache(s, p, false))
+	if !s.Enabled {
+		add("native-enabled", errors.New("Claude memory plugin is disabled; explicitly preview reconnect or repair to re-enable it"))
+	}
 	// A deliberate new native executable can be inspected, but the old connection
 	// still needs an explicit reconnect; never call it healthy on version alone.
 	selected := p
