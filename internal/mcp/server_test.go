@@ -9,6 +9,7 @@ import (
 	"github.com/google/jsonschema-go/jsonschema"
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -36,6 +37,14 @@ func TestMCPUsesSharedContractAndRejectsDuplicates(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer client.Close()
+	// These instructions are delivered by initialize without requiring the model
+	// to choose/load a skill first. They guide selection, never dispatch a sync.
+	instructions := client.InitializeResult().Instructions
+	for _, required := range []string{"memory_sync with timeout_seconds: 3", "prefer memory_remember_and_sync", "prefer memory_journal_append_and_sync", "synchronization is prohibited", "delivery was not attempted", "Read-only/no-save"} {
+		if !strings.Contains(instructions, required) {
+			t.Fatalf("missing always-visible delivery guidance: %s", required)
+		}
+	}
 	list, err := client.ListTools(ctx, nil)
 	if err != nil || len(list.Tools) != 22 {
 		t.Fatal(list, err)
@@ -49,6 +58,20 @@ func TestMCPUsesSharedContractAndRejectsDuplicates(t *testing.T) {
 		}
 		if tool.Name == "signet_create" || tool.Name == "release_inspect" || tool.Name == "release_plan" || tool.Name == "release_apply" || tool.Name == "foundling_register" || tool.Name == "foundling_connect" || tool.Name == "foundling_disconnect" || tool.Name == "foundling_preview" || tool.Name == "foundling_history" {
 			t.Fatal("cross-bank admin exposed")
+		}
+		// Confirm the guidance reaches the actual MCP tools/list boundary, where
+		// a model can select a save without loading the optional memory skill.
+		switch tool.Name {
+		case "memory_remember", "memory_journal_append":
+			for _, required := range []string{"Local-only", "does not attempt synchronization", "prefer " + tool.Name + "_and_sync", "delivery as not attempted"} {
+				if !strings.Contains(tool.Description, required) {
+					t.Fatalf("%s lacks selection boundary %q", tool.Name, required)
+				}
+			}
+		case "memory_remember_and_sync", "memory_journal_append_and_sync":
+			if !strings.HasPrefix(tool.Description, "Preferred for") || !strings.Contains(tool.Description, "Read-only/no-save") {
+				t.Fatalf("missing combined preference/permission boundary: %s", tool.Name)
+			}
 		}
 		network := tool.Name == "memory_sync" || tool.Name == "memory_remember_and_sync" || tool.Name == "memory_journal_append_and_sync"
 		if tool.Annotations == nil || tool.Annotations.OpenWorldHint == nil || *tool.Annotations.OpenWorldHint != network {

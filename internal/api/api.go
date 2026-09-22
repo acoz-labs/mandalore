@@ -159,7 +159,7 @@ func number(n *int, fallback int) int {
 }
 
 var operations = []Operation{
-	operation("memory_recall", "Recall scoped current evidence. Conflicting heads are not guidance; empty/truncated results do not prove absence.", true, func(_ context.Context, s *memory.Service, in RecallInput) (memory.RecallPacket, error) {
+	operation("memory_recall", "Recall local scoped current evidence. Before cross-machine recall, call memory_sync with timeout_seconds: 3 when synchronization is allowed; otherwise state the local freshness limitation. Conflicting heads are not guidance; empty/truncated results do not prove absence.", true, func(_ context.Context, s *memory.Service, in RecallInput) (memory.RecallPacket, error) {
 		return s.Recall(in.Query, in.Scope, number(in.Limit, 5), number(in.BudgetBytes, 8192))
 	}),
 	operation("memory_scopes", "List stable routing scopes without promoting their content into guidance.", true, func(_ context.Context, s *memory.Service, in PageInput) (memory.Page[memory.ScopeInfo], error) {
@@ -171,8 +171,8 @@ var operations = []Operation{
 	operation("memory_journal", "Search recent semantic journal entries, not authoritative current facts or raw transcripts.", true, func(_ context.Context, s *memory.Service, in JournalInput) (memory.Page[memory.JournalEntry], error) {
 		return s.JournalPage(in.Query, number(in.Limit, 5))
 	}),
-	operation("memory_remember", "Store a confirmed fact, preference, decision, procedure, project-state, entity, commitment or research-claim. Basis: user-direction, observation, inference or import. Recall before adding duplicates; corrections name record_id and predecessor revision IDs. Never store secrets.", false, remember),
-	operation("memory_journal_append", "Append a concise account of actual work and decisions, not transcripts or secrets. Do not journal a read-only task.", false, appendJournal),
+	operation("memory_remember", "Local-only save: does not attempt synchronization. For ordinary confirmed learning when saving and synchronization are allowed, prefer memory_remember_and_sync. Use this tool when synchronization is prohibited but local saving is allowed; report delivery as not attempted. Store a confirmed fact, preference, decision, procedure, project-state, entity, commitment or research-claim. Basis: user-direction, observation, inference or import. Recall before adding duplicates; corrections name record_id and predecessor revision IDs. Never store secrets.", false, remember),
+	operation("memory_journal_append", "Local-only journal: does not attempt synchronization. For useful semantic journals when journaling and synchronization are allowed, prefer memory_journal_append_and_sync. Use this tool when synchronization is prohibited but local journaling is allowed; report delivery as not attempted. Append a concise account of actual work and decisions, not transcripts or secrets. Do not journal a read-only task.", false, appendJournal),
 	operation("memory_inspect", "Read-only signet structure validation; no remote, credentials, native plugin or model-behavior checks.", true, func(_ context.Context, s *memory.Service, _ struct{}) (Inspection, error) {
 		err := s.Validate()
 		return Inspection{SignetID: s.ID(), Root: s.Root(), Healthy: err == nil, Notice: "Read-only structure checks only; no synchronization, authentication or native integration verification."}, err

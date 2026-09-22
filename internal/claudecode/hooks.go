@@ -12,7 +12,7 @@ import (
 	"github.com/acoz-labs/mandalore/internal/strictjson"
 )
 
-const orientation = memorycontext.Orientation + " Claude native memory is separate. Do not copy Mandalore signet knowledge into native memory, import native notes automatically, or recreate withdrawn facts from native notes. Do not disable native memory implicitly. Resolve disagreements against current user direction and current Mandalore evidence."
+const orientation = memorycontext.Orientation + memorycontext.DeliverySelection + " Claude native memory is separate. Do not copy Mandalore signet knowledge into native memory, import native notes automatically, or recreate withdrawn facts from native notes. Do not disable native memory implicitly. Resolve disagreements against current user direction and current Mandalore evidence."
 
 type contextOutput struct {
 	Event   string `json:"hookEventName"`

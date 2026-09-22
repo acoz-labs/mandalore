@@ -75,10 +75,10 @@ func saveAndSync(ctx context.Context, s *memory.Service, timeout *int, save func
 }
 
 var saveAndDelivery = []Operation{
-	operation("memory_remember_and_sync", "Save confirmed knowledge locally, then attempt bounded delivery once. Use only when saving AND synchronization are allowed; otherwise use local-only memory_remember. Outer success confirms the save, not delivery: inspect saved and delivery separately. Never repeat the save to retry delivery.", false, func(ctx context.Context, s *memory.Service, in RememberAndSyncInput) (SaveAndSyncResult, error) {
+	operation("memory_remember_and_sync", "Preferred for ordinary confirmed learning when saving AND synchronization are allowed: save knowledge locally, then attempt bounded delivery once. If synchronization is prohibited but local saving is allowed, use local-only memory_remember. Read-only/no-save tasks prohibit both. Outer success confirms the save, not delivery: inspect saved and delivery separately. Never repeat the save to retry delivery.", false, func(ctx context.Context, s *memory.Service, in RememberAndSyncInput) (SaveAndSyncResult, error) {
 		return saveAndSync(ctx, s, in.TimeoutSeconds, func() (Receipt, error) { return remember(ctx, s, in.Record) })
 	}),
-	operation("memory_journal_append_and_sync", "Save a useful semantic journal locally, then attempt bounded delivery once. Use only when journaling AND synchronization are allowed; otherwise use local-only memory_journal_append. Outer success confirms the save, not delivery: inspect saved and delivery separately. Never repeat the save to retry delivery.", false, func(ctx context.Context, s *memory.Service, in JournalAndSyncInput) (SaveAndSyncResult, error) {
+	operation("memory_journal_append_and_sync", "Preferred for useful semantic journals when journaling AND synchronization are allowed: save locally, then attempt bounded delivery once. If synchronization is prohibited but local journaling is allowed, use local-only memory_journal_append. Read-only/no-save tasks prohibit both. Outer success confirms the save, not delivery: inspect saved and delivery separately. Never repeat the save to retry delivery.", false, func(ctx context.Context, s *memory.Service, in JournalAndSyncInput) (SaveAndSyncResult, error) {
 		return saveAndSync(ctx, s, in.TimeoutSeconds, func() (Receipt, error) { return appendJournal(ctx, s, in.Entry) })
 	}),
 }

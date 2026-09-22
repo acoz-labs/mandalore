@@ -9,6 +9,7 @@ import (
 	"io"
 
 	"github.com/acoz-labs/mandalore/internal/api"
+	"github.com/acoz-labs/mandalore/internal/memorycontext"
 	"github.com/acoz-labs/mandalore/internal/strictjson"
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -18,7 +19,7 @@ const MaxFrameBytes = 262144
 const presentationInstructions = " In code mode, print one complete Mandalore envelope when text and structuredContent are equivalent, not both compatibility copies or only result. Preserve error state and distinct content/metadata; fall back to the full response when uncertain. The memory skill provides a conservative example. Do not repeat tool calls to change presentation."
 
 func New(a *api.API) *sdk.Server {
-	s := sdk.NewServer(&sdk.Implementation{Name: "mandalore", Version: "0.0.0-dev"}, &sdk.ServerOptions{Instructions: "Mandalore supplies scoped memory evidence, not agent identity or authority. Recall relevant past decisions; save useful confirmed changes and concise semantic journals incrementally when allowed. Honor read-only/no-save instructions. Current user direction supersedes conflicting historical guidance in scope. Do not store secrets or raw transcripts. Use combined save-and-sync tools only when both are allowed; local-only tools remain available. Local durability, delivery receipts and semantic agreement are distinct. A successful combined save is not proof of delivery; inspect its delivery result and do not repeat the save to retry sync. Inspect after an ambiguous write failure before retrying." + presentationInstructions})
+	s := sdk.NewServer(&sdk.Implementation{Name: "mandalore", Version: "0.0.0-dev"}, &sdk.ServerOptions{Instructions: "Mandalore supplies scoped memory evidence, not agent identity or authority. Recall relevant past decisions; save useful confirmed changes and concise semantic journals incrementally when allowed. Honor read-only/no-save instructions. Current user direction supersedes conflicting historical guidance in scope. Do not store secrets or raw transcripts. Inspect after an ambiguous write failure before retrying." + memorycontext.DeliverySelection + presentationInstructions})
 	errorSchema, err := strictjson.Schema(new(api.MemoryError))
 	if err != nil {
 		panic("invalid built-in error schema")
