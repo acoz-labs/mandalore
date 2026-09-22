@@ -17,7 +17,7 @@ are separate choices. Applying requires an explicit confirmation.
 The CLI exposes the same workflow:
 
 ```sh
-mandalore connection plan --harness claude-code \
+mandalore connection plan --harness claude-code --session-sync \
   --binding /example/binding.json \
   --native-home /example/claude-profile \
   --native-binary /example/bin/claude \

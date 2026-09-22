@@ -120,9 +120,12 @@ apply command and restart/trust checks. This does not change Pi's reload contrac
 ### Pi
 
 Pi setup asks for a trusted Mandalore executable, binding, native profile,
-installation state, native executable and memory access mode. Ordinary learning
-is the default; enforced read-only is an explicit connection choice, not a mode
-automatically entered for ordinary questions. Preview executes the selected
+installation state, native executable and memory access mode. New writable
+setup defaults to **Enabled session · Automatic refresh and delivery**. The
+reviewed plan records this permission as `session_transport_version: 1`.
+Enforced read-only is a separate connection choice, not a mode automatically
+entered for ordinary questions. Repair preserves the existing access and
+transport mode; it does not silently opt a legacy connection into transport. Preview executes the selected
 runtime's read-only planner so its own embedded package is used. Review paths,
 identities and effects, then separately confirm application (default No).
 
@@ -267,3 +270,32 @@ there while the menu shows human summaries.
 Exit status is 0 on ordinary exit, 1 if an operation/output failed during the
 invocation, 2 for invalid flags and 130 for process-context cancellation.
 Exiting or cancelling never undoes an earlier completed step.
+
+## Session synchronization and opting out
+
+New enabled-session connections authorize bounded refresh before memory context
+and delivery after semantic saves. Typed planning uses `--session-sync`, producing
+`session_transport_version: 1`; omitting it preserves legacy planning semantics.
+For example:
+
+```sh
+mandalore connection plan --harness claude-code --session-sync \
+  --binding /example/binding.json > connection-plan.json
+```
+
+Review the complete plan before applying it. `--session-sync` cannot be combined
+with `--memory-read-only`. Existing installations without a session policy retain
+their old behavior until explicitly updated. Repair preserves the selected mode;
+changing permissions requires a new reviewed connection plan and any applicable
+stopped-session handoff.
+
+“Don't remember this” tells the agent not to save that material. Transport of
+previously saved records remains enabled. To stop Mandalore altogether, disable
+the complete native plugin/package and start a fresh session without its hooks,
+MCP/native tools, skills or memory context. Omitting skills alone does not remove
+other components. Check every native resource source, including project settings
+and explicitly loaded extensions; a second enabled copy can still attach.
+
+Disabling cannot remove context already loaded into a model, and native agent
+memory/logging remains independently controlled. No personal signet migration or
+native-memory configuration change is part of enabling this transport policy.
