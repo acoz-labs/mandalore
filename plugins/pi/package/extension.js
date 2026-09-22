@@ -1,6 +1,7 @@
+import { randomUUID } from 'node:crypto';
 import { TransportError } from './transport.js';
 
-const unavailable = 'Mandalore memory is unavailable. Ask the Armorer to inspect the selected Pi connection. No automatic repair or synchronization occurred.';
+const unavailable = 'Mandalore memory is unavailable. Ask the Armorer to inspect the selected Pi connection. Inspect local durability and delivery status before retrying.';
 const readOnlyNotice = 'This Mandalore connection is enforced read-only. Do not save, journal or synchronize.';
 
 function toolResult(name, envelope) {
@@ -11,12 +12,16 @@ function toolResult(name, envelope) {
 }
 
 // Pi owns native tools, model access, sessions and user authorization. This
-// controller only registers memory tools and adds fresh, read-only context.
+// controller registers memory tools and awaits foreground session refresh before
+// adding context. Legacy/read-only connections retain local-only behavior.
 export function attach(pi, openConnection) {
   let connection = null;
   let sessionAbort = null;
   let catalogSignature = null;
   let lastWarning = null;
+  let turnSequence = 0;
+  let instanceID = randomUUID();
+  let sessionID = "";
   const registered = new Set();
   const warn = (ctx, message) => {
     if (message === lastWarning) return;
@@ -66,8 +71,15 @@ export function attach(pi, openConnection) {
         catalogSignature = signature;
       }
       connection = candidate;
+      turnSequence = 0;
+      instanceID = randomUUID();
+      sessionID = ctx.sessionManager?.getSessionId?.() || "";
+      const packet = await candidate.start?.({kind: "startup", session_id: sessionID, event_key: ""}, starting.signal);
+      if (starting.signal.aborted || sessionAbort !== starting) return;
       lastWarning = null;
+      if (packet?.warning) warn(ctx, packet.warning);
     } catch {
+      if (connection === candidate) connection = null;
       await candidate?.close().catch(() => {});
       if (sessionAbort === starting) warn(ctx, unavailable);
     }
@@ -80,7 +92,7 @@ export function attach(pi, openConnection) {
     if (!selected) return {systemPrompt: event.systemPrompt + '\n\n' + unavailable};
     try {
       if (typeof event.prompt !== 'string') throw new Error('Missing native prompt');
-      const packet = await selected.context(event.prompt, ctx.signal);
+      const packet = await selected.context(event.prompt, ctx.signal, {kind: "turn", session_id: sessionID, event_key: instanceID + ":" + String(++turnSequence)});
       if (connection !== selected || sessionAbort !== turnSession) return; // A shutdown/reload superseded this turn.
       if (packet.warning) warn(ctx, packet.warning);
       const parts = [event.systemPrompt];

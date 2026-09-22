@@ -23,12 +23,21 @@ func (p PiPlan) runtimePlan() Plan {
 }
 
 func piConnection(p PiPlan) ([]byte, error) {
-	return json.MarshalIndent(map[string]any{
+	value := map[string]any{
 		"schema_version": 1, "harness": "pi", "runtime": p.Runtime, "runtime_sha256": p.BinarySHA256,
 		"binding": p.Binding, "binding_sha256": p.BindingSHA256, "signet_id": p.SignetID,
 		"package_sha256": p.PackageSHA256, "package_version": p.PackageVersion, "read_only": p.ReadOnly,
 		"native_home": p.NativeHome, "native_binary": p.NativeBinary, "state_dir": p.StateDir, "connection_root": p.Root,
-	}, "", "  ")
+	}
+	if p.SessionTransportVersion == 1 {
+		raw, err := sessionPolicy(p.Options, p.Runtime, p.BinarySHA256, p.BindingSHA256, p.SignetID)
+		if err != nil {
+			return nil, err
+		}
+		value["session_policy"] = filepath.Join(p.Root, "package", "session-policy.json")
+		value["session_policy_sha256"] = hash(raw)
+	}
+	return json.MarshalIndent(value, "", "  ")
 }
 
 func piBundle(p PiPlan) (map[string][]byte, PiReceipt, error) {
@@ -45,6 +54,9 @@ func piBundle(p PiPlan) (map[string][]byte, PiReceipt, error) {
 		files["package/"+name] = raw
 	}
 	files["package/connection.json"], err = piConnection(p)
+	if err == nil && p.SessionTransportVersion == 1 {
+		files["package/session-policy.json"], err = sessionPolicy(p.Options, p.Runtime, p.BinarySHA256, p.BindingSHA256, p.SignetID)
+	}
 	if err != nil {
 		return nil, PiReceipt{}, err
 	}
@@ -91,6 +103,13 @@ func decodePiReceipt(root string, raw []byte) (PiReceipt, error) {
 	if err != nil || hash(expected) != r.Files["package/connection.json"] {
 		return PiReceipt{}, errors.New("Pi administrative context differs from receipt")
 	}
+	if err := validateSessionReceipt(p.Options, p.Runtime, p.BinarySHA256, p.BindingSHA256, p.SignetID, r.Files, "package/session-policy.json"); err != nil {
+		return PiReceipt{}, err
+	}
+	if p.ReadOnly && p.SessionTransportVersion != 0 {
+		return PiReceipt{}, errors.New("read-only receipt cannot authorize synchronization")
+	}
+
 	return r, nil
 }
 
@@ -138,7 +157,7 @@ func verifyPiTree(r PiReceipt, allowMissing bool) error {
 			return errors.New("Pi package exceeds byte limit")
 		}
 		seen[name] = true
-		if name != "package/connection.json" {
+		if name != "package/session-policy.json" && name != "package/connection.json" {
 			public[strings.TrimPrefix(name, "package/")] = raw
 		}
 		return nil

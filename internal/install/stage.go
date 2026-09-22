@@ -122,6 +122,19 @@ func bundle(p Plan) (map[string][]byte, Receipt, error) {
 		"if [ -z \"${MANDALORE_BINDING:-}\" ]; then MANDALORE_BINDING=" + quote(p.Binding) + "; fi\n" +
 		"export MANDALORE_BIN MANDALORE_BINDING\n" +
 		"exec /bin/sh \"$(dirname \"$0\")/run-memory.sh\" \"$@\"\n")
+	if p.SessionTransportVersion == 1 {
+		policy, err := sessionPolicy(p.Options, p.Runtime, p.BinarySHA256, p.BindingSHA256, p.SignetID)
+		if err != nil {
+			return nil, Receipt{}, err
+		}
+		files[prefix+"session-policy.json"] = policy
+		args, err := sessionArgs(p.Options, filepath.Join(p.Root, "plugins", "mandalore"), p.Runtime, p.BinarySHA256, p.BindingSHA256, p.SignetID)
+		if err != nil {
+			return nil, Receipt{}, err
+		}
+		pinned := " --binding " + quote(p.Binding) + " --binding-sha256 " + quote(p.BindingSHA256) + " --signet-id " + quote(p.SignetID) + args
+		files[prefix+"scripts/connection.sh"] = []byte(sessionRuntimeGuard(p.Runtime, p.BinarySHA256) + "case ${1:-} in\nhook) exec " + quote(p.Runtime) + " codex-memory-hook" + pinned + " ;;\nmcp) exec " + quote(p.Runtime) + " mcp --harness codex" + pinned + " ;;\n*) exit 1 ;;\nesac\n")
+	}
 	for _, name := range []string{prefix + ".mcp.json", prefix + "hooks/hooks.json"} {
 		if !bytes.Contains(files[name], []byte("scripts/run-memory.sh")) {
 			return nil, Receipt{}, errors.New("embedded bridge contract changed")
@@ -209,6 +222,10 @@ func decodeReceipt(root string, b []byte) (Receipt, error) {
 			return Receipt{}, errors.New("invalid file digest")
 		}
 	}
+	if err := validateSessionReceipt(p.Options, p.Runtime, p.BinarySHA256, p.BindingSHA256, p.SignetID, r.Files, "plugins/mandalore/session-policy.json"); err != nil {
+		return Receipt{}, err
+	}
+
 	return r, nil
 }
 

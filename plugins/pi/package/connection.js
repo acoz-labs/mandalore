@@ -49,7 +49,7 @@ function runtimeDigest(path) {
 }
 
 // Matches Go's JSON encoding of the sorted filename-to-byte-slice map. The one
-// generated local context file is deliberately outside the public payload hash.
+// generated local context and pinned session policy are outside the public payload hash.
 export function packageDigest(root) {
   const content = new Map();
   let total = 0;
@@ -60,7 +60,7 @@ export function packageDigest(root) {
       if (++entries > 256) throw invalid();
       const path = join(directory, entry.name);
       const name = relative(root, path);
-      if (name === 'connection.json') continue;
+      if (name === 'connection.json' || name === 'session-policy.json') continue;
       if (entry.isDirectory()) { walk(path, depth + 1); continue; }
       if (!entry.isFile() || content.size >= 128) throw invalid();
       const data = bytes(path, 1048576 - total);
@@ -80,9 +80,12 @@ export function readConnection(root) {
     if (!['darwin', 'linux'].includes(process.platform)) throw invalid();
     const config = JSON.parse(new TextDecoder('utf-8', {fatal: true}).decode(bytes(join(root, 'connection.json'), 16384)));
     const paths = ['runtime', 'binding', 'native_home', 'native_binary', 'state_dir', 'connection_root'];
-    const keys = ['schema_version', 'harness', ...paths, 'runtime_sha256', 'binding_sha256', 'signet_id', 'package_sha256', 'package_version', 'read_only'];
+    const sessionEnabled = config?.session_policy !== undefined || config?.session_policy_sha256 !== undefined;
+    const keys = ['schema_version', 'harness', ...paths, 'runtime_sha256', 'binding_sha256', 'signet_id', 'package_sha256', 'package_version', 'read_only', ...(sessionEnabled ? ['session_policy', 'session_policy_sha256'] : [])];
     if (!config || Array.isArray(config) || Object.keys(config).length !== keys.length || Object.keys(config).some(key => !keys.includes(key))) throw invalid();
     if (config.schema_version !== 1 || config.harness !== 'pi' || typeof config.read_only !== 'boolean' || typeof config.signet_id !== 'string' || !idPattern.test(config.signet_id) || typeof config.package_version !== 'string' || !config.package_version || config.package_version.length > 128) throw invalid();
+    if (sessionEnabled && (config.read_only || typeof config.session_policy !== 'string' || config.session_policy !== join(config.connection_root, 'package', 'session-policy.json') || !shaPattern.test(config.session_policy_sha256))) throw invalid();
+    if (sessionEnabled && createHash('sha256').update(bytes(config.session_policy, 16384)).digest('hex') !== config.session_policy_sha256) throw invalid();
     if (paths.some(key => typeof config[key] !== 'string' || !isAbsolute(config[key]) || /[\x00-\x1f\x7f]/.test(config[key]))) throw invalid();
     if (['runtime_sha256', 'binding_sha256', 'package_sha256'].some(key => typeof config[key] !== 'string' || !shaPattern.test(config[key]))) throw invalid();
     if (realpathSync(root) !== realpathSync(join(config.connection_root, 'package')) || packageDigest(root) !== config.package_sha256) throw invalid();
@@ -121,31 +124,36 @@ export async function openConnection(root, sessionSignal) {
     for (const controller of pending.keys()) controller.abort();
     await Promise.allSettled([...pending.values()]);
   };
-  const guards = ['--binding', config.binding, '--binding-sha256', config.binding_sha256, '--signet-id', config.signet_id, '--harness', 'pi'];
-  const bound = (name, input, options = {}) => request(['call', name, ...guards, ...(config.read_only || options.readOnly ? ['--read-only'] : [])], input, options);
+  const sessionEnabled = !!config.session_policy;
+  const guards = ['--binding', config.binding, '--binding-sha256', config.binding_sha256, '--signet-id', config.signet_id, '--harness', 'pi', ...(sessionEnabled ? ['--session-policy', config.session_policy, '--session-policy-sha256', config.session_policy_sha256] : [])];
+  const bound = (name, input, options = {}) => request(['call', name, ...guards, ...(config.read_only || options.readOnly && !sessionEnabled ? ['--read-only'] : [])], input, options);
   const requireOK = response => { if (!response.ok) throw invalid(); return response.result; };
   try {
     const version = requireOK(await request(['version'], undefined, {timeoutMs: 5000}));
     if (version.name !== 'mandalore' || version.protocol_version !== 1) throw invalid();
     const identity = requireOK(await request(['call', 'pi_package_inspect'], {}, {timeoutMs: 5000}));
     if (identity.name !== 'mandalore' || identity.harness_protocol_version !== 1 || identity.sha256 !== config.package_sha256 || identity.version !== config.package_version) throw invalid();
-    const catalog = requireOK(await request(['operations'], undefined, {timeoutMs: 5000, maxOutputBytes: MAX_CATALOG_BYTES}));
-    if (!Array.isArray(catalog.operations) || catalog.max_input_bytes !== 32768 || catalog.max_output_bytes !== 65536) throw invalid();
+    const catalog = requireOK(sessionEnabled ? await bound('memory_session_catalog', {}, {timeoutMs: 5000, maxOutputBytes: MAX_CATALOG_BYTES}) : await request(['operations'], undefined, {timeoutMs: 5000, maxOutputBytes: MAX_CATALOG_BYTES}));
+    if (!Array.isArray(catalog.operations) || !sessionEnabled && (catalog.max_input_bytes !== 32768 || catalog.max_output_bytes !== 65536)) throw invalid();
     const operations = catalog.operations.filter(op => op.requires_binding === true && op.cli_only === false);
     if (operations.length < 1 || new Set(operations.map(op => op.name)).size !== operations.length || operations.some(op => !/^[a-z][a-z0-9_]{0,63}$/.test(op.name) || typeof op.description !== 'string' || typeof op.read_only !== 'boolean' || !op.input_schema || typeof op.input_schema !== 'object')) throw invalid();
     // Opening the guarded service validates the connection. Orientation-only
     // avoids a redundant whole-bank validation before the first actual turn.
-    requireOK(await bound('memory_context', {}, {timeoutMs: 5000, readOnly: true}));
+    if (!sessionEnabled) requireOK(await bound('memory_context', {}, {timeoutMs: 5000, readOnly: true}));
     return {
-      operations, readOnly: config.read_only, close,
+      operations, readOnly: config.read_only, sessionEnabled, close,
+      async start(boundary, signal) {
+        if (!sessionEnabled) return;
+        return requireOK(await bound('memory_context', {boundary}, {signal, timeoutMs: 5000, mutating: true}));
+      },
       async call(name, input, signal) {
         const operation = operations.find(op => op.name === name);
         if (!operation) throw new TransportError('operation.unknown', 'Operation is not a native memory tool.');
         return bound(name, input, {signal, mutating: !operation.read_only});
       },
-      async context(prompt, signal) {
-        const packet = requireOK(await bound('memory_context', {prompt: boundedPrompt(prompt)}, {signal, timeoutMs: 5000, readOnly: true}));
-        if (!packet || typeof packet !== 'object' || Array.isArray(packet) || Object.keys(packet).some(key => !['context', 'warning'].includes(key)) || (packet.context !== undefined && typeof packet.context !== 'string') || (packet.warning !== undefined && typeof packet.warning !== 'string') || (!packet.context && !packet.warning) || Buffer.byteLength(JSON.stringify(packet)) > 16383) throw invalid();
+      async context(prompt, signal, boundary) {
+        const packet = requireOK(await bound('memory_context', {prompt: boundedPrompt(prompt), ...(sessionEnabled ? {boundary} : {})}, {signal, timeoutMs: 5000, readOnly: true, mutating: sessionEnabled}));
+        if (!packet || typeof packet !== 'object' || Array.isArray(packet) || Object.keys(packet).some(key => !['context', 'warning', 'synchronization'].includes(key)) || (packet.context !== undefined && typeof packet.context !== 'string') || (packet.warning !== undefined && typeof packet.warning !== 'string') || (!packet.context && !packet.warning) || Buffer.byteLength(JSON.stringify(packet)) > 16383) throw invalid();
         return packet;
       },
     };

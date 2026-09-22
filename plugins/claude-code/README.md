@@ -17,7 +17,7 @@ are separate choices. Applying requires an explicit confirmation.
 The CLI exposes the same workflow:
 
 ```sh
-mandalore connection plan --harness claude-code \
+mandalore connection plan --harness claude-code --session-sync \
   --binding /example/binding.json \
   --native-home /example/claude-profile \
   --native-binary /example/bin/claude \
@@ -40,9 +40,9 @@ utility or changed runtime leaves the connection unavailable for inspection.
 
 Use `--memory-read-only` when planning to enforce no memory writes or sync in the
 installed connection. The general `--read-only` option instead prohibits mutations
-by the particular CLI invocation. A learning-enabled connection still follows
-the user's current task restrictions; model adherence is distinct from the
-runtime enforcement provided by a read-only connection.
+by the particular CLI invocation. An enabled session honors content-level
+requests not to remember or journal while software transports existing records.
+Existing read-only connections remain read-only until explicitly reconfigured.
 
 ## Use memory naturally
 
@@ -68,35 +68,28 @@ separate sources is a different task; withdrawal is not universal erasure.
 
 ## Lifecycle and delivery
 
-The native adapter handles `SessionStart` and `UserPromptSubmit`. It reads bounded
-local context, never a transcript. It does not save memories, initialize Git,
-synchronize, launch a model or block unrelated work. Context output stays below
-Claude's 10,000-character inline-context threshold; a failure produces a concise
-warning so tools can be inspected directly.
+The native adapter handles synchronous `SessionStart` and `UserPromptSubmit`.
+An explicitly enabled session refreshes before assembling bounded memory context;
+legacy connections without that policy keep local-only hooks. Hooks never scan
+transcripts, extract memories or launch a model. A refresh failure reports pending
+or stale state without falsely claiming current remote knowledge.
 
-Native macOS validation with Claude Code 2.1.278 observed `SessionStart:startup`
-and `UserPromptSubmit` on a fresh print session, `SessionStart:resume` when
-resuming, and `SessionStart:compact` after an actual manual `/compact`. A resumed
-post-compaction session received orientation again and retained the discussion.
-Interrupting streamed model text with SIGINT left the synthetic signet and native
-memory unchanged. These are observed native behaviors, not guarantees that every
-termination runs a hook. Linux adapter-input checks are distinct from a native
-Linux Claude session.
+The shared session API attempts delivery after semantic writes, regardless of
+whether the model chooses an ordinary save or a combined save-and-sync tool.
+Inspect the separate saved and delivery outcomes. Pending delivery retries at the
+next foreground opportunity; never repeat a save to retry transport. The runtime
+does not initialize Git, enroll credentials or resolve semantic conflicts.
 
-Learning and synchronization happen through the shared memory tools during the
-conversation. The model is asked to save confirmed knowledge incrementally and
-attempt bounded delivery when allowed. Prefer `memory_remember_and_sync` and
-`memory_journal_append_and_sync` when both saving and synchronization are allowed;
-use their local-only counterparts when synchronization is prohibited. Inspect
-both the saved receipt and delivery result. A local-only receipt means delivery
-was not requested and must not be reported as synchronized. For cross-machine
-recall, use a short-budget `memory_sync` first when the task allows it; a hook
-only reflects the selected local clone. A saved record, successful network
-delivery and knowledge already loaded into another conversation are different
-states. Offline delivery and interrupted responses require inspection before
-retrying a save. No end-of-session or compaction hook promises to recover
-knowledge that was never saved. Deterministic lifecycle transport remains tracked
-separately in [issue #55](https://github.com/acoz-labs/mandalore/issues/55).
+Native behavior and timings must be verified against the exact release candidate.
+Earlier 2.1.278 local-hook evidence observed startup, resume and manual compact
+callbacks, but does not certify the changed synchronization callbacks. No exit
+or compaction event promises to recover knowledge that was never saved.
+
+To opt out, disable the complete native Mandalore plugin and start a fresh
+session. Disabling only skills leaves other plugin components possible, and
+already-loaded context cannot be removed retroactively. Requests not to remember
+particular content still apply while transport of existing records is enabled.
+See [the shared transport contract](../../docs/synchronization.md#session-authorized-transport).
 
 ## Update and recover
 

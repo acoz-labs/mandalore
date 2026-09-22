@@ -69,3 +69,15 @@ copy credentials or claim a fresh session has already loaded an update.
 ## Native memory coexistence
 
 Claude Code native memory remains a separate store. Do not silently copy Mandalore records to native notes, import native notes automatically, or recreate withdrawn Mandalore knowledge from notes, journals or history. Revalidate overlapping native assertions against current Mandalore evidence and surface conflicts. This cannot revoke independently retained notes or already loaded context. Do not disable native auto memory or migrate it implicitly.
+
+## Enabled-session authorization
+
+An installed version-1 enabled-session policy is pinned to its selected binding,
+signet and retained runtime. Software synchronizes before native memory context
+and after semantic saves. New writable connections review this permission in their
+plan; existing/read-only connections must not be silently upgraded. Never edit a
+policy or receipt by hand. Conversational no-sync does not disconnect an enabled
+session: use the actual native disable control and start fresh to verify no
+Mandalore hooks/tools/context. Do-not-remember/no-journal still controls content
+selection. Local administrative CLI calls remain local unless explicitly invoked
+under an enabled policy. Report session_sync separately from saved/partial receipts.

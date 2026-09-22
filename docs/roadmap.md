@@ -51,9 +51,11 @@ correction/withdrawal, native-memory coexistence and honest offline delivery.
 The development [integration guide](../plugins/claude-code/README.md) documents
 the interface; source implementation is not release acceptance.
 
-Deterministic lifecycle synchronization #55 remains open. If native handoff tests
-show that agent-invoked delivery cannot meet the selected experience, the required
-bounded transport work must be addressed before claiming reliable continuity.
+Native handoff tests showed that model-requested synchronization could miss
+updates. The required bounded transport work is now included in #14: enabled
+sessions refresh before context and deliver after semantic saves through shared
+software. Discovery #55 is closed historical evidence. Existing read-only and
+legacy connections retain their restrictions until explicitly reconfigured.
 The broader new-machine assessment #15 remains separate; the core assessment
 delivered through #85 is already available.
 

@@ -1,7 +1,7 @@
 # Pi integration
 
-Development integration for issue #13, after accepted Codex MVP #10. The native
-package is not yet a released or accepted connection workflow. Typed CLI and
+Pi integration shipped with Mandalore 1.2.0. The next session-transport changes
+require new exact-candidate acceptance before release. Typed CLI and
 guided menu installation/recovery are implemented. Source-bound native model,
 delivery and rendered evidence is recorded in
 [engineering reconciliation](../../docs/evidence/pi/reconciliation.md);
@@ -15,9 +15,9 @@ and synchronization. One complete JSON envelope is returned; result metadata
 does not repeat memory content. Lost responses preserve possible-write ambiguity.
 
 Only session start, per-turn context and shutdown are subscribed. Context is a
-fresh bounded local read appended to Pi's existing system prompt, not a saved
-message, transcript scan or automatic write. Startup checks connection identity
-without a redundant record scan. Shutdown cancels and reaps owned calls. Native
+bounded packet appended to Pi's existing system prompt, not a saved message or
+transcript scan. Enabled sessions attempt refresh before assembling it; legacy
+connections keep local-only context. Startup validates the pinned connection. Shutdown cancels and reaps owned calls. Native
 tools, model access, authentication and session history remain Pi-owned.
 
 `package/connection.json` is machine-local generated context, never embedded in
@@ -68,7 +68,7 @@ not install them or change authentication. The native contract currently accepts
 Pi 0.85.1 only; the initial native test baseline is Node 24.1.0 on macOS arm64.
 
 ```sh
-mandalore connection plan --harness pi --binding /absolute/binding.json \
+mandalore connection plan --harness pi --session-sync --binding /absolute/binding.json \
   --native-home /absolute/pi-profile --native-binary /absolute/pi \
   --state-dir /absolute/mandalore-state > pi-plan.json
 # Review the plan before this explicitly mutating step.
@@ -93,3 +93,16 @@ then use `connection repair --harness pi --connection-root RETAINED_ROOT` to
 preview a fresh generation and `--apply` only when requested. Unknown files and
 changed bindings are not silently repaired. Existing sessions need a fresh start
 or native reload; Armorer health does not prove live tools or model access.
+
+## Session transport and disabling
+
+Enabled sessions use the [shared transport contract](../../docs/synchronization.md#session-authorized-transport):
+refresh before context and bounded delivery after semantic writes. The reviewed
+connection plan declares this mode; repair preserves the selected mode, and
+existing read-only connections never silently gain transport permission.
+
+Start Pi without the Mandalore package, extension and skills to disable the
+integration completely. Omitting skills alone does not stop extension callbacks
+or registered tools. Use a fresh session to verify absence; old model context
+and Pi's own history are independently retained. A content-level request not to
+remember something does not disable transport of records already saved.

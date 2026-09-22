@@ -121,6 +121,7 @@ func runConnection(ctx context.Context, args []string, input io.Reader, out io.W
 	readOnly := f.Bool("read-only", false, "Reject mutations")
 	harness := f.String("harness", "codex", "Native harness: codex, pi or claude-code")
 	var memoryReadOnly bool
+	var sessionSync bool
 	var profile install.Profile
 	var binary, path, root string
 	var applyRepair bool
@@ -134,6 +135,7 @@ func runConnection(ctx context.Context, args []string, input io.Reader, out io.W
 		f.StringVar(&profile.NativeBinary, "native-binary", "", "Absolute native executable")
 	}
 	if sub == "plan" {
+		f.BoolVar(&sessionSync, "session-sync", false, "Enable reviewed session-authorized automatic refresh and delivery")
 		f.BoolVar(&memoryReadOnly, "memory-read-only", false, "Enforce read-only memory in Pi and Claude Code connections")
 		f.StringVar(&binary, "binary", "", "Trusted Mandalore executable to stage; default running CLI")
 		f.StringVar(&path, "binding", "", "Explicit machine-local signet binding")
@@ -158,6 +160,9 @@ func runConnection(ctx context.Context, args []string, input io.Reader, out io.W
 	}
 	if *harness != "codex" && *harness != "pi" && *harness != "claude-code" {
 		return bad(out, "Choose --harness codex, pi or claude-code.")
+	}
+	if memoryReadOnly && sessionSync {
+		return bad(out, "Read-only memory cannot enable session transport.")
 	}
 	if memoryReadOnly && *harness != "pi" && *harness != "claude-code" {
 		return bad(out, "--memory-read-only is supported by Pi and Claude Code connections.")
@@ -190,7 +195,11 @@ func runConnection(ctx context.Context, args []string, input io.Reader, out io.W
 			if err != nil {
 				return bad(out, "Cannot select local runtime or binding defaults; supply explicit absolute paths.")
 			}
-			value = install.Options{StateDir: profile.StateDir, NativeHome: profile.NativeHome, NativeBinary: profile.NativeBinary, Binary: binary, Binding: path}
+			transportVersion := 0
+			if sessionSync {
+				transportVersion = 1
+			}
+			value = install.Options{SessionTransportVersion: transportVersion, StateDir: profile.StateDir, NativeHome: profile.NativeHome, NativeBinary: profile.NativeBinary, Binary: binary, Binding: path}
 			if *harness == "pi" {
 				value = install.PiOptions{Options: value.(install.Options), ReadOnly: memoryReadOnly}
 			} else if *harness == "claude-code" {

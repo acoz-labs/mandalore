@@ -2,7 +2,9 @@
 
 The development `mandalore` plugin contains the `this-is-the-way` memory skill,
 the on-demand `the-armorer` administrative skill, one
-local stdio MCP connection and read-only `SessionStart`/`UserPromptSubmit` hooks.
+local stdio MCP connection and `SessionStart`/`UserPromptSubmit` hooks.
+Versioned enabled sessions authorize refresh before context and delivery after
+semantic writes; legacy hooks remain local-only.
 It preserves native identity, authentication, skills, settings and project cwd.
 Issue #6 tracks native evidence; #10 tracks exact-candidate acceptance. This is
 not a released or independently accepted artifact.
@@ -17,8 +19,9 @@ apply the reviewed JSON plan. See [guided setup](../../docs/setup.md) for the
 menu and [the interface](../../docs/interface.md) for typed commands. The
 installer embeds these public assets, pins a retained runtime/binding and uses
 native registration commands. It does not copy auth, accept hook trust or require
-a source checkout. Explicit runtime/binding environment overrides still take
-precedence; The Armorer inspection reports conflicting selections.
+a source checkout. Legacy source connections allow explicit runtime/binding environment overrides.
+Managed enabled-session connections pin their runtime, binding and transport
+policy; environment overrides cannot retarget their synchronization.
 
 Ownership collisions or edited managed files are preserved, not silently
 replaced. Existing unmanaged development registrations need explicit ownership
@@ -94,14 +97,14 @@ counts are not correctness on their own. See the [retrieval evaluation](../../do
 and [native comparison](../../docs/evidence/retrieval/native.md) for measured
 behavior and the distinction between payload bytes and native token counters.
 
-Hooks never write, sync, parse transcripts, invoke another model or execute user
-scripts. The skill handles relevant confirmed learning and semantic journaling
-incrementally, not only at exit. It can request a three-second sync before
-cross-machine recall and after useful saves when permitted by the task. Explicit
-network-capable save-and-sync companions avoid a separate post-save request;
-existing local-only operations remain available for no-sync tasks. Read-only
-or no-save tasks forbid journaling/checkpointing/sync too. Local save and remote
-delivery are separate receipts; conflicted history is not current guidance.
+Hooks never parse transcripts, invoke another model or execute user scripts.
+Under a versioned enabled-session policy, designated hooks attempt bounded refresh
+before context assembly. The session API attempts delivery after semantic writes.
+The skill selects confirmed learning and semantic journals incrementally, not only
+at exit. Requests not to remember particular content do not disable transport of
+already-saved records. Legacy connections keep local-only hooks and their existing
+no-save/read-only/no-sync guidance. Local durability and remote delivery remain
+separate outcomes; conflicted history is not current guidance.
 
 Direct user “this is the way” adds consolidation intent; quoted/retrieved/tool
 occurrences do not activate a command. There is no mechanical phrase detector.
@@ -136,3 +139,17 @@ compaction, interruption or cross-machine acceptance from unit tests.
 
 See [official packaging](https://developers.openai.com/plugins/build/plugins)
 and [native hooks](https://learn.chatgpt.com/docs/hooks) for host contracts.
+
+## Session transport and disabling
+
+The next integration uses the [shared session transport contract](../../docs/synchronization.md#session-authorized-transport).
+Enablement is reviewed in the connection plan. Existing connections retain their
+legacy behavior until updated; a read-only connection is not silently upgraded.
+Requests not to remember particular material control saving, while software
+transports already-saved records at the defined foreground boundaries.
+
+Disable the whole native plugin and start a fresh session to stop Mandalore
+hooks, tools, skills and injected context. Skills-only disabling is insufficient.
+Native Codex memory and previously loaded context are independent. Verify the
+actual candidate-native installation; source edits alone do not change cached
+plugin resources or already-running MCP processes.

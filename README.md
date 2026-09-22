@@ -10,8 +10,7 @@ engine, CLI, MCP server and thin native harness plugins.
 
 This is the memory-only successor to [My Friday](https://github.com/acoz-labs/my-friday).
 The repository contains the memory engine, a CLI/local MCP server,
-explicit Git synchronization, a Codex plugin with read-only lifecycle
-hooks and memory/administration skills, guided setup/local-artifact update/inspection/repair, explicit
+Git synchronization, native lifecycle integration and memory/administration skills, guided setup/local-artifact update/inspection/repair, explicit
 memory-only migration, foundling consultation/selective promotion, retrieval
 evaluation and synthetic regression tests. Versioned candidate builds, guided
 CLI installation/update and guarded same-byte release tooling are implemented.
@@ -22,6 +21,8 @@ is published from the independently accepted retained candidate. See the
 Codex and Pi integrations are released. The development
 [Claude Code integration](plugins/claude-code/README.md) adds native setup,
 memory skills and guarded access to the same signet for the next release.
+The next iteration adds [session-authorized automatic synchronization](docs/synchronization.md#session-authorized-transport) across Claude Code, Codex and Pi;
+released 1.2 connections retain their existing behavior until explicitly updated.
 Development and prototype evidence do not certify a published artifact.
 
 ## A small vocabulary

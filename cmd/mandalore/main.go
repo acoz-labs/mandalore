@@ -19,6 +19,7 @@ import (
 	memorymcp "github.com/acoz-labs/mandalore/internal/mcp"
 	"github.com/acoz-labs/mandalore/internal/memory"
 	"github.com/acoz-labs/mandalore/internal/readiness"
+	"github.com/acoz-labs/mandalore/internal/sessionsync"
 )
 
 var version = "0.0.0-dev"
@@ -132,6 +133,8 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 		path := f.String("binding", "", "Machine-local binding file")
 		digest := f.String("binding-sha256", "", "Expected binding hash")
 		signet := f.String("signet-id", "", "Expected signet identity")
+		policy := f.String("session-policy", "", "Reviewed session transport policy")
+		policyHash := f.String("session-policy-sha256", "", "Expected session policy hash")
 		if err := f.Parse(args[1:]); err != nil || f.NArg() != 0 {
 			_, err := io.WriteString(out, "{}\n")
 			if err != nil {
@@ -139,7 +142,15 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 			}
 			return 0
 		}
-		if err := claudecode.Run(*path, binding.Guard{SHA256: *digest, SignetID: *signet}, input, out); err != nil {
+		c, err := openSession(*policy, *policyHash, *path, binding.Guard{SHA256: *digest, SignetID: *signet})
+		if err != nil {
+			_, err := io.WriteString(out, "{\"systemMessage\":\"Mandalore session policy invalid; automatic refresh and memory context unavailable.\"}\n")
+			if err != nil {
+				return 1
+			}
+			return 0
+		}
+		if err := claudecode.RunSession(ctx, *path, binding.Guard{SHA256: *digest, SignetID: *signet}, c, input, out); err != nil {
 			return 1
 		}
 		return 0
@@ -148,6 +159,10 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 		f := flag.NewFlagSet("codex-memory-hook", flag.ContinueOnError)
 		f.SetOutput(io.Discard)
 		path := f.String("binding", "", "Machine-local binding file")
+		digest := f.String("binding-sha256", "", "Expected binding hash")
+		signet := f.String("signet-id", "", "Expected signet identity")
+		policy := f.String("session-policy", "", "Reviewed session transport policy")
+		policyHash := f.String("session-policy-sha256", "", "Expected session policy hash")
 		if err := f.Parse(args[1:]); err != nil || f.NArg() != 0 {
 			_, err := io.WriteString(out, "{\"systemMessage\":\"Mandalore hook configuration is invalid; no memory was changed.\"}\n")
 			if err != nil {
@@ -155,7 +170,15 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 			}
 			return 0
 		}
-		if err := codex.Run(*path, input, out); err != nil {
+		c, err := openSession(*policy, *policyHash, *path, binding.Guard{SHA256: *digest, SignetID: *signet})
+		if err != nil {
+			_, err := io.WriteString(out, "{\"systemMessage\":\"Mandalore session policy invalid; automatic refresh and memory context unavailable.\"}\n")
+			if err != nil {
+				return 1
+			}
+			return 0
+		}
+		if err := codex.RunSession(ctx, *path, binding.Guard{SHA256: *digest, SignetID: *signet}, c, input, out); err != nil {
 			return 1
 		}
 		return 0
@@ -233,6 +256,8 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 	}
 	harness := f.String("harness", harnessDefault, "Attribution harness label")
 	readOnly := f.Bool("read-only", false, "Reject mutations")
+	policy := f.String("session-policy", "", "Reviewed session transport policy")
+	policyHash := f.String("session-policy-sha256", "", "Expected session policy hash")
 	bindingSHA := f.String("binding-sha256", "", "Expected binding bytes SHA-256; requires signet-id")
 	signetID := f.String("signet-id", "", "Expected signet identity; requires binding-sha256")
 	var repository, label, actor, displayName, query, kind, scopeID, recordID string
@@ -356,6 +381,19 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 		}
 	}
 	a := api.New(service, *readOnly)
+	if *policy != "" || *policyHash != "" {
+		if *readOnly || service == nil {
+			return bad(failureOut, "Session transport requires an explicitly enabled bound connection; read-only cannot synchronize.")
+		}
+		c, err := openSession(*policy, *policyHash, *path, guard)
+		if err != nil {
+			return bad(failureOut, "Session transport policy or pinned selection is invalid.")
+		}
+		a, err = api.NewSession(service, c)
+		if err != nil {
+			return bad(failureOut, "Cannot enable selected session transport.")
+		}
+	}
 	if name == "mcp" {
 		reader, ok := input.(io.ReadCloser)
 		if !ok {
@@ -425,4 +463,15 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 		}
 	}
 	return emit(out, a.Call(ctx, name, raw))
+}
+
+func openSession(policy, policyHash, path string, guard binding.Guard) (*sessionsync.Coordinator, error) {
+	if policy == "" && policyHash == "" {
+		return nil, nil
+	}
+	runtime, err := os.Executable()
+	if err != nil {
+		return nil, err
+	}
+	return sessionsync.Open(policy, sessionsync.Selection{Binding: path, Guard: guard, Runtime: runtime, PolicySHA256: policyHash})
 }

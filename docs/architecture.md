@@ -9,8 +9,9 @@ responses, and immutable foundling registration/routing/citation validation. See
 `internal/api`, `internal/binding`, `internal/mcp` and `cmd/mandalore` now provide
 the [shared local interface](interface.md). `internal/sync` now supplies explicit
 [Git checkpoints and reconciliation](synchronization.md). `internal/codex` and
-`plugins/codex` supply the development native plugin, read-only lifecycle context
-and memory skill. `internal/install` supplies explicit native connection plans,
+`plugins/codex` supply native lifecycle context and memory skills.
+`internal/sessionsync` adds pinned session transport policy and bounded foreground
+coordination around the shared Git engine; legacy adapters remain local-only. `internal/install` supplies explicit native connection plans,
 retained runtime/package publication and doctor/repair; `internal/console` supplies
 presentation-only terminal prompts and reports. The [guided menu](setup.md)
 delegates to shared operations rather than owning a second implementation.
@@ -20,10 +21,11 @@ Maintainer commands and workflows coordinate nomination, acceptance guards and
 release-ledger finalization outside the memory MCP surface.
 `plugins/pi` supplies a second native adapter over guarded, short-lived CLI calls;
 `internal/memorycontext` shares bounded local evidence assembly across harnesses.
-Claude Code remains a later target after Pi acceptance. [Codex](codex-native-evidence.md)
+`internal/claudecode` and `plugins/claude-code` supply the third native adapter
+under the same session contract. [Codex](codex-native-evidence.md)
 and [Pi engineering evidence](evidence/pi/README.md) are separate from product
-acceptance. Published v1.1.0 includes Codex and Pi. Subsequent source changes,
-including format2 withdrawal, require their own candidate acceptance and release.
+acceptance. Published v1.2.0 includes Codex, Pi and format2 withdrawal. Claude Code and
+session-authorized transport require new exact-candidate acceptance and release.
 
 | Location | Responsibility |
 | --- | --- |
@@ -37,7 +39,8 @@ including format2 withdrawal, require their own candidate acceptance and release
 | `internal/binding` | Local signet selection and originating-device identity |
 | `internal/foundlings` | Bounded local/Git reference observation, clone-local connections and verified selective promotion |
 | `internal/mcp` | Typed stdio MCP access over the same memory engine |
-| `internal/codex` | Bounded read-only native event adapter; no transcript access or synchronization |
+| `internal/codex`, `internal/claudecode` | Bounded native event adapters; authorized session refresh before local context, no transcript access |
+| `internal/sessionsync` | Versioned pinned policy, bounded per-checkout transport coordination and receipt reuse |
 | `internal/memorycontext` | Shared bounded local orientation, bank-wide evidence and scope routing |
 | `internal/install` | Native connections, runtime pinning, doctor/update/repair |
 | `internal/readiness` | Non-executing setup observations, support declarations, exact scenario evidence and bounded follow-up guidance |
@@ -47,7 +50,7 @@ including format2 withdrawal, require their own candidate acceptance and release
 | `internal/console` | Presentation-only terminal prompts, navigation and bounded-width reports |
 | `plugins/codex` | First native plugin and `this-is-the-way` skill |
 | `plugins/pi` | Embedded native extension, guarded CLI transport, memory/Armorer skills and tests |
-| `plugins/claude-code` | Reserved third integration after Pi acceptance |
+| `plugins/claude-code` | Embedded native plugin, guarded MCP/hooks and shared memory/Armorer skills |
 
 ## Ownership and trust
 
@@ -96,8 +99,9 @@ doctor does not establish authentication, hook trust, live tools or fresh contex
 Pi owns native tools, authentication, resources and sessions. Mandalore registers
 the bound memory catalog once, preserves native tool selection and appends fresh
 bounded evidence to the existing system prompt per turn. It does not accumulate
-persistent attachment messages, scan transcripts or write at startup, compaction
-or shutdown. Shutdown cancels/reaps owned calls. Confirmed learning and delivery
+persistent attachment messages or scan transcripts. An explicitly enabled
+session authorizes transport before context and after semantic writes; legacy
+context callbacks remain local-only. Shutdown cancels/reaps owned calls. Confirmed learning and delivery
 remain semantic tool use; lifecycle synchronization is a separate unresolved
 workstream, not implemented by these context hooks.
 
@@ -192,3 +196,25 @@ works offline; cross-machine freshness requires successful sync. The initial MCP
 transport is local stdio. Remote hosting/authentication is deferred.
 
 See [product](product.md), [migration](migration.md), and [delivery](deployment.md).
+
+## Foreground synchronization
+
+A session policy pins exact binding bytes, signet identity and retained runtime.
+The session-aware API is separate from the default administrative dispatcher;
+local-only commands and legacy read-only connections do not inherit permission
+from an enabled session elsewhere. Generated native connections also pin policy
+bytes so remembered content cannot retarget or change transport authority.
+
+Coordination is local to a physical checkout. Separate clones of the same signet
+must each refresh; concurrent harnesses on one checkout serialize attempts. A
+coalesced result is reusable only when its completed head still covers local
+state. Native session/event identity, bounded startup adjacency and a consumed
+one-shot marker avoid duplicate startup/first-prompt work without treating
+identical prompt text as an event ID. Pi adds a per-start nonce to its turn counter.
+
+The semantic operation saves first. Its original receipt/error is preserved and
+optional `session_sync` metadata records the subsequent bounded transport outcome.
+Combined tools route through the same local primitive and coordinator once.
+Pending data retries at the next foreground boundary, not a daemon or assumed
+exit callback. No transport operation extracts facts from transcripts or resolves
+semantic conflicts automatically.
