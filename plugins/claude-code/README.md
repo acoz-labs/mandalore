@@ -100,10 +100,17 @@ retrying. Preview repair with:
 
 ```sh
 mandalore connection repair --harness claude-code \
-  --connection-root /example/retained-generation
+  --connection-root /example/retained-generation > claude-repair-plan.json
+# Inspect the saved repair plan, then apply those exact bytes.
+mandalore connection apply --harness claude-code --sessions-stopped \
+  < claude-repair-plan.json
 ```
 
-Applying that repair is a separate `--apply --sessions-stopped` invocation after
-review. Repair preserves binding and memory-access mode and creates a new
+Repair preserves binding and memory-access mode and creates a new
 generation. Missing or edited ownership evidence requires inspection; it does
 not authorize silently adopting files or switching signets.
+
+The `repair --apply --sessions-stopped` convenience form prepares and applies
+a new repair plan in one invocation. Repeating `repair` generates a new plan;
+use the saved-plan form above when approval must bind to the previously viewed
+bytes.
