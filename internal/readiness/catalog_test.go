@@ -15,10 +15,10 @@ func TestCatalogKeepsSupportDependenciesAndEvidenceSeparate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if c.SchemaVersion != 1 || len(c.Targets) != 4 || len(c.Components) != 4 || len(c.Evidence) != 6 {
+	if c.SchemaVersion != 1 || len(c.Targets) != 4 || len(c.Components) != 5 || len(c.Evidence) != 6 {
 		t.Fatalf("unexpected declaration shape: %+v", c)
 	}
-	if c.MemoryProtocol != 1 || c.CodexHookProtocol != 1 || c.PiHarnessProtocol != 1 {
+	if c.MemoryProtocol != 1 || c.CodexHookProtocol != 1 || c.PiHarnessProtocol != 1 || c.ClaudeHookProtocol != 1 {
 		t.Fatal("protocol declarations drifted")
 	}
 	files, err := piplugin.PackageFiles()
@@ -30,6 +30,9 @@ func TestCatalogKeepsSupportDependenciesAndEvidenceSeparate(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, d := range c.Components {
+		if d.ID == "claude-code" && d.NativeContract != install.ClaudeNativeVersion {
+			t.Fatal("Claude native contract differs from installer")
+		}
 		if d.ID == "pi" {
 			if d.NativeContract != install.PiNativeVersion {
 				t.Fatal("Pi contract differs from actual installer")

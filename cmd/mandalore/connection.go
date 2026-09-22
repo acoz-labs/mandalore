@@ -21,7 +21,7 @@ func connectionDefaults(profile *install.Profile) error {
 }
 
 func connectionHarnessDefaults(profile *install.Profile, harness string) error {
-	if harness != "codex" && harness != "pi" {
+	if harness != "codex" && harness != "pi" && harness != "claude-code" {
 		return errors.New("unsupported connection harness")
 	}
 	if profile.StateDir == "" {
@@ -35,6 +35,8 @@ func connectionHarnessDefaults(profile *install.Profile, harness string) error {
 		key := "CODEX_HOME"
 		if harness == "pi" {
 			key = "PI_CODING_AGENT_DIR"
+		} else if harness == "claude-code" {
+			key = "CLAUDE_CONFIG_DIR"
 		}
 		profile.NativeHome = os.Getenv(key)
 		if profile.NativeHome == "" {
@@ -45,11 +47,17 @@ func connectionHarnessDefaults(profile *install.Profile, harness string) error {
 			profile.NativeHome = filepath.Join(home, ".codex")
 			if harness == "pi" {
 				profile.NativeHome = filepath.Join(home, ".pi", "agent")
+			} else if harness == "claude-code" {
+				profile.NativeHome = filepath.Join(home, ".claude")
 			}
 		}
 	}
 	if profile.NativeBinary == "" {
-		path, err := exec.LookPath(harness)
+		executable := harness
+		if harness == "claude-code" {
+			executable = "claude"
+		}
+		path, err := exec.LookPath(executable)
 		if err != nil {
 			return errors.New("Selected harness is not on PATH; supply --native-binary with its absolute path")
 		}
@@ -111,22 +119,22 @@ func runConnection(ctx context.Context, args []string, input io.Reader, out io.W
 	f := flag.NewFlagSet("connection "+sub, flag.ContinueOnError)
 	f.SetOutput(io.Discard)
 	readOnly := f.Bool("read-only", false, "Reject mutations")
-	harness := f.String("harness", "codex", "Native harness: codex or pi")
+	harness := f.String("harness", "codex", "Native harness: codex, pi or claude-code")
 	var memoryReadOnly bool
 	var profile install.Profile
 	var binary, path, root string
 	var applyRepair bool
 	var sessionsStopped bool
 	if sub == "apply" || sub == "repair" {
-		f.BoolVar(&sessionsStopped, "sessions-stopped", false, "Confirm all Codex sessions using the selected profile have exited")
+		f.BoolVar(&sessionsStopped, "sessions-stopped", false, "Confirm all selected native sessions using the selected profile have exited")
 	}
 	if sub == "plan" || sub == "doctor" {
 		f.StringVar(&profile.StateDir, "state-dir", "", "Machine-local installation state directory")
-		f.StringVar(&profile.NativeHome, "native-home", "", "Existing native Codex profile")
-		f.StringVar(&profile.NativeBinary, "native-binary", "", "Absolute native Codex executable")
+		f.StringVar(&profile.NativeHome, "native-home", "", "Existing native profile")
+		f.StringVar(&profile.NativeBinary, "native-binary", "", "Absolute native executable")
 	}
 	if sub == "plan" {
-		f.BoolVar(&memoryReadOnly, "memory-read-only", false, "Enforce read-only memory in the Pi connection")
+		f.BoolVar(&memoryReadOnly, "memory-read-only", false, "Enforce read-only memory in Pi and Claude Code connections")
 		f.StringVar(&binary, "binary", "", "Trusted Mandalore executable to stage; default running CLI")
 		f.StringVar(&path, "binding", "", "Explicit machine-local signet binding")
 	}
@@ -148,14 +156,14 @@ func runConnection(ctx context.Context, args []string, input io.Reader, out io.W
 	if f.NArg() != 0 {
 		return bad(out, "Unexpected connection arguments.")
 	}
-	if *harness != "codex" && *harness != "pi" {
-		return bad(out, "Choose --harness codex or pi.")
+	if *harness != "codex" && *harness != "pi" && *harness != "claude-code" {
+		return bad(out, "Choose --harness codex, pi or claude-code.")
 	}
-	if memoryReadOnly && *harness != "pi" {
-		return bad(out, "--memory-read-only is supported by the Pi connection.")
+	if memoryReadOnly && *harness != "pi" && *harness != "claude-code" {
+		return bad(out, "--memory-read-only is supported by Pi and Claude Code connections.")
 	}
-	if sessionsStopped && (*harness != "codex" || sub == "repair" && !applyRepair) {
-		return bad(out, "--sessions-stopped applies only to Codex apply or repair --apply.")
+	if sessionsStopped && (*harness == "pi" || sub == "repair" && !applyRepair) {
+		return bad(out, "--sessions-stopped applies only to Codex or Claude Code apply or repair --apply.")
 	}
 	if *readOnly && (sub == "apply" || applyRepair) {
 		return emit(out, api.Failure("operation.read_only", "Mutations are disabled for this task.", false))
@@ -185,6 +193,8 @@ func runConnection(ctx context.Context, args []string, input io.Reader, out io.W
 			value = install.Options{StateDir: profile.StateDir, NativeHome: profile.NativeHome, NativeBinary: profile.NativeBinary, Binary: binary, Binding: path}
 			if *harness == "pi" {
 				value = install.PiOptions{Options: value.(install.Options), ReadOnly: memoryReadOnly}
+			} else if *harness == "claude-code" {
+				value = install.ClaudeOptions{Options: value.(install.Options), ReadOnly: memoryReadOnly}
 			}
 		}
 	case "repair":
@@ -193,6 +203,8 @@ func runConnection(ctx context.Context, args []string, input io.Reader, out io.W
 	}
 	if *harness == "pi" {
 		name = "pi_" + name
+	} else if *harness == "claude-code" {
+		name = "claude_code_" + name
 	}
 	var raw []byte
 	if value != nil {
@@ -205,6 +217,8 @@ func runConnection(ctx context.Context, args []string, input io.Reader, out io.W
 		}
 		if *harness == "pi" {
 			raw, err = unwrapConnectionPlan[install.PiPlan](raw)
+		} else if *harness == "claude-code" {
+			raw, err = unwrapConnectionPlan[install.ClaudePlan](raw)
 		} else {
 			raw, err = unwrapPlan(raw)
 		}
@@ -220,6 +234,13 @@ func runConnection(ctx context.Context, args []string, input io.Reader, out io.W
 		}
 		raw, _ = json.Marshal(install.ApplyInput{Plan: p, SessionsStopped: true})
 	}
+	if sub == "apply" && *harness == "claude-code" {
+		var p install.ClaudePlan
+		if err := strictjson.Decode(raw, &p, api.MaxInputBytes); err != nil {
+			return bad(out, "Expected an exact approved connection plan.")
+		}
+		raw, _ = json.Marshal(install.ClaudeApplyInput{Plan: p, SessionsStopped: sessionsStopped})
+	}
 	result := a.Call(ctx, name, raw)
 	if sub == "repair" && applyRepair && result.OK {
 		raw, _ = json.Marshal(result.Result)
@@ -229,6 +250,9 @@ func runConnection(ctx context.Context, args []string, input io.Reader, out io.W
 		applyName := "connection_apply"
 		if *harness == "pi" {
 			applyName = "pi_" + applyName
+		} else if *harness == "claude-code" {
+			applyName = "claude_code_" + applyName
+			raw, _ = json.Marshal(install.ClaudeApplyInput{Plan: result.Result.(install.ClaudePlan), SessionsStopped: sessionsStopped})
 		}
 		result = a.Call(ctx, applyName, raw)
 	}

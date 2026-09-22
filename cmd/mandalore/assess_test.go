@@ -28,7 +28,7 @@ func TestAssessmentCLIAndSharedCallHaveIdenticalReports(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Setenv("PATH", filepath.Join(root, "absent"))
-	for _, harness := range []string{"codex", "pi"} {
+	for _, harness := range []string{"codex", "pi", "claude-code"} {
 		in := readiness.Input{Harness: harness, StateDir: filepath.Join(root, "state"), NativeHome: filepath.Join(root, "profile"), NativeBinary: filepath.Join(root, "native"), Binding: filepath.Join(root, "binding"), IncludePrompt: true}
 		raw, _ := json.Marshal(in)
 		human, hcode := cli(t, []string{"connection", "assess", "--harness", harness, "--state-dir", in.StateDir, "--native-home", in.NativeHome, "--native-binary", in.NativeBinary, "--binding", in.Binding, "--prompt", "--read-only"}, "")
@@ -74,7 +74,7 @@ func TestCompiledAssessmentNeverRunsNativeOrDependencyTraps(t *testing.T) {
 	if err := os.Mkdir(traps, 0700); err != nil {
 		t.Fatal(err)
 	}
-	for _, name := range []string{"codex", "pi", "git", "node"} {
+	for _, name := range []string{"codex", "pi", "claude", "git", "node"} {
 		if err := os.WriteFile(filepath.Join(traps, name), []byte("#!/bin/sh\nprintf executed > \"${0%/*}/execution-canary\"\nexit 97\n"), 0700); err != nil {
 			t.Fatal(err)
 		}
@@ -97,7 +97,7 @@ func TestCompiledAssessmentNeverRunsNativeOrDependencyTraps(t *testing.T) {
 		t.Fatal(err)
 	}
 	before := assessmentFixtureInventory(t, root)
-	for _, harness := range []string{"codex", "pi"} {
+	for _, harness := range []string{"codex", "pi", "claude-code"} {
 		cmd := exec.CommandContext(ctx, binary, "connection", "assess", "--harness", harness, "--state-dir", filepath.Join(root, "state"), "--native-home", filepath.Join(root, "profile"), "--binding", filepath.Join(root, "binding"), "--prompt")
 		cmd.Env = []string{"PATH=" + traps, "HTTP_PROXY=" + endpoint.URL, "HTTPS_PROXY=" + endpoint.URL, "ALL_PROXY=" + endpoint.URL, "OPENAI_BASE_URL=" + endpoint.URL, "ANTHROPIC_BASE_URL=" + endpoint.URL}
 		out, err := cmd.CombinedOutput()
@@ -116,7 +116,7 @@ func TestCompiledAssessmentNeverRunsNativeOrDependencyTraps(t *testing.T) {
 		}
 	}
 	entries, err := os.ReadDir(traps)
-	if err != nil || len(entries) != 4 {
+	if err != nil || len(entries) != 5 {
 		t.Fatal("dependency/native trap executed", entries, err)
 	}
 	for _, name := range []string{"state", "profile", "binding"} {

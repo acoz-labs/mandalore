@@ -64,7 +64,7 @@ func inspectBinding(ctx context.Context, path, harness string, read metadataRead
 	var b binding.Binding
 	if strictjson.Decode(raw, &b, 16<<10) != nil || b.Version != 1 ||
 		!filepath.IsAbs(b.Root) || len(b.Root) > 4096 || strings.IndexFunc(b.Root, unicode.IsControl) >= 0 ||
-		memory.ValidateDeviceID(b.DeviceID) != nil || (harness != "codex" && harness != "pi") {
+		memory.ValidateDeviceID(b.DeviceID) != nil || (harness != "codex" && harness != "pi" && harness != "claude-code") {
 		return inconsistentMetadata("binding-invalid")
 	}
 	sum := sha256.Sum256(raw)

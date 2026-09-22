@@ -40,7 +40,7 @@ func matchEvidence(e Evidence, observed Observation) EvidenceMatch {
 		}
 	}
 	compare("runtime-sha256", e.Identities.RuntimeSHA256, observed.Identities.RuntimeSHA256)
-	if e.Component == "codex" || e.Component == "pi" {
+	if e.Component == "codex" || e.Component == "pi" || e.Component == "claude-code" {
 		compare("package-sha256", e.Identities.PackageSHA256, observed.Identities.PackageSHA256)
 		compare("native-sha256", e.Identities.NativeSHA256, observed.Identities.NativeSHA256)
 		compare("native-version", e.Identities.NativeVersion, observed.Identities.NativeVersion)

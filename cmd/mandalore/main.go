@@ -13,6 +13,7 @@ import (
 
 	"github.com/acoz-labs/mandalore/internal/api"
 	"github.com/acoz-labs/mandalore/internal/binding"
+	"github.com/acoz-labs/mandalore/internal/claudecode"
 	"github.com/acoz-labs/mandalore/internal/codex"
 	"github.com/acoz-labs/mandalore/internal/foundlings"
 	memorymcp "github.com/acoz-labs/mandalore/internal/mcp"
@@ -54,7 +55,7 @@ const help = `Mandalore — durable memory across tools
   mandalore codex-memory-hook [--binding FILE]   Read-only native lifecycle JSON
   mandalore connection plan [--binary FILE] [--binding FILE] [profile options]
   mandalore connection apply < approved-plan.json
-  mandalore connection assess --harness codex|pi [profile options] [--binding FILE] [--connection-root DIR] [--prompt]
+  mandalore connection assess --harness codex|pi|claude-code [profile options] [--binding FILE] [--connection-root DIR] [--prompt]
   mandalore connection armorer [profile options]  The Armorer: read-only inspection
   mandalore connection doctor [profile options]   Compatibility alias
   mandalore connection repair --connection-root DIR [--apply]
@@ -64,8 +65,8 @@ const help = `Mandalore — durable memory across tools
   mandalore export apply [--read-only] < reviewed-preview.json
 
 Profile options: --state-dir DIR, --native-home DIR, --native-binary FILE.
-Connection harness: --harness codex|pi (required for assess; otherwise default codex).
-Pi plan --memory-read-only enforces read-only memory in the installed connection;
+Connection harness: --harness codex|pi|claude-code (required for assess; otherwise default codex).
+Pi and Claude Code plan --memory-read-only enforces read-only memory in the installed connection;
 --read-only instead prohibits mutations by this CLI invocation.
 Connection plan/armorer/doctor/repair preview do not activate a connection.
 Connection assess never executes programs or changes state; --prompt only adds guidance.
@@ -124,6 +125,24 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 	}
 	if len(args) > 0 && args[0] == "connection" {
 		return runConnection(ctx, args[1:], input, out)
+	}
+	if len(args) > 0 && args[0] == "claude-code-memory-hook" {
+		f := flag.NewFlagSet("claude-code-memory-hook", flag.ContinueOnError)
+		f.SetOutput(io.Discard)
+		path := f.String("binding", "", "Machine-local binding file")
+		digest := f.String("binding-sha256", "", "Expected binding hash")
+		signet := f.String("signet-id", "", "Expected signet identity")
+		if err := f.Parse(args[1:]); err != nil || f.NArg() != 0 {
+			_, err := io.WriteString(out, "{}\n")
+			if err != nil {
+				return 1
+			}
+			return 0
+		}
+		if err := claudecode.Run(*path, binding.Guard{SHA256: *digest, SignetID: *signet}, input, out); err != nil {
+			return 1
+		}
+		return 0
 	}
 	if len(args) > 0 && args[0] == "codex-memory-hook" {
 		f := flag.NewFlagSet("codex-memory-hook", flag.ContinueOnError)

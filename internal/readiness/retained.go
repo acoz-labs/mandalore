@@ -45,7 +45,7 @@ func inspectRetained(ctx context.Context, s install.ReceiptSelection, native fil
 		return retainedObservation{Setup: "unknown", Code: "retained-unselected", Complete: true}, nil
 	}
 	name, limit := "connection.json", int64(32<<10)
-	if s.Harness == "pi" {
+	if s.Harness == "pi" || s.Harness == "claude-code" {
 		name, limit = "receipt.json", 64<<10
 	}
 	raw, err := read(ctx, filepath.Join(s.Root, name), limit)
