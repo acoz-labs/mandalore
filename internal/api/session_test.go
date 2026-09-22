@@ -315,7 +315,8 @@ func assertSessionDelivered(t *testing.T, a *API, out Envelope) {
 		t.Fatal("remote differs from delivery receipt", remote, out.SessionSync)
 	}
 }
-func TestSessionVisibilityMutationsDeliver(t *testing.T) {
+func sessionVisibilityFixture(t *testing.T) (*API, memory.Revision) {
+	t.Helper()
 	a, s, syncer := sessionFixture(t)
 	r, err := s.Remember(memory.Write{Kind: "fact", Summary: "Synthetic record", Body: "Teal convention", Basis: "user-direction", Reason: "Confirmed"})
 	if err != nil {
@@ -338,14 +339,20 @@ func TestSessionVisibilityMutationsDeliver(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	return a, r
+}
+
+func TestSessionVisibilityMutationsDeliver(t *testing.T) {
+	a, r := sessionVisibilityFixture(t)
 	for _, name := range []string{"memory_withdraw", "memory_restore"} {
 		h := inlineCall(t, a, "memory_visibility_history", HistoryInput{RecordID: r.RecordID}).Result.(memory.VisibilityHistory)
 		out := inlineCall(t, a, name, memory.VisibilityWrite{RecordID: r.RecordID, ContentHeads: h.State.ContentHeads, VisibilityHeads: h.State.VisibilityHeads, Reason: "Explicit decision"})
 		assertSessionDelivered(t, a, out)
 		receipt := out.Result.(memory.VisibilityReceipt)
-		if !receipt.DurableLocally || receipt.Synchronization == "not-requested" {
+		if !receipt.DurableLocally || receipt.Synchronization != sessionState(*out.SessionSync) {
 			t.Fatal(receipt)
 		}
+		assertSessionVisibilityNotice(t, receipt)
 	}
 }
 

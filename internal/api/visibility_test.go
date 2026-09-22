@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/acoz-labs/mandalore/internal/binding"
@@ -58,7 +59,7 @@ func TestVisibilityAPIAuthorityAndTypedRoundTrip(t *testing.T) {
 	h := inlineCall(t, a, "memory_visibility_history", HistoryInput{RecordID: r.RecordID}).Result.(memory.VisibilityHistory)
 	in := memory.VisibilityWrite{RecordID: r.RecordID, ContentHeads: h.State.ContentHeads, VisibilityHeads: h.State.VisibilityHeads, Reason: "Explicit withdrawal"}
 	w := inlineCall(t, a, "memory_withdraw", in).Result.(memory.VisibilityReceipt)
-	if !w.DurableLocally || w.State.State != "withdrawn" || w.Synchronization != "not-requested" {
+	if !w.DurableLocally || w.State.State != "withdrawn" || w.Synchronization != "not-requested" || !strings.Contains(w.Notice, "no checkpoint or delivery requested") {
 		t.Fatal(w)
 	}
 	discovered := inlineCall(t, New(a.service, true), "memory_withheld", WithheldInput{Query: "Synthetic record"}).Result.(memory.Page[memory.WithheldRecord])
