@@ -74,9 +74,24 @@ synchronize, launch a model or block unrelated work. Context output stays below
 Claude's 10,000-character inline-context threshold; a failure produces a concise
 warning so tools can be inspected directly.
 
+Native macOS validation with Claude Code 2.1.278 observed `SessionStart:startup`
+and `UserPromptSubmit` on a fresh print session, `SessionStart:resume` when
+resuming, and `SessionStart:compact` after an actual manual `/compact`. A resumed
+post-compaction session received orientation again and retained the discussion.
+Interrupting streamed model text with SIGINT left the synthetic signet and native
+memory unchanged. These are observed native behaviors, not guarantees that every
+termination runs a hook. Linux adapter-input checks are distinct from a native
+Linux Claude session.
+
 Learning and synchronization happen through the shared memory tools during the
 conversation. The model is asked to save confirmed knowledge incrementally and
-attempt bounded delivery when allowed. A saved record, successful network
+attempt bounded delivery when allowed. Prefer `memory_remember_and_sync` and
+`memory_journal_append_and_sync` when both saving and synchronization are allowed;
+use their local-only counterparts when synchronization is prohibited. Inspect
+both the saved receipt and delivery result. A local-only receipt means delivery
+was not requested and must not be reported as synchronized. For cross-machine
+recall, use a short-budget `memory_sync` first when the task allows it; a hook
+only reflects the selected local clone. A saved record, successful network
 delivery and knowledge already loaded into another conversation are different
 states. Offline delivery and interrupted responses require inspection before
 retrying a save. No end-of-session or compaction hook promises to recover

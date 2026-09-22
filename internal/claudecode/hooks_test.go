@@ -201,3 +201,27 @@ func TestHookRejectsBindingRetargetAndMissingGuard(t *testing.T) {
 		t.Fatal("hook modified signet")
 	}
 }
+
+func TestLifecycleContextOffersDeliveryChoiceWithoutWriting(t *testing.T) {
+	root, path := fixture(t)
+	before := snapshot(t, filepath.Dir(root))
+	for _, event := range []string{`{"hook_event_name":"SessionStart"}`, `{"hook_event_name":"UserPromptSubmit","prompt":"This is a no-sync task; recall Answer style"}`} {
+		result := invoke(t, path, event)
+		output, ok := result["hookSpecificOutput"].(map[string]any)
+		if !ok {
+			t.Fatal("missing native context", result)
+		}
+		context, ok := output["additionalContext"].(string)
+		if !ok {
+			t.Fatal(output)
+		}
+		for _, required := range []string{"memory_sync with timeout_seconds: 3", "prefer memory_remember_and_sync", "prefer memory_journal_append_and_sync", "synchronization is prohibited", "delivery was not attempted", "Read-only/no-save"} {
+			if !strings.Contains(context, required) {
+				t.Fatalf("native context omits %q", required)
+			}
+		}
+	}
+	if !reflect.DeepEqual(before, snapshot(t, filepath.Dir(root))) {
+		t.Fatal("delivery guidance caused hook writes")
+	}
+}
