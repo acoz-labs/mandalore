@@ -73,6 +73,22 @@ func TestMCPUsesSharedContractAndRejectsDuplicates(t *testing.T) {
 				t.Fatalf("missing combined preference/permission boundary: %s", tool.Name)
 			}
 		}
+		if tool.Name == "memory_remember" || tool.Name == "memory_remember_and_sync" {
+			for _, required := range []string{"original record_id", "current revision IDs", "not record IDs", "duplicate/test records"} {
+				if !strings.Contains(tool.Description, required) {
+					t.Fatalf("%s lacks correction guidance %q", tool.Name, required)
+				}
+			}
+			encoded, err := json.Marshal(tool.InputSchema)
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, required := range []string{"original record_id", "current revision IDs", "Supply record_id too"} {
+				if !bytes.Contains(encoded, []byte(required)) {
+					t.Fatalf("%s schema omits correction field meaning %q", tool.Name, required)
+				}
+			}
+		}
 		network := tool.Name == "memory_sync" || tool.Name == "memory_remember_and_sync" || tool.Name == "memory_journal_append_and_sync"
 		if tool.Annotations == nil || tool.Annotations.OpenWorldHint == nil || *tool.Annotations.OpenWorldHint != network {
 			t.Fatal("incorrect network annotation", tool.Name)

@@ -8,6 +8,8 @@ import (
 	signetsync "github.com/acoz-labs/mandalore/internal/sync"
 )
 
+const correctionGuidance = " For corrections, keep the original record_id (record-...) and set supersedes to its current revision IDs (revision-...), not record IDs; both fields are required together. Preserve the original kind and scope. Omit both identity fields only for genuinely new knowledge. Obtain IDs from recall/history. After validation errors, inspect memory_history and the input schema; do not guess IDs, create duplicate/test records, or withdraw the original as a correction workaround."
+
 type RememberAndSyncInput struct {
 	Record         memory.Write `json:"record" jsonschema:"Confirmed knowledge to save locally before delivery."`
 	TimeoutSeconds *int         `json:"timeout_seconds,omitempty" jsonschema:"Delivery budget only: default 3 seconds; range 1–30."`
@@ -75,7 +77,7 @@ func saveAndSync(ctx context.Context, s *memory.Service, timeout *int, save func
 }
 
 var saveAndDelivery = []Operation{
-	operation("memory_remember_and_sync", "Preferred for ordinary confirmed learning when saving AND synchronization are allowed: save knowledge locally, then attempt bounded delivery once. If synchronization is prohibited but local saving is allowed, use local-only memory_remember. Read-only/no-save tasks prohibit both. Outer success confirms the save, not delivery: inspect saved and delivery separately. Never repeat the save to retry delivery.", false, func(ctx context.Context, s *memory.Service, in RememberAndSyncInput) (SaveAndSyncResult, error) {
+	operation("memory_remember_and_sync", "Preferred for ordinary confirmed learning when saving AND synchronization are allowed: save knowledge locally, then attempt bounded delivery once. If synchronization is prohibited but local saving is allowed, use local-only memory_remember. Read-only/no-save tasks prohibit both. Outer success confirms the save, not delivery: inspect saved and delivery separately. Never repeat the save to retry delivery."+correctionGuidance, false, func(ctx context.Context, s *memory.Service, in RememberAndSyncInput) (SaveAndSyncResult, error) {
 		return saveAndSync(ctx, s, in.TimeoutSeconds, func() (Receipt, error) { return remember(ctx, s, in.Record) })
 	}),
 	operation("memory_journal_append_and_sync", "Preferred for useful semantic journals when journaling AND synchronization are allowed: save locally, then attempt bounded delivery once. If synchronization is prohibited but local journaling is allowed, use local-only memory_journal_append. Read-only/no-save tasks prohibit both. Outer success confirms the save, not delivery: inspect saved and delivery separately. Never repeat the save to retry delivery.", false, func(ctx context.Context, s *memory.Service, in JournalAndSyncInput) (SaveAndSyncResult, error) {

@@ -30,14 +30,14 @@ func (s *Service) Validate() error { return s.store.Validate() }
 
 type Write struct {
 	ExternalOrigin *ExternalOrigin `json:"external_origin,omitempty"`
-	Kind           string          `json:"kind"`
+	Kind           string          `json:"kind" jsonschema:"Knowledge kind. For a correction, preserve the original record kind."`
 	Summary        string          `json:"summary"`
 	Body           string          `json:"body"`
 	Basis          string          `json:"basis"`
 	Reason         string          `json:"reason"`
-	Scope          *Scope          `json:"scope,omitempty"`
-	RecordID       string          `json:"record_id,omitempty"`
-	Supersedes     []string        `json:"supersedes,omitempty"`
+	Scope          *Scope          `json:"scope,omitempty" jsonschema:"For a correction, preserve the original scope from recall/history. Omission selects signet-wide scope, not the original project/account scope automatically."`
+	RecordID       string          `json:"record_id,omitempty" jsonschema:"For a correction, the original record_id (record-...) from recall/history; supply together with supersedes. Omit both only for genuinely new knowledge, never to bypass validation with a duplicate/test record."`
+	Supersedes     []string        `json:"supersedes,omitempty" jsonschema:"For a correction, current revision IDs (revision-...) belonging to record_id, not record IDs. Supply record_id too. Inspect memory_history after validation errors rather than guessing IDs or creating another record."`
 	Sensitivity    string          `json:"sensitivity,omitempty"`
 	Volatility     string          `json:"volatility,omitempty"`
 	Confidence     string          `json:"confidence,omitempty"`

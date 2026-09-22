@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/json"
@@ -239,5 +240,65 @@ func TestSaveAndSyncCatalogPreservesLocalOnlyTools(t *testing.T) {
 	}
 	if len(expected) != 0 {
 		t.Fatalf("missing operations: %v", expected)
+	}
+}
+
+func TestCorrectionValidationPreservesOriginalRecord(t *testing.T) {
+	for _, name := range []string{"memory_remember", "memory_remember_and_sync"} {
+		t.Run(name, func(t *testing.T) {
+			a := fixture(t)
+			original := a.Call(context.Background(), "memory_remember", []byte(`{"kind":"fact","summary":"Preview color","body":"Amber","basis":"user-direction","reason":"Confirmed"}`))
+			if !original.OK {
+				t.Fatal(original)
+			}
+			receipt := original.Result.(Receipt)
+			call := func(record map[string]any) Envelope {
+				var input any = record
+				if name == "memory_remember_and_sync" {
+					input = map[string]any{"record": record}
+				}
+				raw, _ := json.Marshal(input)
+				return a.Call(context.Background(), name, raw)
+			}
+			record := map[string]any{"kind": "fact", "summary": "Preview color", "body": "Cobalt", "basis": "user-direction", "reason": "User correction", "supersedes": []string{receipt.RecordID}}
+			before := inlineInventory(t, a.service.Root())
+			for _, withRecordID := range []bool{false, true} {
+				if withRecordID {
+					record["record_id"] = receipt.RecordID
+				}
+				result := call(record)
+				if result.OK || result.Error.WriteMayHaveOccurred {
+					t.Fatal("invalid correction published", result)
+				}
+				if !reflect.DeepEqual(before, inlineInventory(t, a.service.Root())) {
+					t.Fatal("validation changed original signet")
+				}
+			}
+			// Use the original record identity plus its actual revision identity. The
+			// same payload is valid for both local and combined saves; no duplicate or
+			// withdrawal is needed to recover from the invalid request.
+			record["supersedes"] = []string{receipt.ID}
+			corrected := call(record)
+			if !corrected.OK {
+				t.Fatal(corrected)
+			}
+			saved := Receipt{}
+			if name == "memory_remember" {
+				saved = corrected.Result.(Receipt)
+			} else {
+				saved = corrected.Result.(SaveAndSyncResult).Saved
+			}
+			if saved.RecordID != receipt.RecordID || saved.ID == receipt.ID || !saved.DurableLocally {
+				t.Fatal("correction changed identity", saved)
+			}
+			history := a.Call(context.Background(), "memory_history", []byte(`{"record_id":"`+receipt.RecordID+`"}`))
+			if !history.OK {
+				t.Fatal(history)
+			}
+			encoded, _ := json.Marshal(history.Result)
+			if !bytes.Contains(encoded, []byte(receipt.ID)) || !bytes.Contains(encoded, []byte(saved.ID)) {
+				t.Fatal("correction lost revision history", string(encoded))
+			}
+		})
 	}
 }
