@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/acoz-labs/mandalore/internal/memory"
 	"github.com/acoz-labs/mandalore/internal/memorycontext"
@@ -136,7 +137,9 @@ func (a *API) callSession(ctx context.Context, name string, data []byte) Envelop
 		if seconds := number(in.TimeoutSeconds, 3); seconds < 1 || seconds > 30 {
 			return Failure("input.invalid", "Synchronization timeout requires 1–30 seconds.", false)
 		}
-		attempt := a.session.Attempt(ctx, sessionsync.Boundary{Kind: "manual"})
+		deliveryCtx, cancel := context.WithTimeout(ctx, time.Duration(number(in.TimeoutSeconds, 3))*time.Second)
+		defer cancel()
+		attempt := a.session.Attempt(deliveryCtx, sessionsync.Boundary{Kind: "manual"})
 		out := Success(attempt.Status)
 		if attempt.Error != nil {
 			out = Failure(attempt.Error.Code, attempt.Error.Message, attempt.Attempted)
@@ -146,11 +149,13 @@ func (a *API) callSession(ctx context.Context, name string, data []byte) Envelop
 		return out
 	}
 	originalName := name
+	deliveryBudget := sessionsync.Budget
 	if name == "memory_remember_and_sync" {
 		var in RememberAndSyncInput
 		if strictjson.Decode(data, &in, MaxInputBytes) != nil || number(in.TimeoutSeconds, 3) < 1 || number(in.TimeoutSeconds, 3) > 30 {
 			return Failure("input.invalid", "Invalid combined save request.", false)
 		}
+		deliveryBudget = min(deliveryBudget, time.Duration(number(in.TimeoutSeconds, 3))*time.Second)
 		name = "memory_remember"
 		data, _ = json.Marshal(in.Record)
 	} else if name == "memory_journal_append_and_sync" {
@@ -158,6 +163,7 @@ func (a *API) callSession(ctx context.Context, name string, data []byte) Envelop
 		if strictjson.Decode(data, &in, MaxInputBytes) != nil || number(in.TimeoutSeconds, 3) < 1 || number(in.TimeoutSeconds, 3) > 30 {
 			return Failure("input.invalid", "Invalid combined journal request.", false)
 		}
+		deliveryBudget = min(deliveryBudget, time.Duration(number(in.TimeoutSeconds, 3))*time.Second)
 		name = "memory_journal_append"
 		data, _ = json.Marshal(in.Entry)
 	}
@@ -167,7 +173,9 @@ func (a *API) callSession(ctx context.Context, name string, data []byte) Envelop
 	}
 	// This runs after a successful or possibly partial publication. Cancellation
 	// suppresses further work while preserving the actual published receipt.
-	attempt := a.session.Attempt(ctx, sessionsync.Boundary{Kind: "write"})
+	deliveryCtx, cancel := context.WithTimeout(ctx, deliveryBudget)
+	defer cancel()
+	attempt := a.session.Attempt(deliveryCtx, sessionsync.Boundary{Kind: "write"})
 	out.SessionSync = &attempt
 	if out.OK {
 		if saved, ok := out.Result.(Receipt); ok {

@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func hash(raw []byte) string { h := sha256.Sum256(raw); return hex.EncodeToString(h[:]) }
@@ -345,5 +346,49 @@ func TestSessionVisibilityMutationsDeliver(t *testing.T) {
 		if !receipt.DurableLocally || receipt.Synchronization == "not-requested" {
 			t.Fatal(receipt)
 		}
+	}
+}
+
+func TestSessionExplicitShortDeliveryTimeoutPreservesSave(t *testing.T) {
+	for _, name := range []string{"memory_sync", "memory_remember_and_sync", "memory_journal_append_and_sync"} {
+		t.Run(name, func(t *testing.T) {
+			a, _, _ := sessionFixture(t)
+			real, err := exec.LookPath("git")
+			if err != nil {
+				t.Fatal(err)
+			}
+			quote := func(s string) string { return "'" + strings.ReplaceAll(s, "'", "'\\''") + "'" }
+			bin := t.TempDir()
+			script := "#!/bin/sh\nfor arg in \"$@\"; do\nif [ \"$arg\" = ls-remote ]; then sleep 30; exit 128; fi\ndone\nexec " + quote(real) + " \"$@\"\n"
+			if err := os.WriteFile(filepath.Join(bin, "git"), []byte(script), 0700); err != nil {
+				t.Fatal(err)
+			}
+			t.Setenv("PATH", bin+string(os.PathListSeparator)+os.Getenv("PATH"))
+			data := `{"timeout_seconds":1}`
+			if name == "memory_remember_and_sync" {
+				data = `{"timeout_seconds":1,"record":{"kind":"fact","summary":"Teal","body":"Synthetic teal convention","basis":"user-direction","reason":"Confirmed"}}`
+			}
+			if name == "memory_journal_append_and_sync" {
+				data = `{"timeout_seconds":1,"entry":{"kind":"outcome","summary":"Synthetic outcome"}}`
+			}
+			start := time.Now()
+			out := a.Call(context.Background(), name, []byte(data))
+			elapsed := time.Since(start)
+			if elapsed >= 2500*time.Millisecond || elapsed < 900*time.Millisecond {
+				t.Fatal("one-second delivery deadline not honored", elapsed)
+			}
+			if out.SessionSync == nil || out.SessionSync.Error == nil || out.SessionSync.Status == nil || !out.SessionSync.Status.Checkpointed {
+				t.Fatal("missing partial checkpoint receipt", out)
+			}
+			if name != "memory_sync" {
+				if !out.OK {
+					t.Fatal(out)
+				}
+				r := out.Result.(SaveAndSyncResult)
+				if !r.Saved.DurableLocally || r.Delivery.OK || r.Delivery.Result != nil || r.Delivery.Error == nil {
+					t.Fatal(r)
+				}
+			}
+		})
 	}
 }
