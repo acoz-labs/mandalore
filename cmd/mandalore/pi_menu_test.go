@@ -62,7 +62,7 @@ func TestPiMenuConnectRequiresReviewedConsent(t *testing.T) {
 }
 
 func TestPiMenuBackAndInvisiblePreviewCannotExecute(t *testing.T) {
-	for _, script := range []string{"3\n", ":back\n", ""} {
+	for _, script := range []string{"4\n", ":back\n", ""} {
 		m, _, calls := piMenuFixture(t, script)
 		m.prepareSelectedPi = func(context.Context, install.PiOptions) (install.PiPlan, error) {
 			t.Fatal("back executed runtime")

@@ -10,6 +10,7 @@ import (
 	"runtime"
 
 	"github.com/acoz-labs/mandalore/internal/install"
+	claudeplugin "github.com/acoz-labs/mandalore/plugins/claude-code"
 	codexplugin "github.com/acoz-labs/mandalore/plugins/codex"
 	piplugin "github.com/acoz-labs/mandalore/plugins/pi"
 )
@@ -75,6 +76,13 @@ type Report struct {
 }
 
 func embeddedPackage(harness string) (PackageIdentity, error) {
+	if harness == "claude-code" {
+		info, err := claudeplugin.Inspect()
+		if err != nil {
+			return PackageIdentity{}, ErrCatalogInvalid
+		}
+		return PackageIdentity{harness, info.Version, info.SHA256}, nil
+	}
 	if harness == "pi" {
 		info, err := piplugin.Inspect()
 		if err != nil {
@@ -331,7 +339,7 @@ func nextAction(components []Component) Action {
 		}
 	}
 	for _, c := range components {
-		if c.Setup == "missing" && (c.ID == "codex" || c.ID == "pi" || c.ID == "node" || c.ID == "git-sync") {
+		if c.Setup == "missing" && (c.ID == "codex" || c.ID == "pi" || c.ID == "claude-code" || c.ID == "node" || c.ID == "git-sync") {
 			return Action{"select-dependencies", "Select or configure the missing dependencies in a separately authorized task."}
 		}
 	}

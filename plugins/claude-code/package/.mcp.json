@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "mandalore": {
+      "command": "/bin/sh",
+      "args": [
+        "${CLAUDE_PLUGIN_ROOT}/scripts/run-memory.sh",
+        "mcp"
+      ]
+    }
+  }
+}

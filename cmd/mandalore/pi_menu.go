@@ -15,14 +15,17 @@ func (m *menu) chooseHarness() (string, error) {
 	if m.harness == "pi" {
 		def = 1
 	}
-	n, err := m.selectItem("Choose native harness", []string{"Codex", "Pi", "Back"}, def)
+	if m.harness == "claude-code" {
+		def = 2
+	}
+	n, err := m.selectItem("Choose native harness", []string{"Codex", "Pi", "Claude Code", "Back"}, def)
 	if err != nil {
 		return "", err
 	}
-	if n == 2 {
+	if n == 3 {
 		return "", console.ErrBack
 	}
-	m.harness = []string{"codex", "pi"}[n]
+	m.harness = []string{"codex", "pi", "claude-code"}[n]
 	return m.harness, nil
 }
 

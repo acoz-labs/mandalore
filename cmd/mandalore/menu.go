@@ -31,6 +31,7 @@ type menu struct {
 	binding       string
 	profile       install.Profile
 	piProfile     install.Profile
+	claudeProfile install.Profile
 	harness       string
 	binary        string
 	failed        bool
@@ -43,6 +44,8 @@ type menu struct {
 	applySelectedConnection   func(context.Context, install.Plan, bool) (install.Result, error)
 	prepareSelectedPi         func(context.Context, install.PiOptions) (install.PiPlan, error)
 	applySelectedPi           func(context.Context, install.PiPlan) (install.PiResult, error)
+	prepareSelectedClaude     func(context.Context, install.ClaudeOptions) (install.ClaudePlan, error)
+	applySelectedClaude       func(context.Context, install.ClaudeApplyInput) (install.ClaudeResult, error)
 	nativeInspect             func(string, install.Profile) api.Envelope
 }
 
@@ -66,6 +69,7 @@ func runMenu(ctx context.Context, args []string, input io.Reader, out io.Writer)
 		}
 		return bad(out, "Invalid menu options; use --help.")
 	}
+	m.claudeProfile = m.profile
 	m.piProfile = m.profile // Copy explicit flags, never resolved Codex defaults.
 	if !*plain {
 		m.tui = console.New(input, out)
@@ -84,7 +88,7 @@ func runMenu(ctx context.Context, args []string, input io.Reader, out io.Writer)
 		m.binary, _ = os.Executable()
 	}
 	m.block(console.Block{Title: "Mandalore", Body: "Memory across time and space. Opening this menu changes nothing. A signet is your private memory bank."})
-	choices := []string{"Signet · Create a new local memory bank", "Signet · Connect an existing local clone", "Signet · Inspect selected memory and sync status", "Signet · Synchronize with its configured remote", "Connection · Connect or update Codex or Pi", "The Armorer · Assess or inspect", "The Armorer · Repair connection", "Foundlings · Manage historical references", "CLI · Install, update or select a retained runtime", "Exit"}
+	choices := []string{"Signet · Create a new local memory bank", "Signet · Connect an existing local clone", "Signet · Inspect selected memory and sync status", "Signet · Synchronize with its configured remote", "Connection · Connect or update Codex, Pi or Claude Code", "The Armorer · Assess or inspect", "The Armorer · Repair connection", "Foundlings · Manage historical references", "CLI · Install, update or select a retained runtime", "Exit"}
 	for {
 		if m.outputErr != nil {
 			return 1
@@ -310,6 +314,12 @@ func (m *menu) outcome(title string, v api.Envelope) error {
 		if v.Error.ConnectionResult != nil {
 			m.connectionResult(*v.Error.ConnectionResult)
 		}
+		if v.Error.ClaudeConnectionReport != nil {
+			m.claudeReport(*v.Error.ClaudeConnectionReport)
+		}
+		if v.Error.ClaudeConnectionResult != nil {
+			m.claudeResult(*v.Error.ClaudeConnectionResult)
+		}
 		if v.Error.PiConnectionReport != nil {
 			m.piReport(*v.Error.PiConnectionReport)
 		}
@@ -440,9 +450,9 @@ func (m *menu) setup(create bool) error {
 	if create {
 		title = "[PASS] Local signet ready"
 	}
-	body = "Selected for this menu. Connect Codex or Pi when ready. No synchronization was performed; inspect its existing Git configuration before synchronizing."
+	body = "Selected for this menu. Connect Codex, Pi or Claude Code when ready. No synchronization was performed; inspect its existing Git configuration before synchronizing."
 	if create {
-		body = "Remote synchronization is not configured. Keep this private bank backed up; configure its native Git origin separately. Next: connect Codex or Pi. No agent was launched."
+		body = "Remote synchronization is not configured. Keep this private bank backed up; configure its native Git origin separately. Next: connect Codex, Pi or Claude Code. No agent was launched."
 	}
 	m.block(console.Block{Title: title, Body: body, Tone: console.Success, Fields: []console.Field{{Label: "Signet", Value: root}, {Label: "Binding", Value: path}}})
 	return nil
@@ -493,6 +503,8 @@ func (m *menu) connect() error {
 	}
 	if harness == "pi" {
 		return m.connectPi()
+	} else if harness == "claude-code" {
+		return m.connectClaude()
 	}
 	if err := m.nativeProfile(); err != nil {
 		return err
@@ -577,6 +589,8 @@ func (m *menu) doctor() error {
 	}
 	if harness == "pi" {
 		return m.doctorPi()
+	} else if harness == "claude-code" {
+		return m.doctorClaude()
 	}
 	if err := m.nativeProfile(); err != nil {
 		return err
@@ -591,6 +605,8 @@ func (m *menu) repair() error {
 	}
 	if harness == "pi" {
 		return m.repairPi()
+	} else if harness == "claude-code" {
+		return m.repairClaude()
 	}
 	root, err := m.input("Retained managed connection root (shown by The Armorer)", "")
 	if err != nil {

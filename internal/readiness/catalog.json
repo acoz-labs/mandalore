@@ -65,6 +65,16 @@
         }
       ],
       "native_contract": "0.85.1"
+    },
+    {
+      "id": "claude-code",
+      "dependencies": [
+        {
+          "id": "claude-code",
+          "constraint": "=2.1.278"
+        }
+      ],
+      "native_contract": "2.1.278"
     }
   ],
   "evidence": [
@@ -185,5 +195,6 @@
         "https://github.com/acoz-labs/mandalore/blob/a102ab8b6142c7e5c62ba04fbb33b4907436286e/docs/evidence/pi/final-head-41a45b7/README.md"
       ]
     }
-  ]
+  ],
+  "claude_hook_protocol": 1
 }

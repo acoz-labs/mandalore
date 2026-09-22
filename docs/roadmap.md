@@ -40,12 +40,22 @@ Foundlings belongs before real-memory adoption, not merely an optional post-MVP
 improvement. Codex acceptance precedes Pi; Pi acceptance precedes Claude Code.
 Engineering merges alone are not release acceptance.
 
-The [1.1.0 candidate guide](releases/1.1.0-candidate.md) maps the merged post-1.0
-batch (#56, #61, #65, #57, #13, #74 and #85) to its original acceptance criteria.
-Preparation is tracked by #88; no candidate acceptance or publication is implied.
-Lifecycle #55 O1/O2, deferred export/withdrawal #80/#81, and Claude #14 remain
-unfinished. The completed independent improvements do not redefine the remaining
-roadmap or remove Pi's acceptance prerequisite for Claude.
+The [1.1.0 release](releases/1.1.0.md) delivered Pi and the post-1.0 improvements.
+The [1.2.0 release](releases/1.2.0.md) delivered recovery, export, withdrawal,
+retention preview and safer connection updates. Pi's acceptance prerequisite for
+Claude Code is satisfied.
+
+Claude Code #14 is the selected next iteration, targeting 1.3.0. Its acceptance
+centers on natural Codex/Pi/Claude continuity, native setup and recovery,
+correction/withdrawal, native-memory coexistence and honest offline delivery.
+The development [integration guide](../plugins/claude-code/README.md) documents
+the interface; source implementation is not release acceptance.
+
+Deterministic lifecycle synchronization #55 remains open. If native handoff tests
+show that agent-invoked delivery cannot meet the selected experience, the required
+bounded transport work must be addressed before claiming reliable continuity.
+The broader new-machine assessment #15 remains separate; the core assessment
+delivered through #85 is already available.
 
 The public [Mandalore board](https://github.com/orgs/acoz-labs/projects/35) contains
 the original 16 successor issues. Template fields/views and item status were verified;

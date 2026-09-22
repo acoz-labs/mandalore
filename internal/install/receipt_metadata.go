@@ -51,6 +51,14 @@ func ProjectReceiptMetadata(s ReceiptSelection, raw []byte) (ReceiptMetadata, er
 		p := r.Plan
 		o = p.Options
 		m = ReceiptMetadata{Runtime: p.Runtime, RuntimeSHA256: p.BinarySHA256, NativeSHA256: p.NativeSHA256, BindingSHA256: p.BindingSHA256, PackageSHA256: p.PackageSHA256, PackageVersion: p.PackageVersion, SignetID: p.SignetID}
+	case "claude-code":
+		r, err := decodeClaudeReceipt(s.Root, raw)
+		if err != nil {
+			return ReceiptMetadata{}, ErrReceiptMetadata
+		}
+		p := r.Plan
+		o = p.Options
+		m = ReceiptMetadata{Runtime: p.Runtime, RuntimeSHA256: p.BinarySHA256, NativeSHA256: p.NativeSHA256, BindingSHA256: p.BindingSHA256, PackageSHA256: p.PackageSHA256, PackageVersion: p.PackageVersion, SignetID: p.SignetID}
 	default:
 		return ReceiptMetadata{}, ErrReceiptMetadata
 	}

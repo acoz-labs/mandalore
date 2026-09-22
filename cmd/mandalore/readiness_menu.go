@@ -40,6 +40,8 @@ func (m *menu) assessMachine() error {
 	profile := m.profile
 	if harness == "pi" {
 		profile = m.piProfile
+	} else if harness == "claude-code" {
+		profile = m.claudeProfile
 	}
 	in := readiness.Input{Harness: harness, StateDir: profile.StateDir, NativeHome: profile.NativeHome, NativeBinary: profile.NativeBinary, Binding: m.binding, IncludePrompt: true}
 	for {
@@ -130,7 +132,7 @@ func (m *menu) editAssessment(in *readiness.Input) error {
 }
 
 func componentLabel(id string) string {
-	labels := map[string]string{"memory-runtime": "Memory runtime", "git-sync": "Git for delivery", "codex": "Codex", "pi": "Pi", "node": "Node for Pi", "native-profile": "Native profile", "installation-state": "Installation state", "binding": "Signet binding", "retained-runtime": "Retained runtime"}
+	labels := map[string]string{"memory-runtime": "Memory runtime", "git-sync": "Git for delivery", "codex": "Codex", "pi": "Pi", "claude-code": "Claude Code", "node": "Node for Pi", "native-profile": "Native profile", "installation-state": "Installation state", "binding": "Signet binding", "retained-runtime": "Retained runtime"}
 	if label := labels[id]; label != "" {
 		return label
 	}
@@ -221,7 +223,7 @@ func (m *menu) assessmentDetails(r readiness.Report) {
 	if r.Retained != nil {
 		m.jsonBlock("Retained observation · Declarations are not loaded package proof", r.Retained)
 	}
-	m.block(console.Block{Title: "Declared support", Fields: []console.Field{{Label: "Targets", Value: fmt.Sprint(r.Declarations.Targets)}, {Label: "Signet read versions", Value: fmt.Sprint(r.Declarations.SignetReadVersions)}, {Label: "Signet write versions", Value: fmt.Sprint(r.Declarations.SignetWriteVersions)}, {Label: "Memory / Codex / Pi protocols", Value: fmt.Sprintf("%d / %d / %d", r.Declarations.MemoryProtocol, r.Declarations.CodexHookProtocol, r.Declarations.PiHarnessProtocol)}}})
+	m.block(console.Block{Title: "Declared support", Fields: []console.Field{{Label: "Targets", Value: fmt.Sprint(r.Declarations.Targets)}, {Label: "Signet read versions", Value: fmt.Sprint(r.Declarations.SignetReadVersions)}, {Label: "Signet write versions", Value: fmt.Sprint(r.Declarations.SignetWriteVersions)}, {Label: "Memory / Codex / Pi / Claude protocols", Value: fmt.Sprintf("%d / %d / %d / %d", r.Declarations.MemoryProtocol, r.Declarations.CodexHookProtocol, r.Declarations.PiHarnessProtocol, r.Declarations.ClaudeHookProtocol)}}})
 	for _, d := range r.Declarations.Components {
 		fields := []console.Field{{Label: "Native contract", Value: d.NativeContract}}
 		for _, dep := range d.Dependencies {
@@ -239,8 +241,8 @@ func (m *menu) assessmentDetails(r readiness.Report) {
 }
 
 func (m *menu) nativeInspection(harness string, profile install.Profile) error {
-	if harness != "codex" && harness != "pi" {
-		return errors.New("choose Codex or Pi before native inspection")
+	if harness != "codex" && harness != "pi" && harness != "claude-code" {
+		return errors.New("choose Codex, Pi or Claude Code before native inspection")
 	}
 	if profile.NativeBinary == "" {
 		return errors.New("select a native executable before requesting native checks")
@@ -262,6 +264,8 @@ func (m *menu) nativeInspection(harness string, profile install.Profile) error {
 	var v api.Envelope
 	if harness == "pi" {
 		m.piProfile = profile
+	} else if harness == "claude-code" {
+		m.claudeProfile = profile
 	}
 	if m.nativeInspect != nil {
 		v = m.nativeInspect(harness, profile)
@@ -269,6 +273,8 @@ func (m *menu) nativeInspection(harness string, profile install.Profile) error {
 		name := "connection_doctor"
 		if harness == "pi" {
 			name = "pi_connection_doctor"
+		} else if harness == "claude-code" {
+			name = "claude_code_connection_doctor"
 		}
 		v = m.call(name, profile, false)
 	}
@@ -277,6 +283,8 @@ func (m *menu) nativeInspection(harness string, profile install.Profile) error {
 	}
 	if harness == "pi" {
 		m.piReport(v.Result.(install.PiReport))
+	} else if harness == "claude-code" {
+		m.claudeReport(v.Result.(install.ClaudeReport))
 	} else {
 		m.report(v.Result.(install.Report))
 	}

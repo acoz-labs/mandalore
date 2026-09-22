@@ -38,17 +38,19 @@ type MemoryError struct {
 }
 type Error struct {
 	MemoryError
-	FoundlingResult    *FoundlingMutationResult    `json:"foundling_result,omitempty"`
-	ConnectionResult   *install.Result             `json:"connection_result,omitempty"`
-	ConnectionReport   *install.Report             `json:"connection_report,omitempty"`
-	PiConnectionResult *install.PiResult           `json:"pi_connection_result,omitempty"`
-	PiConnectionReport *install.PiReport           `json:"pi_connection_report,omitempty"`
-	MigrationResult    *migration.Result           `json:"migration_result,omitempty"`
-	ReleaseResult      *distribution.InstallResult `json:"release_result,omitempty"`
-	ReleaseRetry       *distribution.ReleaseRetry  `json:"release_retry,omitempty"`
-	ExportResult       *exportreport.Receipt       `json:"export_result,omitempty"`
-	VisibilityResult   *memory.VisibilityReceipt   `json:"visibility_result,omitempty"`
-	UpgradeResult      *formatupgrade.Receipt      `json:"upgrade_result,omitempty"`
+	FoundlingResult        *FoundlingMutationResult    `json:"foundling_result,omitempty"`
+	ConnectionResult       *install.Result             `json:"connection_result,omitempty"`
+	ConnectionReport       *install.Report             `json:"connection_report,omitempty"`
+	ClaudeConnectionResult *install.ClaudeResult       `json:"claude_code_connection_result,omitempty"`
+	ClaudeConnectionReport *install.ClaudeReport       `json:"claude_code_connection_report,omitempty"`
+	PiConnectionResult     *install.PiResult           `json:"pi_connection_result,omitempty"`
+	PiConnectionReport     *install.PiReport           `json:"pi_connection_report,omitempty"`
+	MigrationResult        *migration.Result           `json:"migration_result,omitempty"`
+	ReleaseResult          *distribution.InstallResult `json:"release_result,omitempty"`
+	ReleaseRetry           *distribution.ReleaseRetry  `json:"release_retry,omitempty"`
+	ExportResult           *exportreport.Receipt       `json:"export_result,omitempty"`
+	VisibilityResult       *memory.VisibilityReceipt   `json:"visibility_result,omitempty"`
+	UpgradeResult          *formatupgrade.Receipt      `json:"upgrade_result,omitempty"`
 }
 type Envelope struct {
 	ProtocolVersion int    `json:"protocol_version"`
@@ -179,7 +181,7 @@ var operations = []Operation{
 
 func Catalog() []Operation {
 	var result []Operation
-	for _, group := range [][]Operation{operations, administration, synchronization, connections, migrations, foundlingOperations, releases, saveAndDelivery, nativeContext, piAdministration, readinessOperations, exports, visibilityOperations, upgradeOperations, retentionOperations} {
+	for _, group := range [][]Operation{operations, administration, synchronization, connections, migrations, foundlingOperations, releases, saveAndDelivery, nativeContext, piAdministration, claudeAdministration, readinessOperations, exports, visibilityOperations, upgradeOperations, retentionOperations} {
 		result = append(result, group...)
 	}
 	return result
@@ -296,6 +298,16 @@ func (a *API) failure(op Operation, err error) Envelope {
 		}
 		out := Failure(code, piConnection.Error(), piConnection.result != nil)
 		out.Error.PiConnectionResult, out.Error.PiConnectionReport = piConnection.result, piConnection.report
+		return out
+	}
+	var claudeConnection *claudeConnectionFailure
+	if errors.As(err, &claudeConnection) {
+		code := "connection.failed"
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			code = "operation.cancelled"
+		}
+		out := Failure(code, claudeConnection.Error(), claudeConnection.result != nil)
+		out.Error.ClaudeConnectionResult, out.Error.ClaudeConnectionReport = claudeConnection.result, claudeConnection.report
 		return out
 	}
 	var connection *connectionFailure

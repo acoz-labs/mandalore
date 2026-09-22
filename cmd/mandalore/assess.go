@@ -15,7 +15,7 @@ func runAssessment(ctx context.Context, args []string, out io.Writer) int {
 	f := flag.NewFlagSet("connection assess", flag.ContinueOnError)
 	f.SetOutput(io.Discard)
 	var in readiness.Input
-	f.StringVar(&in.Harness, "harness", "", "Native harness: codex or pi (required)")
+	f.StringVar(&in.Harness, "harness", "", "Native harness: codex, pi or claude-code (required)")
 	f.StringVar(&in.StateDir, "state-dir", "", "Installation state directory")
 	f.StringVar(&in.NativeHome, "native-home", "", "Selected native profile directory")
 	f.StringVar(&in.NativeBinary, "native-binary", "", "Selected native executable; inspected, not executed")

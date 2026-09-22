@@ -99,7 +99,7 @@ func TestNextActionDoesNotSendMissingConnectionStraightToNativeExecution(t *test
 
 func TestUntestedRequirementsStayHarnessSpecific(t *testing.T) {
 	in := assessmentInput(t)
-	for _, harness := range []string{"codex", "pi"} {
+	for _, harness := range []string{"codex", "pi", "claude-code"} {
 		in.Harness = harness
 		r, err := Assess(context.Background(), in)
 		if err != nil {

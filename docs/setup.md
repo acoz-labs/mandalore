@@ -40,10 +40,11 @@ Use explicit bindings for additional banks; no cwd discovery or shell edits occu
 
 ## Native connection journeys
 
-Connection setup, Armorer assessment/inspection and repair first ask for **Codex** or **Pi**.
-Each keeps its own native-profile defaults; choosing Pi does not reuse a resolved
-Codex home. Native executables must already be installed. Neither journey installs
-a harness, logs into a provider or copies authentication/session files.
+Connection setup, Armorer assessment/inspection and repair first ask for **Codex**,
+**Pi** or **Claude Code**. Claude Code is a development addition for the next
+release. Each keeps its own native-profile defaults. Native executables must
+already be installed; these journeys do not install a harness, log into a
+provider or copy authentication/session files.
 
 ### Assess this machine first
 
@@ -142,12 +143,27 @@ An interrupted remove/install may leave no active registration. Inspect its
 phase/attempt receipt before recovery. See the [Pi guide](../plugins/pi/README.md)
 and [engineering evidence](evidence/pi/README.md).
 
+### Claude Code
+
+Claude Code uses the shared MCP runtime with an explicit guarded binding.
+Choose its native profile (`CLAUDE_CONFIG_DIR`, otherwise `.claude`), executable
+(`claude`), installation state and memory access mode. Preview reads the selected
+runtime's own package and requires a separate default-No application decision.
+The initial native contract is Claude Code 2.1.278.
+
+The plugin adds native memory skills and bounded local startup/per-prompt context.
+It preserves native auto memory and asks the agent not to duplicate signet records
+into native notes. Existing native notes and loaded conversation context are
+separate from Mandalore's withdrawal controls. See the
+[Claude Code guide](../plugins/claude-code/README.md) for coexistence and lifecycle
+behavior, typed CLI examples, stopped-session updates and owned recovery.
+
 ## CLI installation and updates
 
 **CLI · Install, update or select a retained runtime** offers the latest published
 stable release, a specific version, an explicit local candidate, or a retained
 manifest SHA-256. An unavailable release is reported without changing the machine.
-The current published version is [1.1.0](releases/1.1.0.md). This journey is also available directly
+The current published version is [1.2.0](releases/1.2.0.md). This journey is also available directly
 as `mandalore release install`, including `--plain` and optional `--prefix DIR`.
 
 The preview shows source and content identities, compatibility, destination,
@@ -156,16 +172,17 @@ an owned CLI launcher and retains older runtimes; it changes no memory or native
 connections. A launcher outside PATH is shown as a full command, not silently added
 to shell settings. Missing receipt fields are displayed as None.
 
-After CLI success, optionally choose one Codex or Pi connection. Its preview executes
+After CLI success, optionally choose one native connection. Claude Code is offered
+by development builds supporting that harness. Its preview executes
 the verified new runtime to prepare **its own embedded package**, then asks for a
 second confirmation before native activation. CLI success and any later native
 failure are reported separately. The default leaves connections unchanged; a
 successful update requires a fresh native session. Use this release journey when
 updating runtime and plugin together. The older local-artifact Codex journey above
 still previews the running toolkit's embedded plugin without executing the selected
-artifact; its `--binary` flag is not a release-package selector. Pi's local-artifact
-journey instead delegates to the selected executable. Pi identity uses its own
-package metadata, not the release manifest's Codex plugin hash.
+artifact; its `--binary` flag is not a release-package selector. Pi and Claude Code
+local-artifact journeys delegate to the selected executable. Their identities use
+their own package metadata, not the release manifest's Codex plugin hash.
 
 If activation was interrupted, inspect the retained phase and pending record and
 reapply its exact reviewed plan through the [CLI recovery interface](interface.md#apply-a-reviewed-cli-installation).
@@ -231,8 +248,10 @@ The skill cannot bootstrap itself before the plugin is installed.
 
 `mandalore connection armorer` is the read-only inspection command;
 `connection doctor` remains a compatibility alias. The typed operation is still
-`connection_doctor` for Codex and `pi_connection_doctor` for Pi. Add `--harness pi`
-to the human Pi command; omitting it retains the Codex default. A diagnostic
+`connection_doctor` for Codex, `pi_connection_doctor` for Pi and
+`claude_code_connection_doctor` for Claude Code. Add `--harness pi` or
+`--harness claude-code` to the corresponding human command; omitting it retains
+the Codex default. A diagnostic
 request does not authorize repair or sync.
 Requested setup/update/repair follows the existing preview/apply contracts;
 native authentication and hook trust remain separate, and a structural pass

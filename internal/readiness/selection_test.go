@@ -66,3 +66,25 @@ func TestExecutableDefaultDoesNotSilentlySkipRelativePATHPrecedence(t *testing.T
 		t.Fatal("ambiguous PATH selected a different default", got)
 	}
 }
+
+func TestClaudeSelectionUsesOwnEnvironmentAndExecutable(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("PATH", root)
+	t.Setenv("MANDALORE_BINDING", filepath.Join(root, "binding"))
+	t.Setenv("CLAUDE_CONFIG_DIR", filepath.Join(root, "claude-profile"))
+	t.Setenv("CODEX_HOME", "relative")
+	if err := os.WriteFile(filepath.Join(root, "claude"), []byte("never executed"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	got, err := resolveSelection(Input{Harness: "claude-code", StateDir: filepath.Join(root, "state")})
+	if err != nil || got.NativeBinary.Path != filepath.Join(root, "claude") || got.NativeHome.Path != filepath.Join(root, "claude-profile") {
+		t.Fatal(got, err)
+	}
+	if _, err := os.Stat(got.NativeHome.Path); !os.IsNotExist(err) {
+		t.Fatal("selection created profile")
+	}
+	t.Setenv("CLAUDE_CONFIG_DIR", "relative")
+	if _, err := resolveSelection(Input{Harness: "claude-code"}); !errors.Is(err, ErrSelection) {
+		t.Fatal(err)
+	}
+}
