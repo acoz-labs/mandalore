@@ -168,6 +168,10 @@ func (a *API) callSession(ctx context.Context, name string, data []byte) Envelop
 		data, _ = json.Marshal(in.Entry)
 	}
 	out := legacy.Call(ctx, name, data)
+	return a.deliverSessionMutation(ctx, originalName, deliveryBudget, out)
+}
+
+func (a *API) deliverSessionMutation(ctx context.Context, originalName string, deliveryBudget time.Duration, out Envelope) Envelope {
 	if !sessionMutation(originalName) || (!out.OK && (out.Error == nil || !out.Error.WriteMayHaveOccurred)) {
 		return out
 	}
@@ -191,12 +195,29 @@ func (a *API) callSession(ctx context.Context, name string, data []byte) Envelop
 			}
 		}
 		if saved, ok := out.Result.(memory.VisibilityReceipt); ok {
-			saved.Synchronization = sessionState(attempt)
-			out.Result = saved
+			out.Result = sessionVisibilityReceipt(saved, attempt)
 		}
+	}
+	if out.Error != nil && out.Error.VisibilityResult != nil {
+		saved := sessionVisibilityReceipt(*out.Error.VisibilityResult, attempt)
+		out.Error.VisibilityResult = &saved
 	}
 	return out
 }
+
+// The local visibility service cannot describe delivery performed by this layer.
+// Preserve its publication evidence while reporting transport separately, even
+// when local durability is uncertain and the original operation remains failed.
+func sessionVisibilityReceipt(saved memory.VisibilityReceipt, attempt sessionsync.Attempt) memory.VisibilityReceipt {
+	saved.Synchronization = sessionState(attempt)
+	saved.Notice = "Visibility publication attempted; inspect this event ID before retrying."
+	if saved.DurableLocally {
+		saved.Notice = "Visibility decision saved locally."
+	}
+	saved.Notice += " Inspect session_sync for checkpoint and delivery status. Evidence is preserved, not erased. Previously read context and offline copies cannot be revoked."
+	return saved
+}
+
 func sessionState(a sessionsync.Attempt) string {
 	if a.Status != nil && a.Status.State != "" {
 		return a.Status.State
