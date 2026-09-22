@@ -12,6 +12,34 @@ described in [synchronization](synchronization.md). Exact-candidate/release
 acceptance and publication are recorded for [v1.0.0](releases/1.0.0.md).
 No live migration is implied.
 
+## Enabled-session API
+
+Managed native connections can select `session_transport_version: 1` through
+`connection plan --session-sync`. The generated policy pins its exact bytes,
+binding, signet and retained runtime. Native entry points supply both
+`--session-policy` and `--session-policy-sha256` alongside binding identity guards.
+Absent policy preserves the administrative/legacy API; it does not infer
+permission from installed skills, remembered content or environment selection.
+
+The active session catalog declares network effects for semantic writes and
+refreshing lifecycle context. `memory_session_catalog` is a CLI-only inspection
+of that selected catalog, not an additional memory tool or a synchronization.
+MCP/native tool clients receive the active schemas for their connection.
+
+Semantic write envelopes preserve the original `result` or partial `error` and
+add optional top-level `session_sync` metadata. Its `attempted` and `coalesced`
+fields describe invocation; `status` describes observed delivery/head/conflicts,
+and `error` describes a failed or interrupted attempt. A successful local write
+remains `ok: true` even when transport fails. Inspect the complete envelope;
+dropping `session_sync` drops delivery evidence. Reuse the saved identity when
+retrying transport, never resubmit the semantic write.
+
+Existing combined save operations retain their nested `saved`/`delivery` shape
+and make one software-controlled attempt in this mode. Ordinary remember/journal
+operations already trigger delivery, so models need no companion sync call.
+Default administrative commands retain their original schemas and local-only
+effects. Enforced read-only and enabled-session transport cannot be combined.
+
 ## Save with bounded delivery
 
 In the default administrative and legacy connection catalog, `memory_remember`
