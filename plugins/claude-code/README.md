@@ -89,9 +89,12 @@ attempt bounded delivery when allowed. Prefer `memory_remember_and_sync` and
 `memory_journal_append_and_sync` when both saving and synchronization are allowed;
 use their local-only counterparts when synchronization is prohibited. Inspect
 both the saved receipt and delivery result. A local-only receipt means delivery
-was not requested and must not be reported as synchronized. For cross-machine
-recall, use a short-budget `memory_sync` first when the task allows it; a hook
-only reflects the selected local clone. A saved record, successful network
+was not requested and must not be reported as synchronized. At the start of ordinary memory work, use one short-budget `memory_sync`
+before relying on attached or recalled memory when the task and connection allow
+it. This does not require knowing whether another device wrote something: that
+change is invisible until delivery is checked. A hook only reflects the selected
+local clone. No-sync and read-only tasks keep local evidence and its freshness
+limitation; a failed attempt is not an instruction to retry on every lookup. A saved record, successful network
 delivery and knowledge already loaded into another conversation are different
 states. Offline delivery and interrupted responses require inspection before
 retrying a save. No end-of-session or compaction hook promises to recover
