@@ -1,15 +1,15 @@
 # Codex integration
 
-The development `mandalore` plugin contains the `this-is-the-way` memory skill,
+The `mandalore` plugin contains the `this-is-the-way` memory skill,
 the on-demand `the-armorer` administrative skill, one
 local stdio MCP connection and `SessionStart`/`UserPromptSubmit` hooks.
 Versioned enabled sessions authorize refresh before context and delivery after
 semantic writes; legacy hooks remain local-only.
 It preserves native identity, authentication, skills, settings and project cwd.
-Issue #6 tracks native evidence; #10 tracks exact-candidate acceptance. This is
-not a released or independently accepted artifact.
-See the [native engineering receipt](../../docs/codex-native-evidence.md) for
-actual tested artifacts, scenarios and remaining gaps.
+See the [1.3.0 release record](../../docs/releases/1.3.0.md) for independently
+accepted artifacts, current native scenarios and limits. The
+[native engineering receipt](../../docs/codex-native-evidence.md) and issues #6
+and #10 preserve the original integration and acceptance history.
 
 ## Managed connection
 
@@ -33,8 +33,8 @@ Replacing an existing connection requires an explicit exited-session handoff;
 otherwise apply returns a deferred receipt without changing native registration
 or cache. Verified identical replay does not reinstall. See
 [upgrade safety evidence](../../docs/evidence/upgrade-safety/README.md) and the
-[recovery procedure](../../docs/runbook.md#deferred-codex-upgrades). These source
-changes are not yet a released artifact or a promise of hot reload.
+[recovery procedure](../../docs/runbook.md#deferred-codex-upgrades). This does
+not promise hot reload; exit affected sessions before replacement and start fresh.
 
 ## Source-checkout connection for plugin development
 

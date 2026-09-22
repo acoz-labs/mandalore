@@ -1,11 +1,11 @@
 # Pi integration
 
-Pi integration shipped with Mandalore 1.2.0. The next session-transport changes
-require new exact-candidate acceptance before release. Typed CLI and
-guided menu installation/recovery are implemented. Source-bound native model,
-delivery and rendered evidence is recorded in
-[engineering reconciliation](../../docs/evidence/pi/reconciliation.md);
-final-head verification and immutable-candidate acceptance remain separate gates.
+Pi integration is released. [Mandalore 1.3.0](../../docs/releases/1.3.0.md) adds
+enabled-session automatic transport, with independent native and retained-artifact
+acceptance. Typed CLI and guided menu installation/recovery are available.
+Historical source-bound model, delivery and rendered evidence remains in
+[engineering reconciliation](../../docs/evidence/pi/reconciliation.md); use the
+release record for current artifact identities and acceptance limits.
 
 The dependency-free JavaScript extension discovers the retained runtime's typed
 catalog and exposes its bound memory operations as native Pi tools. Every call

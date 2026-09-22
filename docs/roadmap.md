@@ -45,11 +45,14 @@ The [1.2.0 release](releases/1.2.0.md) delivered recovery, export, withdrawal,
 retention preview and safer connection updates. Pi's acceptance prerequisite for
 Claude Code is satisfied.
 
-Claude Code #14 is the selected next iteration, targeting 1.3.0. Its acceptance
-centers on natural Codex/Pi/Claude continuity, native setup and recovery,
-correction/withdrawal, native-memory coexistence and honest offline delivery.
-The development [integration guide](../plugins/claude-code/README.md) documents
-the interface; source implementation is not release acceptance.
+The [1.3.0 release](releases/1.3.0.md) delivers Claude Code #14 and automatic
+enabled-session transport across Claude Code, Codex and Pi. Acceptance exercised
+current recorded-value handoff, native setup/recovery, correction and visibility,
+native-memory coexistence and honest offline/cancelled delivery. Claude can still
+question rapid external revisions; transport does not guarantee semantic agreement.
+The [integration guide](../plugins/claude-code/README.md) documents setup.
+The [website update](https://github.com/acoz-labs/acoz/issues/151) is a separate
+pending delivery.
 
 Native handoff tests showed that model-requested synchronization could miss
 updates. The required bounded transport work is now included in #14: enabled

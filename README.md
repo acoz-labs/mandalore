@@ -14,16 +14,17 @@ Git synchronization, native lifecycle integration and memory/administration skil
 memory-only migration, foundling consultation/selective promotion, retrieval
 evaluation and synthetic regression tests. Versioned candidate builds, guided
 CLI installation/update and guarded same-byte release tooling are implemented.
-[Mandalore v1.2.0](https://github.com/acoz-labs/mandalore/releases/tag/v1.2.0)
+[Mandalore v1.3.0](https://github.com/acoz-labs/mandalore/releases/tag/v1.3.0)
 is published from the independently accepted retained candidate. See the
-[release record](docs/releases/1.2.0.md) for provenance, verification and limits.
+[release record](docs/releases/1.3.0.md) for provenance, verification and limits.
 
-Codex and Pi integrations are released. The development
-[Claude Code integration](plugins/claude-code/README.md) adds native setup,
-memory skills and guarded access to the same signet for the next release.
-The next iteration adds [session-authorized automatic synchronization](docs/synchronization.md#session-authorized-transport) across Claude Code, Codex and Pi;
-released 1.2 connections retain their existing behavior until explicitly updated.
-Development and prototype evidence do not certify a published artifact.
+Claude Code, Codex and Pi integrations are released with
+[session-authorized automatic synchronization](docs/synchronization.md#session-authorized-transport).
+Enabled sessions attempt refresh before context and delivery after semantic saves.
+Existing 1.2 connections keep their transport behavior until a reviewed update
+adopts the new policy. Read-only connections are never silently upgraded.
+Delivery does not guarantee model agreement; see the release record for native
+evidence and limits.
 
 ## A small vocabulary
 

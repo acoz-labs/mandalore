@@ -41,8 +41,8 @@ Use explicit bindings for additional banks; no cwd discovery or shell edits occu
 ## Native connection journeys
 
 Connection setup, Armorer assessment/inspection and repair first ask for **Codex**,
-**Pi** or **Claude Code**. Claude Code is a development addition for the next
-release. Each keeps its own native-profile defaults. Native executables must
+**Pi** or **Claude Code**. All three are supported by
+[release 1.3.0](releases/1.3.0.md). Each keeps its own native-profile defaults. Native executables must
 already be installed; these journeys do not install a harness, log into a
 provider or copy authentication/session files.
 
@@ -166,7 +166,7 @@ behavior, typed CLI examples, stopped-session updates and owned recovery.
 **CLI · Install, update or select a retained runtime** offers the latest published
 stable release, a specific version, an explicit local candidate, or a retained
 manifest SHA-256. An unavailable release is reported without changing the machine.
-The current published version is [1.2.0](releases/1.2.0.md). This journey is also available directly
+The current published version is [1.3.0](releases/1.3.0.md). This journey is also available directly
 as `mandalore release install`, including `--plain` and optional `--prefix DIR`.
 
 The preview shows source and content identities, compatibility, destination,
@@ -175,8 +175,8 @@ an owned CLI launcher and retains older runtimes; it changes no memory or native
 connections. A launcher outside PATH is shown as a full command, not silently added
 to shell settings. Missing receipt fields are displayed as None.
 
-After CLI success, optionally choose one native connection. Claude Code is offered
-by development builds supporting that harness. Its preview executes
+After CLI success, optionally choose one native connection. Claude Code is
+available in 1.3.0. Its preview executes
 the verified new runtime to prepare **its own embedded package**, then asks for a
 second confirmation before native activation. CLI success and any later native
 failure are reported separately. The default leaves connections unchanged; a

@@ -1,10 +1,12 @@
 # Claude Code integration
 
-Development integration for [issue #14](https://github.com/acoz-labs/mandalore/issues/14).
-It connects ordinary Claude Code sessions to the same signet used by Codex and
-Pi through the shared Mandalore MCP server. This development branch is not a
-published or accepted release. The initial native contract is Claude Code
-2.1.278; binary cross-compilation does not establish native acceptance.
+Released in [Mandalore 1.3.0](../../docs/releases/1.3.0.md) through
+[issue #14](https://github.com/acoz-labs/mandalore/issues/14). It connects ordinary
+Claude Code sessions to the same signet used by Codex and Pi through the shared
+Mandalore MCP server. Native acceptance exercised Claude Code 2.1.278 on macOS
+ARM64. The release record distinguishes software-controlled delivery and current
+recorded-value recall from model agreement; cross-compilation does not establish
+native acceptance.
 
 ## Connect an existing signet
 
