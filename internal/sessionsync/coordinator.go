@@ -110,7 +110,9 @@ func (c *Coordinator) attempt(parent context.Context, b Boundary, run syncCall) 
 		return failed("session.coordination-invalid")
 	}
 	path := filepath.Join(local, "session-sync.lock")
-	fd, err := syscall.Open(path, syscall.O_CREAT|syscall.O_RDWR|syscall.O_NOFOLLOW, 0600)
+	// Git subprocesses must not inherit this lock if the runtime is killed.
+	// Set close-on-exec atomically, avoiding a concurrent process-start race.
+	fd, err := syscall.Open(path, syscall.O_CREAT|syscall.O_RDWR|syscall.O_NOFOLLOW|syscall.O_CLOEXEC, 0600)
 	if err != nil {
 		return failed("session.coordination-invalid")
 	}
