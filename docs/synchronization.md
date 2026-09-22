@@ -215,17 +215,17 @@ into software; discovery #55 remains historical evidence for that change.
 See the [native consolidation evidence](evidence/lifecycle-sync/consolidation.md)
 for observed before/after behavior, prohibitions, failures and test limits.
 
-Legacy native startup hooks remain read-only. A versioned enabled-session policy
-authorizes designated lifecycle transport callbacks before context assembly. The native memory skill may request short-budget sync before authorized
-recall and after useful memory writes, skipping no-save/read-only tasks. Actual
-Codex lifecycle wiring and measured interaction latency are #6/#10 work; this
-backend does not claim that those integrations already ran.
+Legacy native startup hooks remain read-only and retain agent-requested delivery
+under their existing content/transport restrictions. Enabled sessions instead
+use the pinned policy and software callbacks described above. Native candidate
+acceptance must measure actual lifecycle ordering, cancellation and interaction
+latency; earlier local-hook evidence cannot certify changed transport behavior.
 
 Tests use disposable local remotes and independent clones, preserving original
 device/harness and correction history through long-lived service handles. They
 cover competing semantic heads, file conflicts without merge-state damage,
 unavailable/controlled auth failure, racing pushes, cancellation receipts, unsafe
 candidate content, read-only status hashes and compiled CLI/stdin-MCP operations.
-Local Git feature evidence is 2.50.1 with merge-tree --write-tree; hosted CI provides
-separate Linux evidence. Local clone tests are not two physical-machine native
-agent acceptance. Issues #5/#10 remain open until that evidence exists.
+Local clone tests are not two physical-machine native agent acceptance. Native
+journeys and platform-specific execution evidence must identify the exact
+candidate and tested versions; cross-builds alone do not establish either.

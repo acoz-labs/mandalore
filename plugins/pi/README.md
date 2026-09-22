@@ -68,7 +68,7 @@ not install them or change authentication. The native contract currently accepts
 Pi 0.85.1 only; the initial native test baseline is Node 24.1.0 on macOS arm64.
 
 ```sh
-mandalore connection plan --harness pi --binding /absolute/binding.json \
+mandalore connection plan --harness pi --session-sync --binding /absolute/binding.json \
   --native-home /absolute/pi-profile --native-binary /absolute/pi \
   --state-dir /absolute/mandalore-state > pi-plan.json
 # Review the plan before this explicitly mutating step.
