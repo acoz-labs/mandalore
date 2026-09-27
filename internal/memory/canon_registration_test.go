@@ -58,7 +58,7 @@ func TestCanonRegistrationVersionAndLegacyPreservation(t *testing.T) {
 	if err != nil || view.Mode != "legacy" || legacy.Version != 1 {
 		t.Fatal(view, err)
 	}
-	for _, branch := range []string{"", "-option", "main~1", "../main", "main:other", "a/.hidden", "main.lock", "a//b", "main@{1}", "a\\b"} {
+	for _, branch := range []string{"", "-option", "main~1", "../main", "main:other", "a/.hidden", "main.lock", "a//b", "main@{1}", "a\\b", "HEAD", "@", "a\x1bb", "a\x7fb"} {
 		input.Branch = branch
 		if _, err := s.WriteFoundling(input); err == nil {
 			t.Fatalf("accepted branch %q", branch)

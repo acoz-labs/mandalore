@@ -177,7 +177,7 @@ func TestArgumentRoutingAndResumeBoundaries(t *testing.T) {
 	}{
 		{"codex", []string{"-c", "mcp_servers.foo={}"}}, {"codex", []string{"-cfoo=bar"}}, {"codex", []string{"--profile=personal"}},
 		{"pi", []string{"--session=/personal/session.jsonl"}}, {"pi", []string{"--session-dir", "/personal"}}, {"pi", []string{"-eextension"}},
-		{"claude-code", []string{"--safe-mode"}}, {"claude-code", []string{"--bare"}}, {"claude-code", []string{"--plugin-url=https://example.invalid/plugin"}}, {"claude-code", []string{"--settings=/personal/config"}}, {"claude-code", []string{"--plugin-dir", "/personal"}}, {"claude-code", []string{"--resume", "/foreign/session"}},
+		{"pi", []string{"--fork", "/foreign/session"}}, {"pi", []string{"-ne"}}, {"pi", []string{"-ns"}}, {"pi", []string{"-np"}}, {"pi", []string{"--session-id", "../../foreign"}}, {"claude-code", []string{"--safe-mode"}}, {"claude-code", []string{"--bare"}}, {"claude-code", []string{"--plugin-url=https://example.invalid/plugin"}}, {"claude-code", []string{"--settings=/personal/config"}}, {"claude-code", []string{"--plugin-dir", "/personal"}}, {"claude-code", []string{"--resume", "/foreign/session"}},
 		{"codex", []string{"resume", "foreign-name"}},
 	} {
 		if e := ValidateArguments(tc.h, tc.args); e == nil {
@@ -189,7 +189,7 @@ func TestArgumentRoutingAndResumeBoundaries(t *testing.T) {
 		args []string
 	}{
 		{"codex", []string{"resume", "00000000-0000-0000-0000-000000000001"}}, {"codex", []string{"resume", "--last"}},
-		{"pi", []string{"--resume"}}, {"pi", []string{"--continue"}}, {"claude-code", []string{"--resume", "00000000-0000-0000-0000-000000000001"}},
+		{"pi", []string{"--session-id", "00000000-0000-0000-0000-000000000001"}}, {"pi", []string{"--resume"}}, {"pi", []string{"--continue"}}, {"claude-code", []string{"--resume", "00000000-0000-0000-0000-000000000001"}},
 		{"claude-code", []string{"--continue"}}, {"codex", []string{"--", "-c literal prompt"}},
 	} {
 		if e := ValidateArguments(tc.h, tc.args); e != nil {

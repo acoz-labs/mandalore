@@ -37,7 +37,7 @@ func ValidateArguments(harness string, args []string) error {
 			denied[v] = true
 		}
 	case "pi":
-		for _, v := range []string{"--session", "--session-dir", "--extension", "-e", "--no-extensions", "--package", "--no-skills", "--skill", "--no-prompt-templates", "--prompt-template"} {
+		for _, v := range []string{"--fork", "-ne", "-ns", "-np", "--session", "--session-dir", "--extension", "-e", "--no-extensions", "--package", "--no-skills", "--skill", "--no-prompt-templates", "--prompt-template"} {
 			denied[v] = true
 		}
 	case "claude-code":
@@ -66,7 +66,7 @@ func ValidateArguments(harness string, args []string) error {
 		if blocked {
 			return errors.New("native argument overrides the selected memory/profile environment; configure a separate entry instead")
 		}
-		if (harness == "codex" && (arg == "resume" || arg == "fork")) || (harness == "claude-code" && (flag == "--resume" || flag == "-r")) {
+		if (harness == "codex" && (arg == "resume" || arg == "fork")) || (harness == "claude-code" && (flag == "--resume" || flag == "-r")) || (harness == "pi" && flag == "--session-id") {
 			value, has := strings.CutPrefix(arg, flag+"=")
 			if !has && i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
 				value = args[i+1]

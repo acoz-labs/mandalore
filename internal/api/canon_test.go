@@ -3,6 +3,8 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"github.com/acoz-labs/mandalore/internal/foundlings"
 	"os"
 	"path/filepath"
 	"strings"
@@ -82,6 +84,33 @@ func TestCanonOperationSchemasExposeSessionAndEffects(t *testing.T) {
 	for _, op := range a.Catalog() {
 		if op.Name == "foundling_refresh" && (!op.Network || op.ReadOnly) {
 			t.Fatal(op)
+		}
+	}
+}
+
+func TestCanonReceiptPaginationDoesNotRequireAnotherRefresh(t *testing.T) {
+	receipts := make([]foundlings.CanonReceipt, 12)
+	for i := range receipts {
+		receipts[i] = foundlings.CanonReceipt{FoundlingID: fmt.Sprintf("foundling-%02d", i), SessionID: "codex:synthetic", State: "unavailable", Description: strings.Repeat("x", 4096)}
+	}
+	first, err := canonReceiptPage(receipts, 0, 5)
+	if err != nil || len(first.Items) != 5 || first.NextOffset == nil || *first.NextOffset != 5 || !first.Truncated {
+		t.Fatal(first, err)
+	}
+	second, err := canonReceiptPage(receipts, *first.NextOffset, 10)
+	if err != nil || len(second.Items) != 7 || second.NextOffset != nil || second.Truncated {
+		t.Fatal(second, err)
+	}
+	if first.Items[4].FoundlingID == second.Items[0].FoundlingID {
+		t.Fatal("repeated receipt")
+	}
+	raw, _ := json.Marshal(second)
+	if len(raw) > MaxOutputBytes-1024 {
+		t.Fatal("unbounded page", len(raw))
+	}
+	for _, selection := range [][2]int{{-1, 5}, {0, 0}, {0, 11}} {
+		if _, err := canonReceiptPage(receipts, selection[0], selection[1]); err == nil {
+			t.Fatal("invalid pagination accepted", selection)
 		}
 	}
 }

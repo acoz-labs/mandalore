@@ -123,8 +123,13 @@ func latestFile(id string) string { return "verified-" + id + ".json" }
 // SessionRefresh is a bounded foreground boundary. No selected snapshot changes
 // on ordinary reads. A resumed native session deliberately calls this again.
 func (m *Manager) SessionRefresh(parent context.Context, sessionID string) ([]CanonReceipt, error) {
-	ctx, cancel := context.WithTimeout(parent, 3*time.Second)
+	started := time.Now()
+	ctx, cancel := context.WithDeadline(parent, started.Add(3*time.Second))
 	defer cancel()
+	// All sources share one fetch budget. Reserve the final second for validating
+	// eligible stale snapshots instead of passing an expired fetch context to reads.
+	fetchCtx, stopFetch := context.WithDeadline(ctx, started.Add(2*time.Second))
+	defer stopFetch()
 	regs, err := m.canonRegistrations(ctx)
 	if err != nil {
 		return nil, err
@@ -148,7 +153,10 @@ func (m *Manager) SessionRefresh(parent context.Context, sessionID string) ([]Ca
 		if reg.State != "active" {
 			receipt.Reason = reg.State
 		} else {
-			fresh, e := m.fetchCanon(ctx, root, reg)
+			fresh, e := m.fetchCanon(fetchCtx, root, reg)
+			if e == nil {
+				e = ctx.Err()
+			}
 			if e == nil {
 				receipt = fresh
 				receipt.SessionID = sessionID
@@ -158,7 +166,7 @@ func (m *Manager) SessionRefresh(parent context.Context, sessionID string) ([]Ca
 			} else {
 				receipt.Reason = canonFailure(e)
 				var prior CanonReceipt
-				if (receipt.Reason == "timeout" || receipt.Reason == "cancelled" || receipt.Reason == "transport_unavailable" || receipt.Reason == "authentication_failed" || receipt.Reason == "absent_branch") && canonRead(root, latestFile(reg.FoundlingID), &prior) == nil && prior.FoundlingID == reg.FoundlingID && prior.RegistrationID == receipt.RegistrationID && prior.SourceSignetID == receipt.SourceSignetID {
+				if ctx.Err() == nil && (receipt.Reason == "timeout" || receipt.Reason == "transport_unavailable" || receipt.Reason == "authentication_failed" || receipt.Reason == "absent_branch") && canonRead(root, latestFile(reg.FoundlingID), &prior) == nil && prior.FoundlingID == reg.FoundlingID && prior.RegistrationID == receipt.RegistrationID && prior.SourceSignetID == receipt.SourceSignetID {
 					if _, e = m.openCanon(ctx, root, prior); e == nil {
 						prior.SessionID = sessionID
 						prior.State = "stale"
@@ -169,12 +177,17 @@ func (m *Manager) SessionRefresh(parent context.Context, sessionID string) ([]Ca
 			}
 		}
 
-		current, ce := m.memory.Foundling(reg.FoundlingID)
-		if ce != nil || current.State != "active" || len(current.HeadIDs) != 1 || current.HeadIDs[0] != receipt.RegistrationID {
+		if interrupted := ctx.Err(); interrupted != nil {
 			receipt.State = "unavailable"
-			receipt.Reason = "registration_changed"
-			if ce == nil && current.State != "active" {
-				receipt.Reason = current.State
+			receipt.Reason = canonFailure(interrupted)
+		} else {
+			current, ce := m.memory.Foundling(reg.FoundlingID)
+			if ce != nil || current.State != "active" || len(current.HeadIDs) != 1 || current.HeadIDs[0] != receipt.RegistrationID {
+				receipt.State = "unavailable"
+				receipt.Reason = "registration_changed"
+				if ce == nil && current.State != "active" {
+					receipt.Reason = current.State
+				}
 			}
 		}
 		if err = canonWrite(root, sessionFile(sessionID, reg.FoundlingID), receipt); err != nil {

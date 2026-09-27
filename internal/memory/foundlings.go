@@ -136,7 +136,7 @@ func validFoundlingMode(r FoundlingRegistration) bool {
 	}
 	// Branch is a full refs/heads suffix, never a ref expression or option.
 	b := r.Branch
-	if b == "" || len(b) > 256 || strings.HasPrefix(b, "-") || strings.ContainsAny(b, " ~^:?*[\\\r\n\t") || strings.Contains(b, "..") || strings.Contains(b, "@{") || strings.HasSuffix(b, ".") || strings.Contains(b, "//") {
+	if b == "" || b == "@" || b == "HEAD" || strings.IndexFunc(b, func(r rune) bool { return r <= 32 || r == 127 }) >= 0 || len(b) > 256 || strings.HasPrefix(b, "-") || strings.ContainsAny(b, " ~^:?*[\\\r\n\t") || strings.Contains(b, "..") || strings.Contains(b, "@{") || strings.HasSuffix(b, ".") || strings.Contains(b, "//") {
 		return false
 	}
 	for _, part := range strings.Split(b, "/") {

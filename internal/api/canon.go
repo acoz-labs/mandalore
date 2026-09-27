@@ -130,9 +130,9 @@ var canonOperations = []Operation{
 		q.BudgetBytes = number(in.BudgetBytes, 8192)
 		return foundlings.New(s).CanonRecall(ctx, q)
 	}),
-	foundlingOperation("foundling_canon_heads", "Inspect visible current heads of one source record, with full authorship/evidence and immutable promotion digests. Returns all unresolved heads; withheld/superseded content is not returned.", true, false, func(ctx context.Context, s *memory.Service, in CanonHeadsInput) (CanonHeadsResult, error) {
+	foundlingOperation("foundling_canon_heads", "Inspect visible current heads of one source record, with full authorship/evidence and immutable promotion digests. Pages unresolved heads with next_offset; withheld/superseded content is not returned.", true, false, func(ctx context.Context, s *memory.Service, in CanonHeadsInput) (CanonHeadsResult, error) {
 		v, r, e := foundlings.New(s).CanonHeads(ctx, in.selection(), in.RecordID)
-		out := CanonHeadsResult{Reference: r, Heads: []CanonHead{}, Notice: "Current visible heads only. Multiple heads are unresolved source conflict, not a choice made by the reader."}
+		out := CanonHeadsResult{Reference: r, Heads: []CanonHead{}, Notice: "Current visible heads only; follow next_offset for remaining heads. Multiple heads are unresolved source conflict, not a choice made by the reader."}
 		if e != nil {
 			return out, e
 		}

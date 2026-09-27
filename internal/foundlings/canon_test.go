@@ -469,3 +469,42 @@ func TestCanonTransportCancellationTerminatesProcessGroup(t *testing.T) {
 		t.Fatal(e, time.Since(start))
 	}
 }
+
+func TestCanonFetchDeadlineReservesVerifiedStaleFallback(t *testing.T) {
+	m, _, reg, _, _ := canonFixture(t)
+	first := refreshTest(t, m, "seed")
+	realGit, e := exec.LookPath("git")
+	if e != nil {
+		t.Fatal(e)
+	}
+	bin := t.TempDir()
+	// Init remains real. The actual fetch subprocess reaches its deadline, so the
+	// regression cannot pass merely by classifying an immediate mocked error.
+	script := "#!/bin/sh\nfor arg do\nif [ \"$arg\" = fetch ]; then\nsleep 30 &\nwait\nexit $?\nfi\ndone\nexec '" + strings.ReplaceAll(realGit, "'", "'\\''") + "' \"$@\"\n"
+	if e = os.WriteFile(filepath.Join(bin, "git"), []byte(script), 0700); e != nil {
+		t.Fatal(e)
+	}
+	t.Setenv("PATH", bin+string(os.PathListSeparator)+os.Getenv("PATH"))
+	start := time.Now()
+	receipts, e := m.SessionRefresh(context.Background(), "timed-out")
+	elapsed := time.Since(start)
+	if e != nil || len(receipts) != 1 || receipts[0].State != "stale" || receipts[0].Reason != "timeout" || receipts[0].Pin != first.Pin || receipts[0].RefreshedAt != first.RefreshedAt {
+		t.Fatal(receipts, e)
+	}
+	if elapsed < 1800*time.Millisecond || elapsed >= 3*time.Second {
+		t.Fatalf("fetch and stale validation outside shared budget: %s", elapsed)
+	}
+	if got := recallTest(t, m, reg.FoundlingID, "timed-out"); got.Reference.State != "stale" || len(got.Memory.Current) != 1 {
+		t.Fatal(got)
+	}
+	// Parent cancellation is not the reserved internal fetch deadline: it must
+	// withhold even a previously verified snapshot rather than read after cancel.
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	timer := time.AfterFunc(150*time.Millisecond, cancel)
+	defer timer.Stop()
+	receipts, e = m.SessionRefresh(ctx, "cancelled-during-fetch")
+	if e != nil || len(receipts) != 1 || receipts[0].State != "unavailable" || receipts[0].Reason != "cancelled" {
+		t.Fatal(receipts, e)
+	}
+}
