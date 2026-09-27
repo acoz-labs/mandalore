@@ -33,7 +33,7 @@ func ValidateArguments(harness string, args []string) error {
 	denied := map[string]bool{}
 	switch harness {
 	case "codex":
-		for _, v := range []string{"-c", "--config", "-p", "--profile", "-C", "--cd", "--remote", "--remote-env", "--enable", "--disable"} {
+		for _, v := range []string{"--ignore-user-config", "-c", "--config", "-p", "--profile", "-C", "--cd", "--remote", "--remote-env", "--enable", "--disable"} {
 			denied[v] = true
 		}
 	case "pi":
