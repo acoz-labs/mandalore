@@ -205,3 +205,24 @@ that supported format. Normal recovery inspects rejected/corrupt files and
 history; it never silently drops evidence or picks a conflicting head. Native
 Linux CLI/plugin behavior, cross-machine bindings and sync require separate
 acceptance; library tests run natively on macOS/arm64 and Linux/amd64.
+
+## Canon registration compatibility
+
+Canon uses foundling registration version 2 with explicit mode, tracked branch
+and expected source signet identity. Existing legacy registrations retain their
+original version-1 bytes; mode omission remains legacy. New explicitly legacy
+registrations retain the compatible omitted-mode representation.
+
+Registration version is distinct from the bank manifest version. Adding canon
+requires compatible readers across the primary signet's clients: old strict
+readers reject the new registration instead of treating it as a historical pin.
+This is an explicit registration operation, never an automatic launch/recall
+migration. Disconnecting preserves history and therefore does not restore old
+reader compatibility. Runtime rollback does not rewrite registration history.
+
+Local session snapshot/cache metadata is ignored local state. Routine branch
+refresh never creates a portable registration revision. Source identity/branch
+changes remain explicit versioned registration changes. Provenance for an
+explicitly promoted canon record retains its observed commit and selected
+record/revision digest, even after the branch advances. See
+[foundlings](foundlings.md) for current-visibility and promotion rules.

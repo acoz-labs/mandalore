@@ -919,3 +919,27 @@ remain 32768/65536 bytes (catalog discovery allows 1 MiB). Tool calls have a
 45-second outer deadline; startup/context calls use five seconds. Cancellation
 terminates owned process groups with bounded escalation; lost output can mean a
 write occurred and requires inspection, never an automatic retry.
+
+## Canon reference operations and local launching
+
+`foundling_register` accepts `mode`, `branch` and `source_signet_id` for canon;
+mode omission preserves legacy registration. `foundling_status` pages the
+selected session's refresh receipts without network effects.
+`foundling_canon_scopes`, `foundling_canon_recall` and `foundling_canon_heads`
+consult semantic source state at that session's immutable commit.
+`foundling_canon_promote` verifies a selected visible head and records explicit
+adapted knowledge with generated provenance. Enabled sessions deliver that
+semantic save through the existing bounded transport path.
+
+`foundling_refresh` is an explicit enabled-session operation with network/local
+cache effects. Ordinary canon reads never select another session or refresh
+implicitly. Use the exact harness-namespaced `session_id` supplied by native
+context; unknown selection fails rather than falling back to a global snapshot.
+Read the active operation catalog for bounds and returned continuation fields.
+See [foundlings](foundlings.md) for content and compatibility semantics.
+
+The separate `mandalore launch` CLI owns machine-local environment selection.
+`launch schema` describes its strict entry JSON; `configure`, `list` and
+`--preview` support setup and inspection. No model memory tool edits shell aliases
+or launches a second agent. See [launch](launch.md) for profile ownership and
+native argument boundaries.

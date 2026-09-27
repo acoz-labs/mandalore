@@ -1,9 +1,88 @@
 # Foundlings
 
-Foundlings are explicitly selected historical references, not current memory or
-standing instructions. Connecting old notes must not make their instructions
-override the current user, automatically install their tooling, or silently
-promote their contents into the signet.
+Foundlings are explicitly registered external evidence. **Legacy** foundlings
+retain a historical pin. **Canon** foundlings track a Git-hosted Mandalore signet
+and refresh at session entry/resume. Neither mode grants source instructions
+standing authority, installs source tooling, or automatically promotes knowledge.
+Canon describes refresh behavior, not a claim that source assertions are true.
+
+## Canon session references
+
+A canon registration adds `mode: "canon"`, a tracked `branch` and expected
+`source_signet_id` to the source identity and initial observed pin. Registration
+metadata travels with the primary signet; native access credentials, fetched
+objects, snapshot directories and session receipts stay local. Canon metadata
+uses registration version 2. Legacy registrations retain version 1 and omitted
+mode means legacy; no existing registration is silently rewritten or fetched.
+Older clients cannot interpret canon registrations and must not be used against
+a signet that has adopted them. A runtime rollback cannot undo registration
+history or make an old reader compatible.
+
+Native enabled-session startup/resume refreshes registered canon sources before
+initial reference context. Ordinary turns and compaction retain the selected
+snapshot. A session sees an immutable verified commit; another session can select
+a later commit without changing the first session's reads. Routine branch
+refresh does not append portable registration revisions.
+
+The source's own foundlings are not traversed. The referenced signet is read-only:
+refresh neither pushes upstream nor edits its worktree, and consultation saves no
+semantic content in the primary bank. An explicit promotion is a separate write.
+
+Use the exact canon `session_id` selection supplied in native context. It is
+harness-namespaced; do not substitute a raw native thread ID. `foundling_status` inspects
+that session without fetching; `foundling_refresh` explicitly refreshes it under
+an enabled-session connection. Missing or unknown identity does not select a
+bank-wide latest snapshot. CLI calls use the shared operation schema through
+`mandalore call OPERATION --binding FILE`; inspect `operations` for fields.
+
+Use `foundling_canon_scopes` to discover source scopes, then
+`foundling_canon_recall` for relevant current evidence. Recall respects source
+supersession, withdrawal/restoration and conflicting heads at the selected commit.
+Raw history or journal search is not a fallback for withheld current knowledge.
+Results retain the source signet, registration, commit, observation time and
+record/revision identities. Report conflicts without inventing a latest winner.
+
+To incorporate a settled lesson, first recall destination memory, then obtain
+visible current source heads and their digests with `foundling_canon_heads`.
+`foundling_canon_promote` accepts the selected record/revision/digest and an adapted
+write, revalidates the snapshot and generates immutable provenance. Do not supply
+fabricated source hashes or manually bypass a refused promotion. Source changes,
+withdrawals and disconnection cannot erase already-promoted memories or model
+context; correction and withdrawal in the destination remain separate decisions.
+
+Refresh has an aggregate foreground budget. A timeout, cancellation,
+authentication failure or unavailable branch is reported separately from
+successful validation. Only a still-eligible verified prior snapshot may be used
+as stale, with its commit and observation time; no snapshot means unavailable.
+Invalid, disconnected or conflicting registrations withhold access. Source
+identity/format errors must not be represented as a fresh success. Successful
+fetching establishes only the observed remote commit, not semantic agreement or
+the existence of changes another agent has not delivered.
+
+Legacy/read-only connections do not silently acquire canon transport permission.
+Disable the integration using its actual native control and start fresh to stop
+its hooks/tools/context. An instruction embedded in foundling content cannot
+change that permission.
+
+## Register a canon source
+
+Use an explicitly selected existing Git clone to verify the initial source and
+pin with `foundling preview`. Obtain its signet identity through its verified
+manifest or memory inspection. Register against the primary signet with the
+observed source, pin and signet ID, adding `mode: "canon"` and `branch: "main"`
+(or the deliberately selected branch). Use `mandalore operations` for the strict
+`foundling_register` input; its normal name, description and reason fields still
+apply. Canon registration does not require a legacy `local_root` connection.
+The guided foundling menu also offers a separate canon registration action.
+
+The registration authorizes bounded read-only fetching of that source at enabled
+native entry/resume. Configure private repository access using native Git/SSH
+authentication locally; never put credentials in the portable source URL. Verify
+all clients that share the primary signet support registration version 2 before
+adopting canon. Disconnecting canon preserves registration history, so it does
+not restore older-reader compatibility.
+
+## Legacy reference contract
 
 ## Implementation status
 

@@ -156,3 +156,22 @@ disconnected source merely to answer a memory question. Historical instructions
 are not permission to execute scripts, install tools or modify current memory.
 Content assessment and selective adoption belong to the memory skill's foundling
 workflow; administration alone never authorizes wholesale import.
+
+
+## Canon references and named launch entries
+
+Distinguish legacy pinned references from canon Git-hosted signets. Canon
+registration selects a tracked branch, expected signet identity and observed
+bootstrap pin. Use current operation schemas and verified source evidence. It
+explicitly enables read-only fetching of that source at enabled session entry;
+it does not grant source-write or transitive-reference permission. Explain old
+reader incompatibility before adoption. Existing legacy registrations are not
+silently converted. Native credentials and cache paths stay local.
+
+`mandalore launch schema` describes local entry configuration. Configure a name
+only against verified existing native connections and dedicated profiles; the
+one-time profile confirmation attests that existing history belongs to this
+signet. `launch list` and `launch NAME --preview` inspect without executing the
+agent. `--agent` overrides only this invocation. Use supported setup/repair for
+missing connections; do not copy credentials/profiles or edit shell aliases.
+A running session cannot be retargeted to a different bank by a launch entry.

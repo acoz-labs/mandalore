@@ -295,3 +295,21 @@ refresh; legacy connections read local records without synchronization. An
 externally superseded fact can appear next turn after successful refresh;
 previously read reasoning is not changed mid-turn. Reload or restart is still needed for
 changed extension/skill/connection code. Hooks do not promise an exit checkpoint.
+
+## Named launch or canon reference failure
+
+Use `mandalore launch NAME --preview` and `launch list` to inspect local routing.
+A changed binding, missing executable or native profile mismatch requires
+explicit supported connection repair/reconfiguration; do not change a global
+binding or silently reuse another environment. A profile ownership claim cannot
+prove historical provenance: configure only dedicated profiles whose existing
+native history belongs to the intended signet. Authenticate with the native
+harness; never copy a whole personal profile as a shortcut.
+
+For canon, inspect `foundling_status` with the exact selection ID from context.
+Keep network/authentication failure, stale verified snapshots, missing cache,
+source identity/format failure and registration conflicts distinct. Fix actual
+local access or explicit registration problems, then request refresh; do not
+repeat semantic saves to retry transport or manually edit receipts/cache pins.
+An unavailable reference is not proof that source knowledge is absent. Do not
+fall back to source journals/history to recreate withdrawn records.

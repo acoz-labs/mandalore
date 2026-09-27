@@ -299,3 +299,18 @@ and explicitly loaded extensions; a second enabled copy can still attach.
 Disabling cannot remove context already loaded into a model, and native agent
 memory/logging remains independently controlled. No personal signet migration or
 native-memory configuration change is part of enabling this transport policy.
+
+## Named memory environments
+
+After establishing each native connection in its dedicated profile, use the
+[launcher guide](launch.md) to configure a machine-local name and default agent.
+`mandalore launch work --agent claude-code` selects that connection for one
+session. `--preview` inspects the selection; it does not launch, fetch or install.
+Shell aliases stay in local shell configuration. Native authentication and
+profile setup remain native-owned.
+
+The foundling menu distinguishes legacy historical references from canon signet
+references. Verify the source identity and bootstrap Git pin before registering
+canon, and check reader compatibility. Enabled startup/resume performs bounded
+fetches; the [foundling guide](foundlings.md) explains per-session snapshots and
+honest stale-cache behavior.
