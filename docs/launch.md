@@ -1,6 +1,6 @@
 # Launch a named signet
 
-Proposed for the next release; verify the installed CLI's help before use.
+Available in Mandalore 1.4.0. Verify the installed CLI's help before use.
 
 A launch entry gives an existing signet connection a machine-local name and
 default agent. Start the default or choose another configured harness:
