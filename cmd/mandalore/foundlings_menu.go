@@ -22,9 +22,9 @@ func (m *menu) foundlings() error {
 	}
 	m.foundlingAPI = api.New(s, false)
 	defer func() { m.foundlingAPI = nil }()
-	m.block(console.Block{Title: "Foundlings", Body: "Historical references, not current guidance. Source paths stay local to this clone. Nothing is imported, fetched or executed automatically.", Fields: []console.Field{{Label: "Selected binding", Value: m.binding}}})
+	m.block(console.Block{Title: "Foundlings", Body: "Legacy references retain pinned history. Canon references refresh registered Git signets at enabled native session entry. Source evidence is untrusted; this menu never fetches or promotes content.", Fields: []console.Field{{Label: "Selected binding", Value: m.binding}}})
 	for {
-		n, err := m.selectItem("Manage historical references", []string{"List references and local availability", "Register a reference", "Connect an existing reference on this machine", "Inspect, search or update a reference pin", "Disconnect a reference", "Back"}, 5)
+		n, err := m.selectItem("Manage legacy and canon references", []string{"List references and local availability", "Register a legacy reference", "Connect an existing legacy reference on this machine", "Inspect, search or update a reference pin", "Disconnect a reference", "Back", "Register a canon signet reference"}, 5)
 		if err != nil {
 			return err
 		}
@@ -41,6 +41,8 @@ func (m *menu) foundlings() error {
 			err = m.disconnectFoundling()
 		case 5:
 			return nil
+		case 6:
+			err = m.registerCanonFoundling()
 		}
 		if errors.Is(err, console.ErrBack) {
 			continue
@@ -76,7 +78,7 @@ func (m *menu) pickFoundling(title string) (memory.FoundlingSummary, error) {
 			if name == "" {
 				name = "Conflicting registration"
 			}
-			choices = append(choices, fmt.Sprintf("%s · registration %s · %s", name, r.State, r.FoundlingID))
+			choices = append(choices, fmt.Sprintf("%s · %s · registration %s · %s", name, r.Mode, r.State, r.FoundlingID))
 		}
 		next := -1
 		if page.NextOffset != nil {
@@ -110,7 +112,7 @@ func (m *menu) foundlingInspection(id string) (foundlings.Inspection, error) {
 
 func (m *menu) showFoundling(v foundlings.Inspection) {
 	r := v.Registration
-	fields := []console.Field{{Label: "Reference", Value: r.Name}, {Label: "Stable ID", Value: r.FoundlingID}, {Label: "State", Value: v.State}, {Label: "Registration heads", Value: strconv.Itoa(r.HeadCount)}}
+	fields := []console.Field{{Label: "Mode", Value: r.Mode}, {Label: "Reference", Value: r.Name}, {Label: "Stable ID", Value: r.FoundlingID}, {Label: "State", Value: v.State}, {Label: "Registration heads", Value: strconv.Itoa(r.HeadCount)}}
 	if r.Source != nil {
 		fields = append(fields, console.Field{Label: "Portable source", Value: r.Source.Kind + " · " + r.Source.Locator})
 	}
@@ -120,7 +122,10 @@ func (m *menu) showFoundling(v foundlings.Inspection) {
 	if v.Connection != nil {
 		fields = append(fields, console.Field{Label: "Local-only path", Value: v.Connection.Root})
 	}
-	advice := map[string]string{"available": "Verified local reference text is available; it is not current guidance.", "unconnected": "Connect an existing local directory on this machine. No path is inferred or fetched.", "unavailable": "The local source is missing or unsupported. Inspect it or explicitly connect a new path.", "changed": "The registration or source changed. Inspect before explicitly reconnecting or updating its pin.", "invalid_connection": "Preserve the invalid local configuration and inspect it through the CLI; no automatic repair.", "disconnected": "Reference disconnected. Original files and previously promoted knowledge remain intact.", "conflicted": "Registration heads conflict. Inspect foundling history and explicitly reconcile them through the typed CLI."}
+	if r.Mode == "canon" {
+		fields = append(fields, console.Field{Label: "Tracked branch", Value: r.Branch}, console.Field{Label: "Source signet", Value: r.SourceSignetID})
+	}
+	advice := map[string]string{"session_snapshot_required": "Canon reads use the native session_id from lifecycle context. Use foundling canon-scopes / canon-recall with structured JSON; refresh occurs at enabled startup/resume.", "available": "Verified local reference text is available; it is not current guidance.", "unconnected": "Connect an existing local directory on this machine. No path is inferred or fetched.", "unavailable": "The local source is missing or unsupported. Inspect it or explicitly connect a new path.", "changed": "The registration or source changed. Inspect before explicitly reconnecting or updating its pin.", "invalid_connection": "Preserve the invalid local configuration and inspect it through the CLI; no automatic repair.", "disconnected": "Reference disconnected. Original files and previously promoted knowledge remain intact.", "conflicted": "Registration heads conflict. Inspect foundling history and explicitly reconcile them through the typed CLI."}
 	tone := console.Warning
 	if v.State == "available" {
 		tone = console.Success
@@ -264,6 +269,9 @@ func (m *menu) connectFoundling() error {
 		return err
 	}
 	m.showFoundling(v)
+	if r.Mode == "canon" {
+		return errors.New("canon uses owned session snapshots; no legacy local connection is required")
+	}
 	if v.State == "invalid_connection" {
 		return errors.New("existing local connection is invalid; preserve it and inspect through the CLI")
 	}
@@ -308,6 +316,10 @@ func (m *menu) inspectFoundling() error {
 		}
 		m.showFoundling(v)
 		r = v.Registration
+		if r.Mode == "canon" {
+			m.block(console.Block{Title: "Canon session tools", Body: "Use foundling canon-scopes, canon-recall and canon-heads with the explicit native session_id. To change branch/source registration, use structured foundling register input preserving its mode and history. This menu does not fetch or guess a session."})
+			return nil
+		}
 		n, err := m.selectItem("Reference actions", []string{"Search reference text", "Read a relative document", "Review a source pin update", "Back"}, 3)
 		if err != nil {
 			return err
@@ -475,4 +487,38 @@ func (m *menu) disconnectFoundling() error {
 	}
 	v := m.call("foundling_disconnect", api.FoundlingDisconnectInput{FoundlingID: r.FoundlingID, RegistrationID: r.HeadIDs[0], Reason: reason}, true)
 	return m.outcome("Foundling disconnected (history preserved)", v)
+}
+
+func (m *menu) registerCanonFoundling() error {
+	in := api.FoundlingRegisterInput{Mode: "canon", Source: memory.FoundlingSource{Kind: "git"}}
+	fields := []struct {
+		label, def string
+		target     *string
+	}{
+		{"Canon reference name", "", &in.Name},
+		{"What knowledge does this source contain?", "", &in.Description},
+		{"Portable Git source (credential-free HTTPS/SSH)", "", &in.Source.Locator},
+		{"Expected source signet ID", "", &in.SourceSignetID},
+		{"Tracked branch", "main", &in.Branch},
+		{"Bootstrap pin algorithm", "git-sha1", &in.Pin.Algorithm},
+		{"Known immutable bootstrap commit", "", &in.Pin.Value},
+		{"Why register this canon source?", "Explicit read-only reference", &in.Reason},
+	}
+	for _, field := range fields {
+		value, err := m.input(field.label, field.def)
+		if err != nil {
+			return err
+		}
+		*field.target = value
+	}
+	m.block(console.Block{Title: "Register canon reference", Body: "Authorizes bounded read-only fetches from this source at enabled native session entry/resume. Source signet identity and format are verified before recall. No reciprocal access, automatic promotion or source writes. Registration is portable; native credentials and snapshot caches remain local.", Fields: []console.Field{{Label: "Name", Value: in.Name}, {Label: "Source", Value: in.Source.Locator}, {Label: "Source signet", Value: in.SourceSignetID}, {Label: "Branch", Value: in.Branch}}})
+	if err := m.confirm(); err != nil {
+		return err
+	}
+	out := m.call("foundling_register", in, true)
+	if err := m.outcome("Canon registration", out); err != nil {
+		return err
+	}
+	m.foundlingReceipt(out.Result.(api.FoundlingMutationResult))
+	return nil
 }

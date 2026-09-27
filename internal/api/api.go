@@ -183,7 +183,7 @@ var operations = []Operation{
 
 func Catalog() []Operation {
 	result := []Operation{sessionCatalog}
-	for _, group := range [][]Operation{operations, administration, synchronization, connections, migrations, foundlingOperations, releases, saveAndDelivery, nativeContext, piAdministration, claudeAdministration, readinessOperations, exports, visibilityOperations, upgradeOperations, retentionOperations} {
+	for _, group := range [][]Operation{operations, administration, synchronization, connections, migrations, foundlingOperations, canonOperations, releases, saveAndDelivery, nativeContext, piAdministration, claudeAdministration, readinessOperations, exports, visibilityOperations, upgradeOperations, retentionOperations} {
 		result = append(result, group...)
 	}
 	return result

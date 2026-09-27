@@ -85,6 +85,9 @@ func run(ctx context.Context, path string, guard binding.Guard, c *sessionsync.C
 	summary := ""
 	if c != nil {
 		boundary := sessionsync.Boundary{Kind: "startup"}
+		if source, _ := event["source"].(string); source == "resume" || source == "compact" {
+			boundary.Kind = source
+		}
 		if name == "UserPromptSubmit" {
 			boundary.Kind = "turn"
 		}
@@ -96,6 +99,7 @@ func run(ctx context.Context, path string, guard binding.Guard, c *sessionsync.C
 			return emit(output{Warning: summary})
 		}
 		selectedOrientation = memorycontext.SessionOrientation + " Claude native memory is separate. Do not copy Mandalore signet knowledge into native memory, import native notes automatically, or recreate withdrawn facts from native notes. Do not disable native memory implicitly. Resolve disagreements against current user direction and current Mandalore evidence."
+		selectedOrientation += memorycontext.CanonOrientation(ctx, s, boundary)
 	}
 	packet := memorycontext.Build(s, prompt, name == "UserPromptSubmit", selectedOrientation)
 	if c != nil && packet.Warning != "" {

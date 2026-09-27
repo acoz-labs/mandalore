@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/acoz-labs/mandalore/internal/foundlings"
 	"github.com/acoz-labs/mandalore/internal/memory"
 	"github.com/acoz-labs/mandalore/internal/memorycontext"
 	"github.com/acoz-labs/mandalore/internal/sessionsync"
@@ -38,7 +39,7 @@ func SessionSyncSchema() *jsonschema.Schema {
 // and installation remain outside automatic semantic delivery.
 func sessionMutation(name string) bool {
 	switch name {
-	case "memory_remember", "memory_journal_append", "memory_remember_and_sync", "memory_journal_append_and_sync", "memory_withdraw", "memory_restore", "foundling_promote", "foundling_register", "foundling_disconnect":
+	case "memory_remember", "memory_journal_append", "memory_remember_and_sync", "memory_journal_append_and_sync", "memory_withdraw", "memory_restore", "foundling_promote", "foundling_canon_promote", "foundling_register", "foundling_disconnect":
 		return true
 	}
 	return false
@@ -69,6 +70,9 @@ func (a *API) Catalog() []Operation {
 			case "memory_journal_append_and_sync":
 				op.Description = "Compatibility combined journal: save once and make exactly one software-controlled bounded delivery attempt. Ordinary memory_journal_append already delivers in this enabled session. Honor no-journal content requests and inspect receipts separately."
 			}
+		}
+		if op.Name == "foundling_refresh" {
+			op.Network = true
 		}
 		if op.Name == "memory_context" {
 			op.ReadOnly = false
@@ -105,6 +109,21 @@ func (a *API) callSession(ctx context.Context, name string, data []byte) Envelop
 		}
 		return Success(map[string]any{"operations": a.Catalog()})
 	}
+	if name == "foundling_refresh" {
+		var in CanonSessionInput
+		if strictjson.Decode(data, &in, MaxInputBytes) != nil {
+			return Failure("input.invalid", "Expected exact native session_id.", false)
+		}
+		refs, err := foundlings.New(a.service).SessionRefresh(ctx, in.SessionID)
+		if err != nil {
+			return foundlingFailureEnvelope(&foundlingFailure{err: err})
+		}
+		page, err := canonReceiptPage(refs, 0, 5)
+		if err != nil {
+			return foundlingFailureEnvelope(&foundlingFailure{err: err})
+		}
+		return Success(page)
+	}
 	if name == "memory_context" {
 		var in NativeContextInput
 		if strictjson.Decode(data, &in, MaxInputBytes) != nil {
@@ -124,7 +143,7 @@ func (a *API) callSession(ctx context.Context, name string, data []byte) Envelop
 		if in.Prompt != nil {
 			prompt = *in.Prompt
 		}
-		packet := memorycontext.Build(a.service, prompt, in.Prompt != nil, memorycontext.SessionOrientation+" "+attempt.Summary())
+		packet := memorycontext.Build(a.service, prompt, in.Prompt != nil, memorycontext.SessionOrientation+" "+attempt.Summary()+memorycontext.CanonOrientation(ctx, a.service, boundary))
 		packet.Warning = strings.ReplaceAll(packet.Warning, "no memory was changed", "no semantic content was saved; synchronization status is separate")
 		packet.Synchronization = &attempt
 		return Success(packet)

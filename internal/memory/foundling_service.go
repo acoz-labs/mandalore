@@ -9,14 +9,17 @@ import (
 // FoundlingWrite authors only portable registration metadata. It neither
 // connects a local path nor verifies, retrieves or endorses source content.
 type FoundlingWrite struct {
-	FoundlingID string          `json:"foundling_id,omitempty"`
-	Name        string          `json:"name"`
-	Description string          `json:"description"`
-	Source      FoundlingSource `json:"source"`
-	Pin         SourcePin       `json:"pin"`
-	State       string          `json:"state"`
-	Supersedes  []string        `json:"supersedes,omitempty"`
-	Reason      string          `json:"reason"`
+	Mode           string          `json:"mode,omitempty"`
+	Branch         string          `json:"branch,omitempty"`
+	SourceSignetID string          `json:"source_signet_id,omitempty"`
+	FoundlingID    string          `json:"foundling_id,omitempty"`
+	Name           string          `json:"name"`
+	Description    string          `json:"description"`
+	Source         FoundlingSource `json:"source"`
+	Pin            SourcePin       `json:"pin"`
+	State          string          `json:"state"`
+	Supersedes     []string        `json:"supersedes,omitempty"`
+	Reason         string          `json:"reason"`
 }
 
 func (s *Service) WriteFoundling(input FoundlingWrite) (FoundlingRegistration, error) {
@@ -32,7 +35,14 @@ func (s *Service) WriteFoundling(input FoundlingWrite) (FoundlingRegistration, e
 	if input.Supersedes == nil {
 		input.Supersedes = []string{}
 	}
-	r := FoundlingRegistration{Version: 1, ID: NewID("registration"), FoundlingID: input.FoundlingID, Name: input.Name, Description: input.Description, Source: input.Source, Pin: input.Pin, State: input.State, RecordedAt: time.Now().UTC().Format(time.RFC3339Nano), Authorship: s.author, Supersedes: input.Supersedes, ChangeReason: input.Reason}
+	version := 1
+	if input.Mode == "legacy" {
+		input.Mode = ""
+	}
+	if input.Mode == "canon" {
+		version = 2
+	}
+	r := FoundlingRegistration{Version: version, Mode: input.Mode, Branch: input.Branch, SourceSignetID: input.SourceSignetID, ID: NewID("registration"), FoundlingID: input.FoundlingID, Name: input.Name, Description: input.Description, Source: input.Source, Pin: input.Pin, State: input.State, RecordedAt: time.Now().UTC().Format(time.RFC3339Nano), Authorship: s.author, Supersedes: input.Supersedes, ChangeReason: input.Reason}
 	if err := s.store.PutFoundlingRegistration(r); err != nil {
 		return FoundlingRegistration{}, err
 	}
@@ -43,6 +53,9 @@ func (s *Service) WriteFoundling(input FoundlingWrite) (FoundlingRegistration, e
 // guidance. A conflicted registration exposes no arbitrarily selected name/pin.
 // History pagination retains every revision when the bounded head list truncates.
 type FoundlingSummary struct {
+	Mode           string           `json:"mode,omitempty"`
+	Branch         string           `json:"branch,omitempty"`
+	SourceSignetID string           `json:"source_signet_id,omitempty"`
 	FoundlingID    string           `json:"foundling_id"`
 	State          string           `json:"state"`
 	HeadCount      int              `json:"head_count"`
@@ -111,6 +124,7 @@ func (s *Service) foundlingSummaries() ([]FoundlingSummary, error) {
 			r := current[0]
 			v.State, v.Name, v.Description = r.State, r.Name, r.Description
 			v.Source, v.Pin = &r.Source, &r.Pin
+			v.Mode, v.Branch, v.SourceSignetID = r.EffectiveMode(), r.Branch, r.SourceSignetID
 		}
 		summaries = append(summaries, v)
 	}
