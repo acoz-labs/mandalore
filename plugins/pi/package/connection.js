@@ -144,7 +144,7 @@ export async function openConnection(root, sessionSignal) {
       operations, readOnly: config.read_only, sessionEnabled, close,
       async start(boundary, signal) {
         if (!sessionEnabled) return;
-        return requireOK(await bound('memory_context', {boundary}, {signal, timeoutMs: 5000, mutating: true}));
+        return requireOK(await bound('memory_context', {boundary}, {signal, timeoutMs: 9000, mutating: true}));
       },
       async call(name, input, signal) {
         const operation = operations.find(op => op.name === name);
@@ -152,7 +152,7 @@ export async function openConnection(root, sessionSignal) {
         return bound(name, input, {signal, mutating: !operation.read_only});
       },
       async context(prompt, signal, boundary) {
-        const packet = requireOK(await bound('memory_context', {prompt: boundedPrompt(prompt), ...(sessionEnabled ? {boundary} : {})}, {signal, timeoutMs: 5000, readOnly: true, mutating: sessionEnabled}));
+        const packet = requireOK(await bound('memory_context', {prompt: boundedPrompt(prompt), ...(sessionEnabled ? {boundary} : {})}, {signal, timeoutMs: sessionEnabled ? 9000 : 5000, readOnly: true, mutating: sessionEnabled}));
         if (!packet || typeof packet !== 'object' || Array.isArray(packet) || Object.keys(packet).some(key => !['context', 'warning', 'synchronization'].includes(key)) || (packet.context !== undefined && typeof packet.context !== 'string') || (packet.warning !== undefined && typeof packet.warning !== 'string') || (!packet.context && !packet.warning) || Buffer.byteLength(JSON.stringify(packet)) > 16383) throw invalid();
         return packet;
       },

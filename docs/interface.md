@@ -911,11 +911,39 @@ selects the owned generation's intact retained runtime, falling back only to its
 matching source bytes. Existing threads need restart or native reload to load
 changed code; the next-turn memory packet is independently read fresh.
 
-The native extension exposes the same 22 bound operations as MCP with sequential
+The native extension exposes the same 28 bound operations as MCP with sequential
 tool execution, shell-free arguments, binding guards and `pi` provenance.
 One complete envelope is returned in text, with only operation/ok metadata.
 Read nested delivery errors even if the outer save succeeded. Input/output bounds
 remain 32768/65536 bytes (catalog discovery allows 1 MiB). Tool calls have a
-45-second outer deadline; startup/context calls use five seconds. Cancellation
+45-second outer deadline; enabled startup/context calls use nine seconds to
+cover primary-signet and canon refresh budgets, while legacy context uses five
+seconds. Cancellation
 terminates owned process groups with bounded escalation; lost output can mean a
 write occurred and requires inspection, never an automatic retry.
+
+## Canon reference operations and local launching
+
+`foundling_register` accepts `mode`, `branch` and `source_signet_id` for canon;
+mode omission preserves legacy registration. `foundling_status` pages the
+selected session's refresh receipts without network effects.
+`foundling_canon_scopes`, `foundling_canon_recall` and `foundling_canon_heads`
+consult semantic source state at that session's immutable commit.
+`foundling_canon_promote` verifies a selected visible head and records explicit
+adapted knowledge with generated provenance. Enabled sessions deliver that
+semantic save through the existing bounded transport path.
+
+`foundling_refresh` is an explicit enabled-session operation with network/local
+cache effects. Ordinary canon reads never select another session or refresh
+implicitly. Use the exact harness-namespaced `session_id` supplied by native
+context; unknown selection fails rather than falling back to a global snapshot.
+Status, scopes and visible-head results are bounded and paged; use their
+`next_offset` values rather than repeating refresh or treating truncation as
+absence. Read the active operation catalog for bounds and continuation fields.
+See [foundlings](foundlings.md) for content and compatibility semantics.
+
+The separate `mandalore launch` CLI owns machine-local environment selection.
+`launch schema` describes its strict entry JSON; `configure`, `list` and
+`--preview` support setup and inspection. No model memory tool edits shell aliases
+or launches a second agent. See [launch](launch.md) for profile ownership and
+native argument boundaries.

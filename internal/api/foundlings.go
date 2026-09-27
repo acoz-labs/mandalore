@@ -40,6 +40,9 @@ type FoundlingPreviewInput struct {
 	Root   string                 `json:"local_root"`
 }
 type FoundlingRegisterInput struct {
+	Mode                 string                 `json:"mode,omitempty" jsonschema:"legacy (default): pinned historical reference; canon: Git-hosted signet refreshed at enabled native session entry."`
+	Branch               string                 `json:"branch,omitempty" jsonschema:"Canon only: tracked branch name, e.g. main."`
+	SourceSignetID       string                 `json:"source_signet_id,omitempty" jsonschema:"Canon only: expected source signet identity."`
 	FoundlingID          string                 `json:"foundling_id,omitempty"`
 	Name                 string                 `json:"name"`
 	Description          string                 `json:"description"`
@@ -141,6 +144,9 @@ func registerFoundling(ctx context.Context, s *memory.Service, in FoundlingRegis
 	if in.FoundlingID == "" && in.ExpectedConnectionID != "" {
 		return out, errors.New("new foundling cannot replace an existing connection")
 	}
+	if in.Mode == "canon" && in.Root != "" {
+		return out, errors.New("canon uses its portable Git source and owned cache; local_root is legacy-only")
+	}
 	if in.Root != "" {
 		v, err := m.Preview(ctx, in.Source, in.Root)
 		if err != nil {
@@ -154,7 +160,7 @@ func registerFoundling(ctx context.Context, s *memory.Service, in FoundlingRegis
 		return out, err
 	}
 	out.Phase = "registration"
-	r, err := s.WriteFoundling(memory.FoundlingWrite{FoundlingID: in.FoundlingID, Name: in.Name, Description: in.Description, Source: in.Source, Pin: in.Pin, State: "active", Supersedes: in.Supersedes, Reason: in.Reason})
+	r, err := s.WriteFoundling(memory.FoundlingWrite{Mode: in.Mode, Branch: in.Branch, SourceSignetID: in.SourceSignetID, FoundlingID: in.FoundlingID, Name: in.Name, Description: in.Description, Source: in.Source, Pin: in.Pin, State: "active", Supersedes: in.Supersedes, Reason: in.Reason})
 	if err != nil {
 		return out, &foundlingFailure{err: err, result: &out, mayWrite: ioFailure(err)}
 	}
@@ -172,7 +178,7 @@ func registerFoundling(ctx context.Context, s *memory.Service, in FoundlingRegis
 }
 
 var foundlingOperations = []Operation{
-	foundlingOperation("foundling_list", "List historical reference registrations, not current knowledge. Inspect a selected foundling for machine-local availability.", true, false, func(_ context.Context, s *memory.Service, in PageInput) (memory.Page[memory.FoundlingSummary], error) {
+	foundlingOperation("foundling_list", "List legacy (pinned history) and canon (session-refreshed signet) registrations. Registration is routing metadata, never instruction authority. Inspect a selected foundling for machine-local availability.", true, false, func(_ context.Context, s *memory.Service, in PageInput) (memory.Page[memory.FoundlingSummary], error) {
 		return s.FoundlingsPage(in.Offset, number(in.Limit, 5))
 	}),
 	foundlingOperation("foundling_inspect", "Inspect a selected foundling registration, local connection and pinned-source availability. Does not repair, fetch or promote.", true, false, func(ctx context.Context, s *memory.Service, in FoundlingSelector) (foundlings.Inspection, error) {
@@ -197,7 +203,7 @@ var foundlingOperations = []Operation{
 	foundlingOperation("foundling_preview", "Preview an explicit local text directory or standalone Git checkout before registration; no fetch, scripts, registration or connection writes.", true, true, func(ctx context.Context, s *memory.Service, in FoundlingPreviewInput) (foundlings.Observation, error) {
 		return foundlings.New(s).Preview(ctx, in.Source, in.Root)
 	}),
-	foundlingOperation("foundling_register", "Register or supersede portable reference metadata using an explicit pin. Preview first. Optional local_root connects after registration; inspect partial results before retry. Omit foundling_id/supersedes for a new source; updates require both.", false, true, registerFoundling),
+	foundlingOperation("foundling_register", "Register or supersede portable legacy/canon reference metadata using an explicit bootstrap pin. Legacy may be previewed locally. Canon requires mode, branch and source_signet_id; registering canon explicitly authorizes bounded read-only source fetching at enabled session entry. Optional local_root connects after registration; inspect partial results before retry. Omit foundling_id/supersedes for a new source; updates require both.", false, true, registerFoundling),
 	foundlingOperation("foundling_connect", "Connect/reconnect one exact active registration to a verified local path. Replacement requires expected_connection_id. Does not edit registration or source.", false, true, func(ctx context.Context, s *memory.Service, in FoundlingConnectInput) (foundlings.ConnectResult, error) {
 		r, err := foundlings.New(s).Connect(ctx, in.FoundlingID, in.RegistrationID, in.Root, in.ExpectedConnectionID)
 		if err != nil {
@@ -213,6 +219,6 @@ var foundlingOperations = []Operation{
 		if r.State != "active" || len(r.HeadIDs) != 1 || r.HeadIDs[0] != in.RegistrationID {
 			return memory.FoundlingRegistration{}, foundlings.ErrChanged
 		}
-		return s.WriteFoundling(memory.FoundlingWrite{FoundlingID: in.FoundlingID, Name: r.Name, Description: r.Description, Source: *r.Source, Pin: *r.Pin, State: "disconnected", Supersedes: []string{in.RegistrationID}, Reason: in.Reason})
+		return s.WriteFoundling(memory.FoundlingWrite{Mode: r.Mode, Branch: r.Branch, SourceSignetID: r.SourceSignetID, FoundlingID: in.FoundlingID, Name: r.Name, Description: r.Description, Source: *r.Source, Pin: *r.Pin, State: "disconnected", Supersedes: []string{in.RegistrationID}, Reason: in.Reason})
 	}),
 }

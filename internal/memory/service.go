@@ -24,6 +24,21 @@ func OpenService(root string, author Authorship) (*Service, error) {
 	return &Service{store: s, author: author}, nil
 }
 
+// OpenReadOnlyService opens a verified source without creating local authorship.
+// Mutations cannot publish because no valid device/author is attached.
+func OpenReadOnlyService(root string) (*Service, error) {
+	store, err := Open(root)
+	if err != nil {
+		return nil, err
+	}
+	if err = store.Validate(); err != nil {
+		return nil, err
+	}
+	return &Service{store: store}, nil
+}
+
+func (s *Service) Harness() string { return s.author.Harness }
+
 func (s *Service) ID() string      { return s.store.Signet.ID }
 func (s *Service) Root() string    { return s.store.Root }
 func (s *Service) Validate() error { return s.store.Validate() }

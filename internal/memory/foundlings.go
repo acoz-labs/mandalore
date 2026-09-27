@@ -25,18 +25,21 @@ type SourcePin struct {
 }
 
 type FoundlingRegistration struct {
-	Version      int             `json:"schema_version"`
-	ID           string          `json:"id"`
-	FoundlingID  string          `json:"foundling_id"`
-	Name         string          `json:"name"`
-	Description  string          `json:"description"`
-	Source       FoundlingSource `json:"source"`
-	Pin          SourcePin       `json:"pin"`
-	State        string          `json:"state"`
-	RecordedAt   string          `json:"recorded_at"`
-	Authorship   Authorship      `json:"authorship"`
-	Supersedes   []string        `json:"supersedes"`
-	ChangeReason string          `json:"change_reason"`
+	Version        int             `json:"schema_version"`
+	Mode           string          `json:"mode,omitempty"`
+	Branch         string          `json:"branch,omitempty"`
+	SourceSignetID string          `json:"source_signet_id,omitempty"`
+	ID             string          `json:"id"`
+	FoundlingID    string          `json:"foundling_id"`
+	Name           string          `json:"name"`
+	Description    string          `json:"description"`
+	Source         FoundlingSource `json:"source"`
+	Pin            SourcePin       `json:"pin"`
+	State          string          `json:"state"`
+	RecordedAt     string          `json:"recorded_at"`
+	Authorship     Authorship      `json:"authorship"`
+	Supersedes     []string        `json:"supersedes"`
+	ChangeReason   string          `json:"change_reason"`
 }
 
 // ExternalOrigin describes historical attribution separately from incorporation.
@@ -116,6 +119,34 @@ func validateFoundlingSource(source FoundlingSource, pin SourcePin) error {
 	return nil
 }
 
+// Mode defaults to legacy only for the original v1 registration format.
+func (r FoundlingRegistration) EffectiveMode() string {
+	if r.Mode == "" && r.Version == 1 {
+		return "legacy"
+	}
+	return r.Mode
+}
+
+func validFoundlingMode(r FoundlingRegistration) bool {
+	if r.Version == 1 {
+		return (r.Mode == "" || r.Mode == "legacy") && r.Branch == "" && r.SourceSignetID == ""
+	}
+	if r.Version != 2 || r.Mode != "canon" || r.Source.Kind != "git" || !identifier.MatchString(r.SourceSignetID) {
+		return false
+	}
+	// Branch is a full refs/heads suffix, never a ref expression or option.
+	b := r.Branch
+	if b == "" || b == "@" || b == "HEAD" || strings.IndexFunc(b, func(r rune) bool { return r <= 32 || r == 127 }) >= 0 || len(b) > 256 || strings.HasPrefix(b, "-") || strings.ContainsAny(b, " ~^:?*[\\\r\n\t") || strings.Contains(b, "..") || strings.Contains(b, "@{") || strings.HasSuffix(b, ".") || strings.Contains(b, "//") {
+		return false
+	}
+	for _, part := range strings.Split(b, "/") {
+		if part == "" || strings.HasPrefix(part, ".") || strings.HasSuffix(part, ".lock") {
+			return false
+		}
+	}
+	return true
+}
+
 func (s *Store) validateRegistrations(items []FoundlingRegistration) error {
 	return validateRegistrationGraph(items, s.deviceExists)
 }
@@ -124,7 +155,7 @@ func validateRegistrationGraph(items []FoundlingRegistration, device func(string
 	byID := map[string]FoundlingRegistration{}
 	roots := map[string]int{}
 	for _, r := range items {
-		if r.Version != 1 || !identifier.MatchString(r.ID) || !identifier.MatchString(r.FoundlingID) || !textWithin(r.Name, 256) || !textWithin(r.Description, 4096) || !textWithin(r.ChangeReason, 1024) || len(r.Supersedes) > 32 || (r.State != "active" && r.State != "disconnected") {
+		if !validFoundlingMode(r) || !identifier.MatchString(r.ID) || !identifier.MatchString(r.FoundlingID) || !textWithin(r.Name, 256) || !textWithin(r.Description, 4096) || !textWithin(r.ChangeReason, 1024) || len(r.Supersedes) > 32 || (r.State != "active" && r.State != "disconnected") {
 			return errors.New("invalid foundling registration")
 		}
 		if _, err := time.Parse(time.RFC3339Nano, r.RecordedAt); err != nil {
@@ -265,7 +296,7 @@ func validateOriginAgainst(origin *ExternalOrigin, items []FoundlingRegistration
 		}
 	}
 	for _, r := range items {
-		if r.ID == origin.RegistrationRevisionID && r.FoundlingID == origin.FoundlingID && r.Source == origin.SourceIdentity && r.Pin == origin.SourcePin {
+		if r.ID == origin.RegistrationRevisionID && r.FoundlingID == origin.FoundlingID && r.Source == origin.SourceIdentity && (r.Pin == origin.SourcePin || (r.EffectiveMode() == "canon" && validateFoundlingSource(r.Source, origin.SourcePin) == nil)) {
 			return nil
 		}
 	}

@@ -357,45 +357,84 @@ func TestSessionVisibilityMutationsDeliver(t *testing.T) {
 }
 
 func TestSessionExplicitShortDeliveryTimeoutPreservesSave(t *testing.T) {
-	for _, name := range []string{"memory_sync", "memory_remember_and_sync", "memory_journal_append_and_sync"} {
-		t.Run(name, func(t *testing.T) {
-			a, _, _ := sessionFixture(t)
-			real, err := exec.LookPath("git")
-			if err != nil {
-				t.Fatal(err)
-			}
-			quote := func(s string) string { return "'" + strings.ReplaceAll(s, "'", "'\\''") + "'" }
-			bin := t.TempDir()
-			script := "#!/bin/sh\nfor arg in \"$@\"; do\nif [ \"$arg\" = ls-remote ]; then sleep 30; exit 128; fi\ndone\nexec " + quote(real) + " \"$@\"\n"
-			if err := os.WriteFile(filepath.Join(bin, "git"), []byte(script), 0700); err != nil {
-				t.Fatal(err)
-			}
-			t.Setenv("PATH", bin+string(os.PathListSeparator)+os.Getenv("PATH"))
-			data := `{"timeout_seconds":1}`
-			if name == "memory_remember_and_sync" {
-				data = `{"timeout_seconds":1,"record":{"kind":"fact","summary":"Teal","body":"Synthetic teal convention","basis":"user-direction","reason":"Confirmed"}}`
-			}
-			if name == "memory_journal_append_and_sync" {
-				data = `{"timeout_seconds":1,"entry":{"kind":"outcome","summary":"Synthetic outcome"}}`
-			}
-			start := time.Now()
-			out := a.Call(context.Background(), name, []byte(data))
-			elapsed := time.Since(start)
-			if elapsed >= 2500*time.Millisecond || elapsed < 900*time.Millisecond {
-				t.Fatal("one-second delivery deadline not honored", elapsed)
-			}
-			if out.SessionSync == nil || out.SessionSync.Error == nil || out.SessionSync.Status == nil || !out.SessionSync.Status.Checkpointed {
-				t.Fatal("missing partial checkpoint receipt", out)
-			}
-			if name != "memory_sync" {
-				if !out.OK {
-					t.Fatal(out)
+	for _, blockedPhase := range []string{"checkpoint", "remote"} {
+		for _, name := range []string{"memory_sync", "memory_remember_and_sync", "memory_journal_append_and_sync"} {
+			t.Run(blockedPhase+"/"+name, func(t *testing.T) {
+				a, service, _ := sessionFixture(t)
+				real, err := exec.LookPath("git")
+				if err != nil {
+					t.Fatal(err)
 				}
-				r := out.Result.(SaveAndSyncResult)
-				if !r.Saved.DurableLocally || r.Delivery.OK || r.Delivery.Result != nil || r.Delivery.Error == nil {
-					t.Fatal(r)
+				quote := func(s string) string { return "'" + strings.ReplaceAll(s, "'", "'\\''") + "'" }
+				bin := t.TempDir()
+				marker := filepath.Join(bin, "blocked-phase-entered")
+				operation := "ls-remote"
+				if blockedPhase == "checkpoint" {
+					operation = "rev-parse"
 				}
-			}
-		})
+				script := "#!/bin/sh\nfor arg in \"$@\"; do\nif [ \"$arg\" = " + quote(operation) + " ]; then : > " + quote(marker) + "; sleep 30; exit 128; fi\ndone\nexec " + quote(real) + " \"$@\"\n"
+				if err := os.WriteFile(filepath.Join(bin, "git"), []byte(script), 0700); err != nil {
+					t.Fatal(err)
+				}
+				t.Setenv("PATH", bin+string(os.PathListSeparator)+os.Getenv("PATH"))
+				data := `{"timeout_seconds":1}`
+				if name == "memory_remember_and_sync" {
+					data = `{"timeout_seconds":1,"record":{"kind":"fact","summary":"Teal","body":"Synthetic teal convention","basis":"user-direction","reason":"Confirmed"}}`
+				}
+				if name == "memory_journal_append_and_sync" {
+					data = `{"timeout_seconds":1,"entry":{"kind":"outcome","summary":"Synthetic outcome"}}`
+				}
+				start := time.Now()
+				out := a.Call(context.Background(), name, []byte(data))
+				elapsed := time.Since(start)
+				if elapsed >= 2500*time.Millisecond || elapsed < 900*time.Millisecond {
+					t.Fatal("one-second delivery deadline not honored", elapsed)
+				}
+				if out.SessionSync == nil || out.SessionSync.Error == nil {
+					t.Fatal("missing delivery failure receipt", out)
+				}
+				status := out.SessionSync.Status
+				if status != nil && status.Delivered {
+					t.Fatal("interrupted operation claimed delivery", status)
+				}
+				_, markerErr := os.Stat(marker)
+				// The one-second budget includes checkpoint work. A slow machine may expire
+				// before ls-remote starts; that must not be reported as a completed checkpoint.
+				// Once remote entry is actually observed, checkpoint preservation is required.
+				if blockedPhase == "remote" && markerErr == nil {
+					if status == nil || !status.Checkpointed || status.Phase != "fetch" {
+						t.Fatal("observed remote entry lost its checkpoint receipt", out)
+					}
+				}
+				if blockedPhase == "checkpoint" && status != nil && status.Checkpointed {
+					t.Fatal("blocked checkpoint was falsely confirmed", status)
+				}
+				if markerErr != nil && !os.IsNotExist(markerErr) {
+					t.Fatal(markerErr)
+				}
+				if name != "memory_sync" {
+					if !out.OK {
+						t.Fatal(out)
+					}
+					r := out.Result.(SaveAndSyncResult)
+					if !r.Saved.DurableLocally || r.Delivery.OK || r.Delivery.Result != nil || r.Delivery.Error == nil {
+						t.Fatal(r)
+					}
+					// Inspect actual immutable storage: durable-local is independent of Git
+					// checkpoint and remote completion, including timeout before either stage.
+					if name == "memory_remember_and_sync" {
+						revisions, err := service.History(r.Saved.RecordID)
+						if err != nil || len(revisions) != 1 || revisions[0].ID != r.Saved.ID || revisions[0].Body != "Synthetic teal convention" {
+							t.Fatal("saved record missing after delivery timeout", revisions, err)
+						}
+					} else {
+						entries, err := service.Journal("Synthetic outcome", 10)
+						if err != nil || len(entries) != 1 || entries[0].ID != r.Saved.ID {
+							t.Fatal("saved journal missing after delivery timeout", entries, err)
+						}
+					}
+				}
+			})
+		}
 	}
 }

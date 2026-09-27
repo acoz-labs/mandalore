@@ -300,3 +300,19 @@ func TestFoundlingMenuReconnectAndExplicitPinUpdate(t *testing.T) {
 		t.Fatal(history, err)
 	}
 }
+
+func TestCanonMenuRegistrationIsPortableAndDoesNotFetch(t *testing.T) {
+	s, bind, _ := foundlingMenuFixture(t)
+	script := strings.Join([]string{"8", "7", "Work conventions", "Synthetic work evidence", "https://example.invalid/work.git", "signet-work", "main", "git-sha1", strings.Repeat("a", 40), "Explicit reference", "2", "1", "6", "10", ""}, "\n")
+	out, code := menuTrial(t, script, "--binding", bind)
+	if code != 0 || !strings.Contains(out, "canon") || !strings.Contains(out, "session_snapshot_required") {
+		t.Fatal(code, out)
+	}
+	page, err := s.FoundlingsPage(0, 5)
+	if err != nil || len(page.Items) != 1 || page.Items[0].Mode != "canon" {
+		t.Fatal(page, err)
+	}
+	if _, err := os.Stat(filepath.Join(s.Root(), ".mandalore/canon")); !os.IsNotExist(err) {
+		t.Fatal("menu fetched or cached source", err)
+	}
+}

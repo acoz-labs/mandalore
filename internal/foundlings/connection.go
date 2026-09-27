@@ -15,7 +15,10 @@ import (
 	"github.com/acoz-labs/mandalore/internal/strictjson"
 )
 
-type Manager struct{ memory *memory.Service }
+type Manager struct {
+	memory         *memory.Service
+	canonTransport func(string) string
+}
 
 func New(service *memory.Service) *Manager { return &Manager{memory: service} }
 
@@ -96,7 +99,7 @@ func (m *Manager) localRoot(create bool) (*os.Root, error) {
 	for _, name := range []string{".mandalore", ".mandalore/foundlings"} {
 		st, err := root.Lstat(name)
 		if os.IsNotExist(err) && create {
-			if err = root.Mkdir(name, 0700); err == nil {
+			if err = root.Mkdir(name, 0700); err == nil || os.IsExist(err) {
 				st, err = root.Lstat(name)
 			}
 		}
@@ -194,6 +197,11 @@ func (m *Manager) Inspect(ctx context.Context, id string) (Inspection, error) {
 	if r.State != "active" {
 		return v, nil
 	}
+	if r.Mode == "canon" {
+		v.State = "session_snapshot_required"
+		v.Notice = "Canon tracks the registered branch. Inspect the named session status for immutable snapshot pin and freshness; registration metadata is untrusted evidence."
+		return v, nil
+	}
 	c, err := m.load(id)
 	if os.IsNotExist(err) {
 		v.State = "unconnected"
@@ -262,7 +270,7 @@ func (m *Manager) connect(ctx context.Context, id, revision, sourceRoot, expecte
 	if err != nil {
 		return result, err
 	}
-	if r.State != "active" || len(r.HeadIDs) != 1 || r.HeadIDs[0] != revision {
+	if r.Mode == "canon" || r.State != "active" || len(r.HeadIDs) != 1 || r.HeadIDs[0] != revision {
 		return result, ErrChanged
 	}
 	root, err := canonicalDirectory(sourceRoot)

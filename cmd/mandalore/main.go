@@ -29,6 +29,8 @@ const help = `Mandalore — durable memory across tools
 
   mandalore menu [--plain]                       Guided setup, inspection and recovery
   mandalore operations                          JSON schemas and implemented operations
+  mandalore launch NAME [--agent NAME] [--preview] [-- native arguments]
+  mandalore launch configure|list|schema|--help   Machine-local named environments
   mandalore connection apply --sessions-stopped  Apply a reviewed plan after affected Codex sessions exit
   mandalore version                             Runtime/protocol version
   mandalore release inspect [--version VERSION | --candidate DIR]
@@ -51,6 +53,8 @@ const help = `Mandalore — durable memory across tools
   mandalore memory sync --binding FILE [--timeout-seconds 10]
   mandalore foundling list|inspect|history|search|read --binding FILE [options]
   mandalore foundling preview|register|connect|disconnect|promote --binding FILE < input.json
+  mandalore foundling status|canon-scopes|canon-recall|canon-heads|canon-promote --binding FILE < input.json
+  mandalore foundling refresh --binding FILE [enabled-session guards] < session.json
   mandalore call OPERATION --binding FILE < input.json
   mandalore mcp --binding FILE [--harness NAME] [--read-only]
   mandalore codex-memory-hook [--binding FILE]   Read-only native lifecycle JSON
@@ -81,7 +85,10 @@ Foundling options: --foundling-id ID, --query TEXT (search), --limit N (list/his
 --offset N (list/history/search/read), --registration-id ID (search/read),
 --excerpt-bytes N --budget-bytes N (search), --locator PATH --limit-bytes N (read).
 Search offsets select document ranks; read offsets select UTF-8 bytes.
-Foundling setup is CLI-only; MCP exposes list/inspect/search/read/promote.
+Foundling setup is CLI-only. Legacy uses pinned historical text; canon uses session-pinned signet evidence.
+Canon operations take structured JSON with the exact session_id from native lifecycle context.
+Canon refresh requires enabled-session policy guards; ordinary canon reads never fetch.
+MCP exposes legacy consultation plus canon status/scopes/recall/heads/promotion and explicit refresh.
 Common options: --binding FILE, --harness NAME, --read-only, --help.
 Optional connection guards: --binding-sha256 SHA256 --signet-id ID (both required).
 Binding selection: explicit file, then MANDALORE_BINDING, then platform config.
@@ -93,6 +100,14 @@ Publication uses separate maintainer acceptance/release gates; local builds are 
 `
 
 func main() {
+	// Cancel bounded preflight on interruption without closing interactive stdin.
+	// Exec resets caught signal handlers when the native process takes over.
+	if len(os.Args) > 1 && os.Args[1] == "launch" {
+		launchContext, cancelLaunch := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		code := runLaunch(launchContext, os.Args[2:], os.Stdin, os.Stdout, os.Stderr)
+		cancelLaunch()
+		os.Exit(code)
+	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	go func() { <-ctx.Done(); _ = os.Stdin.Close() }()
 	code := run(ctx, os.Args[1:], os.Stdin, os.Stdout, os.Stderr)
@@ -112,6 +127,9 @@ func bad(out io.Writer, message string) int {
 
 func run(ctx context.Context, args []string, input io.Reader, out, errout io.Writer) int {
 	ctx = readiness.WithBuild(ctx, version, sourceCommit)
+	if len(args) > 0 && args[0] == "launch" {
+		return runLaunch(ctx, args[1:], input, out, errout)
+	}
 	if len(args) > 0 && args[0] == "export" {
 		return runExport(ctx, args[1:], input, out)
 	}

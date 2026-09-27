@@ -229,3 +229,20 @@ candidate content, read-only status hashes and compiled CLI/stdin-MCP operations
 Local clone tests are not two physical-machine native agent acceptance. Native
 journeys and platform-specific execution evidence must identify the exact
 candidate and tested versions; cross-builds alone do not establish either.
+
+## Canon reference freshness
+
+Canon reference fetching is distinct from primary-signet synchronization.
+The primary bank still uses its existing enabled-session transport policy.
+Registered canon sources are read-only inputs: their session-entry/resume
+refresh never pushes upstream or saves copied semantic knowledge. Each session
+retains the verified commit until resume or explicit refresh; ordinary turns and
+compaction keep that snapshot. Native context provides the exact selection ID
+for subsequent tools across processes.
+
+Inspect individual reference receipts separately from the primary bank's
+`session_sync`. Successful primary delivery does not prove reference freshness,
+and successful reference fetch does not deliver primary writes. Stale-cache
+fallback identifies its observed commit and time; absent or ineligible snapshots
+remain unavailable. Refresh is bounded foreground work, not a daemon. See the
+[foundling contract](foundlings.md) for eligibility and provenance.

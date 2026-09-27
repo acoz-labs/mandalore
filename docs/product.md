@@ -5,8 +5,9 @@
 An existing agent learns useful facts, preferences, decisions, lessons and
 procedures during ordinary work. Fresh sessions and different tools/machines
 recall the same user-owned knowledge through an explicitly selected signet.
-No assistant launcher, replacement identity, separate inference account or
-transferred native thread is required.
+An optional thin launcher selects a named local connection and native harness.
+Direct native starts remain supported; no replacement identity, separate inference
+account or transferred native thread is required.
 
 ## Names
 
@@ -91,8 +92,11 @@ explicit history access. Measure relevance, corpus growth, repeated reads and
 latency before adopting indexing, semantic search or qmd. Derived indexes must
 be rebuildable; lexical misses are not proof of absence.
 
-Existing memory/documents can be linked as **foundlings**: historical reference
-evidence, not live instructions or a 1:1 migration. The MVP includes a minimal
+Existing memory/documents can be linked as **foundlings**. **Legacy** foundlings
+are explicitly pinned historical reference evidence. **Canon** foundlings track
+a Git-hosted signet and refresh at session entry/resume, retaining a verified
+commit for the session. Neither mode grants instruction authority or performs a
+1:1 migration. The MVP includes a minimal
 reference workflow before real-memory adoption (#12). Versioned registrations
 and citations belong to the signet; machine-local checkout paths remain local.
 Selective promotion preserves original source identity/pin/attribution separately

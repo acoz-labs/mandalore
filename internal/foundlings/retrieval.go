@@ -82,7 +82,7 @@ func (m *Manager) selected(id, revision string) (*Connection, error) {
 	if err != nil {
 		return nil, err
 	}
-	if r.State != "active" || (revision != "" && (len(r.HeadIDs) != 1 || r.HeadIDs[0] != revision)) {
+	if r.Mode == "canon" || r.State != "active" || (revision != "" && (len(r.HeadIDs) != 1 || r.HeadIDs[0] != revision)) {
 		return nil, ErrChanged
 	}
 	c, err := m.load(id)
