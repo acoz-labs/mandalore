@@ -1,15 +1,52 @@
 package main
 
 import (
+	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"io/fs"
 	"runtime"
+	"strings"
 	"testing"
 
+	"github.com/acoz-labs/mandalore/internal/strictjson"
 	codexplugin "github.com/acoz-labs/mandalore/plugins/codex"
 )
+
+func TestVersionRemainsReadableByReleased13Installer(t *testing.T) {
+	var out, errout bytes.Buffer
+	if code := run(context.Background(), []string{"version"}, strings.NewReader(""), &out, &errout); code != 0 {
+		t.Fatalf("version exit %d: %s", code, errout.String())
+	}
+	// Frozen v1.3 installer wire contract. Do not replace this with the current
+	// runtime's metadata type: released updaters cannot accept additive fields.
+	var released13 struct {
+		Protocol int  `json:"protocol_version"`
+		OK       bool `json:"ok"`
+		Result   struct {
+			Name          string `json:"name"`
+			Version       string `json:"version"`
+			Source        string `json:"source_commit"`
+			OS            string `json:"os"`
+			Arch          string `json:"arch"`
+			Go            string `json:"go_version"`
+			Protocol      int    `json:"protocol_version"`
+			Hook          int    `json:"codex_hook_protocol"`
+			Read          []int  `json:"signet_read_versions"`
+			Write         []int  `json:"signet_write_versions"`
+			PluginVersion string `json:"plugin_version"`
+			PluginSHA     string `json:"plugin_sha256"`
+		} `json:"result"`
+	}
+	if err := strictjson.Decode(out.Bytes(), &released13, 16<<10); err != nil {
+		t.Fatalf("released v1.3 installer cannot decode actual version output: %v", err)
+	}
+	if !released13.OK || released13.Protocol != 1 || released13.Result.Name != "mandalore" {
+		t.Fatalf("invalid version envelope: %+v", released13)
+	}
+}
 
 func TestVersionReportsActualEmbeddedPackageAndBuildSource(t *testing.T) {
 	v, code := cli(t, []string{"version"}, "")

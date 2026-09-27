@@ -33,12 +33,13 @@ func runtimeMetadata() (map[string]any, error) {
 	if err := json.Unmarshal(files["plugins/mandalore/.codex-plugin/plugin.json"], &plugin); err != nil {
 		return nil, err
 	}
+	// Released installers strictly decode this wire contract. Expose new
+	// capabilities through operation schemas, not additional version fields.
 	return map[string]any{
 		"name": "mandalore", "version": version, "source_commit": sourceCommit,
 		"protocol_version": api.ProtocolVersion, "codex_hook_protocol": 1,
 		"os": runtime.GOOS, "arch": runtime.GOARCH, "go_version": runtime.Version(),
 		"signet_read_versions": []int{1, 2}, "signet_write_versions": []int{1, 2},
-		"foundling_registration_read_versions": []int{1, 2}, "foundling_modes": []string{"legacy", "canon"},
 		"plugin_version": plugin.Version, "plugin_sha256": hex.EncodeToString(h[:]),
 	}, nil
 }
