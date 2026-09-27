@@ -166,7 +166,7 @@ behavior, typed CLI examples, stopped-session updates and owned recovery.
 **CLI · Install, update or select a retained runtime** offers the latest published
 stable release, a specific version, an explicit local candidate, or a retained
 manifest SHA-256. An unavailable release is reported without changing the machine.
-The current published version is [1.3.0](releases/1.3.0.md). This journey is also available directly
+The current published version is [1.4.0](releases/1.4.0.md). This journey is also available directly
 as `mandalore release install`, including `--plain` and optional `--prefix DIR`.
 
 The preview shows source and content identities, compatibility, destination,
