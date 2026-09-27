@@ -508,3 +508,26 @@ func TestCanonFetchDeadlineReservesVerifiedStaleFallback(t *testing.T) {
 		t.Fatal(receipts, e)
 	}
 }
+
+func TestCanonAuthenticationFailureIsSanitizedAndCanUseVerifiedCache(t *testing.T) {
+	m, _, _, _, _ := canonFixture(t)
+	first := refreshTest(t, m, "auth-seed")
+	realGit, err := exec.LookPath("git")
+	if err != nil {
+		t.Fatal(err)
+	}
+	bin := t.TempDir()
+	script := "#!/bin/sh\nfor arg do\nif [ \"$arg\" = fetch ]; then\necho 'Permission denied: PRIVATE_TRANSPORT_SECRET_CANARY' >&2\nexit 128\nfi\ndone\nexec '" + strings.ReplaceAll(realGit, "'", "'\\''") + "' \"$@\"\n"
+	if err = os.WriteFile(filepath.Join(bin, "git"), []byte(script), 0700); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", bin+string(os.PathListSeparator)+os.Getenv("PATH"))
+	receipts, err := m.SessionRefresh(context.Background(), "auth-failed")
+	if err != nil || len(receipts) != 1 || receipts[0].State != "stale" || receipts[0].Reason != "authentication_failed" || receipts[0].Pin != first.Pin {
+		t.Fatal(receipts, err)
+	}
+	encoded, _ := json.Marshal(receipts)
+	if strings.Contains(string(encoded), "PRIVATE_TRANSPORT_SECRET_CANARY") {
+		t.Fatal("transport diagnostics escaped")
+	}
+}
