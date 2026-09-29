@@ -1,11 +1,13 @@
-FROM golang:1.26.4-bookworm AS build
+FROM --platform=$BUILDPLATFORM golang:1.26.4-bookworm AS build
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
+ARG TARGETOS
+ARG TARGETARCH
 ARG SOURCE_COMMIT
 RUN test "${#SOURCE_COMMIT}" = 40 && echo "$SOURCE_COMMIT" | grep -Eq '^[0-9a-f]+$' && \
-    CGO_ENABLED=0 go build -trimpath -ldflags "-X main.version=$(cat VERSION) -X main.sourceCommit=$SOURCE_COMMIT" -o /mandalore ./cmd/mandalore
+    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags "-X main.version=$(cat VERSION) -X main.sourceCommit=$SOURCE_COMMIT" -o /mandalore ./cmd/mandalore
 
 FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates git openssh-client curl && rm -rf /var/lib/apt/lists/* && useradd --uid 10001 --home-dir /app --create-home mandalore
