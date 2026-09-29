@@ -123,6 +123,20 @@ func latestFile(id string) string { return "verified-" + id + ".json" }
 // SessionRefresh is a bounded foreground boundary. No selected snapshot changes
 // on ordinary reads. A resumed native session deliberately calls this again.
 func (m *Manager) SessionRefresh(parent context.Context, sessionID string) ([]CanonReceipt, error) {
+	return m.sessionRefresh(parent, sessionID, nil)
+}
+
+// SessionRefreshAllowed refreshes only explicitly authorized direct references.
+// An empty list authorizes none; local SessionRefresh retains its existing scope.
+func (m *Manager) SessionRefreshAllowed(parent context.Context, sessionID string, allowed []string) ([]CanonReceipt, error) {
+	selection := make(map[string]bool, len(allowed))
+	for _, id := range allowed {
+		selection[id] = true
+	}
+	return m.sessionRefresh(parent, sessionID, selection)
+}
+
+func (m *Manager) sessionRefresh(parent context.Context, sessionID string, allowed map[string]bool) ([]CanonReceipt, error) {
 	started := time.Now()
 	ctx, cancel := context.WithDeadline(parent, started.Add(3*time.Second))
 	defer cancel()
@@ -146,6 +160,9 @@ func (m *Manager) SessionRefresh(parent context.Context, sessionID string) ([]Ca
 	}
 	out := []CanonReceipt{}
 	for _, reg := range regs {
+		if allowed != nil && !allowed[reg.FoundlingID] {
+			continue
+		}
 		receipt := CanonReceipt{Name: reg.Name, Description: reg.Description, SourceIdentity: reg.Source, SessionID: sessionID, FoundlingID: reg.FoundlingID, SourceSignetID: reg.SourceSignetID, State: "unavailable", Notice: canonNotice}
 		if len(reg.HeadIDs) == 1 {
 			receipt.RegistrationID = reg.HeadIDs[0]

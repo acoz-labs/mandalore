@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 )
 
@@ -16,56 +17,68 @@ func (s *Store) PutSourced(r Revision, source Source) error {
 }
 
 func (s *Store) putSourced(r *Revision, source Source, verify func() error) error {
-	return s.withLock(func() error {
-		if err := s.validateSource(source); err != nil {
-			return err
-		}
-		if len(r.Evidence.SourceRefs) != 1 || r.Evidence.SourceRefs[0] != source.ID || r.Authorship.DeviceID != source.DeviceID {
-			return errors.New("revision and source must share evidence and authorship")
-		}
-		records, err := s.revisions()
+	return s.withLock(func() error { return s.putSourcedLocked(r, source, verify, false) })
+}
+
+func (s *Store) putSourcedLocked(r *Revision, source Source, verify func() error, resume bool) error {
+
+	if err := s.validateSource(source); err != nil {
+		return err
+	}
+	if len(r.Evidence.SourceRefs) != 1 || r.Evidence.SourceRefs[0] != source.ID || r.Authorship.DeviceID != source.DeviceID {
+		return errors.New("revision and source must share evidence and authorship")
+	}
+	records, err := s.revisions()
+	if err != nil {
+		return err
+	}
+	var states map[string]VisibilityState
+	if s.Signet.Version == 2 {
+		states, err = s.validateGraphState(records, nil)
 		if err != nil {
 			return err
 		}
-		var states map[string]VisibilityState
-		if s.Signet.Version == 2 {
-			states, err = s.validateGraphState(records, nil)
-			if err != nil {
-				return err
-			}
-		}
-		if err := prepareContentWrite(r, s.Signet.Version, states); err != nil {
+	}
+	if err := prepareContentWrite(r, s.Signet.Version, states); err != nil {
+		return err
+	}
+	if err := s.validateGraphWithSources(append(records, *r), map[string]Source{source.ID: source}); err != nil {
+		return err
+	}
+	// Size/encoding failures are invalid input, not ambiguous partial I/O.
+	// Check both documents before publishing either one.
+	if _, err := encodeJSON(r); err != nil {
+		return err
+	}
+	if _, err := encodeJSON(source); err != nil {
+		return err
+	}
+	if verify != nil {
+		if err := verify(); err != nil {
 			return err
 		}
-		if err := s.validateGraphWithSources(append(records, *r), map[string]Source{source.ID: source}); err != nil {
+	}
+	dir := filepath.Join(s.Root, "memory/records", r.RecordID)
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		return err
+	}
+	info, err := os.Lstat(dir)
+	if err != nil || !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
+		return errors.New("invalid record directory")
+	}
+	sourcePath := filepath.Join(s.Root, "memory/sources", source.ID+".json")
+	var existing Source
+	err = readJSON(sourcePath, &existing)
+	if resume && err == nil {
+		if !reflect.DeepEqual(existing, source) {
+			return errors.New("idempotency source mismatch")
+		}
+	} else {
+		if err := writeNewJSON(sourcePath, source); err != nil {
 			return err
 		}
-		// Size/encoding failures are invalid input, not ambiguous partial I/O.
-		// Check both documents before publishing either one.
-		if _, err := encodeJSON(r); err != nil {
-			return err
-		}
-		if _, err := encodeJSON(source); err != nil {
-			return err
-		}
-		if verify != nil {
-			if err := verify(); err != nil {
-				return err
-			}
-		}
-		dir := filepath.Join(s.Root, "memory/records", r.RecordID)
-		if err := os.MkdirAll(dir, 0700); err != nil {
-			return err
-		}
-		info, err := os.Lstat(dir)
-		if err != nil || !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
-			return errors.New("invalid record directory")
-		}
-		if err := writeNewJSON(filepath.Join(s.Root, "memory/sources", source.ID+".json"), source); err != nil {
-			return err
-		}
-		return writeNewJSON(filepath.Join(dir, r.ID+".json"), r)
-	})
+	}
+	return writeNewJSON(filepath.Join(dir, r.ID+".json"), r)
 }
 
 func (s *Store) validateRootFiles() error {
