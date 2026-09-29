@@ -1,6 +1,6 @@
 # Razor Crest: self-hosted remote memory MVP
 
-Status: proposed implementation; hosting direction selected; not deployed.
+Status: implementation in progress; hosting direction selected; not deployed.
 Tracking issue: [#146](https://github.com/acoz-labs/mandalore/issues/146).
 
 ## Outcome and selected direction
@@ -35,6 +35,18 @@ not contain personal machine names, signet IDs, domains, credentials or policies
 Cloudflare may authenticate identities; Razor Crest remains responsible for
 validating trusted assertions and authorizing each requested operation. Keep the
 provider-specific validation behind a defined integration boundary.
+
+An owner's installation may inform requirements and private compatibility testing.
+Translate those findings into portable behavior and synthetic fixtures before
+publication. Keep actual hostnames, network topology, filesystem paths, account
+identifiers, signet bindings, access policies and raw deployment evidence outside
+the repository and its public issues, pull requests and build logs. Ignoring a
+file in Git is not a substitute for storing installation secrets separately.
+
+Public acceptance records identify the candidate, client surfaces, scenarios and
+sanitized outcomes. Screenshots, command output, URLs and artifacts must be
+checked for installation details before publication; keep the underlying private
+evidence separately when it is needed to reproduce or audit a result.
 
 ## Proposed architecture
 
@@ -114,8 +126,8 @@ transitive signets just because the service has credentials for them.
    Private installation is tracked separately from reusable product release.
 
 Convert these slices into bounded linked delivery issues when their contracts
-are sufficiently established. This planning task does not implement or deploy
-any slice or create cloud resources.
+are sufficiently established. Implementation is authorized; private installation
+configuration and evidence remain separate from the reusable product work.
 
 ## Verification and acceptance
 
