@@ -67,3 +67,12 @@ the original 16 successor issues. Template fields/views and item status were ver
 see the [project receipt](operations/project.md) and issue #1 for live follow-up.
 My Friday is archived and its planning board is closed; historical work is
 preserved rather than marked successfully implemented.
+
+## Razor Crest — proposed remote access
+
+[#146](https://github.com/acoz-labs/mandalore/issues/146) tracks the optional,
+provider-independent remote memory MVP. The selected initial target is a portable
+self-hosted container with authenticated HTTPS ingress; Cloudflare is a reference
+deployment integration, not a core requirement. See the
+[MVP plan](plans/146-razor-crest-mvp/README.md) for product boundaries, delivery
+sequence and acceptance. This is planned work, not released functionality.
