@@ -129,6 +129,11 @@ agent's binding with host paths that are unavailable inside the container.
 Hash the final binding bytes; an edited binding requires a deliberate new pin.
 
 Mount private configuration read-only and the entire service state read-write.
+Use a filesystem that supports hard links, file and directory synchronization,
+and atomic directory rename without replacement. Some shared or FUSE-backed
+paths reject those operations even when ordinary writes succeed. Validate
+creation, save, retry and recovery on the actual mounted volume; use supported
+local storage rather than weakening atomic-publication guarantees.
 The [Compose example](../packaging/razor-crest/compose.yaml) takes private
 `RAZOR_CONFIG_DIR` and `RAZOR_STATE_DIR` paths. Its non-root runtime needs access to
 those directories with the configured container UID. Git credentials and trusted
@@ -136,7 +141,8 @@ SSH host keys must be provisioned separately and scoped to the selected replica'
 repository. Never bake them into an image, command example or checked-in file.
 
 Build from a clean fixed checkout and set `RAZOR_SOURCE_COMMIT` to its full commit
-ID when using Compose. Retain the resulting image digest alongside that source
+ID when using Compose. This is a source-build recipe, not a claim of a published
+container-registry image. Retain the resulting image digest alongside that source
 identity; a build argument alone does not prove that the checkout was clean or
 that the running image matches it. The image embeds the repository version and
 source commit. Its `/healthz` endpoint is loopback-only process liveness, not a
