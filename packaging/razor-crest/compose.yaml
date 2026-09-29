@@ -1,0 +1,20 @@
+services:
+  razor-crest:
+    build:
+      context: ../..
+      dockerfile: packaging/razor-crest/Dockerfile
+      args:
+        SOURCE_COMMIT: ${RAZOR_SOURCE_COMMIT:?provide exact source commit}
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    volumes:
+      - ${RAZOR_CONFIG_DIR:?provide private configuration directory}:/config:ro
+      - ${RAZOR_STATE_DIR:?provide persistent service state directory}:/state
+    ports:
+      - "127.0.0.1:8080:8080"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL

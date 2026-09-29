@@ -56,6 +56,7 @@ const help = `Mandalore — durable memory across tools
   mandalore foundling status|canon-scopes|canon-recall|canon-heads|canon-promote --binding FILE < input.json
   mandalore foundling refresh --binding FILE [enabled-session guards] < session.json
   mandalore call OPERATION --binding FILE < input.json
+  mandalore razor-crest serve --config FILE     Optional authenticated remote MCP
   mandalore mcp --binding FILE [--harness NAME] [--read-only]
   mandalore codex-memory-hook [--binding FILE]   Read-only native lifecycle JSON
   mandalore connection plan [--binary FILE] [--binding FILE] [profile options]
@@ -127,6 +128,9 @@ func bad(out io.Writer, message string) int {
 
 func run(ctx context.Context, args []string, input io.Reader, out, errout io.Writer) int {
 	ctx = readiness.WithBuild(ctx, version, sourceCommit)
+	if len(args) > 0 && args[0] == "razor-crest" {
+		return runRazorCrest(ctx, args[1:], out)
+	}
 	if len(args) > 0 && args[0] == "launch" {
 		return runLaunch(ctx, args[1:], input, out, errout)
 	}

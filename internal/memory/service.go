@@ -115,14 +115,26 @@ func (s *Service) RememberFromFoundling(input Write, verify func() error) (Revis
 }
 
 func (s *Service) remember(input Write, verify func() error) (Revision, error) {
-	if err := s.validateScope(s.scope(input.Scope)); err != nil {
+	r, source, err := s.prepareRemember(input)
+	if err != nil {
 		return Revision{}, err
 	}
+
+	if err := s.store.putSourced(&r, source, verify); err != nil {
+		return Revision{}, err
+	}
+	return r, nil
+}
+
+func (s *Service) prepareRemember(input Write) (Revision, Source, error) {
+	if err := s.validateScope(s.scope(input.Scope)); err != nil {
+		return Revision{}, Source{}, err
+	}
 	if !textWithin(input.Summary, 256) || !textWithin(input.Body, 8192) || !textWithin(input.Reason, 1024) || len(input.Supersedes) > 32 {
-		return Revision{}, errors.New("require summary (1–256 bytes), body (1–8192 bytes), reason (1–1024 bytes), and at most 32 predecessors")
+		return Revision{}, Source{}, errors.New("require summary (1–256 bytes), body (1–8192 bytes), reason (1–1024 bytes), and at most 32 predecessors")
 	}
 	if (input.RecordID == "") != (len(input.Supersedes) == 0) {
-		return Revision{}, errors.New("correction requires both record_id and supersedes; a new record requires neither")
+		return Revision{}, Source{}, errors.New("correction requires both record_id and supersedes; a new record requires neither")
 	}
 	if input.RecordID == "" {
 		input.RecordID = NewID("record")
@@ -150,10 +162,7 @@ func (s *Service) remember(input Write, verify func() error) (Revision, error) {
 		Evidence:   Evidence{Basis: input.Basis, Confidence: input.Confidence, SourceRefs: []string{source.ID}},
 		Supersedes: input.Supersedes, ChangeReason: input.Reason,
 	}
-	if err := s.store.putSourced(&r, source, verify); err != nil {
-		return Revision{}, err
-	}
-	return r, nil
+	return r, source, nil
 }
 
 // Hit is a compact view, not a second storage format. IDs retrieve the full
