@@ -64,8 +64,11 @@ completed CLI installation is separate from a failed native connection.
 
 Use the trusted selected Mandalore executable to preview and apply its own
 embedded package. Pi and its Node runtime must already be installed; this does
-not install them or change authentication. The native contract currently accepts
-Pi 0.85.1 only; the initial native test baseline is Node 24.1.0 on macOS arm64.
+not install them or change authentication. Pi 0.85.1 with Node 24.1.0 on macOS
+arm64 is the original native test baseline. From Mandalore 1.5.0, other releases
+are accepted when required native capabilities and registration checks pass.
+See [independent native upgrades](../../docs/launch.md#upgrade-native-agents-independently)
+for stable launchers, legacy entries and runtime verification boundaries.
 
 ```sh
 mandalore connection plan --harness pi --session-sync --binding /absolute/binding.json \

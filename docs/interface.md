@@ -891,8 +891,10 @@ The output is a derived report, not a restorable bank or safe-publication promis
 
 Use `connection plan/apply/armorer/repair --harness pi` or the corresponding
 `pi_connection_*` operations. Pi defaults to `PI_CODING_AGENT_DIR`, otherwise
-the native `.pi/agent` directory, and `pi` on PATH. The current adapter accepts
-Pi 0.85.1. Pi/Node installation and model authentication are separate prerequisites.
+the native `.pi/agent` directory, and `pi` on PATH. Pi 0.85.1 is the original
+tested baseline; required CLI capabilities and registration determine
+compatibility for other versions. Pi/Node installation and model authentication
+are separate prerequisites.
 
 The plan's `read_only` (`--memory-read-only`) enforces memory access in the
 installed connection; common CLI `--read-only` prohibits this invocation's own

@@ -130,9 +130,11 @@ runtime's read-only planner so its own embedded package is used. Review paths,
 identities and effects, then separately confirm application (default No).
 
 Pi defaults to `PI_CODING_AGENT_DIR`, otherwise its native `.pi/agent` directory.
-Explicit profile/path flags prefill the menu. The inspected native contract is
-Pi 0.85.1; Node 24.1.0/macOS arm64 is the verified engineering baseline. Other
-versions/platform execution must not be inferred from cross-builds.
+Explicit profile/path flags prefill the menu. Pi 0.85.1 with Node 24.1.0/macOS
+arm64 is the original tested baseline. From Mandalore 1.5.0, other Pi releases
+are checked for the required native capabilities instead of refused solely by
+version. Other versions/platform execution must not be inferred from
+cross-builds. See [independent agent upgrades](launch.md#upgrade-native-agents-independently).
 
 After installation, launch ordinary `pi` in any project using the selected native
 profile. The signet is bound independently of cwd. Start a fresh session or use
@@ -152,7 +154,11 @@ Claude Code uses the shared MCP runtime with an explicit guarded binding.
 Choose its native profile (`CLAUDE_CONFIG_DIR`, otherwise `.claude`), executable
 (`claude`), installation state and memory access mode. Preview reads the selected
 runtime's own package and requires a separate default-No application decision.
-The initial native contract is Claude Code 2.1.278.
+The original tested baseline is Claude Code 2.1.278. From Mandalore 1.5.0, newer
+releases can connect when the required native capabilities and registration
+checks pass; an exact version match is not required. Prefer the installation's
+stable launcher so native updates can preserve existing connections. See
+[independent agent upgrades](launch.md#upgrade-native-agents-independently).
 
 The plugin adds native memory skills and bounded local startup/per-prompt context.
 It preserves native auto memory and asks the agent not to duplicate signet records
