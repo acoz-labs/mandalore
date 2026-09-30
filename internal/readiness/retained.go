@@ -59,8 +59,11 @@ func inspectRetained(ctx context.Context, s install.ReceiptSelection, native fil
 	if bound.Setup != "verified-static" || native.SHA256 == "" || !native.Executable || native.Size == 0 {
 		return retainedObservation{Setup: "unknown", Code: "retained-inputs-unverified"}, nil
 	}
-	if bound.SHA256 != m.BindingSHA256 || bound.signetID != m.SignetID || native.SHA256 != m.NativeSHA256 || native.Path != s.NativeBinary {
+	if bound.SHA256 != m.BindingSHA256 || bound.signetID != m.SignetID || native.Path != s.NativeBinary {
 		return retainedObservation{Setup: "inconsistent", Code: "retained-selection-changed"}, nil
+	}
+	if native.SHA256 != m.NativeSHA256 {
+		return retainedObservation{Setup: "unknown", Code: "native-updated-capability-check-required"}, nil
 	}
 	if err := ctx.Err(); err != nil {
 		return retainedObservation{}, err

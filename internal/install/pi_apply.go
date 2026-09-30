@@ -27,7 +27,7 @@ type PiResult struct {
 
 type piProbe func(context.Context, PiPlan) error
 
-// PiNativeVersion is the exact implemented native contract, not a version range.
+// PiNativeVersion records a tested baseline, not an exclusive supported version.
 const PiNativeVersion = "0.85.1"
 
 func nativePi(ctx context.Context, o Options, args ...string) ([]byte, error) {
@@ -39,8 +39,11 @@ func piNativeVersion(ctx context.Context, o Options, run runner) error {
 	if err != nil {
 		return err
 	}
+	if !nativeVersionPattern.MatchString(strings.TrimSpace(string(raw))) {
+		return errors.New("incompatible Pi version response; select a working Pi installation")
+	}
 	if strings.TrimSpace(string(raw)) != PiNativeVersion {
-		return errors.New("unsupported Pi native contract; this adapter is verified against Pi 0.85.1")
+		return nativeCapabilities(ctx, "pi", o, run)
 	}
 	return nil
 }
@@ -102,9 +105,8 @@ func verifyPiBindingNative(p PiPlan) error {
 	if _, err := binding.OpenGuarded(p.Binding, "installation", binding.Guard{SHA256: p.BindingSHA256, SignetID: p.SignetID}); err != nil {
 		return err
 	}
-	got, err := digestLimit(p.NativeBinary, maxNativeBinary)
-	if err != nil || got != p.NativeSHA256 {
-		return errors.New("selected native Pi executable changed after preview")
+	if err := verifyNativePreview(p.Options, p.NativeSHA256); err != nil {
+		return err
 	}
 	return nil
 }

@@ -19,6 +19,9 @@ func PrepareViaRuntime(ctx context.Context, o Options) (Plan, error) {
 	if err := ctx.Err(); err != nil {
 		return Plan{}, err
 	}
+	if err := prepareNative(&o); err != nil {
+		return Plan{}, err
+	}
 	var err error
 	for _, path := range []*string{&o.StateDir, &o.NativeHome, &o.NativeBinary, &o.Binary, &o.Binding} {
 		*path, err = canonical(*path)

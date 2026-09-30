@@ -107,6 +107,12 @@ func TestRetainedPiRejectsStaleSelectionBeforeFollowingRuntime(t *testing.T) {
 				t.Fatal("stale Pi selection followed runtime")
 				return fileDigest{}, nil
 			})
+			if changed == "native" {
+				if err != nil || r.Setup != "unknown" || r.Code != "native-updated-capability-check-required" {
+					t.Fatal(r, err)
+				}
+				return
+			}
 			if err != nil || r.Complete || r.Setup != "inconsistent" {
 				t.Fatal(r, err)
 			}

@@ -82,6 +82,9 @@ func PrepareClaudeViaRuntime(ctx context.Context, o ClaudeOptions) (ClaudePlan, 
 	if err := ctx.Err(); err != nil {
 		return ClaudePlan{}, err
 	}
+	if err := prepareNative(&o.Options); err != nil {
+		return ClaudePlan{}, err
+	}
 	var err error
 	for _, path := range []*string{&o.StateDir, &o.NativeHome, &o.NativeBinary, &o.Binary, &o.Binding} {
 		*path, err = canonical(*path)
@@ -281,6 +284,7 @@ func PrepareClaudeRepairViaRuntime(ctx context.Context, in RepairInput) (ClaudeP
 			return ClaudePlan{}, err
 		}
 		o.NativeBinary = in.NativeBinary
+		o.NativeLauncher = ""
 	}
 	input, _ := json.Marshal(in)
 	if len(input) > 32768 {
