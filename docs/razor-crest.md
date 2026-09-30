@@ -198,6 +198,10 @@ use the existing explicit format-upgrade/recovery procedure if required.
 
 ## Compatibility evidence
 
+For one-time agent instructions and natural-question testing, see
+[seamless memory setup](razor-crest-memory.md). Connecting the endpoint and
+preapproving its tools permits access; neither alone establishes automatic use.
+
 Protocol tests, ordinary cloud-chat tests and automatic tool selection are
 different evidence. Record the exact client surface, account capability, date,
 candidate identity and result for each. A web connector installation does not
