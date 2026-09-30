@@ -27,7 +27,7 @@ type ClaudeResult struct {
 
 type claudeProbe func(context.Context, ClaudePlan) error
 
-// ClaudeNativeVersion is the exact implemented native contract, not a version range.
+// ClaudeNativeVersion records a tested baseline, not an exclusive supported version.
 const ClaudeNativeVersion = "2.1.278"
 
 func nativeClaude(ctx context.Context, o Options, args ...string) ([]byte, error) {
@@ -39,8 +39,8 @@ func claudeNativeVersion(ctx context.Context, o Options, run runner) error {
 	if err != nil {
 		return err
 	}
-	if strings.TrimSpace(string(raw)) != ClaudeNativeVersion+" (Claude Code)" {
-		return errors.New("unsupported Claude native contract; this adapter is verified against Claude 2.1.278")
+	if !nativeVersionPattern.MatchString(strings.TrimSuffix(strings.TrimSpace(string(raw)), " (Claude Code)")) || !strings.HasSuffix(strings.TrimSpace(string(raw)), " (Claude Code)") {
+		return errors.New("incompatible Claude version response; select a working Claude Code installation")
 	}
 	return nil
 }
@@ -102,9 +102,8 @@ func verifyClaudeBindingNative(p ClaudePlan) error {
 	if _, err := binding.OpenGuarded(p.Binding, "installation", binding.Guard{SHA256: p.BindingSHA256, SignetID: p.SignetID}); err != nil {
 		return err
 	}
-	got, err := digestLimit(p.NativeBinary, maxNativeBinary)
-	if err != nil || got != p.NativeSHA256 {
-		return errors.New("selected native Claude executable changed after preview")
+	if err := verifyNativePreview(p.Options, p.NativeSHA256); err != nil {
+		return err
 	}
 	return nil
 }
@@ -233,6 +232,9 @@ func applyClaude(ctx context.Context, in ClaudeApplyInput, run runner, probe cla
 		return result, errors.New("Claude installation inputs changed while acquiring the lock")
 	}
 	if err := claudeNativeVersion(ctx, p.Options, run); err != nil {
+		return result, err
+	}
+	if err := nativeInstallCapabilities(ctx, "claude-code", p.Options, run, selected != ""); err != nil {
 		return result, err
 	}
 	if err := stageRuntime(p.runtimePlan()); err != nil {

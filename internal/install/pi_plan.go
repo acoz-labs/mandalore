@@ -50,6 +50,9 @@ func PreparePi(o PiOptions) (PiPlan, error) {
 	if o.SessionTransportVersion != 0 && o.SessionTransportVersion != 1 || o.ReadOnly && o.SessionTransportVersion != 0 {
 		return p, errors.New("session transport requires an explicitly enabled writable connection")
 	}
+	if err := prepareNative("pi", &o.Options); err != nil {
+		return p, err
+	}
 	var err error
 	for _, path := range []*string{&o.StateDir, &o.NativeHome, &o.NativeBinary, &o.Binary, &o.Binding} {
 		*path, err = canonical(*path)

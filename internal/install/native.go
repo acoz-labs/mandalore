@@ -355,6 +355,9 @@ func applyAcknowledged(ctx context.Context, p Plan, sessionsStopped bool, run ru
 	if err != nil {
 		return result, err
 	}
+	if err := verifyNativePreview(p.Options, p.NativeSHA256); err != nil {
+		return result, err
+	}
 	if verified {
 		result.Installed, result.Phase = true, "verified"
 		result.Notice = "The exact connection is already installed and verified; no native registration or cache was changed. This does not verify active-session context, hook trust or live MCP."
@@ -394,6 +397,9 @@ func applyAcknowledged(ctx context.Context, p Plan, sessionsStopped bool, run ru
 		result.Notice = "Native registration appeared during preparation. Replacement deferred without native mutation; exit affected Codex sessions and explicitly acknowledge sessions_stopped before applying again."
 		return result, errors.New("connection replacement requires explicit stopped-session acknowledgement")
 	}
+	if err := verifyNativePreview(p.Options, p.NativeSHA256); err != nil {
+		return result, err
+	}
 	if previous != "" && previous != p.Root {
 		if _, err := run(ctx, p.Options, "plugin", "marketplace", "remove", p.Marketplace, "--json"); err != nil {
 			return result, err
@@ -427,6 +433,9 @@ func applyAcknowledged(ctx context.Context, p Plan, sessionsStopped bool, run ru
 		return result, errors.New("native installation did not report the selected source/version enabled")
 	}
 	if err := verifyCache(p, false); err != nil {
+		return result, err
+	}
+	if err := verifyNativePreview(p.Options, p.NativeSHA256); err != nil {
 		return result, err
 	}
 	result.Installed, result.Phase = true, "verified"

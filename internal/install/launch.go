@@ -3,7 +3,7 @@ package install
 import (
 	"context"
 	"errors"
-	"os"
+	"fmt"
 
 	"github.com/acoz-labs/mandalore/internal/binding"
 )
@@ -18,11 +18,14 @@ type LaunchConnection struct {
 	BindingSHA256 string `json:"binding_sha256"`
 	Runtime       string `json:"runtime"`
 	ReadOnly      bool   `json:"read_only"`
+	Executable    string `json:"executable"`
+	NativeSHA256  string `json:"native_sha256"`
+	NativeLocator string `json:"native_locator"`
 }
 
 func InspectLaunch(s ReceiptSelection) (LaunchConnection, error) {
 	var c LaunchConnection
-	for _, p := range []string{s.Root, s.StateDir, s.NativeHome, s.NativeBinary, s.Binding} {
+	for _, p := range []string{s.Root, s.StateDir, s.NativeHome, s.Binding} {
 		actual, err := canonical(p)
 		if err != nil || actual != p {
 			return c, errors.New("launch paths must be explicit canonical absolute paths")
@@ -43,10 +46,7 @@ func InspectLaunch(s ReceiptSelection) (LaunchConnection, error) {
 		if e != nil || root != s.Root {
 			return c, errors.New("Pi registration differs from selected connection")
 		}
-		if e = verifyPiBindingNative(p); e != nil {
-			return c, e
-		}
-		c = LaunchConnection{p.Options, p.Root, p.SignetID, p.BindingSHA256, p.Runtime, p.ReadOnly}
+		c = LaunchConnection{p.Options, p.Root, p.SignetID, p.BindingSHA256, p.Runtime, p.ReadOnly, "", "", ""}
 	case "claude-code":
 		r, e := ownedClaude(s.Root, s.StateDir, s.NativeHome, false)
 		if e != nil {
@@ -64,10 +64,7 @@ func InspectLaunch(s ReceiptSelection) (LaunchConnection, error) {
 		if e = verifyClaudeCache(settings, p, false); e != nil {
 			return c, e
 		}
-		if e = verifyClaudeBindingNative(p); e != nil {
-			return c, e
-		}
-		c = LaunchConnection{p.Options, p.Root, p.SignetID, p.BindingSHA256, p.Runtime, p.ReadOnly}
+		c = LaunchConnection{p.Options, p.Root, p.SignetID, p.BindingSHA256, p.Runtime, p.ReadOnly, "", "", ""}
 	case "codex":
 		r, e := loadReceipt(s.Root)
 		if e != nil {
@@ -80,27 +77,38 @@ func InspectLaunch(s ReceiptSelection) (LaunchConnection, error) {
 		if e = verifyCache(p, false); e != nil {
 			return c, e
 		}
-		if d, e := digestLimit(s.NativeBinary, maxNativeBinary); e != nil || d != p.NativeSHA256 {
-			return c, errors.New("native executable changed")
-		}
-		c = LaunchConnection{p.Options, p.Root, p.SignetID, p.BindingSHA256, p.Runtime, false}
+		c = LaunchConnection{p.Options, p.Root, p.SignetID, p.BindingSHA256, p.Runtime, false, "", "", ""}
 	default:
 		return c, errors.New("unsupported agent; choose codex, pi or claude-code")
 	}
-	if c.StateDir != s.StateDir || c.NativeHome != s.NativeHome || c.NativeBinary != s.NativeBinary || c.Binding != s.Binding {
+	if c.StateDir != s.StateDir || c.NativeHome != s.NativeHome || (c.NativeBinary != s.NativeBinary && c.NativeLauncher != s.NativeBinary) || c.Binding != s.Binding {
 		return LaunchConnection{}, errors.New("connection belongs to a different launch selection")
 	}
 	if _, e := binding.OpenGuarded(c.Binding, s.Harness, binding.Guard{SHA256: c.BindingSHA256, SignetID: c.SignetID}); e != nil {
 		return LaunchConnection{}, e
 	}
-	if st, e := os.Stat(c.NativeBinary); e != nil || st.Mode()&0111 == 0 {
-		return LaunchConnection{}, errors.New("selected native executable is unavailable or not executable")
+	var err error
+	c.Executable, c.NativeSHA256, c.NativeLocator, err = nativeSnapshot(s.Harness, c.Options)
+	if err != nil {
+		return LaunchConnection{}, err
 	}
 	return c, nil
 }
 
-func ValidateLaunchNative(ctx context.Context, harness string, c LaunchConnection) error {
-	p := Profile{StateDir: c.StateDir, NativeHome: c.NativeHome, NativeBinary: c.NativeBinary}
+func ValidateLaunchNative(ctx context.Context, harness string, c LaunchConnection) (resultErr error) {
+	defer func() {
+		if resultErr == nil {
+			resultErr = verifyNativeObservation(harness, c.Options, c.Executable, c.NativeSHA256, c.NativeLocator)
+		}
+	}()
+	target, digest, locator, err := nativeSnapshot(harness, c.Options)
+	if err != nil {
+		return err
+	}
+	if target != c.Executable || digest != c.NativeSHA256 || locator != c.NativeLocator {
+		return errors.New("native executable changed during launch; retry to validate the current installation")
+	}
+	p := Profile{StateDir: c.StateDir, NativeHome: c.NativeHome, NativeBinary: c.Executable}
 	// Native checks inherit profile selection through existing scoped adapters.
 	switch harness {
 	case "pi":
@@ -108,19 +116,21 @@ func ValidateLaunchNative(ctx context.Context, harness string, c LaunchConnectio
 		if r.Healthy && r.Connection != nil && r.Connection.Root == c.Root {
 			return nil
 		}
+		return launchCheckFailure(r.Checks)
 	case "claude-code":
 		r := DoctorClaude(ctx, p)
 		if r.Healthy && r.Connection != nil && r.Connection.Root == c.Root {
 			return nil
 		}
+		return launchCheckFailure(r.Checks)
 	case "codex":
 		r, e := loadReceipt(c.Root)
 		if e != nil {
 			break
 		}
-		ms, ps, e := inventory(ctx, c.Options, native)
+		ms, ps, e := inventory(ctx, Options{NativeHome: c.NativeHome, NativeBinary: c.Executable, Binding: c.Binding}, native)
 		if e != nil {
-			break
+			return fmt.Errorf("Codex plugin inventory capability failed: %w", e)
 		}
 		markets, plugins := 0, 0
 		for _, m := range ms {
@@ -147,4 +157,13 @@ func ValidateLaunchNative(ctx context.Context, harness string, c LaunchConnectio
 		return errors.New("launch interrupted before native start; no configuration was changed")
 	}
 	return errors.New("native connection validation failed; inspect with mandalore connection armorer using the selected profile, then explicitly reconnect if needed")
+}
+
+func launchCheckFailure(checks []Check) error {
+	for _, check := range checks {
+		if check.Status == "fail" {
+			return fmt.Errorf("native connection check %s failed: %s", check.Name, check.Detail)
+		}
+	}
+	return errors.New("native registration differs from selected connection")
 }

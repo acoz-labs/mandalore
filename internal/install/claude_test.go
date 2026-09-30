@@ -23,6 +23,9 @@ func (f *fakeClaude) run(_ context.Context, o Options, args ...string) ([]byte, 
 	if args[0] == "--version" {
 		return []byte(ClaudeNativeVersion + " (Claude Code)\n"), nil
 	}
+	if args[len(args)-1] == "--help" {
+		return []byte("--scope --json --keep-data"), nil
+	}
 	if strings.Contains(command, f.fail) && f.fail != "" {
 		return nil, errors.New("synthetic interruption")
 	}

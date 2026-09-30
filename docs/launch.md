@@ -65,6 +65,39 @@ one of them. `--agent` overrides it for one invocation only. An unknown agent,
 missing executable, changed binding or mismatched profile is an error, not a
 reason to fall back to personal memory or another agent.
 
+## Upgrade native agents independently
+
+Mandalore 1.5.0 checks native interfaces instead of requiring the exact Claude
+Code or Pi version used for its original tests. Compatible agent upgrades can
+keep the same named entry, signet and native profile without reconnecting.
+Codex registration is checked through its structured native inventory. Claude
+and Pi also check the CLI capabilities used by their adapters. An untested
+release is not automatically incompatible; a failed capability check identifies
+the missing interface.
+
+When connecting, select the installation's stable executable launcher when one
+is available. Mandalore retains that locator alongside the resolved executable
+and its preview digest. Existing entries with version-specific targets can
+follow the same installation's Claude native launcher, Codex standalone
+`current` link, or mise Pi `latest` link. This also handles removal of the old
+target. Mandalore does not search arbitrary `PATH` entries or select another
+installation when that locator is broken or redirected outside its expected
+installation. An unrecognized missing executable needs explicit selection of a
+trusted launcher.
+
+Each launch validates the current executable and native registration, then
+rechecks the connection and executable snapshot before starting the agent.
+Retained receipts, binding identity, profile ownership, runtime and plugin
+integrity remain guarded. Upgrading the agent does not change memory access,
+transport authorization, native history or authentication. A native update that
+races a launch is refused; retry after the update finishes.
+
+Preview is a local structural check. Native inspection can run the agent's
+inventory/help commands and create native logs or caches; it does not prove
+that hooks, tools, login or model context work in a fresh session. Those remain
+separate runtime checks. Updating the Mandalore plugin itself still follows the
+stopped-session handoff in [setup](setup.md).
+
 ## Native arguments and continuation
 
 Place native arguments after `--`. Arguments are passed directly, without shell

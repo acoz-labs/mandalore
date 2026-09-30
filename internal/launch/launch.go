@@ -3,6 +3,7 @@ package launch
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"regexp"
 	"strings"
@@ -41,7 +42,7 @@ func ValidateArguments(harness string, args []string) error {
 			denied[v] = true
 		}
 	case "claude-code":
-		for _, v := range []string{"--safe-mode", "--bare", "--plugin-url", "--settings", "--setting-sources", "--plugin-dir", "--mcp-config", "--strict-mcp-config", "--add-dir", "--agents", "--agent", "--disable-slash-commands", "--worktree", "-w"} {
+		for _, v := range []string{"--restricted", "--safe-mode", "--bare", "--plugin-url", "--settings", "--setting-sources", "--plugin-dir", "--mcp-config", "--strict-mcp-config", "--add-dir", "--agents", "--agent", "--disable-slash-commands", "--worktree", "-w"} {
 			denied[v] = true
 		}
 	default:
@@ -103,7 +104,7 @@ func resolve(config Config, name, agent string, args []string, inspect func(inst
 	}
 	c, err := inspect(selection(e, agent))
 	if err != nil {
-		return Plan{}, errors.New("selected connection is missing or changed; inspect mandalore connection armorer, reconnect explicitly, then configure this entry again")
+		return Plan{}, fmt.Errorf("selected connection validation failed: %w", err)
 	}
 	if c.SignetID != e.SignetID || c.BindingSHA256 != e.BindingSHA256 {
 		return Plan{}, errors.New("binding identity changed; explicitly reconnect and reconfigure instead of selecting another signet")
@@ -119,7 +120,11 @@ func resolve(config Config, name, agent string, args []string, inspect func(inst
 	if c.ReadOnly {
 		access = "read-only"
 	}
-	return Plan{1, name, agent, c.SignetID, access, a.NativeBinary, a.NativeHome, append([]string{}, args...), cwd, "Selection verified locally. Native registration is checked at launch; native hooks report synchronization and canon freshness. This is not an OS sandbox; workspace files and native authentication remain native-owned.", c}, nil
+	executable := c.Executable
+	if executable == "" {
+		executable = a.NativeBinary
+	}
+	return Plan{1, name, agent, c.SignetID, access, executable, a.NativeHome, append([]string{}, args...), cwd, "Selection verified locally. Native registration is checked at launch; native hooks report synchronization and canon freshness. This is not an OS sandbox; workspace files and native authentication remain native-owned.", c}, nil
 }
 
 func (p Plan) Environment(in []string) []string {
@@ -156,7 +161,7 @@ func (p Plan) Execute(ctx context.Context) error {
 		return err
 	}
 	// Recheck immutable connection bytes after native inventory and before exec.
-	e := Entry{Binding: p.connection.Binding, Agents: map[string]Agent{p.Agent: {NativeHome: p.NativeHome, NativeBinary: p.Executable, StateDir: p.connection.StateDir, ConnectionRoot: p.connection.Root}}}
+	e := Entry{Binding: p.connection.Binding, Agents: map[string]Agent{p.Agent: {NativeHome: p.NativeHome, NativeBinary: p.connection.NativeBinary, StateDir: p.connection.StateDir, ConnectionRoot: p.connection.Root}}}
 	c, err := install.InspectLaunch(selection(e, p.Agent))
 	if err != nil || c != p.connection {
 		return errors.New("connection changed during launch; inspect and retry")

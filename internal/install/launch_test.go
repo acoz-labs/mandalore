@@ -71,8 +71,11 @@ func TestLaunchInspectionValidatesEachNativeConnectionWithoutExecution(t *testin
 			if e = os.WriteFile(o.NativeBinary, []byte("#!/bin/sh\nexit 88\n"), 0700); e != nil {
 				t.Fatal(e)
 			}
-			if _, e = InspectLaunch(s); e == nil {
-				t.Fatal("changed executable accepted")
+			if upgraded, err := InspectLaunch(s); err != nil || upgraded.NativeSHA256 == c.NativeSHA256 {
+				t.Fatal("updated executable was not captured for capability validation", upgraded, err)
+			}
+			if err := ValidateLaunchNative(context.Background(), h, c); err == nil {
+				t.Fatal("incompatible upgraded native executable accepted")
 			}
 		})
 	}

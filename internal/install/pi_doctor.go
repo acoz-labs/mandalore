@@ -85,12 +85,18 @@ func doctorPi(ctx context.Context, profile Profile, run runner) (r PiReport) {
 	r.Connection = &p
 	_, err = ownedPi(root, profile.StateDir, profile.NativeHome, false)
 	add("retained-integrity", err)
-	// A deliberate new native executable can be inspected, but the old connection
-	// still needs an explicit reconnect; never call it healthy on version alone.
 	selected := p
-	selected.NativeBinary = profile.NativeBinary
+	options, digest, locator, err := selectedNative("pi", p.Options, profile.NativeBinary)
+	add("native-executable", err)
+	if err != nil {
+		return r
+	}
+	selected.Options, selected.NativeSHA256 = options, digest
 	add("binding-and-native-identity", verifyPiBindingNative(selected))
 	add("native-version", piNativeVersion(ctx, selected.Options, run))
+	add("native-stability", verifyNativeObservation("pi", p.Options, selected.NativeBinary, digest, locator))
+	r.Checks = append(r.Checks, Check{Name: "native-release-acceptance", Status: "not-tested", Detail: "CLI compatibility and registration were inspected. Fresh-session hooks, tools and model access on this native release are not established by this inspection."})
+
 	return r
 }
 
@@ -117,6 +123,7 @@ func PreparePiRepair(in RepairInput) (PiPlan, error) {
 	o := r.Plan.PiOptions
 	if in.NativeBinary != "" {
 		o.NativeBinary = in.NativeBinary
+		o.NativeLauncher = ""
 	}
 	o.Binary = r.Plan.Runtime
 	if d, err := digest(o.Binary); err != nil || d != r.Plan.BinarySHA256 {

@@ -71,6 +71,13 @@ func doctor(ctx context.Context, profile Profile, run runner) (r Report) {
 	o := Options{StateDir: profile.StateDir, NativeHome: profile.NativeHome, NativeBinary: profile.NativeBinary}
 	// Native inventory runs in an existing directory; it does not need a binding.
 	o.Binding = filepath.Join(profile.NativeHome, "unused-binding-path")
+	target, nativeDigest, locator, err := nativeSnapshot("codex", o)
+	add("native-executable", err)
+	if err != nil {
+		return r
+	}
+	selectedOptions := o
+	o.NativeBinary = target
 	ms, ps, err := inventory(ctx, o, run)
 	add("native-inventory", err)
 	if err != nil {
@@ -113,11 +120,12 @@ func doctor(ctx context.Context, profile Profile, run runner) (r Report) {
 		err = errors.New("pinned runtime bytes changed")
 	}
 	add("runtime-integrity", err)
-	d, err = digestLimit(profile.NativeBinary, maxNativeBinary)
-	if err == nil && d != p.NativeSHA256 {
-		err = errors.New("selected native executable changed; verify compatibility and preview reconnect")
+	verified, verifiedDigest, _, err := selectedNative("codex", p.Options, profile.NativeBinary)
+	if err == nil && (verified.NativeBinary != target || verifiedDigest != nativeDigest) {
+		err = errors.New("queried native executable differs from the connection launcher; retry with the selected installation")
 	}
 	add("native-executable-identity", err)
+
 	s, err := binding.Open(p.Binding, "doctor")
 	if err == nil && s.ID() != p.SignetID {
 		err = errors.New("binding points to another signet")
@@ -150,6 +158,7 @@ func doctor(ctx context.Context, profile Profile, run runner) (r Report) {
 	} else {
 		add("native-plugin", nil)
 	}
+	add("native-stability", verifyNativeObservation("codex", selectedOptions, target, nativeDigest, locator))
 	return r
 }
 
@@ -179,6 +188,7 @@ func PrepareRepair(in RepairInput) (Plan, error) {
 	o := r.Plan.Options
 	if in.NativeBinary != "" {
 		o.NativeBinary = in.NativeBinary
+		o.NativeLauncher = ""
 	}
 	// Prefer the pinned copy, not an old source path which may have disappeared.
 	o.Binary = r.Plan.Runtime

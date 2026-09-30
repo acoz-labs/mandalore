@@ -91,12 +91,18 @@ func doctorClaude(ctx context.Context, profile Profile, run runner) (r ClaudeRep
 	if !s.Enabled {
 		add("native-enabled", errors.New("Claude memory plugin is disabled; explicitly preview reconnect or repair to re-enable it"))
 	}
-	// A deliberate new native executable can be inspected, but the old connection
-	// still needs an explicit reconnect; never call it healthy on version alone.
 	selected := p
-	selected.NativeBinary = profile.NativeBinary
+	options, digest, locator, err := selectedNative("claude-code", p.Options, profile.NativeBinary)
+	add("native-executable", err)
+	if err != nil {
+		return r
+	}
+	selected.Options, selected.NativeSHA256 = options, digest
 	add("binding-and-native-identity", verifyClaudeBindingNative(selected))
 	add("native-version", claudeNativeVersion(ctx, selected.Options, run))
+	add("native-stability", verifyNativeObservation("claude-code", p.Options, selected.NativeBinary, digest, locator))
+	r.Checks = append(r.Checks, Check{Name: "native-release-acceptance", Status: "not-tested", Detail: "CLI compatibility and registration were inspected. Fresh-session hooks, tools and model access on this native release are not established by this inspection."})
+
 	return r
 }
 
@@ -123,6 +129,7 @@ func PrepareClaudeRepair(in RepairInput) (ClaudePlan, error) {
 	o := r.Plan.ClaudeOptions
 	if in.NativeBinary != "" {
 		o.NativeBinary = in.NativeBinary
+		o.NativeLauncher = ""
 	}
 	o.Binary = r.Plan.Runtime
 	if d, err := digest(o.Binary); err != nil || d != r.Plan.BinarySHA256 {

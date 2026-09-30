@@ -26,6 +26,7 @@ type Options struct {
 	StateDir                string `json:"state_dir"`
 	NativeHome              string `json:"native_home"`
 	NativeBinary            string `json:"native_binary"`
+	NativeLauncher          string `json:"native_launcher,omitempty"`
 	Binary                  string `json:"source_binary"`
 	Binding                 string `json:"binding"`
 	Generation              string `json:"generation,omitempty"`
@@ -136,6 +137,9 @@ func Prepare(o Options) (Plan, error) {
 	var p Plan
 	if o.SessionTransportVersion != 0 && o.SessionTransportVersion != 1 {
 		return p, errors.New("unsupported session transport policy")
+	}
+	if err := prepareNative("codex", &o); err != nil {
+		return p, err
 	}
 	var err error
 	for _, path := range []*string{&o.StateDir, &o.NativeHome, &o.NativeBinary, &o.Binary, &o.Binding} {
