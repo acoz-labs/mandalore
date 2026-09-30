@@ -138,7 +138,7 @@ func Prepare(o Options) (Plan, error) {
 	if o.SessionTransportVersion != 0 && o.SessionTransportVersion != 1 {
 		return p, errors.New("unsupported session transport policy")
 	}
-	if err := prepareNative(&o); err != nil {
+	if err := prepareNative("codex", &o); err != nil {
 		return p, err
 	}
 	var err error

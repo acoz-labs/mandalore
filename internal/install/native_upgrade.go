@@ -10,14 +10,23 @@ import (
 	"strings"
 )
 
-var nativeVersionPattern = regexp.MustCompile(`^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$`)
+var nativeVersionPattern = regexp.MustCompile(`^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$`)
 
 // Remember the explicitly selected launcher before resolving its current target.
 // Existing plans omit this field and retain their original content identity.
-func prepareNative(o *Options) error {
+func prepareNative(harness string, o *Options) error {
 	source := o.NativeBinary
 	if o.NativeLauncher != "" {
 		source = o.NativeLauncher
+	} else if _, err := os.Stat(source); os.IsNotExist(err) {
+		launcher, err := legacyNativeLauncher(harness, source)
+		if err != nil {
+			return err
+		}
+		if launcher != "" {
+			source = launcher
+			o.NativeLauncher = launcher
+		}
 	}
 	if !receiptPath(source) {
 		return errors.New("native launcher requires an absolute path")
@@ -138,17 +147,27 @@ func verifyNativePreview(o Options, want string) error {
 	return nil
 }
 
-// Help establishes the CLI surfaces Mandalore uses, not loaded model context.
+// Installer help establishes only the CLI surfaces used by this mutation.
+// It must never gate an ordinary launch of an intact existing registration.
 // Missing interfaces fail with the capability name and leave native state alone.
-func nativeCapabilities(ctx context.Context, harness string, o Options, run runner) error {
+func nativeInstallCapabilities(ctx context.Context, harness string, o Options, run runner, replacing bool) error {
 	probes := []struct{ args, tokens []string }{}
 	switch harness {
 	case "claude-code":
-		probes = append(probes, struct{ args, tokens []string }{[]string{"plugin", "--help"}, []string{"install", "uninstall", "list", "marketplace"}})
-		probes = append(probes, struct{ args, tokens []string }{[]string{"plugin", "marketplace", "--help"}, []string{"add", "remove", "list"}})
+		probes = append(probes, struct{ args, tokens []string }{[]string{"plugin", "install", "--help"}, []string{"--scope", "--json"}})
+		probes = append(probes, struct{ args, tokens []string }{[]string{"plugin", "marketplace", "add", "--help"}, []string{"--scope"}})
+		if replacing {
+			probes = append(probes, struct{ args, tokens []string }{[]string{"plugin", "uninstall", "--help"}, []string{"--scope", "--json", "--keep-data"}})
+			probes = append(probes, struct{ args, tokens []string }{[]string{"plugin", "marketplace", "remove", "--help"}, []string{"--scope"}})
+		}
 	case "pi":
-		probes = append(probes, struct{ args, tokens []string }{[]string{"--help"}, []string{"--mode", "--extension", "--no-session", "install", "remove"}})
+		tokens := []string{"install"}
+		if replacing {
+			tokens = append(tokens, "remove")
+		}
+		probes = append(probes, struct{ args, tokens []string }{[]string{"--help"}, tokens})
 	}
+
 	for _, probe := range probes {
 		raw, err := run(ctx, o, probe.args...)
 		if err != nil {
@@ -185,4 +204,14 @@ func verifyNativeObservation(harness string, o Options, target, digest, locator 
 		return errors.New("native executable changed during inspection; retry")
 	}
 	return nil
+}
+
+// A retained runtime still owns its own strict schemas and embedded package.
+// Never retry an unsupported preview with dropped identity fields or silently
+// substitute the calling runtime's plugin.
+func nativeDelegationFailure(o Options, err error) error {
+	if err == nil || o.NativeLauncher == "" || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return err
+	}
+	return fmt.Errorf("%w; if the selected Mandalore runtime predates stable launcher support, select a current Mandalore runtime and preview a connection update", err)
 }

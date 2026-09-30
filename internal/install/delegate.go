@@ -19,7 +19,7 @@ func PrepareViaRuntime(ctx context.Context, o Options) (Plan, error) {
 	if err := ctx.Err(); err != nil {
 		return Plan{}, err
 	}
-	if err := prepareNative(&o); err != nil {
+	if err := prepareNative("codex", &o); err != nil {
 		return Plan{}, err
 	}
 	var err error
@@ -42,7 +42,7 @@ func PrepareViaRuntime(ctx context.Context, o Options) (Plan, error) {
 		if ctx.Err() != nil {
 			return Plan{}, ctx.Err()
 		}
-		return Plan{}, errors.New("selected runtime could not prepare this connection; raw output suppressed")
+		return Plan{}, nativeDelegationFailure(o, errors.New("selected runtime could not prepare this connection; raw output suppressed"))
 	}
 	var reply struct {
 		Protocol int             `json:"protocol_version"`
@@ -50,7 +50,7 @@ func PrepareViaRuntime(ctx context.Context, o Options) (Plan, error) {
 		Result   json.RawMessage `json:"result"`
 	}
 	if decodeNative(raw, &reply) != nil || reply.Protocol != 1 || !reply.OK {
-		return Plan{}, errors.New("selected runtime returned an invalid connection preview")
+		return Plan{}, nativeDelegationFailure(o, errors.New("selected runtime returned an invalid connection preview"))
 	}
 	var p Plan
 	if strictjson.Decode(reply.Result, &p, 32768) != nil {
@@ -66,7 +66,7 @@ func PrepareViaRuntime(ctx context.Context, o Options) (Plan, error) {
 	if e != nil || len(decoded) != 32 || strings.ToLower(p.PackageSHA256) != p.PackageSHA256 {
 		return Plan{}, errors.New("selected runtime preview has an invalid embedded package identity")
 	}
-	if got, e := digestLimit(o.NativeBinary, maxNativeBinary); e != nil || got != p.NativeSHA256 {
+	if e := verifyNativePreview(o, p.NativeSHA256); e != nil {
 		return Plan{}, errors.New("native executable differs from the preview")
 	}
 	if got, e := digestLimit(o.Binding, 32768); e != nil || got != p.BindingSHA256 {

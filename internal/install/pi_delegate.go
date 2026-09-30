@@ -82,7 +82,7 @@ func PreparePiViaRuntime(ctx context.Context, o PiOptions) (PiPlan, error) {
 	if err := ctx.Err(); err != nil {
 		return PiPlan{}, err
 	}
-	if err := prepareNative(&o.Options); err != nil {
+	if err := prepareNative("pi", &o.Options); err != nil {
 		return PiPlan{}, err
 	}
 	var err error
@@ -108,7 +108,7 @@ func PreparePiViaRuntime(ctx context.Context, o PiOptions) (PiPlan, error) {
 	}
 	raw, err := executePiDelegate(ctx, o.Binary, filepath.Dir(o.Binding), input, "call", "pi_connection_plan", "--read-only")
 	if err != nil {
-		return PiPlan{}, piPreviewFailure(raw, err)
+		return PiPlan{}, nativeDelegationFailure(o.Options, piPreviewFailure(raw, err))
 	}
 	var reply struct {
 		Protocol int             `json:"protocol_version"`
@@ -116,7 +116,7 @@ func PreparePiViaRuntime(ctx context.Context, o PiOptions) (PiPlan, error) {
 		Result   json.RawMessage `json:"result"`
 	}
 	if decodeNative(raw, &reply) != nil || reply.Protocol != 1 || !reply.OK {
-		return PiPlan{}, piPreviewFailure(raw, errors.New("selected runtime returned an invalid Pi preview"))
+		return PiPlan{}, nativeDelegationFailure(o.Options, piPreviewFailure(raw, errors.New("selected runtime returned an invalid Pi preview")))
 	}
 	var p PiPlan
 	if strictjson.Decode(reply.Result, &p, 32768) != nil {
@@ -255,12 +255,15 @@ func PreparePiRepairViaRuntime(ctx context.Context, in RepairInput) (PiPlan, err
 		}
 	}
 	if in.NativeBinary != "" {
-		in.NativeBinary, err = canonical(in.NativeBinary)
+		_, err = canonical(in.NativeBinary)
 		if err != nil {
 			return PiPlan{}, err
 		}
 		o.NativeBinary = in.NativeBinary
 		o.NativeLauncher = ""
+	}
+	if err := prepareNative("pi", &o.Options); err != nil {
+		return PiPlan{}, err
 	}
 	input, _ := json.Marshal(in)
 	if len(input) > 32768 {
@@ -268,7 +271,7 @@ func PreparePiRepairViaRuntime(ctx context.Context, in RepairInput) (PiPlan, err
 	}
 	raw, err := executePiDelegate(ctx, o.Binary, filepath.Dir(o.Binding), input, "call", "pi_connection_repair_plan", "--read-only")
 	if err != nil {
-		return PiPlan{}, piPreviewFailure(raw, err)
+		return PiPlan{}, nativeDelegationFailure(o.Options, piPreviewFailure(raw, err))
 	}
 	var reply struct {
 		Protocol int             `json:"protocol_version"`
@@ -276,7 +279,7 @@ func PreparePiRepairViaRuntime(ctx context.Context, in RepairInput) (PiPlan, err
 		Result   json.RawMessage `json:"result"`
 	}
 	if decodeNative(raw, &reply) != nil || reply.Protocol != 1 || !reply.OK {
-		return PiPlan{}, piPreviewFailure(raw, errors.New("retained runtime could not preview Pi repair; inspect its ownership and inputs"))
+		return PiPlan{}, nativeDelegationFailure(o.Options, piPreviewFailure(raw, errors.New("retained runtime could not preview Pi repair; inspect its ownership and inputs")))
 	}
 	var p PiPlan
 	if strictjson.Decode(reply.Result, &p, 32768) != nil {
@@ -287,7 +290,7 @@ func PreparePiRepairViaRuntime(ctx context.Context, in RepairInput) (PiPlan, err
 	}
 	o.Generation, o.RecoverFrom = p.Generation, root
 	if p.PiOptions != o || p.BindingSHA256 != r.Plan.BindingSHA256 || p.SignetID != r.Plan.SignetID || p.BinarySHA256 != r.Plan.BinarySHA256 || p.PackageSHA256 != r.Plan.PackageSHA256 || p.PackageVersion != r.Plan.PackageVersion {
-		return PiPlan{}, errors.New("retained Pi repair changed owned connection identity or access mode")
+		return PiPlan{}, nativeDelegationFailure(o.Options, errors.New("retained Pi repair changed owned connection identity or access mode"))
 	}
 	fresh, err := PreparePiViaRuntime(ctx, o)
 	if err != nil {

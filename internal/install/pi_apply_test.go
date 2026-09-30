@@ -20,6 +20,9 @@ func (f *fakePi) run(_ context.Context, o Options, args ...string) ([]byte, erro
 	if args[0] == "--version" {
 		return []byte("0.85.1\n"), nil
 	}
+	if args[0] == "--help" {
+		return []byte("install remove"), nil
+	}
 	if args[0] == f.fail {
 		return nil, errors.New("synthetic native interruption")
 	}

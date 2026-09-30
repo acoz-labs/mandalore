@@ -82,7 +82,7 @@ func PrepareClaudeViaRuntime(ctx context.Context, o ClaudeOptions) (ClaudePlan, 
 	if err := ctx.Err(); err != nil {
 		return ClaudePlan{}, err
 	}
-	if err := prepareNative(&o.Options); err != nil {
+	if err := prepareNative("claude-code", &o.Options); err != nil {
 		return ClaudePlan{}, err
 	}
 	var err error
@@ -108,7 +108,7 @@ func PrepareClaudeViaRuntime(ctx context.Context, o ClaudeOptions) (ClaudePlan, 
 	}
 	raw, err := executeClaudeDelegate(ctx, o.Binary, filepath.Dir(o.Binding), input, "call", "claude_code_connection_plan", "--read-only")
 	if err != nil {
-		return ClaudePlan{}, claudePreviewFailure(raw, err)
+		return ClaudePlan{}, nativeDelegationFailure(o.Options, claudePreviewFailure(raw, err))
 	}
 	var reply struct {
 		Protocol int             `json:"protocol_version"`
@@ -116,7 +116,7 @@ func PrepareClaudeViaRuntime(ctx context.Context, o ClaudeOptions) (ClaudePlan, 
 		Result   json.RawMessage `json:"result"`
 	}
 	if decodeNative(raw, &reply) != nil || reply.Protocol != 1 || !reply.OK {
-		return ClaudePlan{}, claudePreviewFailure(raw, errors.New("selected runtime returned an invalid Claude preview"))
+		return ClaudePlan{}, nativeDelegationFailure(o.Options, claudePreviewFailure(raw, errors.New("selected runtime returned an invalid Claude preview")))
 	}
 	var p ClaudePlan
 	if strictjson.Decode(reply.Result, &p, 32768) != nil {
@@ -279,12 +279,15 @@ func PrepareClaudeRepairViaRuntime(ctx context.Context, in RepairInput) (ClaudeP
 		}
 	}
 	if in.NativeBinary != "" {
-		in.NativeBinary, err = canonical(in.NativeBinary)
+		_, err = canonical(in.NativeBinary)
 		if err != nil {
 			return ClaudePlan{}, err
 		}
 		o.NativeBinary = in.NativeBinary
 		o.NativeLauncher = ""
+	}
+	if err := prepareNative("claude-code", &o.Options); err != nil {
+		return ClaudePlan{}, err
 	}
 	input, _ := json.Marshal(in)
 	if len(input) > 32768 {
@@ -292,7 +295,7 @@ func PrepareClaudeRepairViaRuntime(ctx context.Context, in RepairInput) (ClaudeP
 	}
 	raw, err := executeClaudeDelegate(ctx, o.Binary, filepath.Dir(o.Binding), input, "call", "claude_code_connection_repair_plan", "--read-only")
 	if err != nil {
-		return ClaudePlan{}, claudePreviewFailure(raw, err)
+		return ClaudePlan{}, nativeDelegationFailure(o.Options, claudePreviewFailure(raw, err))
 	}
 	var reply struct {
 		Protocol int             `json:"protocol_version"`
@@ -300,7 +303,7 @@ func PrepareClaudeRepairViaRuntime(ctx context.Context, in RepairInput) (ClaudeP
 		Result   json.RawMessage `json:"result"`
 	}
 	if decodeNative(raw, &reply) != nil || reply.Protocol != 1 || !reply.OK {
-		return ClaudePlan{}, claudePreviewFailure(raw, errors.New("retained runtime could not preview Claude repair; inspect its ownership and inputs"))
+		return ClaudePlan{}, nativeDelegationFailure(o.Options, claudePreviewFailure(raw, errors.New("retained runtime could not preview Claude repair; inspect its ownership and inputs")))
 	}
 	var p ClaudePlan
 	if strictjson.Decode(reply.Result, &p, 32768) != nil {
@@ -311,7 +314,7 @@ func PrepareClaudeRepairViaRuntime(ctx context.Context, in RepairInput) (ClaudeP
 	}
 	o.Generation, o.RecoverFrom = p.Generation, root
 	if p.ClaudeOptions != o || p.BindingSHA256 != r.Plan.BindingSHA256 || p.SignetID != r.Plan.SignetID || p.BinarySHA256 != r.Plan.BinarySHA256 || p.PackageSHA256 != r.Plan.PackageSHA256 || p.PackageVersion != r.Plan.PackageVersion {
-		return ClaudePlan{}, errors.New("retained Claude repair changed owned connection identity or access mode")
+		return ClaudePlan{}, nativeDelegationFailure(o.Options, errors.New("retained Claude repair changed owned connection identity or access mode"))
 	}
 	fresh, err := PrepareClaudeViaRuntime(ctx, o)
 	if err != nil {

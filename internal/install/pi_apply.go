@@ -42,9 +42,6 @@ func piNativeVersion(ctx context.Context, o Options, run runner) error {
 	if !nativeVersionPattern.MatchString(strings.TrimSpace(string(raw))) {
 		return errors.New("incompatible Pi version response; select a working Pi installation")
 	}
-	if strings.TrimSpace(string(raw)) != PiNativeVersion {
-		return nativeCapabilities(ctx, "pi", o, run)
-	}
 	return nil
 }
 
@@ -209,6 +206,9 @@ func applyPi(ctx context.Context, p PiPlan, run runner, probe piProbe) (result P
 		return result, errors.New("Pi installation inputs changed while acquiring the lock")
 	}
 	if err := piNativeVersion(ctx, p.Options, run); err != nil {
+		return result, err
+	}
+	if err := nativeInstallCapabilities(ctx, "pi", p.Options, run, selected != ""); err != nil {
 		return result, err
 	}
 	if err := stageRuntime(p.runtimePlan()); err != nil {

@@ -94,9 +94,6 @@ func doctorPi(ctx context.Context, profile Profile, run runner) (r PiReport) {
 	selected.Options, selected.NativeSHA256 = options, digest
 	add("binding-and-native-identity", verifyPiBindingNative(selected))
 	add("native-version", piNativeVersion(ctx, selected.Options, run))
-	if digest != p.NativeSHA256 {
-		add("native-capabilities", nativeCapabilities(ctx, "pi", selected.Options, run))
-	}
 	add("native-stability", verifyNativeObservation("pi", p.Options, selected.NativeBinary, digest, locator))
 	r.Checks = append(r.Checks, Check{Name: "native-release-acceptance", Status: "not-tested", Detail: "CLI compatibility and registration were inspected. Fresh-session hooks, tools and model access on this native release are not established by this inspection."})
 

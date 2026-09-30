@@ -100,9 +100,6 @@ func doctorClaude(ctx context.Context, profile Profile, run runner) (r ClaudeRep
 	selected.Options, selected.NativeSHA256 = options, digest
 	add("binding-and-native-identity", verifyClaudeBindingNative(selected))
 	add("native-version", claudeNativeVersion(ctx, selected.Options, run))
-	if digest != p.NativeSHA256 {
-		add("native-capabilities", nativeCapabilities(ctx, "claude-code", selected.Options, run))
-	}
 	add("native-stability", verifyNativeObservation("claude-code", p.Options, selected.NativeBinary, digest, locator))
 	r.Checks = append(r.Checks, Check{Name: "native-release-acceptance", Status: "not-tested", Detail: "CLI compatibility and registration were inspected. Fresh-session hooks, tools and model access on this native release are not established by this inspection."})
 

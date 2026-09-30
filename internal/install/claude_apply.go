@@ -42,9 +42,6 @@ func claudeNativeVersion(ctx context.Context, o Options, run runner) error {
 	if !nativeVersionPattern.MatchString(strings.TrimSuffix(strings.TrimSpace(string(raw)), " (Claude Code)")) || !strings.HasSuffix(strings.TrimSpace(string(raw)), " (Claude Code)") {
 		return errors.New("incompatible Claude version response; select a working Claude Code installation")
 	}
-	if strings.TrimSuffix(strings.TrimSpace(string(raw)), " (Claude Code)") != ClaudeNativeVersion {
-		return nativeCapabilities(ctx, "claude-code", o, run)
-	}
 	return nil
 }
 
@@ -235,6 +232,9 @@ func applyClaude(ctx context.Context, in ClaudeApplyInput, run runner, probe cla
 		return result, errors.New("Claude installation inputs changed while acquiring the lock")
 	}
 	if err := claudeNativeVersion(ctx, p.Options, run); err != nil {
+		return result, err
+	}
+	if err := nativeInstallCapabilities(ctx, "claude-code", p.Options, run, selected != ""); err != nil {
 		return result, err
 	}
 	if err := stageRuntime(p.runtimePlan()); err != nil {
