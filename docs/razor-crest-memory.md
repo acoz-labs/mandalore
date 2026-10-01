@@ -102,9 +102,12 @@ mobile application separately; uploading it on the web is not mobile acceptance.
 The configured Grok Bot connection has passed OAuth sign-in, discovery of eight
 semantic tools, scoped recall, a confirmed semantic save and delivered recall by
 native Codex. The locally inspected desktop was 0.63.0 on macOS; screenshots
-show the client results but do not independently identify its build. Fresh-chat
-automatic selection and reconnect verification remain pending. These results
-do not establish ordinary Grok chat, Grok Build or Cursor IDE compatibility.
+show the client results but do not independently identify its build. An ordinary
+prompt without naming the connector returned the recorded decision, and the
+owner subsequently confirmed repeated successful signet references in everyday
+use on October 1, 2026. This supports the configured recall workflow; a forced
+restart and authentication-renewal trial remain unverified for this client. These
+results do not establish ordinary Grok chat, Grok Build or Cursor IDE compatibility.
 
 For the tested personal-account path, ask Grok Bot in chat to add a remote MCP
 server using the private Razor Crest HTTPS URL and OAuth. It invokes its custom
@@ -145,9 +148,10 @@ the authenticated public endpoint and requires no local Git replica.
 The independent save check matched the original record and revision in both a
 native agent and the remote service, with successful remote Git delivery and no
 semantic conflicts. Private values, identifiers and screenshots remain outside
-public evidence. A fresh ordinary prompt and a reconnect trial are still needed
-to close the remaining workflow checks; initial sign-in is not token-renewal
-acceptance.
+public evidence. Repeated-use confirmation is owner-reported; the supplied
+natural-prompt screenshot does not expose the underlying tool trace or prove an
+application restart. No further duplicate recall trial is required for that
+ordinary-use observation. Reconnect and token-renewal acceptance remain separate.
 
 ## Acceptance without explicit invocation
 
