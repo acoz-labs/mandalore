@@ -4,11 +4,11 @@ Razor Crest is the optional service that connects authorized remote MCP clients
 to a Mandalore signet. It runs beside a persistent replica and reuses Mandalore's
 memory operations. Local agent connections continue to use their own replicas.
 
-**Implementation and acceptance are in progress under [#146](https://github.com/acoz-labs/mandalore/issues/146).**
-The instructions below describe the candidate implementation. They are not a
-claim that a released build or any particular mobile application supports it.
-Ordinary cloud-chat, mobile, OAuth refresh and natural tool-selection acceptance
-must be recorded separately before release.
+The service runtime ships in [Mandalore 1.5.0](releases/1.5.0.md). Remote-service
+acceptance and the private installation are tracked separately from the native
+release in [#146](https://github.com/acoz-labs/mandalore/issues/146).
+See the [service verification record](releases/1.5.0-razor-crest.md) for tested
+clients, authentication, recovery and remaining limitations.
 
 ## Ownership and privacy
 
@@ -31,7 +31,7 @@ owner's private network.
 
 ## Service contract
 
-The candidate exposes Streamable HTTP MCP at `/mcp`. It uses stateless HTTP
+The service exposes Streamable HTTP MCP at `/mcp`. It uses stateless HTTP
 requests; each request must pass the host allowlist, optional browser Origin
 allowlist, private-origin secret and signed identity validation. No inbound home
 router port forwarding is required with an outbound tunnel.
@@ -67,8 +67,7 @@ policy, and Managed OAuth. Use the client's actual OAuth redirect URI when
 configuring registration; do not allow arbitrary redirect hosts. Leave localhost
 and loopback registration disabled unless a selected client needs them.
 
-Cloudflare documents Managed OAuth as beta and requires an RFC 8707-compatible
-client. It provides discovery and token refresh and sends a signed assertion to
+Cloudflare requires an RFC 8707-compatible client for Managed OAuth. It provides discovery and token refresh and sends a signed assertion to
 the origin. A browser-cookie login wall alone does not provide that flow. Verify
 the installed client's discovery, authorization, refresh and reconnect behavior;
 vendor documentation is not an acceptance result.
@@ -99,7 +98,7 @@ See [Managed OAuth](https://developers.cloudflare.com/cloudflare-one/access-cont
 [Cloudflare Tunnel](https://developers.cloudflare.com/tunnel/) and
 [Request Header Transform Rules](https://developers.cloudflare.com/rules/transform/request-header-modification/).
 
-## Configure the candidate
+## Configure the service
 
 The runtime entry point is:
 
@@ -138,7 +137,13 @@ The [Compose example](../packaging/razor-crest/compose.yaml) takes private
 `RAZOR_CONFIG_DIR` and `RAZOR_STATE_DIR` paths. Its non-root runtime needs access to
 those directories with the configured container UID. Git credentials and trusted
 SSH host keys must be provisioned separately and scoped to the selected replica's
-repository. Never bake them into an image, command example or checked-in file.
+repository. Never bake them into an image, command example or checked-in file. For SSH,
+provide an OpenSSH configuration and pinned host keys readable by the container
+user in its home `.ssh` directory. Reference the separately mounted repository
+key there. Mandalore supplies its own noninteractive SSH command during
+synchronization; a successful shell Git command using `GIT_SSH_COMMAND` alone
+does not verify the service's credential setup. Check the service's delivery
+receipt before routing clients to a new replica.
 
 Build from a clean fixed checkout and set `RAZOR_SOURCE_COMMIT` to its full commit
 ID when using Compose. This is a source-build recipe, not a claim of a published
@@ -164,7 +169,7 @@ with pending or disabled synchronization remains local. A delivered Git head doe
 not establish semantic agreement: conflicting heads still require an explicit
 correction. Do not repeat a semantic save with a new key to retry delivery.
 
-With `synchronization: true`, the candidate makes bounded attempts at startup,
+With `synchronization: true`, the service makes bounded attempts at startup,
 approximately every minute, before reads and after saves, serialized with memory
 operations. A failed attempt preserves pending local work. These are service
 boundaries, independent of native-agent lifecycle hooks. Setting the flag false
