@@ -96,6 +96,44 @@ prerequisites include code execution and file creation. Package the
 The skill itself contains no executable code. Check availability in the intended
 mobile application separately; uploading it on the web is not mobile acceptance.
 
+### Grok Bot — integration in progress
+
+Tracked in [#151](https://github.com/acoz-labs/mandalore/issues/151). Grok Bot is
+not yet in the verified client matrix. Ordinary Grok chat, Grok Build, Cursor IDE
+and Grok Bot have distinct connection paths; success in one does not establish
+support in another.
+
+The intended connection is a custom **Remote HTTPS** MCP server pointing at the
+owner's Razor Crest endpoint. Grok Bot documents remote custom MCP connections
+and shared plugins in its [Team Bots guide](https://docs.x.ai/grok-bot/team-bots),
+but the actual personal-account installation and OAuth flow still need testing.
+Keep installation URLs and credentials in private deployment configuration.
+
+Before enabling access, observe the redirect URI requested by the installed
+client and add only that exact compatible callback to the ingress registration
+allowlist. Do not infer the active callback from another client or an installed
+bundle string. A rejected application-scheme callback requires investigating the
+client's supported HTTPS flow; it is not a reason to disable authentication or
+allow arbitrary redirects. Preserve other clients' existing callbacks.
+
+Reuse the [portable memory skill](../packaging/razor-crest/skills/mandalore-memory/SKILL.md).
+Grok Bot's [private skill library](https://docs.x.ai/grok-bot/skills-routines-and-automations)
+is shared across Bots. Verify that the workflow is active for ordinary prompts;
+manual skill invocation alone is not automatic-memory acceptance. Its
+[computer and connection model](https://docs.x.ai/grok-bot/computer-and-apps)
+also shares connectors and credentials across an account. This setup does not
+publish a personal signet to a Team Bot or authorize team access.
+
+Routing the Bot computer's egress through a desktop does not establish that the
+hosted connector backend uses that route. Start with the authenticated public
+endpoint. Local execution, stdio MCP and cloud-computer Git replicas are separate
+integration choices, not implicit parts of this remote setup.
+
+Record the client version and platform, actual callback, tool discovery, expected
+signet, cross-agent recall/save and natural-prompt results before changing this
+status to supported. Authentication/session renewal evidence remains separate
+from a successful first connection.
+
 ## Acceptance without explicit invocation
 
 Keep connector permissions fixed during a test series. Record the exact client,
