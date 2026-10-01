@@ -96,43 +96,58 @@ prerequisites include code execution and file creation. Package the
 The skill itself contains no executable code. Check availability in the intended
 mobile application separately; uploading it on the web is not mobile acceptance.
 
-### Grok Bot — integration in progress
+### Grok Bot — authenticated recall and save verified
 
-Tracked in [#151](https://github.com/acoz-labs/mandalore/issues/151). Grok Bot is
-not yet in the verified client matrix. Ordinary Grok chat, Grok Build, Cursor IDE
-and Grok Bot have distinct connection paths; success in one does not establish
-support in another.
+[#151](https://github.com/acoz-labs/mandalore/issues/151) tracks the integration.
+The configured Grok Bot connection has passed OAuth sign-in, discovery of eight
+semantic tools, scoped recall, a confirmed semantic save and delivered recall by
+native Codex. The locally inspected desktop was 0.63.0 on macOS; screenshots
+show the client results but do not independently identify its build. Fresh-chat
+automatic selection and reconnect verification remain pending. These results
+do not establish ordinary Grok chat, Grok Build or Cursor IDE compatibility.
 
-The intended connection is a custom **Remote HTTPS** MCP server pointing at the
-owner's Razor Crest endpoint. Grok Bot documents remote custom MCP connections
-and shared plugins in its [Team Bots guide](https://docs.x.ai/grok-bot/team-bots),
-but the actual personal-account installation and OAuth flow still need testing.
-Keep installation URLs and credentials in private deployment configuration.
+For the tested personal-account path, ask Grok Bot in chat to add a remote MCP
+server using the private Razor Crest HTTPS URL and OAuth. It invokes its custom
+server setup tool and supplies a connection card. A custom-server button was not
+visible to the owner; do not require one in Marketplace. Complete authentication
+in the provided flow, then ask for tool discovery and `memory_scopes` without a
+save. Verify the selected signet before using personal memory.
 
-Before enabling access, observe the redirect URI requested by the installed
-client and add only that exact compatible callback to the ingress registration
-allowlist. Do not infer the active callback from another client or an installed
-bundle string. A rejected application-scheme callback requires investigating the
-client's supported HTTPS flow; it is not a reason to disable authentication or
-allow arbitrary redirects. Preserve other clients' existing callbacks.
+The working Cloudflare registration configuration preserved existing callbacks
+and owner policy, added the two Cursor HTTPS callbacks, and enabled localhost
+and loopback clients:
 
-Reuse the [portable memory skill](../packaging/razor-crest/skills/mandalore-memory/SKILL.md).
-Grok Bot's [private skill library](https://docs.x.ai/grok-bot/skills-routines-and-automations)
-is shared across Bots. Verify that the workflow is active for ordinary prompts;
-manual skill invocation alone is not automatic-memory acceptance. Its
-[computer and connection model](https://docs.x.ai/grok-bot/computer-and-apps)
-also shares connectors and credentials across an account. This setup does not
-publish a personal signet to a Team Bot or authorize team access.
+- `https://www.cursor.com/agents/mcp/oauth/callback`
+- `https://www.cursor.com/bot/mcp/oauth/callback`
 
-Routing the Bot computer's egress through a desktop does not establish that the
-hosted connector backend uses that route. Start with the authenticated public
-endpoint. Local execution, stdio MCP and cloud-computer Git replicas are separate
-integration choices, not implicit parts of this remote setup.
+[Cursor's published OAuth client metadata](https://cursor.com/oauth/mcp-client.json)
+lists those callbacks plus localhost/loopback callbacks. Registration continued
+to fail with only the HTTPS callbacks allowed and succeeded after enabling the
+native callback options. The actual submitted redirect list and selected callback
+were not captured; do not infer them from that outcome. Those Cloudflare options
+allow localhost/loopback clients generally, not only a single port/path. Keep
+owner authentication, service grants and origin protection intact. No arbitrary
+HTTPS redirect wildcard or custom-scheme exception was enabled.
 
-Record the client version and platform, actual callback, tool discovery, expected
-signet, cross-agent recall/save and natural-prompt results before changing this
-status to supported. Authentication/session renewal evidence remains separate
-from a successful first connection.
+Reuse the [portable memory skill](../packaging/razor-crest/skills/mandalore-memory/SKILL.md)
+as connector instructions, preserving existing instructions. The owner reported
+successful connector-instruction installation; full installed text was not
+independently inspected. Grok Bot also documents a shared
+[private skill library](https://docs.x.ai/grok-bot/skills-routines-and-automations),
+but this trial does not establish a separate skill-library installation.
+
+Its [computer and connection model](https://docs.x.ai/grok-bot/computer-and-apps)
+shares connectors and credentials across an account. Do not publish personal
+signet access to a Team Bot as part of this setup. Desktop egress does not prove
+that hosted connector traffic uses the desktop network. The verified path uses
+the authenticated public endpoint and requires no local Git replica.
+
+The independent save check matched the original record and revision in both a
+native agent and the remote service, with successful remote Git delivery and no
+semantic conflicts. Private values, identifiers and screenshots remain outside
+public evidence. A fresh ordinary prompt and a reconnect trial are still needed
+to close the remaining workflow checks; initial sign-in is not token-renewal
+acceptance.
 
 ## Acceptance without explicit invocation
 
