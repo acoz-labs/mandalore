@@ -135,6 +135,9 @@ func resolve(config Config, name, agent string, args []string, inspect func(inst
 	if executable == "" {
 		executable = a.NativeBinary
 	}
+	if agent == "hermes" {
+		args = install.HermesNativeArguments(a.NativeHome, args)
+	}
 	return Plan{1, name, agent, c.SignetID, access, executable, a.NativeHome, append([]string{}, args...), cwd, "Selection verified locally. Native registration is checked at launch; native hooks report synchronization and canon freshness. This is not an OS sandbox; workspace files and native authentication remain native-owned.", c}, nil
 }
 

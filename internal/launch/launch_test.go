@@ -69,7 +69,11 @@ func TestConfigureResolveProfilesAndLiteralArguments(t *testing.T) {
 		if expected == "" {
 			expected = "pi"
 		}
-		if p.Agent != expected || !reflect.DeepEqual(p.Arguments, args) {
+		expectedArgs := args
+		if expected == "hermes" {
+			expectedArgs = append([]string{"--profile", "default"}, args...)
+		}
+		if p.Agent != expected || !reflect.DeepEqual(p.Arguments, expectedArgs) {
 			t.Fatal(p)
 		}
 		cwd, _ := os.Getwd()

@@ -50,6 +50,40 @@ func (f *fakeHermes) run(_ context.Context, o Options, args ...string) ([]byte, 
 
 func noHermesProbe(context.Context, HermesPlan) error { return nil }
 
+func TestHermesNativeCommandsPinRootAgainstStickyProfile(t *testing.T) {
+	root := t.TempDir()
+	binary := filepath.Join(root, "hermes")
+	script := `#!/bin/sh
+selected="$HERMES_HOME"
+case "$HERMES_HOME" in
+  */profiles/*) ;;
+  *)
+    if [ "$1" = "--profile" ] && [ "$2" = "default" ]; then
+      shift 2
+    elif [ -f "$HERMES_HOME/active_profile" ]; then
+      selected="$HERMES_HOME/profiles/$(cat "$HERMES_HOME/active_profile")"
+    fi ;;
+esac
+printf '%s\n' "$selected"
+`
+	if err := os.WriteFile(binary, []byte(script), 0700); err != nil {
+		t.Fatal(err)
+	}
+	for _, home := range []string{filepath.Join(root, "custom"), filepath.Join(root, "custom", "profiles", "selected")} {
+		if err := os.MkdirAll(home, 0700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(home, "active_profile"), []byte("other"), 0600); err != nil {
+			t.Fatal(err)
+		}
+		o := Options{NativeHome: home, NativeBinary: binary, Binding: filepath.Join(root, "binding.json")}
+		raw, err := nativeHermes(context.Background(), o, "plugins", "enable", "mandalore")
+		if err != nil || strings.TrimSpace(string(raw)) != home {
+			t.Fatalf("native command redirected selected profile: %s %v", raw, err)
+		}
+	}
+}
+
 func TestHermesPreviewPinsProfileAndNeverExecutes(t *testing.T) {
 	o := HermesOptions{Options: fixture(t), ReadOnly: true}
 	p, err := PrepareHermes(o)

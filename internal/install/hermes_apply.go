@@ -30,8 +30,17 @@ type hermesProbe func(context.Context, HermesPlan) error
 // HermesNativeVersion records a tested baseline, not an exclusive supported version.
 const HermesNativeVersion = "0.21.5"
 
+// HermesNativeArguments prevents Hermes's sticky active_profile from redirecting
+// a selected root. Named profile homes already bypass that selection in Hermes.
+func HermesNativeArguments(home string, args []string) []string {
+	if filepath.Base(filepath.Dir(home)) != "profiles" {
+		return append([]string{"--profile", "default"}, args...)
+	}
+	return append([]string{}, args...)
+}
+
 func nativeHermes(ctx context.Context, o Options, args ...string) ([]byte, error) {
-	return execute(ctx, o.NativeBinary, filepath.Dir(o.Binding), environment(map[string]string{"HERMES_HOME": o.NativeHome, "PYTHONDONTWRITEBYTECODE": "1"}), nil, args...)
+	return execute(ctx, o.NativeBinary, filepath.Dir(o.Binding), environment(map[string]string{"HERMES_HOME": o.NativeHome, "PYTHONDONTWRITEBYTECODE": "1"}), nil, HermesNativeArguments(o.NativeHome, args)...)
 }
 
 func hermesNativeVersion(ctx context.Context, o Options, run runner) error {
