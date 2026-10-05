@@ -1,13 +1,14 @@
 # Hermes integration
 
-Status: proposed implementation under [issue #153](https://github.com/acoz-labs/mandalore/issues/153).
-This document describes the intended contract. It does not establish that an
-installed release supports Hermes or that native acceptance has passed.
+Released in [Mandalore 1.6.0](releases/1.6.0.md), with independent retained-artifact
+acceptance on Hermes 0.21.5 for macOS arm64 CLI and persistent-service paths.
+The release record distinguishes native observations, model behavior and
+platform limits. An existing installation needs a separate reviewed upgrade.
 
-## Setup and inspection in development builds
+## Setup and inspection
 
-Use a trusted development candidate with Hermes support; historical release
-binaries do not acquire the new adapter through configuration alone. Select a
+Use Mandalore 1.6.0 or a later release with Hermes support; older binaries do
+not acquire the adapter through configuration alone. Select a
 healthy Hermes executable/profile and an explicit machine-local signet binding.
 The guided connection menu includes Hermes. Agent-friendly commands provide
 the equivalent `connection plan --harness hermes`, `connection apply --harness
@@ -65,9 +66,9 @@ withdrawn knowledge must not be recreated from stale native memory or journals.
 
 ## Native lifecycle mapping
 
-The unreleased adapter uses Hermes's general-plugin tool registration and
+The adapter uses Hermes's general-plugin tool registration and
 `pre_llm_call` context hook. The hook receives a native session identity, a turn
-identity and the current user message. It should await the shared engine's
+identity and the current user message. It awaits the shared engine's
 bounded foreground refresh before constructing that turn's memory context.
 The first observed turn for each native session maps to `startup` when Hermes
 reports a first turn, and otherwise to `resume`; later turns map to `turn`.
@@ -145,7 +146,7 @@ Disabling does not erase previously read context, native Hermes memory, or
 signet records. Conversational requests to stop synchronization are not a
 transport control while the integration remains enabled.
 
-## Verification before release
+## Verification for upgrades
 
 Acceptance must exercise the retained artifact through a supported Hermes
 runtime, including the actual CLI and persistent-service paths being claimed.

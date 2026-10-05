@@ -6,7 +6,7 @@ Do not duplicate storage, retrieval or supersession semantics.
 - [Codex](codex/README.md): first integration, released.
 - [Pi](pi/README.md): released after Codex acceptance, issue #13.
 - [Claude Code](claude-code/README.md): released in 1.3.0, issue #14.
-- [Hermes](../docs/hermes.md): unreleased general-plugin integration, issue #153;
+- [Hermes](../docs/hermes.md): general-plugin integration released in 1.6.0, issue #153;
   preserves built-in memory and exposes semantic memory tools, lifecycle context
   and native `this-is-the-way` / `the-armorer` skills.
 

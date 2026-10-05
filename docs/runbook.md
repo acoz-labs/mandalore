@@ -1,18 +1,17 @@
 # Runbook
 
-The [v1.1.0 release](releases/1.1.0.md) is published with Codex and Pi support.
-Subsequent development builds, including format2 withdrawal, are not accepted
-production upgrades.
-See the [setup guide](setup.md), [Codex guide](../plugins/codex/README.md) and
-[Pi development guide](../plugins/pi/README.md) for the respective boundaries.
-Archiving My Friday neither migrates nor removes existing pinned installations.
+[Mandalore 1.6.0](releases/1.6.0.md) adds released Hermes support alongside
+Codex, Pi and Claude Code. See the [setup guide](setup.md) and each native guide
+for installation boundaries. Archiving My Friday neither migrates nor removes
+existing pinned installations. A release does not authorize a live signet schema
+migration or establish that an operator has upgraded.
 
-Hermes integration is [unreleased work](hermes.md) tracked in issue #153.
-Its connection inspection does not prove that a running Hermes service loaded
-the selected generation. Stop selected sessions before activation, preserve
-retained receipts and runtime generations, and restart the service before
-testing a fresh session. Native memory remains independent. Do not infer a
-published Hermes release or completed operator upgrade from source tests.
+For [Hermes](hermes.md), connection inspection does not prove that a running
+service loaded the selected generation. Stop selected sessions before activation,
+preserve retained receipts and runtime generations, and restart the service
+before testing a fresh session. Native memory remains independent. Use native
+plugin disable and a fresh session to stop Mandalore hooks, tools and context;
+previously loaded context cannot be revoked.
 
 ## Project operations
 
