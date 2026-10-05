@@ -61,7 +61,7 @@ const help = `Mandalore — durable memory across tools
   mandalore codex-memory-hook [--binding FILE]   Read-only native lifecycle JSON
   mandalore connection plan [--binary FILE] [--binding FILE] [profile options]
   mandalore connection apply < approved-plan.json
-  mandalore connection assess --harness codex|pi|claude-code [profile options] [--binding FILE] [--connection-root DIR] [--prompt]
+  mandalore connection assess --harness codex|pi|claude-code|hermes [profile options] [--binding FILE] [--connection-root DIR] [--prompt]
   mandalore connection armorer [profile options]  The Armorer: read-only inspection
   mandalore connection doctor [profile options]   Compatibility alias
   mandalore connection repair --connection-root DIR [--apply]
@@ -71,7 +71,7 @@ const help = `Mandalore — durable memory across tools
   mandalore export apply [--read-only] < reviewed-preview.json
 
 Profile options: --state-dir DIR, --native-home DIR, --native-binary FILE.
-Connection harness: --harness codex|pi|claude-code (required for assess; otherwise default codex).
+Connection harness: --harness codex|pi|claude-code|hermes (required for assess; otherwise default codex).
 Pi and Claude Code plan --memory-read-only enforces read-only memory in the installed connection;
 --read-only instead prohibits mutations by this CLI invocation.
 Connection plan/armorer/doctor/repair preview do not activate a connection.

@@ -32,6 +32,20 @@ func InspectLaunch(s ReceiptSelection) (LaunchConnection, error) {
 		}
 	}
 	switch s.Harness {
+	case "hermes":
+		r, e := ownedHermes(s.Root, s.StateDir, s.NativeHome, false)
+		if e != nil {
+			return c, e
+		}
+		p := r.Plan
+		settings, e := inspectHermesSettings(s.NativeHome)
+		if e != nil {
+			return c, e
+		}
+		if settings.Root != s.Root || !settings.Enabled {
+			return c, errors.New("Hermes registration is missing, disabled or differs from selection")
+		}
+		c = LaunchConnection{p.Options, p.Root, p.SignetID, p.BindingSHA256, p.Runtime, p.ReadOnly, "", "", ""}
 	case "pi":
 		r, e := ownedPi(s.Root, s.StateDir, s.NativeHome, false)
 		if e != nil {
@@ -79,7 +93,7 @@ func InspectLaunch(s ReceiptSelection) (LaunchConnection, error) {
 		}
 		c = LaunchConnection{p.Options, p.Root, p.SignetID, p.BindingSHA256, p.Runtime, false, "", "", ""}
 	default:
-		return c, errors.New("unsupported agent; choose codex, pi or claude-code")
+		return c, errors.New("unsupported agent; choose codex, pi, claude-code or hermes")
 	}
 	if c.StateDir != s.StateDir || c.NativeHome != s.NativeHome || (c.NativeBinary != s.NativeBinary && c.NativeLauncher != s.NativeBinary) || c.Binding != s.Binding {
 		return LaunchConnection{}, errors.New("connection belongs to a different launch selection")
@@ -111,6 +125,12 @@ func ValidateLaunchNative(ctx context.Context, harness string, c LaunchConnectio
 	p := Profile{StateDir: c.StateDir, NativeHome: c.NativeHome, NativeBinary: c.Executable}
 	// Native checks inherit profile selection through existing scoped adapters.
 	switch harness {
+	case "hermes":
+		r := DoctorHermes(ctx, p)
+		if r.Healthy && r.Connection != nil && r.Connection.Root == c.Root {
+			return nil
+		}
+		return launchCheckFailure(r.Checks)
 	case "pi":
 		r := DoctorPi(ctx, p)
 		if r.Healthy && r.Connection != nil && r.Connection.Root == c.Root {

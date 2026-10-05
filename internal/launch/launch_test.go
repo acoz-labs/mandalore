@@ -34,7 +34,7 @@ func fixture(t *testing.T) (string, Entry, func(install.ReceiptSelection) (insta
 	raw, _ := os.ReadFile(bp)
 	hash := sha256.Sum256(raw)
 	entry := Entry{Binding: bp, DefaultAgent: "pi", Agents: map[string]Agent{}}
-	for _, h := range []string{"pi", "codex", "claude-code"} {
+	for _, h := range []string{"pi", "codex", "claude-code", "hermes"} {
 		home := filepath.Join(dir, h+" profile")
 		if e = os.Mkdir(home, 0700); e != nil {
 			t.Fatal(e)
@@ -60,7 +60,7 @@ func TestConfigureResolveProfilesAndLiteralArguments(t *testing.T) {
 	}
 	rawBefore, _ := os.ReadFile(path)
 	args := []string{"--print", "hello space", "$(touch never)", "`never`", "$HOME", "quote\"here"}
-	for _, h := range []string{"", "codex", "pi", "claude-code"} {
+	for _, h := range []string{"", "codex", "pi", "claude-code", "hermes"} {
 		p, e := resolve(c, "work", h, args, inspect)
 		if e != nil {
 			t.Fatal(e)
@@ -69,14 +69,18 @@ func TestConfigureResolveProfilesAndLiteralArguments(t *testing.T) {
 		if expected == "" {
 			expected = "pi"
 		}
-		if p.Agent != expected || !reflect.DeepEqual(p.Arguments, args) {
+		expectedArgs := args
+		if expected == "hermes" {
+			expectedArgs = append([]string{"--profile", "default"}, args...)
+		}
+		if p.Agent != expected || !reflect.DeepEqual(p.Arguments, expectedArgs) {
 			t.Fatal(p)
 		}
 		cwd, _ := os.Getwd()
 		if p.WorkingDirectory != cwd {
 			t.Fatal("cwd changed")
 		}
-		env := p.Environment([]string{"PATH=/bin", "MANDALORE_BINDING=/foreign", "MANDALORE_BIN=/old", "MANDALORE_SECRET=remove", "CODEX_HOME=/personal", "CLAUDE_CONFIG_DIR=/personal", "PI_CODING_AGENT_DIR=/personal", "CODEX_SQLITE_HOME=/personal", "CLAUDE_CODE_SAFE_MODE=1", "CLAUDE_CODE_PLUGIN_DIRS=/personal", "CLAUDE_CODE_PLUGIN_CACHE_DIR=/personal", "CLAUDE_CODE_PLUGIN_SEED_DIR=/personal", "CLAUDE_CODE_OAUTH_TOKEN=native-owned"})
+		env := p.Environment([]string{"PATH=/bin", "MANDALORE_BINDING=/foreign", "MANDALORE_BIN=/old", "MANDALORE_SECRET=remove", "CODEX_HOME=/personal", "CLAUDE_CONFIG_DIR=/personal", "PI_CODING_AGENT_DIR=/personal", "HERMES_HOME=/personal", "CODEX_SQLITE_HOME=/personal", "CLAUDE_CODE_SAFE_MODE=1", "CLAUDE_CODE_PLUGIN_DIRS=/personal", "CLAUDE_CODE_PLUGIN_CACHE_DIR=/personal", "CLAUDE_CODE_PLUGIN_SEED_DIR=/personal", "CLAUDE_CODE_OAUTH_TOKEN=native-owned"})
 		if strings.Contains(strings.Join(env, "\n"), "personal") || strings.Contains(strings.Join(env, "\n"), "foreign") {
 			t.Fatal(env)
 		}
@@ -179,6 +183,7 @@ func TestArgumentRoutingAndResumeBoundaries(t *testing.T) {
 		{"pi", []string{"--session=/personal/session.jsonl"}}, {"pi", []string{"--session-dir", "/personal"}}, {"pi", []string{"-eextension"}},
 		{"pi", []string{"--fork", "/foreign/session"}}, {"pi", []string{"-ne"}}, {"pi", []string{"-ns"}}, {"pi", []string{"-np"}}, {"pi", []string{"--session-id", "../../foreign"}}, {"codex", []string{"--ignore-user-config"}}, {"codex", []string{"exec", "resume", "--ignore-user-config", "--last"}}, {"claude-code", []string{"--restricted"}}, {"claude-code", []string{"--safe-mode"}}, {"claude-code", []string{"--bare"}}, {"claude-code", []string{"--plugin-url=https://example.invalid/plugin"}}, {"claude-code", []string{"--settings=/personal/config"}}, {"claude-code", []string{"--plugin-dir", "/personal"}}, {"claude-code", []string{"--resume", "/foreign/session"}},
 		{"codex", []string{"resume", "foreign-name"}},
+		{"hermes", []string{"--profile", "other"}}, {"hermes", []string{"--ignore-user-config"}}, {"hermes", []string{"--safe-mode"}}, {"hermes", []string{"-tshell"}},
 	} {
 		if e := ValidateArguments(tc.h, tc.args); e == nil {
 			t.Errorf("accepted routing override %v", tc)
@@ -191,6 +196,7 @@ func TestArgumentRoutingAndResumeBoundaries(t *testing.T) {
 		{"codex", []string{"resume", "00000000-0000-0000-0000-000000000001"}}, {"codex", []string{"resume", "--last"}},
 		{"pi", []string{"--session-id", "00000000-0000-0000-0000-000000000001"}}, {"pi", []string{"--resume"}}, {"pi", []string{"--continue"}}, {"claude-code", []string{"--resume", "00000000-0000-0000-0000-000000000001"}},
 		{"claude-code", []string{"--continue"}}, {"codex", []string{"--", "-c literal prompt"}},
+		{"hermes", []string{"chat", "--resume", "20260101_000000_synthetic"}},
 	} {
 		if e := ValidateArguments(tc.h, tc.args); e != nil {
 			t.Errorf("rejected safe args %v: %v", tc, e)

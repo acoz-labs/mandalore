@@ -57,16 +57,17 @@ type Evidence struct {
 }
 
 type Catalog struct {
-	SchemaVersion       int           `json:"schema_version"`
-	Targets             []Platform    `json:"targets"`
-	SignetReadVersions  []int         `json:"signet_read_versions"`
-	SignetWriteVersions []int         `json:"signet_write_versions"`
-	MemoryProtocol      int           `json:"memory_protocol"`
-	CodexHookProtocol   int           `json:"codex_hook_protocol"`
-	ClaudeHookProtocol  int           `json:"claude_hook_protocol"`
-	PiHarnessProtocol   int           `json:"pi_harness_protocol"`
-	Components          []Declaration `json:"components"`
-	Evidence            []Evidence    `json:"evidence"`
+	SchemaVersion         int           `json:"schema_version"`
+	Targets               []Platform    `json:"targets"`
+	SignetReadVersions    []int         `json:"signet_read_versions"`
+	SignetWriteVersions   []int         `json:"signet_write_versions"`
+	MemoryProtocol        int           `json:"memory_protocol"`
+	CodexHookProtocol     int           `json:"codex_hook_protocol"`
+	ClaudeHookProtocol    int           `json:"claude_hook_protocol"`
+	PiHarnessProtocol     int           `json:"pi_harness_protocol"`
+	HermesHarnessProtocol int           `json:"hermes_harness_protocol"`
+	Components            []Declaration `json:"components"`
+	Evidence              []Evidence    `json:"evidence"`
 }
 
 var declarationID = regexp.MustCompile(`^[a-z][a-z0-9-]{0,95}$`)
@@ -77,8 +78,8 @@ func loadCatalog() (Catalog, error) { return decodeCatalog(catalogJSON) }
 func decodeCatalog(raw []byte) (Catalog, error) {
 	var c Catalog
 	if strictjson.Decode(raw, &c, 64<<10) != nil || c.SchemaVersion != 1 ||
-		c.MemoryProtocol != 1 || c.CodexHookProtocol != 1 || c.PiHarnessProtocol != 1 || c.ClaudeHookProtocol != 1 ||
-		len(c.Targets) != 4 || len(c.Components) != 5 || len(c.Evidence) < 1 || len(c.Evidence) > 32 ||
+		c.MemoryProtocol != 1 || c.CodexHookProtocol != 1 || c.PiHarnessProtocol != 1 || c.ClaudeHookProtocol != 1 || c.HermesHarnessProtocol != 1 ||
+		len(c.Targets) != 4 || len(c.Components) != 6 || len(c.Evidence) < 1 || len(c.Evidence) > 32 ||
 		len(c.SignetReadVersions) != 2 || c.SignetReadVersions[0] != 1 || c.SignetReadVersions[1] != 2 ||
 		len(c.SignetWriteVersions) != 2 || c.SignetWriteVersions[0] != 1 || c.SignetWriteVersions[1] != 2 {
 		return Catalog{}, ErrCatalogInvalid
@@ -138,13 +139,13 @@ func supportedPlatform(p Platform) bool {
 }
 
 func knownComponent(id string) bool {
-	return id == "memory-runtime" || id == "git-sync" || id == "codex" || id == "pi" || id == "claude-code"
+	return id == "memory-runtime" || id == "git-sync" || id == "codex" || id == "pi" || id == "claude-code" || id == "hermes"
 }
 
 func validScenario(component, scenario string) bool {
 	return component == "memory-runtime" && scenario == "cli-mcp" ||
 		component == "codex" && scenario == "native-recall" ||
-		(component == "pi" || component == "claude-code") && scenario == "native-setup-tools"
+		(component == "pi" || component == "claude-code" || component == "hermes") && scenario == "native-setup-tools"
 }
 
 func hexText(value string, n int) bool {

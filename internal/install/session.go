@@ -52,6 +52,13 @@ func sessionRuntimeGuard(runtime, digest string) string {
 // generations conservatively preserve legacy authority until explicitly changed.
 func ExistingSessionMode(harness string, p Profile) (version int, readOnly bool, exists bool, err error) {
 	switch harness {
+	case "hermes":
+		settings, e := inspectHermesSettings(p.NativeHome)
+		if e != nil || settings.Root == "" {
+			return 0, false, false, e
+		}
+		r, e := ownedHermes(settings.Root, p.StateDir, p.NativeHome, false)
+		return r.Plan.SessionTransportVersion, r.Plan.ReadOnly, true, e
 	case "pi":
 		settings, e := inspectPiSettings(p.NativeHome)
 		if e != nil {

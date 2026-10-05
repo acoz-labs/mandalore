@@ -15,10 +15,10 @@ func TestCatalogKeepsSupportDependenciesAndEvidenceSeparate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if c.SchemaVersion != 1 || len(c.Targets) != 4 || len(c.Components) != 5 || len(c.Evidence) != 6 {
+	if c.SchemaVersion != 1 || len(c.Targets) != 4 || len(c.Components) != 6 || len(c.Evidence) != 6 {
 		t.Fatalf("unexpected declaration shape: %+v", c)
 	}
-	if c.MemoryProtocol != 1 || c.CodexHookProtocol != 1 || c.PiHarnessProtocol != 1 || c.ClaudeHookProtocol != 1 {
+	if c.MemoryProtocol != 1 || c.CodexHookProtocol != 1 || c.PiHarnessProtocol != 1 || c.ClaudeHookProtocol != 1 || c.HermesHarnessProtocol != 1 {
 		t.Fatal("protocol declarations drifted")
 	}
 	files, err := piplugin.PackageFiles()

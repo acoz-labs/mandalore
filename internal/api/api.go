@@ -46,6 +46,8 @@ type Error struct {
 	ClaudeConnectionReport *install.ClaudeReport       `json:"claude_code_connection_report,omitempty"`
 	PiConnectionResult     *install.PiResult           `json:"pi_connection_result,omitempty"`
 	PiConnectionReport     *install.PiReport           `json:"pi_connection_report,omitempty"`
+	HermesConnectionResult *install.HermesResult       `json:"hermes_connection_result,omitempty"`
+	HermesConnectionReport *install.HermesReport       `json:"hermes_connection_report,omitempty"`
 	MigrationResult        *migration.Result           `json:"migration_result,omitempty"`
 	ReleaseResult          *distribution.InstallResult `json:"release_result,omitempty"`
 	ReleaseRetry           *distribution.ReleaseRetry  `json:"release_retry,omitempty"`
@@ -183,7 +185,7 @@ var operations = []Operation{
 
 func Catalog() []Operation {
 	result := []Operation{sessionCatalog}
-	for _, group := range [][]Operation{operations, administration, synchronization, connections, migrations, foundlingOperations, canonOperations, releases, saveAndDelivery, nativeContext, piAdministration, claudeAdministration, readinessOperations, exports, visibilityOperations, upgradeOperations, retentionOperations} {
+	for _, group := range [][]Operation{operations, administration, synchronization, connections, migrations, foundlingOperations, canonOperations, releases, saveAndDelivery, nativeContext, piAdministration, claudeAdministration, hermesAdministration, readinessOperations, exports, visibilityOperations, upgradeOperations, retentionOperations} {
 		result = append(result, group...)
 	}
 	return result
@@ -294,6 +296,16 @@ func (a *API) failure(op Operation, err error) Envelope {
 		mayWrite := migration.result != nil && migration.result.Phase != "preflight"
 		out := Failure(code, migration.Error(), mayWrite)
 		out.Error.MigrationResult = migration.result
+		return out
+	}
+	var hermesConnection *hermesConnectionFailure
+	if errors.As(err, &hermesConnection) {
+		code := "connection.failed"
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			code = "operation.cancelled"
+		}
+		out := Failure(code, hermesConnection.Error(), hermesConnection.result != nil)
+		out.Error.HermesConnectionResult, out.Error.HermesConnectionReport = hermesConnection.result, hermesConnection.report
 		return out
 	}
 	var piConnection *piConnectionFailure
