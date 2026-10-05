@@ -20,6 +20,15 @@ plugins/pi/test/*.test.mjs` for focused adapter tests. Node is a native Pi/test
 prerequisite, not a dependency of the standalone Go memory engine or release
 payload builder. A test pin is not a claim that other native versions are tested.
 
+The unreleased Hermes adapter uses Python's standard library, with Python 3.9+
+required for its focused tests: `python3 -B -m unittest discover -s
+plugins/hermes/test -v`. `bin/ci` runs these tests, and the development container
+installs Python 3. Engineering checks have used Python 3.9.6 locally and the
+inspected Hermes runtime's Python 3.14.7; this does not establish acceptance of
+every intervening Python or Hermes release. No separate Python dependency
+installation is needed for the adapter. Native Hermes retains its own managed
+dependencies and profile requirements; see [Hermes integration](hermes.md).
+
 Use synthetic banks and disposable project workspaces. Native integration tests
 may inherit existing native resources and authentication with explicit local
 runtime/binding selection; do not replace CODEX_HOME or copy authentication,

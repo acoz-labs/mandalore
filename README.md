@@ -26,6 +26,11 @@ adopts the new policy. Read-only connections are never silently upgraded.
 Delivery does not guarantee model agreement; see the release record for native
 evidence and limits.
 
+[Hermes support](docs/hermes.md) is under implementation in
+[issue #153](https://github.com/acoz-labs/mandalore/issues/153). It adds portable
+signet memory alongside Hermes's native memory. This is unreleased work;
+source-level checks do not establish release acceptance or an operator upgrade.
+
 ## A small vocabulary
 
 - **Mandalore**: the application, CLI (`mandalore`) and native plugin name.
@@ -65,6 +70,7 @@ portability is not included.
 - [Guided setup and CLI installation](docs/setup.md) and [historical foundlings](docs/foundlings.md)
 - [Codex plugin](plugins/codex/README.md) and [native engineering evidence](docs/codex-native-evidence.md)
 - [Pi plugin](plugins/pi/README.md) and [Pi engineering evidence](docs/evidence/pi/README.md)
+- [Hermes integration and setup (unreleased)](docs/hermes.md)
 - [Migration and predecessor disposition](docs/migration.md)
 - [Roadmap](docs/roadmap.md) and [issues](https://github.com/acoz-labs/mandalore/issues)
 - [Development](docs/development.md), [releases](docs/deployment.md), [runbook](docs/runbook.md)

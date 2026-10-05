@@ -7,6 +7,13 @@ See the [setup guide](setup.md), [Codex guide](../plugins/codex/README.md) and
 [Pi development guide](../plugins/pi/README.md) for the respective boundaries.
 Archiving My Friday neither migrates nor removes existing pinned installations.
 
+Hermes integration is [unreleased work](hermes.md) tracked in issue #153.
+Its connection inspection does not prove that a running Hermes service loaded
+the selected generation. Stop selected sessions before activation, preserve
+retained receipts and runtime generations, and restart the service before
+testing a fresh session. Native memory remains independent. Do not infer a
+published Hermes release or completed operator upgrade from source tests.
+
 ## Project operations
 
 - Run `bin/ci`; distinguish host, container and native evidence.
