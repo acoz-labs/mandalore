@@ -30,6 +30,13 @@ assess Hermes explicitly, but readiness inspection is not acceptance of a
 running service. See [setup](setup.md) and [development](development.md) for the
 shared preview, candidate and verification boundaries.
 
+For a selected default or custom root, native administration and the thin
+launcher additionally pass `--profile default` so Hermes's sticky
+`active_profile` selection cannot redirect the command. A selected native named
+profile under `profiles/<name>` uses Hermes's direct `HERMES_HOME` pin. The
+connection always targets the selected profile rather than changing the user's
+global active-profile choice.
+
 ## Memory coexistence
 
 Hermes keeps its built-in memory, learned procedures, conversation management,
