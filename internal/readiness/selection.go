@@ -8,7 +8,7 @@ import (
 	"unicode"
 )
 
-var ErrSelection = errors.New("invalid readiness selection; use codex, pi or claude-code and absolute paths without control characters, at most 4096 bytes")
+var ErrSelection = errors.New("invalid readiness selection; use codex, pi, claude-code or hermes and absolute paths without control characters, at most 4096 bytes")
 
 type Input struct {
 	Harness        string `json:"harness"`
@@ -38,7 +38,7 @@ func validPath(path string) bool {
 }
 
 func resolveSelection(in Input) (Selection, error) {
-	if in.Harness != "codex" && in.Harness != "pi" && in.Harness != "claude-code" {
+	if in.Harness != "codex" && in.Harness != "pi" && in.Harness != "claude-code" && in.Harness != "hermes" {
 		return Selection{}, ErrSelection
 	}
 	s := Selection{StateDir: SelectedPath{in.StateDir, "explicit"}, NativeHome: SelectedPath{in.NativeHome, "explicit"}, NativeBinary: SelectedPath{in.NativeBinary, "explicit"}, Binding: SelectedPath{in.Binding, "explicit"}, ConnectionRoot: SelectedPath{in.ConnectionRoot, "explicit"}}
@@ -65,6 +65,8 @@ func resolveSelection(in Input) (Selection, error) {
 			key = "PI_CODING_AGENT_DIR"
 		} else if in.Harness == "claude-code" {
 			key = "CLAUDE_CONFIG_DIR"
+		} else if in.Harness == "hermes" {
+			key = "HERMES_HOME"
 		}
 		s.NativeHome = SelectedPath{os.Getenv(key), "environment"}
 		if s.NativeHome.Path == "" {
@@ -77,6 +79,8 @@ func resolveSelection(in Input) (Selection, error) {
 				path = filepath.Join(home, ".pi", "agent")
 			} else if in.Harness == "claude-code" {
 				path = filepath.Join(home, ".claude")
+			} else if in.Harness == "hermes" {
+				path = filepath.Join(home, ".hermes")
 			}
 			s.NativeHome = SelectedPath{path, "home-default"}
 		}

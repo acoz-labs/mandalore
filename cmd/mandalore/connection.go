@@ -21,7 +21,7 @@ func connectionDefaults(profile *install.Profile) error {
 }
 
 func connectionHarnessDefaults(profile *install.Profile, harness string) error {
-	if harness != "codex" && harness != "pi" && harness != "claude-code" {
+	if harness != "codex" && harness != "pi" && harness != "claude-code" && harness != "hermes" {
 		return errors.New("unsupported connection harness")
 	}
 	if profile.StateDir == "" {
@@ -37,6 +37,8 @@ func connectionHarnessDefaults(profile *install.Profile, harness string) error {
 			key = "PI_CODING_AGENT_DIR"
 		} else if harness == "claude-code" {
 			key = "CLAUDE_CONFIG_DIR"
+		} else if harness == "hermes" {
+			key = "HERMES_HOME"
 		}
 		profile.NativeHome = os.Getenv(key)
 		if profile.NativeHome == "" {
@@ -49,6 +51,8 @@ func connectionHarnessDefaults(profile *install.Profile, harness string) error {
 				profile.NativeHome = filepath.Join(home, ".pi", "agent")
 			} else if harness == "claude-code" {
 				profile.NativeHome = filepath.Join(home, ".claude")
+			} else if harness == "hermes" {
+				profile.NativeHome = filepath.Join(home, ".hermes")
 			}
 		}
 	}
@@ -119,7 +123,7 @@ func runConnection(ctx context.Context, args []string, input io.Reader, out io.W
 	f := flag.NewFlagSet("connection "+sub, flag.ContinueOnError)
 	f.SetOutput(io.Discard)
 	readOnly := f.Bool("read-only", false, "Reject mutations")
-	harness := f.String("harness", "codex", "Native harness: codex, pi or claude-code")
+	harness := f.String("harness", "codex", "Native harness: codex, pi, claude-code or hermes")
 	var memoryReadOnly bool
 	var sessionSync bool
 	var profile install.Profile
@@ -136,7 +140,7 @@ func runConnection(ctx context.Context, args []string, input io.Reader, out io.W
 	}
 	if sub == "plan" {
 		f.BoolVar(&sessionSync, "session-sync", false, "Enable reviewed session-authorized automatic refresh and delivery")
-		f.BoolVar(&memoryReadOnly, "memory-read-only", false, "Enforce read-only memory in Pi and Claude Code connections")
+		f.BoolVar(&memoryReadOnly, "memory-read-only", false, "Enforce read-only memory in Pi, Claude Code and Hermes connections")
 		f.StringVar(&binary, "binary", "", "Trusted Mandalore executable to stage; default running CLI")
 		f.StringVar(&path, "binding", "", "Explicit machine-local signet binding")
 	}
@@ -158,16 +162,16 @@ func runConnection(ctx context.Context, args []string, input io.Reader, out io.W
 	if f.NArg() != 0 {
 		return bad(out, "Unexpected connection arguments.")
 	}
-	if *harness != "codex" && *harness != "pi" && *harness != "claude-code" {
-		return bad(out, "Choose --harness codex, pi or claude-code.")
+	if *harness != "codex" && *harness != "pi" && *harness != "claude-code" && *harness != "hermes" {
+		return bad(out, "Choose --harness codex, pi, claude-code or hermes.")
 	}
 	if memoryReadOnly && sessionSync {
 		return bad(out, "Read-only memory cannot enable session transport.")
 	}
-	if memoryReadOnly && *harness != "pi" && *harness != "claude-code" {
-		return bad(out, "--memory-read-only is supported by Pi and Claude Code connections.")
+	if memoryReadOnly && *harness != "pi" && *harness != "claude-code" && *harness != "hermes" {
+		return bad(out, "--memory-read-only is supported by Pi, Claude Code and Hermes connections.")
 	}
-	if sessionsStopped && (*harness == "pi" || sub == "repair" && !applyRepair) {
+	if sessionsStopped && (*harness == "pi" || *harness == "hermes" || sub == "repair" && !applyRepair) {
 		return bad(out, "--sessions-stopped applies only to Codex or Claude Code apply or repair --apply.")
 	}
 	if *readOnly && (sub == "apply" || applyRepair) {
@@ -204,6 +208,8 @@ func runConnection(ctx context.Context, args []string, input io.Reader, out io.W
 				value = install.PiOptions{Options: value.(install.Options), ReadOnly: memoryReadOnly}
 			} else if *harness == "claude-code" {
 				value = install.ClaudeOptions{Options: value.(install.Options), ReadOnly: memoryReadOnly}
+			} else if *harness == "hermes" {
+				value = install.HermesOptions{Options: value.(install.Options), ReadOnly: memoryReadOnly}
 			}
 		}
 	case "repair":
@@ -214,6 +220,8 @@ func runConnection(ctx context.Context, args []string, input io.Reader, out io.W
 		name = "pi_" + name
 	} else if *harness == "claude-code" {
 		name = "claude_code_" + name
+	} else if *harness == "hermes" {
+		name = "hermes_" + name
 	}
 	var raw []byte
 	if value != nil {
@@ -228,6 +236,8 @@ func runConnection(ctx context.Context, args []string, input io.Reader, out io.W
 			raw, err = unwrapConnectionPlan[install.PiPlan](raw)
 		} else if *harness == "claude-code" {
 			raw, err = unwrapConnectionPlan[install.ClaudePlan](raw)
+		} else if *harness == "hermes" {
+			raw, err = unwrapConnectionPlan[install.HermesPlan](raw)
 		} else {
 			raw, err = unwrapPlan(raw)
 		}
@@ -262,6 +272,8 @@ func runConnection(ctx context.Context, args []string, input io.Reader, out io.W
 		} else if *harness == "claude-code" {
 			applyName = "claude_code_" + applyName
 			raw, _ = json.Marshal(install.ClaudeApplyInput{Plan: result.Result.(install.ClaudePlan), SessionsStopped: sessionsStopped})
+		} else if *harness == "hermes" {
+			applyName = "hermes_" + applyName
 		}
 		result = a.Call(ctx, applyName, raw)
 	}

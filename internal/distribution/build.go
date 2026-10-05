@@ -294,6 +294,18 @@ func Build(ctx context.Context, o BuildOptions) (ParsedManifest, error) {
 	if err := os.WriteFile(claudeManifest, claudeStamped, 0600); err != nil {
 		return ParsedManifest{}, err
 	}
+	hermesManifest := filepath.Join(work, "plugins", "hermes", "package", "plugin.yaml")
+	hermesSource, err := os.ReadFile(hermesManifest)
+	if err != nil {
+		return ParsedManifest{}, err
+	}
+	hermesStamped, err := prepareHermesManifest(hermesSource, releaseVersion)
+	if err != nil {
+		return ParsedManifest{}, err
+	}
+	if err := os.WriteFile(hermesManifest, hermesStamped, 0600); err != nil {
+		return ParsedManifest{}, err
+	}
 	m := Manifest{FormatVersion: 1, Product: "mandalore", Version: releaseVersion, Tag: "v" + releaseVersion, SourceCommit: commit, GoVersion: PinnedGo, ProtocolVersion: 1, SignetReadVersions: []int{1, 2}, SignetWriteVersions: []int{1, 2}, PluginSHA256: p.SHA256}
 	for _, target := range [][2]string{{"darwin", "amd64"}, {"darwin", "arm64"}, {"linux", "amd64"}, {"linux", "arm64"}} {
 		a := Asset{Kind: "cli", OS: target[0], Arch: target[1], Name: "mandalore_" + releaseVersion + "_" + target[0] + "_" + target[1]}

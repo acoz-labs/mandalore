@@ -33,6 +33,10 @@ var uuidPattern = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]
 func ValidateArguments(harness string, args []string) error {
 	denied := map[string]bool{}
 	switch harness {
+	case "hermes":
+		for _, v := range []string{"--profile", "-p", "--ignore-user-config", "--ignore-rules", "--safe-mode", "--toolsets", "-t", "--in", "--worktree", "-w"} {
+			denied[v] = true
+		}
 	case "codex":
 		for _, v := range []string{"--ignore-user-config", "-c", "--config", "-p", "--profile", "-C", "--cd", "--remote", "--remote-env", "--enable", "--disable"} {
 			denied[v] = true
@@ -54,6 +58,13 @@ func ValidateArguments(harness string, args []string) error {
 		}
 		flag, _, _ := strings.Cut(arg, "=")
 		blocked := denied[flag]
+		if harness == "hermes" {
+			for _, prefix := range []string{"-p", "-t"} {
+				if strings.HasPrefix(arg, prefix) && !strings.HasPrefix(arg, "--") {
+					blocked = true
+				}
+			}
+		}
 		if harness == "codex" {
 			for _, prefix := range []string{"-c", "-p", "-C"} {
 				if strings.HasPrefix(arg, prefix) && !strings.HasPrefix(arg, "--") {
@@ -93,7 +104,7 @@ func resolve(config Config, name, agent string, args []string, inspect func(inst
 		agent = e.DefaultAgent
 	}
 	if !supported(agent) {
-		return Plan{}, errors.New("unsupported agent; choose codex, pi or claude-code")
+		return Plan{}, errors.New("unsupported agent; choose codex, pi, claude-code or hermes")
 	}
 	a, ok := e.Agents[agent]
 	if !ok {
@@ -136,11 +147,13 @@ func (p Plan) Environment(in []string) []string {
 		overrides["PI_CODING_AGENT_DIR"] = p.NativeHome
 	case "claude-code":
 		overrides["CLAUDE_CONFIG_DIR"] = p.NativeHome
+	case "hermes":
+		overrides["HERMES_HOME"] = p.NativeHome
 	}
 	result := []string{}
 	for _, item := range in {
 		key, _, _ := strings.Cut(item, "=")
-		if strings.HasPrefix(key, "MANDALORE_") || key == "CODEX_HOME" || key == "PI_CODING_AGENT_DIR" || key == "CLAUDE_CONFIG_DIR" || key == "CODEX_SQLITE_HOME" || key == "CLAUDE_CODE_SAFE_MODE" || key == "CLAUDE_CODE_PLUGIN_DIRS" || key == "CLAUDE_CODE_PLUGIN_CACHE_DIR" || key == "CLAUDE_CODE_PLUGIN_SEED_DIR" {
+		if strings.HasPrefix(key, "MANDALORE_") || key == "CODEX_HOME" || key == "PI_CODING_AGENT_DIR" || key == "CLAUDE_CONFIG_DIR" || key == "HERMES_HOME" || key == "CODEX_SQLITE_HOME" || key == "CLAUDE_CODE_SAFE_MODE" || key == "CLAUDE_CODE_PLUGIN_DIRS" || key == "CLAUDE_CODE_PLUGIN_CACHE_DIR" || key == "CLAUDE_CODE_PLUGIN_SEED_DIR" {
 			continue
 		}
 		result = append(result, item)

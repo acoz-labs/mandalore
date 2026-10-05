@@ -66,7 +66,9 @@ func readFile(path string, limit int64) ([]byte, error) {
 	defer f.Close()
 	return io.ReadAll(io.LimitReader(f, limit+1))
 }
-func supported(agent string) bool { return agent == "codex" || agent == "pi" || agent == "claude-code" }
+func supported(agent string) bool {
+	return agent == "codex" || agent == "pi" || agent == "claude-code" || agent == "hermes"
+}
 func Load(path string) (Config, error) {
 	c := Config{SchemaVersion: 1, Entries: map[string]Entry{}}
 	raw, e := readFile(path, maxConfig)
@@ -84,8 +86,8 @@ func Load(path string) (Config, error) {
 	return c, nil
 }
 func validateEntry(e Entry) error {
-	if !supported(e.DefaultAgent) || len(e.Agents) == 0 || len(e.Agents) > 3 {
-		return errors.New("choose a configured default agent: codex, pi or claude-code")
+	if !supported(e.DefaultAgent) || len(e.Agents) == 0 || len(e.Agents) > 4 {
+		return errors.New("choose a configured default agent: codex, pi, claude-code or hermes")
 	}
 	if _, ok := e.Agents[e.DefaultAgent]; !ok {
 		return errors.New("default agent has no configured profile")
@@ -97,7 +99,7 @@ func validateEntry(e Entry) error {
 		}
 		homes[a.NativeHome] = true
 		if !supported(harness) {
-			return errors.New("unsupported agent; choose codex, pi or claude-code")
+			return errors.New("unsupported agent; choose codex, pi, claude-code or hermes")
 		}
 		for _, p := range []string{e.Binding, a.NativeHome, a.NativeBinary, a.StateDir, a.ConnectionRoot} {
 			if !filepath.IsAbs(p) || filepath.Clean(p) != p || strings.ContainsAny(p, "\x00\r\n") {

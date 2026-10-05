@@ -1,0 +1,6 @@
+{
+  "name": "mandalore",
+  "version": "0.0.0-dev",
+  "description": "Portable semantic signet memory alongside Hermes native memory.",
+  "provides_hooks": ["pre_llm_call", "on_session_finalize", "on_session_reset", "pre_command"]
+}

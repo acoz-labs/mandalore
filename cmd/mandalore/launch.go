@@ -15,7 +15,7 @@ const launchHelp = `Usage:
   mandalore launch configure NAME [--config FILE] --confirm-profile < entry.json
   mandalore launch list [--config FILE]
   mandalore launch schema
-  mandalore launch NAME [--config FILE] [--agent codex|pi|claude-code] [--preview] [-- native arguments]
+  mandalore launch NAME [--config FILE] [--agent codex|pi|claude-code|hermes] [--preview] [-- native arguments]
 
 Configuration is local JSON, outside every signet. Each entry has binding,
 default_agent and agents (keyed by harness). Each agent requires native_home,

@@ -40,6 +40,8 @@ func (m *menu) assessMachine() error {
 	profile := m.profile
 	if harness == "pi" {
 		profile = m.piProfile
+	} else if harness == "hermes" {
+		profile = m.hermesProfile
 	} else if harness == "claude-code" {
 		profile = m.claudeProfile
 	}
@@ -132,7 +134,7 @@ func (m *menu) editAssessment(in *readiness.Input) error {
 }
 
 func componentLabel(id string) string {
-	labels := map[string]string{"memory-runtime": "Memory runtime", "git-sync": "Git for delivery", "codex": "Codex", "pi": "Pi", "claude-code": "Claude Code", "node": "Node for Pi", "native-profile": "Native profile", "installation-state": "Installation state", "binding": "Signet binding", "retained-runtime": "Retained runtime"}
+	labels := map[string]string{"memory-runtime": "Memory runtime", "git-sync": "Git for delivery", "codex": "Codex", "pi": "Pi", "hermes": "Hermes", "claude-code": "Claude Code", "node": "Node for Pi", "native-profile": "Native profile", "installation-state": "Installation state", "binding": "Signet binding", "retained-runtime": "Retained runtime"}
 	if label := labels[id]; label != "" {
 		return label
 	}
@@ -241,8 +243,8 @@ func (m *menu) assessmentDetails(r readiness.Report) {
 }
 
 func (m *menu) nativeInspection(harness string, profile install.Profile) error {
-	if harness != "codex" && harness != "pi" && harness != "claude-code" {
-		return errors.New("choose Codex, Pi or Claude Code before native inspection")
+	if harness != "codex" && harness != "pi" && harness != "claude-code" && harness != "hermes" {
+		return errors.New("choose Codex, Pi, Claude Code or Hermes before native inspection")
 	}
 	if profile.NativeBinary == "" {
 		return errors.New("select a native executable before requesting native checks")
@@ -264,6 +266,8 @@ func (m *menu) nativeInspection(harness string, profile install.Profile) error {
 	var v api.Envelope
 	if harness == "pi" {
 		m.piProfile = profile
+	} else if harness == "hermes" {
+		m.hermesProfile = profile
 	} else if harness == "claude-code" {
 		m.claudeProfile = profile
 	}
@@ -273,6 +277,8 @@ func (m *menu) nativeInspection(harness string, profile install.Profile) error {
 		name := "connection_doctor"
 		if harness == "pi" {
 			name = "pi_connection_doctor"
+		} else if harness == "hermes" {
+			name = "hermes_connection_doctor"
 		} else if harness == "claude-code" {
 			name = "claude_code_connection_doctor"
 		}
@@ -283,6 +289,8 @@ func (m *menu) nativeInspection(harness string, profile install.Profile) error {
 	}
 	if harness == "pi" {
 		m.piReport(v.Result.(install.PiReport))
+	} else if harness == "hermes" {
+		m.hermesReport(v.Result.(install.HermesReport))
 	} else if harness == "claude-code" {
 		m.claudeReport(v.Result.(install.ClaudeReport))
 	} else {

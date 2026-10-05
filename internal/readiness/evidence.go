@@ -40,12 +40,12 @@ func matchEvidence(e Evidence, observed Observation) EvidenceMatch {
 		}
 	}
 	compare("runtime-sha256", e.Identities.RuntimeSHA256, observed.Identities.RuntimeSHA256)
-	if e.Component == "codex" || e.Component == "pi" || e.Component == "claude-code" {
+	if e.Component == "codex" || e.Component == "pi" || e.Component == "claude-code" || e.Component == "hermes" {
 		compare("package-sha256", e.Identities.PackageSHA256, observed.Identities.PackageSHA256)
 		compare("native-sha256", e.Identities.NativeSHA256, observed.Identities.NativeSHA256)
 		compare("native-version", e.Identities.NativeVersion, observed.Identities.NativeVersion)
 	}
-	if e.Component == "pi" {
+	if e.Component == "pi" || e.Component == "hermes" {
 		compare("interpreter-sha256", e.Identities.InterpreterSHA256, observed.Identities.InterpreterSHA256)
 		compare("interpreter-version", e.Identities.InterpreterVersion, observed.Identities.InterpreterVersion)
 	}

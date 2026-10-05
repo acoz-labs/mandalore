@@ -45,6 +45,7 @@ done
   exit 1
 }
 node --test plugins/pi/test/*.test.mjs
+python3 -B -m unittest discover -s plugins/hermes/test -v
 go mod verify
 git --version
 go test -race ./...

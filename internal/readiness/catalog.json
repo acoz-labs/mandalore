@@ -75,6 +75,20 @@
         }
       ],
       "native_contract": "2.1.278"
+    },
+    {
+      "id": "hermes",
+      "dependencies": [
+        {
+          "id": "memory-runtime",
+          "constraint": "Mandalore CLI protocol 1 with embedded Hermes package"
+        },
+        {
+          "id": "python",
+          "constraint": "Hermes-managed Python runtime; native environment must be healthy"
+        }
+      ],
+      "native_contract": "0.21.5"
     }
   ],
   "evidence": [
@@ -196,5 +210,6 @@
       ]
     }
   ],
-  "claude_hook_protocol": 1
+  "claude_hook_protocol": 1,
+  "hermes_harness_protocol": 1
 }
