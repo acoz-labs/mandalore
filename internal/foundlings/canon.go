@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -27,6 +28,7 @@ type CanonReceipt struct {
 	SourceSignetID string                  `json:"source_signet_id,omitempty"`
 	State          string                  `json:"state"`
 	Reason         string                  `json:"reason,omitempty"`
+	TimeoutPhase   string                  `json:"timeout_phase,omitempty"`
 	Pin            memory.SourcePin        `json:"snapshot_pin"`
 	RefreshedAt    string                  `json:"refreshed_at,omitempty"`
 	Digest         string                  `json:"snapshot_sha256,omitempty"`
@@ -171,8 +173,8 @@ func (m *Manager) sessionRefresh(parent context.Context, sessionID string, allow
 			receipt.Reason = reg.State
 		} else {
 			fresh, e := m.fetchCanon(fetchCtx, root, reg)
-			if e == nil {
-				e = ctx.Err()
+			if e == nil && ctx.Err() != nil {
+				e = &canonPhaseError{"validate", ctx.Err()}
 			}
 			if e == nil {
 				receipt = fresh
@@ -182,13 +184,20 @@ func (m *Manager) sessionRefresh(parent context.Context, sessionID string, allow
 				}
 			} else {
 				receipt.Reason = canonFailure(e)
+				var phase *canonPhaseError
+				if receipt.Reason == "timeout" && errors.As(e, &phase) {
+					receipt.TimeoutPhase = phase.phase
+				}
 				var prior CanonReceipt
 				if ctx.Err() == nil && (receipt.Reason == "timeout" || receipt.Reason == "transport_unavailable" || receipt.Reason == "authentication_failed" || receipt.Reason == "absent_branch") && canonRead(root, latestFile(reg.FoundlingID), &prior) == nil && prior.FoundlingID == reg.FoundlingID && prior.RegistrationID == receipt.RegistrationID && prior.SourceSignetID == receipt.SourceSignetID {
 					if _, e = m.openCanon(ctx, root, prior); e == nil {
 						prior.SessionID = sessionID
 						prior.State = "stale"
 						prior.Reason = receipt.Reason
+						prior.TimeoutPhase = receipt.TimeoutPhase
 						receipt = prior
+					} else if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+						receipt.TimeoutPhase = "stale_validation"
 					}
 				}
 			}
@@ -197,6 +206,11 @@ func (m *Manager) sessionRefresh(parent context.Context, sessionID string, allow
 		if interrupted := ctx.Err(); interrupted != nil {
 			receipt.State = "unavailable"
 			receipt.Reason = canonFailure(interrupted)
+			if receipt.Reason != "timeout" {
+				receipt.TimeoutPhase = ""
+			} else if receipt.TimeoutPhase == "" {
+				receipt.TimeoutPhase = "validate"
+			}
 		} else {
 			current, ce := m.memory.Foundling(reg.FoundlingID)
 			if ce != nil || current.State != "active" || len(current.HeadIDs) != 1 || current.HeadIDs[0] != receipt.RegistrationID {
@@ -231,6 +245,14 @@ func canonFailure(err error) string {
 type canonFetchError struct{ reason string }
 
 func (e *canonFetchError) Error() string { return e.reason }
+
+type canonPhaseError struct {
+	phase string
+	err   error
+}
+
+func (e *canonPhaseError) Error() string { return e.phase + ": " + e.err.Error() }
+func (e *canonPhaseError) Unwrap() error { return e.err }
 
 func (m *Manager) SessionStatus(parent context.Context, sessionID string) ([]CanonReceipt, error) {
 	ctx, cancel := context.WithTimeout(parent, 3*time.Second)
@@ -329,9 +351,16 @@ func (m *Manager) CanonScopes(ctx context.Context, in CanonRecallInput) ([]memor
 }
 
 // fetchCanon materializes regular Git blobs, never checks out repository content.
-func (m *Manager) fetchCanon(ctx context.Context, root string, reg memory.FoundlingSummary) (CanonReceipt, error) {
-	r := CanonReceipt{Name: reg.Name, Description: reg.Description, SourceIdentity: reg.Source, FoundlingID: reg.FoundlingID, RegistrationID: reg.HeadIDs[0], SourceSignetID: reg.SourceSignetID, State: "available", Notice: canonNotice}
-	if err := ctx.Err(); err != nil {
+// Errors carry the phase that was running so a timeout receipt can name it.
+func (m *Manager) fetchCanon(ctx context.Context, root string, reg memory.FoundlingSummary) (r CanonReceipt, err error) {
+	phase := "fetch"
+	defer func() {
+		if err != nil {
+			err = &canonPhaseError{phase, err}
+		}
+	}()
+	r = CanonReceipt{Name: reg.Name, Description: reg.Description, SourceIdentity: reg.Source, FoundlingID: reg.FoundlingID, RegistrationID: reg.HeadIDs[0], SourceSignetID: reg.SourceSignetID, State: "available", Notice: canonNotice}
+	if err = ctx.Err(); err != nil {
 		return r, err
 	}
 	stage, err := os.MkdirTemp(root, "fetch-")
@@ -349,6 +378,7 @@ func (m *Manager) fetchCanon(ctx context.Context, root string, reg memory.Foundl
 	if _, err = canonGit(ctx, stage, m.canonTransport != nil, "fetch", "--quiet", "--depth=1", "--no-tags", "--no-recurse-submodules", "--", locator, "refs/heads/"+reg.Branch); err != nil {
 		return r, err
 	}
+	phase = "materialize"
 	pin, err := sourceGit(ctx, stage, "", "rev-parse", "--verify", "FETCH_HEAD^{commit}")
 	if err != nil {
 		return r, err
@@ -362,17 +392,11 @@ func (m *Manager) fetchCanon(ctx context.Context, root string, reg memory.Foundl
 	if err != nil {
 		return r, err
 	}
-	dest, err := os.MkdirTemp(root, "snapshot-")
-	if err != nil {
-		return r, err
-	}
-	defer os.RemoveAll(dest)
-	docs := map[string][]byte{}
-	total := 0
 	entries := strings.Split(strings.TrimSuffix(tree, "\x00"), "\x00")
 	if len(entries) > maxEntries {
 		return r, ErrUnavailable
 	}
+	files := []treeFile{}
 	for _, entry := range entries {
 		meta, name, ok := strings.Cut(entry, "\t")
 		fields := strings.Fields(meta)
@@ -385,26 +409,33 @@ func (m *Manager) fetchCanon(ctx context.Context, root string, reg memory.Foundl
 		if name != "signet.json" && !strings.HasPrefix(name, "memory/") && !strings.HasPrefix(name, "provenance/") && !strings.HasPrefix(name, "foundlings/") {
 			continue
 		}
-		if excluded(name) || strings.Count(name, "/") > 32 {
+		if excluded(name) || strings.Count(name, "/") > 32 || len(files) >= MaxFiles {
 			return r, ErrUnavailable
 		}
-		data, err := sourceGit(ctx, stage, "", "cat-file", "blob", fields[2])
-		if err != nil {
-			return r, err
-		}
-		if len(data) > MaxFileBytes || len(docs) >= MaxFiles || len(data) > MaxSourceBytes-total {
+		if len(fields[2]) != len(r.Pin.Value) || strings.Trim(fields[2], "0123456789abcdef") != "" {
 			return r, ErrUnavailable
 		}
-		total += len(data)
-		docs[name] = []byte(data)
-		path := filepath.Join(dest, filepath.FromSlash(name))
+		files = append(files, treeFile{name: name, object: fields[2]})
+	}
+	docs, err := canonBlobs(ctx, stage, r.Pin.Algorithm, files)
+	if err != nil {
+		return r, err
+	}
+	dest, err := os.MkdirTemp(root, "snapshot-")
+	if err != nil {
+		return r, err
+	}
+	defer os.RemoveAll(dest)
+	for _, file := range files {
+		path := filepath.Join(dest, filepath.FromSlash(file.name))
 		if err = os.MkdirAll(filepath.Dir(path), 0700); err != nil {
 			return r, err
 		}
-		if err = os.WriteFile(path, []byte(data), 0600); err != nil {
+		if err = os.WriteFile(path, docs[file.name], 0600); err != nil {
 			return r, err
 		}
 	}
+	phase = "validate"
 	manifest, err := memory.Open(dest)
 	if err != nil {
 		return r, err
@@ -428,6 +459,76 @@ func (m *Manager) fetchCanon(ctx context.Context, root string, reg memory.Foundl
 		}
 	}
 	return r, nil
+}
+
+// canonBlobs reads the selected blobs from the private stage in a bounded number
+// of Git processes: one size check, then content batches that each fit the Git
+// output cap. Sizes are checked before any content is read; each returned blob is
+// rehashed against its tree identity.
+func canonBlobs(ctx context.Context, stage, algorithm string, files []treeFile) (map[string][]byte, error) {
+	docs := map[string][]byte{}
+	if len(files) == 0 {
+		return docs, nil
+	}
+	var objects strings.Builder
+	for _, file := range files {
+		objects.WriteString(file.object + "\n")
+	}
+	checked, err := sourceGit(ctx, stage, objects.String(), "cat-file", "--batch-check")
+	if err != nil {
+		return nil, err
+	}
+	lines := strings.Split(checked, "\n")
+	if len(lines) != len(files)+1 || lines[len(lines)-1] != "" {
+		return nil, ErrUnavailable
+	}
+	total := 0
+	for i, line := range lines[:len(files)] {
+		fields := strings.Fields(line)
+		if len(fields) != 3 || fields[0] != files[i].object || fields[1] != "blob" {
+			return nil, ErrUnavailable
+		}
+		size, err := strconv.Atoi(fields[2])
+		if err != nil || size < 0 || size > MaxFileBytes || size > MaxSourceBytes-total {
+			return nil, ErrUnavailable
+		}
+		files[i].size = size
+		total += size
+	}
+	for start := 0; start < len(files); {
+		end, bytes := start, 0
+		objects.Reset()
+		for ; end < len(files); end++ {
+			// Header: object ID, type and decimal size; then content and a newline.
+			next := len(files[end].object) + 32 + files[end].size
+			if end > start && bytes+next > maxGitOutput {
+				break
+			}
+			bytes += next
+			objects.WriteString(files[end].object + "\n")
+		}
+		out, err := sourceGit(ctx, stage, objects.String(), "cat-file", "--batch")
+		if err != nil {
+			return nil, err
+		}
+		for _, file := range files[start:end] {
+			header, rest, ok := strings.Cut(out, "\n")
+			if !ok || header != file.object+" blob "+strconv.Itoa(file.size) || len(rest) < file.size+1 || rest[file.size] != '\n' {
+				return nil, ErrUnavailable
+			}
+			data := []byte(rest[:file.size])
+			if blobHash(algorithm, data) != file.object {
+				return nil, ErrUnavailable
+			}
+			docs[file.name] = data
+			out = rest[file.size+1:]
+		}
+		if out != "" {
+			return nil, ErrUnavailable
+		}
+		start = end
+	}
+	return docs, nil
 }
 func (m *Manager) openCanon(ctx context.Context, root string, r CanonReceipt) (*memory.Service, error) {
 	if r.SourceIdentity == nil || memory.ValidateFoundlingIdentity(*r.SourceIdentity, r.Pin) != nil {
