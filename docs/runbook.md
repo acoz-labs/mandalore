@@ -6,6 +6,10 @@ for installation boundaries. Archiving My Friday neither migrates nor removes
 existing pinned installations. A release does not authorize a live signet schema
 migration or establish that an operator has upgraded.
 
+[Mandalore 1.6.1](releases/1.6.1.md) fixes canon refresh timeouts for moderately
+sized references. Read its rollback caveat before you select the retained 1.6.0
+runtime.
+
 For [Hermes](hermes.md), connection inspection does not prove that a running
 service loaded the selected generation. Stop selected sessions before activation,
 preserve retained receipts and runtime generations, and restart the service
