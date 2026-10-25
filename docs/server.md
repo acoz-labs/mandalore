@@ -120,7 +120,8 @@ There is one owner, who signs in with a passkey (WebAuthn, through
    `SameSite=Lax`, 12 hours) held in server memory, so a restart signs the owner
    out. Consent forms carry the session's CSRF token; a POST without the cookie
    or the token, or from another origin, is refused.
-3. A new client's first authorization for a signet shows the sign-in page, then
+3. Every authorization needs the owner session; without one the browser gets
+   the sign-in page. A new client's first authorization for a signet then shows
    the consent page: the client's name, its redirect host in large text, the
    signet, a read or read-write picker, and approve or deny. A loopback redirect
    gets a warning, since any local process can claim a loopback port. Owner pages
@@ -129,7 +130,10 @@ There is one owner, who signs in with a passkey (WebAuthn, through
    record in the signet, labelled `<client name> (<kind>), approved <date>`. The
    kind is the host of its metadata document or of its first non-loopback
    redirect, such as `claude.ai`. Later authorizations by an approved client for
-   that signet skip consent.
+   that signet skip the consent page; the owner still signs in, or uses a live
+   session. A client ID is no secret, so no code is ever issued without the
+   owner. For a metadata-document client the page also names the host that
+   publishes the document, since the client chooses its own name.
 
 Browsers treat `http://localhost` as a secure context, so passkeys and the
 `Secure` cookie work there; an IP address can't hold a passkey.

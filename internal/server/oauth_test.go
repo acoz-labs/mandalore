@@ -168,6 +168,65 @@ func TestOAuthFlowWithClientMetadataDocument(t *testing.T) {
 	checkTimings(t, e)
 }
 
+// An approved client skips only the consent page, never the owner: client IDs
+// are not secret, so a request without the owner session gets the sign-in
+// page and no code, for DCR and metadata-document clients alike.
+func TestApprovedClientStillNeedsTheOwner(t *testing.T) {
+	var docURL string
+	doc := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]any{"client_id": docURL, "client_name": "Synthetic Code", "redirect_uris": []string{"http://127.0.0.1/callback"}})
+	}))
+	t.Cleanup(doc.Close)
+	docURL = doc.URL + "/oauth/client-metadata"
+	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
+	e.server.oauth.documents.client = doc.Client()
+	e.enrollOwner(t)
+	web := "https://claude.ai/api/mcp/auth_callback"
+	dcr := e.registerClient(t, "Synthetic Chat", web)
+	e.tokens(t, dcr, web, "/mcp", "", ScopeReadWrite)
+	_, challenge := pkce()
+	// The consent page names the host that publishes a document client.
+	resp, err := e.browser.Get(authorizeURL(docURL, "http://127.0.0.1:7/callback", challenge, publicURL+"/mcp", ""))
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if !strings.Contains(string(body), "Published by <strong>127.0.0.1</strong>") {
+		t.Fatalf("consent page does not name the document's publisher: %s", body)
+	}
+	e.visit(t, authorizeURL(docURL, "http://127.0.0.1:7/callback", challenge, publicURL+"/mcp", ""), ScopeReadWrite)
+	stranger := &http.Client{Transport: e.agent.Transport, CheckRedirect: e.browser.CheckRedirect}
+	for client, redirect := range map[string]string{dcr: web, docURL: "http://127.0.0.1:6666/callback"} {
+		verifier, challenge := pkce()
+		codes := func() int {
+			e.server.oauth.mu.Lock()
+			defer e.server.oauth.mu.Unlock()
+			return len(e.server.oauth.codes)
+		}
+		before := codes()
+		resp, err := stranger.Get(authorizeURL(client, redirect, challenge, publicURL+"/mcp", scopeRead+" "+scopeWrite))
+		if err != nil {
+			t.Fatal(err)
+		}
+		body, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusOK || resp.Header.Get("Location") != "" || !strings.Contains(string(body), `id="login"`) || strings.Contains(string(body), "code=") {
+			t.Fatalf("%s without the owner: %d %q", client, resp.StatusCode, resp.Header.Get("Location"))
+		}
+		if codes() != before {
+			t.Fatalf("%s: a cookieless request created a code", client)
+		}
+		if resp, out := e.postForm(t, stranger, "/token", url.Values{"grant_type": {"authorization_code"}, "client_id": {client}, "code": {"guessed"}, "redirect_uri": {redirect}, "code_verifier": {verifier}}); resp.StatusCode != http.StatusBadRequest || out["error"] != "invalid_grant" {
+			t.Fatalf("%s token: %d %v", client, resp.StatusCode, out)
+		}
+		// With the owner's live session the same request skips the consent page.
+		if loc := e.visit(t, authorizeURL(client, redirect, challenge, publicURL+"/mcp", ""), ScopeRead); loc.Query().Get("code") == "" {
+			t.Fatalf("%s with the owner: %s", client, loc)
+		}
+	}
+}
+
 // Acceptance 2: exact redirect matching, loopback ports ignored.
 func TestRedirectMatching(t *testing.T) {
 	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
@@ -427,7 +486,7 @@ func TestMetadataDocumentSSRF(t *testing.T) {
 	}
 	for addr, public := range map[string]bool{"127.0.0.1": false, "10.1.2.3": false, "172.16.0.1": false, "192.168.1.1": false, "169.254.169.254": false,
 		"100.64.0.1": false, "0.0.0.0": false, "::1": false, "fe80::1": false, "fd00::1": false, "::ffff:10.0.0.1": false, "64:ff9b::a00:1": false,
-		"224.0.0.1": false, "255.255.255.255": false, "8.8.8.8": true, "2606:4700::1111": true} {
+		"224.0.0.1": false, "255.255.255.255": false, "::127.0.0.1": false, "::10.0.0.1": false, "192.88.99.1": false, "8.8.8.8": true, "2606:4700::1111": true} {
 		if publicAddr(netip.MustParseAddr(addr)) != public {
 			t.Errorf("%s: public=%v", addr, !public)
 		}

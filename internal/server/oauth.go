@@ -307,8 +307,9 @@ func (a *authServer) resolveClient(r *http.Request, id string) (*oauthClient, er
 	return stored, nil
 }
 
-// authorize validates an authorization request. An approved client gets a
-// code at once; otherwise the owner signs in and sees the consent page.
+// authorize validates an authorization request. The owner signs in; an
+// approved client then gets a code at once, and a new one gets the consent
+// page.
 func (a *authServer) authorize(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -359,13 +360,15 @@ func (a *authServer) authorize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	req := &authRequest{client: client, redirect: redirect, state: q.Get("state"), challenge: challenge, signet: slug, requested: requested, expires: a.now().Add(requestTTL)}
-	if grant, ok := client.Grants[slug]; ok {
-		a.grant(w, r, req, narrow(requested, grant))
-		return
-	}
+	// Every code needs the owner: an approved client skips only the consent
+	// page, since a client_id is no secret.
 	session := a.session(r)
 	if session == nil {
 		a.loginPage(w, client)
+		return
+	}
+	if grant, ok := client.Grants[slug]; ok {
+		a.grant(w, r, req, narrow(requested, grant))
 		return
 	}
 	id := secret()

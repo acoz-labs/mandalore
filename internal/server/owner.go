@@ -276,7 +276,13 @@ func (a *authServer) loginPage(w http.ResponseWriter, client *oauthClient) {
 func (a *authServer) consentPage(w http.ResponseWriter, req *authRequest, id, csrf string) {
 	u, _ := url.Parse(req.redirect)
 	write := req.requested != ScopeRead
-	a.page(w, http.StatusOK, consentPage{Client: req.client.Name, Host: u.Host, Loopback: loopbackRedirect(u), Signet: req.signet,
+	// A document client names itself; the host that publishes the document
+	// is what vouches for that name.
+	publisher := ""
+	if req.client.Document {
+		publisher = req.client.Kind
+	}
+	a.page(w, http.StatusOK, consentPage{Client: req.client.Name, Publisher: publisher, Host: u.Host, Loopback: loopbackRedirect(u), Signet: req.signet,
 		Write: write, Request: id, CSRF: csrf})
 }
 
@@ -285,8 +291,8 @@ type (
 	enrollPage  struct{}
 	loginPage   struct{ Client string }
 	consentPage struct {
-		Client, Host, Signet, Request, CSRF string
-		Loopback, Write                     bool
+		Client, Publisher, Host, Signet, Request, CSRF string
+		Loopback, Write                                bool
 	}
 )
 
@@ -386,6 +392,7 @@ for (const [id, fn] of [["enroll", enroll], ["login", login]]) {
 <button id="login" class="primary">Sign in with passkey</button><p id="status" role="status"></p>{{end}}
 
 {{define "consent"}}<h1>Connect {{.Client}}?</h1>
+{{if .Publisher}}<p>Published by <strong>{{.Publisher}}</strong>. The application chooses its own name; trust it only if you know this publisher.</p>{{end}}
 <p>It will reach the <strong>{{.Signet}}</strong> signet and send its access to</p>
 <p class="host">{{.Host}}</p>
 {{if .Loopback}}<p class="warn">This address is on the device that started the connection. Any program on that device can claim it, so approve only if you started this connection yourself just now.</p>{{end}}
