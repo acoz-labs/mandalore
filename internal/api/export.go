@@ -15,7 +15,7 @@ func (e *exportFailure) Error() string { return e.err.Error() }
 func (e *exportFailure) Unwrap() error { return e.err }
 
 func exportOperation[I, O any](name, description string, readOnly bool, fn func(context.Context, I) (O, error)) Operation {
-	op := connectionOperation(name, description, readOnly, fn)
+	op := unboundOperation(name, description, readOnly, fn)
 	op.CLIOnly = true
 	return op
 }

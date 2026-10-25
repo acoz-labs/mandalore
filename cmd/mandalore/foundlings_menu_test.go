@@ -43,7 +43,7 @@ func TestFoundlingMenuStaleNextPageDoesNotOfferBudgetRetry(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if out, code := menuTrial(t, registerMenuScript(root, "2")+"6\n10\n", "--binding", bind); code != 0 {
+	if out, code := menuTrial(t, registerMenuScript(root, "2")+"6\n7\n", "--binding", bind); code != 0 {
 		t.Fatal(code, out)
 	}
 	before := treeDigest(t, s.Root())
@@ -52,7 +52,7 @@ func TestFoundlingMenuStaleNextPageDoesNotOfferBudgetRetry(t *testing.T) {
 			t.Fatal(err)
 		}
 	}}
-	code := run(context.Background(), []string{"menu", "--plain", "--binding", bind}, strings.NewReader("8\n4\n1\n1\nPageMarker\n1\n10\n"), out, out)
+	code := run(context.Background(), []string{"menu", "--plain", "--binding", bind}, strings.NewReader("5\n4\n1\n1\nPageMarker\n1\n7\n"), out, out)
 	if code != 1 || out.onPage != nil || !strings.Contains(out.String(), "reference content or identity changed") || strings.Contains(out.String(), "32768-byte") || strings.Contains(out.String(), "CHANGED-CONTENT-CANARY") {
 		t.Fatal("stale next page was not refused without budget retry", code, out.String())
 	}
@@ -86,7 +86,7 @@ func TestFoundlingMenuPinsItsSelectedSignetThroughConfirmation(t *testing.T) {
 	}}
 	// The first confirmation must keep its original bank. Back and re-entry
 	// deliberately pick up the replacement binding for a second registration.
-	script := registerMenuScript(source, "2") + "6\n" + registerMenuScript(source, "2") + "6\n10\n"
+	script := registerMenuScript(source, "2") + "6\n" + registerMenuScript(source, "2") + "6\n7\n"
 	code := run(context.Background(), []string{"menu", "--plain", "--binding", bind}, strings.NewReader(script), out, out)
 	if code != 0 || out.onConfirm != nil {
 		t.Fatal("confirmation was not exercised", code, out.String())
@@ -136,13 +136,13 @@ func TestFoundlingMenuProgressivePagesAndExpandedRead(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if out, code := menuTrial(t, registerMenuScript(root, "2")+"6\n10\n", "--binding", bind); code != 0 {
+	if out, code := menuTrial(t, registerMenuScript(root, "2")+"6\n7\n", "--binding", bind); code != 0 {
 		t.Fatal(code, out)
 	}
 	before, sourceBefore := treeDigest(t, s.Root()), treeDigest(t, root)
 	// Three Next selections reach the fourth page; complete-page Back returns
 	// through the ordinary reference actions. Then explicitly expand a read.
-	out, code := menuTrial(t, "8\n4\n1\n1\nPageMarker\n1\n1\n1\n2\npage-11.md\n0\n8192\n4\n6\n10\n", "--binding", bind)
+	out, code := menuTrial(t, "5\n4\n1\n1\nPageMarker\n1\n1\n1\n2\npage-11.md\n0\n8192\n4\n6\n7\n", "--binding", bind)
 	if code != 0 || !strings.Contains(out, "page-11.md") || !strings.Contains(out, "END-NOTE-11") || strings.Count(out, "Next page") != 3 || !strings.Contains(out, "Read content bytes") {
 		t.Fatal("progressive page/read journey failed", code, out)
 	}
@@ -150,7 +150,7 @@ func TestFoundlingMenuProgressivePagesAndExpandedRead(t *testing.T) {
 		t.Fatal("menu retrieval wrote source or signet")
 	}
 	for _, size := range []string{"", "8193", "bad", ":back"} {
-		out, code := menuTrial(t, "8\n4\n1\n2\npage-11.md\n0\n"+size+"\n4\n6\n10\n", "--binding", bind)
+		out, code := menuTrial(t, "5\n4\n1\n2\npage-11.md\n0\n"+size+"\n4\n6\n7\n", "--binding", bind)
 		if strings.Contains(out, "END-NOTE-11") || (size == "" && code != 0) || ((size == "8193" || size == "bad") && code != 1) {
 			t.Fatal("read default/validation/cancellation failed", size, code, out)
 		}
@@ -173,11 +173,11 @@ func TestFoundlingMenuBudgetRecoveryIsExplicit(t *testing.T) {
 		if err := os.WriteFile(filepath.Join(dir, "heavy.md"), []byte("HeavyMarker TOKEN-HEAVY "+strings.Repeat("\x01", 1024)), 0600); err != nil {
 			t.Fatal(err)
 		}
-		if out, code := menuTrial(t, registerMenuScript(root, "2")+"6\n10\n", "--binding", bind); code != 0 {
+		if out, code := menuTrial(t, registerMenuScript(root, "2")+"6\n7\n", "--binding", bind); code != 0 {
 			t.Fatal(code, out)
 		}
 		before := treeDigest(t, s.Root())
-		out, code := menuTrial(t, "8\n4\n1\n1\nHeavyMarker\n"+choice+"\n4\n6\n10\n", "--binding", bind)
+		out, code := menuTrial(t, "5\n4\n1\n1\nHeavyMarker\n"+choice+"\n4\n6\n7\n", "--binding", bind)
 		if code != 0 || !strings.Contains(out, "32768") || (strings.Contains(out, "TOKEN-HEAVY") != (choice == "1")) {
 			t.Fatal("budget recovery did not respect explicit choice", choice, code, out)
 		}
@@ -188,11 +188,11 @@ func TestFoundlingMenuBudgetRecoveryIsExplicit(t *testing.T) {
 }
 
 func registerMenuScript(root, consent string) string {
-	return strings.Join([]string{"8", "2", "Historical notes", "Reference only", "1", "source-history", root, "Explicit historical reference", consent}, "\n") + "\n"
+	return strings.Join([]string{"5", "2", "Historical notes", "Reference only", "1", "source-history", root, "Explicit historical reference", consent}, "\n") + "\n"
 }
 
 func TestFoundlingMenuRegisterCancelEOFAndDefaultNo(t *testing.T) {
-	for _, ending := range []string{"\n6\n10\n", ":back\n6\n10\n", "2"} {
+	for _, ending := range []string{"\n6\n7\n", ":back\n6\n7\n", "2"} {
 		s, bind, root := foundlingMenuFixture(t)
 		before := treeDigest(t, s.Root())
 		script := registerMenuScript(root, "")
@@ -210,7 +210,7 @@ func TestFoundlingMenuRegisterCancelEOFAndDefaultNo(t *testing.T) {
 func TestFoundlingMenuRegisterInspectSearchAndDisconnect(t *testing.T) {
 	s, bind, root := foundlingMenuFixture(t)
 	sourceBefore := treeDigest(t, root)
-	script := registerMenuScript(root, "2") + "1\n4\n1\n1\nCopper Finch\n4\n5\n1\nNo longer needed\n2\n6\n10\n"
+	script := registerMenuScript(root, "2") + "1\n4\n1\n1\nCopper Finch\n4\n5\n1\nNo longer needed\n2\n6\n7\n"
 	out, code := menuTrial(t, script, "--binding", bind)
 	if code != 0 {
 		t.Fatal(code, out)
@@ -237,7 +237,7 @@ func TestFoundlingMenuShowsCompletedRegistrationOnConnectionFailure(t *testing.T
 	if err := os.WriteFile(filepath.Join(s.Root(), ".mandalore", "foundlings"), []byte("preserve unknown local file"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	out, code := menuTrial(t, registerMenuScript(root, "2")+"10\n", "--binding", bind)
+	out, code := menuTrial(t, registerMenuScript(root, "2")+"7\n", "--binding", bind)
 	if code != 1 || !strings.Contains(out, "Registration saved") || !strings.Contains(out, "Connection not completed") || strings.Contains(out, "[PASS] Foundling registered") {
 		t.Fatal(code, out)
 	}
@@ -265,14 +265,14 @@ func TestFoundlingMenuOutputFailureAndCancellationPreventRegistration(t *testing
 
 func TestFoundlingMenuReconnectAndExplicitPinUpdate(t *testing.T) {
 	s, bind, root := foundlingMenuFixture(t)
-	if out, code := menuTrial(t, registerMenuScript(root, "2")+"6\n10\n", "--binding", bind); code != 0 {
+	if out, code := menuTrial(t, registerMenuScript(root, "2")+"6\n7\n", "--binding", bind); code != 0 {
 		t.Fatal(code, out)
 	}
 	if err := os.Rename(root, root+"-moved"); err != nil {
 		t.Fatal(err)
 	}
 	root += "-moved"
-	out, code := menuTrial(t, "8\n3\n1\n"+root+"\n2\n6\n10\n", "--binding", bind)
+	out, code := menuTrial(t, "5\n3\n1\n"+root+"\n2\n6\n7\n", "--binding", bind)
 	if code != 0 || !strings.Contains(out, "unavailable") || !strings.Contains(out, "[PASS] Local reference connected") {
 		t.Fatal(code, out)
 	}
@@ -280,14 +280,14 @@ func TestFoundlingMenuReconnectAndExplicitPinUpdate(t *testing.T) {
 		t.Fatal(err)
 	}
 	before := treeDigest(t, s.Root())
-	out, code = menuTrial(t, "8\n4\n1\n3\n\nNew source revision\n\n6\n10\n", "--binding", bind)
+	out, code = menuTrial(t, "5\n4\n1\n3\n\nNew source revision\n\n6\n7\n", "--binding", bind)
 	if code != 0 || !strings.Contains(out, "changed") || !strings.Contains(out, "Review superseding source pin") {
 		t.Fatal(code, out)
 	}
 	if !reflect.DeepEqual(before, treeDigest(t, s.Root())) {
 		t.Fatal("declining pin update changed history")
 	}
-	out, code = menuTrial(t, "8\n4\n1\n3\n\nNew source revision\n2\n6\n10\n", "--binding", bind)
+	out, code = menuTrial(t, "5\n4\n1\n3\n\nNew source revision\n2\n6\n7\n", "--binding", bind)
 	if code != 0 || !strings.Contains(out, "[PASS] Source pin superseded") {
 		t.Fatal(code, out)
 	}
@@ -303,7 +303,7 @@ func TestFoundlingMenuReconnectAndExplicitPinUpdate(t *testing.T) {
 
 func TestCanonMenuRegistrationIsPortableAndDoesNotFetch(t *testing.T) {
 	s, bind, _ := foundlingMenuFixture(t)
-	script := strings.Join([]string{"8", "7", "Work conventions", "Synthetic work evidence", "https://example.invalid/work.git", "signet-work", "main", "git-sha1", strings.Repeat("a", 40), "Explicit reference", "2", "1", "6", "10", ""}, "\n")
+	script := strings.Join([]string{"5", "7", "Work conventions", "Synthetic work evidence", "https://example.invalid/work.git", "signet-work", "main", "git-sha1", strings.Repeat("a", 40), "Explicit reference", "2", "1", "6", "7", ""}, "\n")
 	out, code := menuTrial(t, script, "--binding", bind)
 	if code != 0 || !strings.Contains(out, "canon") || !strings.Contains(out, "server_refreshed") {
 		t.Fatal(code, out)

@@ -12,7 +12,6 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY cmd cmd
 COPY internal internal
-COPY plugins plugins
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=$TARGETARCH go build -trimpath -buildvcs=false \
       -ldflags "-buildid= -X main.version=$VERSION" -o /out/mandalore-linux-$TARGETARCH ./cmd/mandalore
 

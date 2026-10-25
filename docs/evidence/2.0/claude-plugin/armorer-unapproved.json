@@ -1,0 +1,32 @@
+{
+  "run": "armorer-unapproved",
+  "mcp_servers": [
+    {
+      "name": "plugin:mandalore:mandalore",
+      "status": "needs-auth"
+    }
+  ],
+  "hooks": [
+    {
+      "hook": "UserPromptSubmit",
+      "outcome": "error",
+      "output": "MCP server 'plugin:mandalore:mandalore' not connected"
+    }
+  ],
+  "context": [
+    {
+      "type": "hook_non_blocking_error",
+      "hookName": "UserPromptSubmit",
+      "hookEvent": "UserPromptSubmit",
+      "stderr": "MCP server 'plugin:mandalore:mandalore' not connected",
+      "seconds_after_prompt": 0.003
+    }
+  ],
+  "tools_called": [
+    "Skill"
+  ],
+  "answer": "Your Mandalore memory isn't working yet. **This client isn't authorized yet.**\n\nThe Mandalore server at `http://localhost:28730/mcp` answered, but it's asking this client to sign in. That means the server is running and reachable, and only the authorization step is missing. No memory tools are available until that's done. Your prompts still work in the meantime, just without memory.\n\n**To fix it:**\n1. In an interactive Claude Code session, run `/mcp`. This session is non-interactive, so the sign-in can't happen here.\n2. Choose **Mandalore** and sign in.\n3. The server owner approves this new client once, on the server's consent page. If the owner denies it, they'll need to approve it on a new sign-in attempt.\n\nAfter that, ask me to check again. I'll confirm the connection and whether you have read-only or read-write access.",
+  "is_error": false,
+  "wall_seconds": 7.38,
+  "api_seconds": 6.57
+}

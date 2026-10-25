@@ -254,7 +254,7 @@ func (c *ReleaseClient) inspectVerified(ctx context.Context, path, version strin
 	if r.ID <= 0 || r.Tag != "v"+v || !ValidVersion(v) || r.Draft == nil || r.Prerelease == nil || r.Immutable == nil || *r.Draft || !*r.Immutable || dateErr != nil || latest && (*r.Prerelease || strings.Contains(base, "-")) || version != "" && v != version {
 		return verifiedRelease{}, errors.New("release must be published, immutable and match the explicitly selected version; latest excludes prereleases")
 	}
-	if len(r.Assets) != 8 {
+	if len(r.Assets) != 7 {
 		return verifiedRelease{}, errors.New("release asset inventory is incomplete or unexpected")
 	}
 	assets := map[string]ReleaseAsset{}

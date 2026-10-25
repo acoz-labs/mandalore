@@ -56,7 +56,7 @@ var descriptions = map[string]string{
 	"memory_recall":             "Search shared long-term memory for prior decisions, preferences, project facts and earlier work in one scope. Omitted scope searches signet-wide memory only. Conflicting heads are not settled guidance; an empty result does not prove absence.",
 	"memory_remember":           "Save a confirmed preference, decision or project fact. Recall first to avoid duplicates. A correction keeps record_id, kind and scope and supersedes the current revision IDs. Never save secrets or transcripts. Use one new request_id per save; retry an ambiguous response with identical input and the same request_id.",
 	"memory_journal_append":     "Record a concise, useful work outcome or decision trail, not a transcript. Use one new request_id per entry; retry an ambiguous response with identical input and the same request_id.",
-	"memory_context":            "Relevant memory for a lifecycle hook, as plain text. Hooks call it on each prompt; you rarely need to.",
+	"memory_context":            "Relevant memory for a lifecycle hook, as Claude Code hook output JSON. Hooks call it on each prompt; you rarely need to.",
 	"memory_withdraw":           "Withhold a record from recall without deleting its history. Needs the current content and visibility heads from memory_visibility_history, and a reason.",
 	"memory_restore":            "Restore a withdrawn record. Needs the current content and visibility heads from memory_visibility_history, and a reason.",
 	"memory_visibility_history": "A record's current content and visibility heads and its withdraw/restore decisions. Read it before withdrawing or restoring.",
@@ -192,7 +192,7 @@ func (s *signet) call(ctx context.Context, c Client, name string, raw []byte) *s
 		if err != nil {
 			return result(api.Failure("input.invalid", err.Error(), false))
 		}
-		return &sdk.CallToolResult{Content: []sdk.Content{&sdk.TextContent{Text: text}}}
+		return &sdk.CallToolResult{Content: []sdk.Content{&sdk.TextContent{Text: hookOutput(in.Event, text)}}}
 	}
 	if !isWrite(name) {
 		return result(api.New(s.memory, true).WithFoundlings(foundlings.NewConfigured(s.memory, s.foundlings)).Call(ctx, name, raw))

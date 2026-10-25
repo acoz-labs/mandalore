@@ -14,14 +14,13 @@ import (
 	"github.com/acoz-labs/mandalore/internal/api"
 	"github.com/acoz-labs/mandalore/internal/binding"
 	"github.com/acoz-labs/mandalore/internal/cutover"
-	"github.com/acoz-labs/mandalore/internal/install"
 	"github.com/acoz-labs/mandalore/internal/server"
 )
 
 const migrateUsage = "Use server migrate preflight --clone PATH [--format json|text], init --config FILE --remote URL --slug S --root DIR [--preflight FILE]... [--device-lost ID --reason TEXT]..., retire --clone PATH --server URL [--native HARNESS=HOME,BINARY]..., or verify --config FILE --slug S."
 
 // disableLegacy is the retire step that runs native commands; tests stub it.
-var disableLegacy cutover.Disabler = install.DisableLegacyConnection
+var disableLegacy cutover.Disabler = cutover.DisableLegacyConnection
 
 func runMigrate(ctx context.Context, args []string, out io.Writer) int {
 	if len(args) == 0 {
@@ -54,7 +53,7 @@ func runMigrate(ctx context.Context, args []string, out io.Writer) int {
 	f.Func("native", "HARNESS=HOME,BINARY", func(v string) error {
 		harness, paths, _ := strings.Cut(v, "=")
 		home, binary, _ := strings.Cut(paths, ",")
-		if !slices.Contains(install.LegacyHarnesses, harness) || !filepath.IsAbs(home) || !filepath.IsAbs(binary) {
+		if !slices.Contains(cutover.LegacyHarnesses, harness) || !filepath.IsAbs(home) || !filepath.IsAbs(binary) {
 			return errors.New("--native takes HARNESS=HOME,BINARY with absolute paths")
 		}
 		profiles = append(profiles, cutover.NativeProfile{Harness: harness, Home: home, Binary: binary})

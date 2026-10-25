@@ -19,7 +19,7 @@ import (
 	"syscall"
 	"unicode"
 
-	"github.com/acoz-labs/mandalore/internal/install"
+	"github.com/acoz-labs/mandalore/internal/cutover"
 	"github.com/acoz-labs/mandalore/internal/memory"
 	"github.com/acoz-labs/mandalore/internal/strictjson"
 )
@@ -55,7 +55,7 @@ type Counts struct {
 
 type WriterObservations struct {
 	Lock   string                  `json:"legacy_lock"`
-	Native install.MemoryInventory `json:"native"`
+	Native cutover.MemoryInventory `json:"native"`
 	Notice string                  `json:"notice"`
 }
 
@@ -281,9 +281,9 @@ func inspect(ctx context.Context, o Options, lock *sourceLock) (Plan, *snapshot,
 	if err != nil {
 		return p, nil, err
 	}
-	p.Writers = WriterObservations{Lock: lock.state, Native: install.MemoryInventory{Status: "not-tested", Plugins: []install.MemoryPlugin{}}, Notice: "Lock availability and installed plugins do not prove idle sessions, same-bank targeting or quiescence on other machines. Stop all writers before apply."}
+	p.Writers = WriterObservations{Lock: lock.state, Native: cutover.MemoryInventory{Status: "not-tested", Plugins: []cutover.MemoryPlugin{}}, Notice: "Lock availability and installed plugins do not prove idle sessions, same-bank targeting or quiescence on other machines. Stop all writers before apply."}
 	if o.NativeHome != "" {
-		p.Writers.Native, err = install.InspectMemoryPlugins(ctx, o.NativeHome, o.NativeBinary)
+		p.Writers.Native, err = cutover.InspectMemoryPlugins(ctx, o.NativeHome, o.NativeBinary)
 		if err != nil {
 			return p, nil, err
 		}

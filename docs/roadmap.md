@@ -50,7 +50,7 @@ enabled-session transport across Claude Code, Codex and Pi. Acceptance exercised
 current recorded-value handoff, native setup/recovery, correction and visibility,
 native-memory coexistence and honest offline/cancelled delivery. Claude can still
 question rapid external revisions; transport does not guarantee semantic agreement.
-The [integration guide](../plugins/claude-code/README.md) documents setup.
+The 1.x integration guide is in Git history; 2.0 replaces it with the [Claude plugin](../plugins/claude/README.md).
 The [website update](https://github.com/acoz-labs/acoz/issues/151) is a separate
 pending delivery.
 

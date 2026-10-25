@@ -16,7 +16,7 @@ func (e *upgradeFailure) Error() string { return e.err.Error() }
 func (e *upgradeFailure) Unwrap() error { return e.err }
 
 func upgradeOperation[I, O any](name, description string, readOnly bool, fn func(context.Context, I) (O, error)) Operation {
-	op := connectionOperation(name, description, readOnly, fn)
+	op := unboundOperation(name, description, readOnly, fn)
 	op.CLIOnly = true
 	return op
 }

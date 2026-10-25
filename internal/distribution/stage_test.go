@@ -84,7 +84,7 @@ func TestStageCandidatePreservesExactPayloadWithoutExecutionOrOverwrite(t *testi
 		t.Fatal("staging directory must be private", err)
 	}
 	entries, err := os.ReadDir(first)
-	if err != nil || len(entries) != 8 {
+	if err != nil || len(entries) != 7 {
 		t.Fatal(err)
 	}
 	for _, entry := range entries {

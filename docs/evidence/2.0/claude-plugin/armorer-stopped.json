@@ -1,0 +1,32 @@
+{
+  "run": "armorer-stopped",
+  "mcp_servers": [
+    {
+      "name": "plugin:mandalore:mandalore",
+      "status": "failed"
+    }
+  ],
+  "hooks": [
+    {
+      "hook": "UserPromptSubmit",
+      "outcome": "error",
+      "output": "MCP server 'plugin:mandalore:mandalore' not connected"
+    }
+  ],
+  "context": [
+    {
+      "type": "hook_non_blocking_error",
+      "hookName": "UserPromptSubmit",
+      "hookEvent": "UserPromptSubmit",
+      "stderr": "MCP server 'plugin:mandalore:mandalore' not connected",
+      "seconds_after_prompt": 0.003
+    }
+  ],
+  "tools_called": [
+    "Skill"
+  ],
+  "answer": "Your Mandalore memory isn't working: I can't reach the server at `http://localhost:28730/mcp`. The connection was refused (`ECONNREFUSED`), so no Mandalore tools are loaded in this session.\n\nTo fix it:\n\n1. **Check that the Mandalore server is running** on this machine.\n2. **Check the port and URL.** It should be listening on `localhost:28730` and serving `/mcp`. If you reach it through a tunnel or port forward, make sure that's up too.\n3. **Reconnect** by running `/mcp` and choosing Mandalore.\n\nUntil it's reachable, everything else keeps working, just without memory. Once it reconnects, ask me to check again and I'll confirm it's authorized and has the access it should.",
+  "is_error": false,
+  "wall_seconds": 8.42,
+  "api_seconds": 7.65
+}

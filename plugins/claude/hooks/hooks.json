@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "server": "plugin:mandalore:mandalore",
+            "tool": "memory_context",
+            "input": {"event": "prompt", "prompt": "${prompt}"},
+            "timeout": 3
+          }
+        ]
+      }
+    ]
+  }
+}

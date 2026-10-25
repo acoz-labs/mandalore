@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/acoz-labs/mandalore/internal/distribution"
-	codexplugin "github.com/acoz-labs/mandalore/plugins/codex"
 )
 
 type inspectFixture struct {
@@ -41,11 +40,7 @@ func (f *inspectFixture) InspectCandidate(_ context.Context, s distribution.Cand
 func promoteFixture(t *testing.T) (string, string, *inspectFixture, string) {
 	t.Helper()
 	dir := t.TempDir()
-	plugin, err := distribution.PreparePlugin(codexplugin.Files, "1.0.0")
-	if err != nil {
-		t.Fatal(err)
-	}
-	m := distribution.Manifest{FormatVersion: 1, Product: "mandalore", Version: "1.0.0", Tag: "v1.0.0", SourceCommit: strings.Repeat("a", 40), GoVersion: "go1.26.4", ProtocolVersion: 1, SignetReadVersions: []int{1}, SignetWriteVersions: []int{1}, PluginSHA256: plugin.SHA256}
+	m := distribution.Manifest{FormatVersion: 1, Product: "mandalore", Version: "1.0.0", Tag: "v1.0.0", SourceCommit: strings.Repeat("a", 40), GoVersion: "go1.26.4", ProtocolVersion: 1, SignetReadVersions: []int{1}, SignetWriteVersions: []int{1}}
 	files := map[string][]byte{}
 	for _, osName := range []string{"darwin", "linux"} {
 		for _, arch := range []string{"amd64", "arm64"} {
@@ -58,10 +53,11 @@ func promoteFixture(t *testing.T) (string, string, *inspectFixture, string) {
 	for _, a := range []struct {
 		kind, name string
 		b          []byte
-	}{{"codex-plugin", "mandalore_1.0.0_codex.zip", plugin.Archive}, {"bootstrap", "install.sh", []byte("inert fixture")}} {
+	}{{"bootstrap", "install.sh", []byte("inert fixture")}} {
 		files[a.name] = a.b
 		m.Assets = append(m.Assets, distribution.Asset{Kind: a.kind, Name: a.name, Size: int64(len(a.b)), SHA256: distribution.Digest(a.b)})
 	}
+	var err error
 	files["manifest.json"], err = distribution.EncodeManifest(m)
 	if err != nil {
 		t.Fatal(err)

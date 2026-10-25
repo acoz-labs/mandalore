@@ -20,8 +20,9 @@ is published from the independently accepted retained candidate. See the
 
 `main` is now 2.0 development: the single-writer [Mandalore server](docs/server.md)
 (`mandalore serve`) replaces the stdio MCP server, lifecycle hooks, session
-synchronization and Razor Crest. The rest of this section describes the released
-1.x line; [Install](#install) covers 2.0.
+synchronization and Razor Crest, and one [Claude plugin](plugins/claude/README.md)
+replaces the 1.x Codex, Pi, Claude Code and Hermes plugins. The rest of this
+section describes the released 1.x line; [Install](#install) covers 2.0.
 
 Claude Code, Codex and Pi integrations are released in 1.x with
 [session-authorized automatic synchronization](docs/synchronization.md).
@@ -31,7 +32,7 @@ adopts the new policy. Read-only connections are never silently upgraded.
 Delivery does not guarantee model agreement; see the release record for native
 evidence and limits.
 
-[Hermes support](docs/hermes.md) is released in [1.6.0](docs/releases/1.6.0.md).
+Hermes support was released in [1.6.0](docs/releases/1.6.0.md).
 It adds portable signet memory alongside Hermes's native memory, with native
 CLI and persistent-service acceptance. Install and activate a reviewed connection
 for the selected profile; publication does not automatically upgrade operators.
@@ -44,8 +45,8 @@ for the selected profile; publication does not automatically upgrade operators.
 - **This is the way**: the memory skill (`this-is-the-way`) and an optional explicit
   cue to remember confirmed knowledge from the current conversation.
 - **Foundlings**: linked historical references, kept separate from current memory.
-- **The Armorer**: the on-demand setup and maintenance skill (`the-armorer`),
-  including read-only connection inspection (`connection armorer`).
+- **The Armorer**: the skill (`the-armorer`) that diagnoses a client's connection
+  to the server.
 - **Server**: `mandalore serve`, the 2.0 [single-writer MCP server](docs/server.md)
   that replaces the Razor Crest candidate.
 
@@ -74,9 +75,7 @@ portability is not included.
 - Deploying the server: [work laptop on loopback](docs/deploy/local.md) and [Cloudflare Tunnel](docs/deploy/cloudflare-tunnel.md)
 - [Privacy, retention and the limits of forgetting](docs/privacy.md)
 - [Guided setup and CLI installation](docs/setup.md) and [historical foundlings](docs/foundlings.md)
-- [Codex plugin](plugins/codex/README.md) and [native engineering evidence](docs/codex-native-evidence.md)
-- [Pi plugin](plugins/pi/README.md) and [Pi engineering evidence](docs/evidence/pi/README.md)
-- [Hermes integration and setup](docs/hermes.md)
+- [Claude plugin](plugins/claude/README.md) and its [native evidence](docs/evidence/2.0/claude-plugin.md)
 - [Migration and predecessor disposition](docs/migration.md)
 - [Roadmap](docs/roadmap.md) and [issues](https://github.com/acoz-labs/mandalore/issues)
 - [Development](docs/development.md), [releases](docs/deployment.md), [runbook](docs/runbook.md)
@@ -108,7 +107,9 @@ connect to it over MCP:
 4. **Choose where it listens.** A [work laptop](docs/deploy/local.md) keeps it
    on loopback; a [home server](docs/deploy/cloudflare-tunnel.md) puts it behind
    Cloudflare Tunnel for Claude on every device.
-5. **Connect Claude.** Give the Claude plugin or connector the server's MCP URL,
+5. **Connect Claude.** Install the [Claude plugin](plugins/claude/README.md) with
+   `/plugin install mandalore --marketplace acoz-labs/mandalore`, or add a
+   connector in the Claude app, and give it the server's MCP URL,
    such as `http://127.0.0.1:8730/mcp` locally or `https://memory.example.com/mcp`
    through a tunnel. With OAuth, approve the client with your owner passkey.
 

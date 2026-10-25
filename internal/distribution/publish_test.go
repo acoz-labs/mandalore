@@ -184,7 +184,7 @@ func TestPublisherStagesVerifiesPublishesAndReusesSameBytes(t *testing.T) {
 				privateReads++
 			}
 		}
-		if r.Method == "PATCH" && privateReads != 8 {
+		if r.Method == "PATCH" && privateReads != 7 {
 			t.Fatalf("published before all remote bytes were checked: %d", privateReads)
 		}
 	}
@@ -192,10 +192,10 @@ func TestPublisherStagesVerifiesPublishesAndReusesSameBytes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err, r)
 	}
-	if r.Phase != "publication-verified" || r.ReleaseID != 42 || len(r.Assets) != 8 || r.Identity != f.identity || r.PendingOperation != "" || f.writes != 10 {
+	if r.Phase != "publication-verified" || r.ReleaseID != 42 || len(r.Assets) != 7 || r.Identity != f.identity || r.PendingOperation != "" || f.writes != 9 {
 		t.Fatal("incomplete publication", r, f.writes)
 	}
-	if publicReads != 8 {
+	if publicReads != 7 {
 		t.Fatalf("public verification must download and check each of eight assets once: %d", publicReads)
 	}
 	for _, a := range r.Assets {
@@ -265,7 +265,7 @@ func TestPublisherRetriesUncertainWritesWithoutReplacement(t *testing.T) {
 				t.Fatal("unconfirmed draft identity claimed", r)
 			}
 			r, err = f.p.Publish(context.Background(), f.dir, f.identity)
-			if err != nil || r.Phase != "publication-verified" || f.writes != 10 {
+			if err != nil || r.Phase != "publication-verified" || f.writes != 9 {
 				t.Fatal("retry did not reuse writes", r, err, f.writes)
 			}
 		})
@@ -319,7 +319,7 @@ func TestPublisherNeverClaimsUnverifiedPublication(t *testing.T) {
 			}
 			if kind == "policy changes" {
 				f.before = func(r *http.Request) {
-					if len(f.assets) == 8 {
+					if len(f.assets) == 7 {
 						f.policy = `{"enabled":false}`
 					}
 				}

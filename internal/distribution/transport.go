@@ -196,8 +196,8 @@ func VerifyCandidateArchive(ctx context.Context, reader io.ReaderAt, size int64,
 		return ParsedManifest{}, err
 	}
 	z, err := zip.NewReader(reader, size)
-	if err != nil || len(z.File) != 8 {
-		return ParsedManifest{}, errors.New("candidate archive requires exactly eight regular payload members")
+	if err != nil || len(z.File) != 7 {
+		return ParsedManifest{}, errors.New("candidate archive requires exactly seven regular payload members")
 	}
 	files := map[string]*zip.File{}
 	for _, f := range z.File {
@@ -253,15 +253,6 @@ func VerifyCandidateArchive(ctx context.Context, reader io.ReaderAt, size int64,
 		if readErr != nil || closeErr != nil || n != a.Size || hex.EncodeToString(h.Sum(nil)) != a.SHA256 {
 			return ParsedManifest{}, errors.New("candidate archive payload is incomplete or differs from manifest")
 		}
-		if a.Kind == "codex-plugin" {
-			b, err := read(a.Name, MaxPluginBytes)
-			if err != nil {
-				return ParsedManifest{}, err
-			}
-			if err := VerifyPlugin(b, p.Manifest.Version, p.Manifest.PluginSHA256); err != nil {
-				return ParsedManifest{}, err
-			}
-		}
 	}
 	if err := checkHash(); err != nil {
 		return ParsedManifest{}, err
@@ -270,7 +261,7 @@ func VerifyCandidateArchive(ctx context.Context, reader io.ReaderAt, size int64,
 }
 
 // Bound central-directory parsing before archive/zip allocates entry objects.
-// This eight-file, <520 MiB transport never needs ZIP64 or multi-disk archives.
+// This seven-file, <520 MiB transport never needs ZIP64 or multi-disk archives.
 func candidateZipLayout(r io.ReaderAt, size int64) error {
 	invalid := errors.New("candidate ZIP directory is malformed, oversized or unsupported")
 	if size < 22 {
@@ -288,7 +279,7 @@ func candidateZipLayout(r io.ReaderAt, size int64) error {
 		end := tail[i:]
 		length := int64(binary.LittleEndian.Uint32(end[12:]))
 		offset := int64(binary.LittleEndian.Uint32(end[16:]))
-		if binary.LittleEndian.Uint16(end[4:]) != 0 || binary.LittleEndian.Uint16(end[6:]) != 0 || binary.LittleEndian.Uint16(end[8:]) != 8 || binary.LittleEndian.Uint16(end[10:]) != 8 || length <= 0 || length > 65536 || offset+length != size-n+int64(i) {
+		if binary.LittleEndian.Uint16(end[4:]) != 0 || binary.LittleEndian.Uint16(end[6:]) != 0 || binary.LittleEndian.Uint16(end[8:]) != 7 || binary.LittleEndian.Uint16(end[10:]) != 7 || length <= 0 || length > 65536 || offset+length != size-n+int64(i) {
 			return invalid
 		}
 		return nil

@@ -1,0 +1,15 @@
+{
+  "name": "mandalore",
+  "description": "Mandalore memory for Claude: one plugin that connects Claude to your Mandalore server.",
+  "owner": {
+    "name": "Acoz Labs",
+    "url": "https://github.com/acoz-labs"
+  },
+  "plugins": [
+    {
+      "name": "mandalore",
+      "source": "./plugins/claude",
+      "description": "Durable memory from a Mandalore server: recall on every prompt, and tools to save and correct."
+    }
+  ]
+}

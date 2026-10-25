@@ -8,7 +8,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -19,7 +18,6 @@ import (
 	"github.com/acoz-labs/mandalore/internal/api"
 	"github.com/acoz-labs/mandalore/internal/binding"
 	"github.com/acoz-labs/mandalore/internal/console"
-	"github.com/acoz-labs/mandalore/internal/install"
 	signetsync "github.com/acoz-labs/mandalore/internal/sync"
 )
 
@@ -31,27 +29,12 @@ type menu struct {
 	out           io.Writer
 	tui           *console.Console
 	binding       string
-	profile       install.Profile
-	piProfile     install.Profile
-	hermesProfile install.Profile
-	claudeProfile install.Profile
-	harness       string
-	binary        string
 	failed        bool
 	outputErr     error
 	foundlingAPI  *api.API // Selected signet is fixed while its reference menu is open.
 	releasePrefix string
 	// Private test seams; never user-configurable scripts or operation names.
-	releaseInvoke             func(string, any) api.Envelope
-	prepareSelectedConnection func(context.Context, install.Options) (install.Plan, error)
-	applySelectedConnection   func(context.Context, install.Plan, bool) (install.Result, error)
-	prepareSelectedPi         func(context.Context, install.PiOptions) (install.PiPlan, error)
-	applySelectedPi           func(context.Context, install.PiPlan) (install.PiResult, error)
-	prepareSelectedHermes     func(context.Context, install.HermesOptions) (install.HermesPlan, error)
-	applySelectedHermes       func(context.Context, install.HermesPlan) (install.HermesResult, error)
-	prepareSelectedClaude     func(context.Context, install.ClaudeOptions) (install.ClaudePlan, error)
-	applySelectedClaude       func(context.Context, install.ClaudeApplyInput) (install.ClaudeResult, error)
-	nativeInspect             func(string, install.Profile) api.Envelope
+	releaseInvoke func(string, any) api.Envelope
 }
 
 var errMenuInputLimit = errors.New("answer exceeds 4096 bytes; menu stopped without interpreting remaining input")
@@ -62,10 +45,6 @@ func runMenu(ctx context.Context, args []string, input io.Reader, out io.Writer)
 	plain := f.Bool("plain", false, "Numbered plain-text prompts")
 	m := &menu{ctx: ctx, in: bufio.NewReader(input), out: out}
 	f.StringVar(&m.binding, "binding", "", "Selected local binding")
-	f.StringVar(&m.profile.StateDir, "state-dir", "", "Installation directory")
-	f.StringVar(&m.profile.NativeHome, "native-home", "", "Explicit native profile for the chosen harness")
-	f.StringVar(&m.profile.NativeBinary, "native-binary", "", "Explicit native executable for the chosen harness")
-	f.StringVar(&m.binary, "binary", "", "Trusted local runtime artifact")
 	f.StringVar(&m.releasePrefix, "prefix", "", "CLI installation prefix for the release journey")
 	if err := f.Parse(args); err != nil || f.NArg() != 0 {
 		if errors.Is(err, flag.ErrHelp) {
@@ -74,9 +53,6 @@ func runMenu(ctx context.Context, args []string, input io.Reader, out io.Writer)
 		}
 		return bad(out, "Invalid menu options; use --help.")
 	}
-	m.claudeProfile = m.profile
-	m.piProfile = m.profile // Copy explicit flags, never resolved Codex defaults.
-	m.hermesProfile = m.profile
 	if !*plain {
 		m.tui = console.New(input, out)
 		if m.tui != nil {
@@ -90,11 +66,8 @@ func runMenu(ctx context.Context, args []string, input io.Reader, out io.Writer)
 			return bad(out, "Cannot select binding default; supply --binding with an absolute path.")
 		}
 	}
-	if m.binary == "" {
-		m.binary, _ = os.Executable()
-	}
 	m.block(console.Block{Title: "Mandalore", Body: "Memory across time and space. Opening this menu changes nothing. A signet is your private memory bank."})
-	choices := []string{"Signet · Create a new local memory bank", "Signet · Connect an existing local clone", "Signet · Inspect selected memory and sync status", "Signet · Synchronize with its configured remote", "Connection · Connect or update Codex, Pi, Claude Code or Hermes", "The Armorer · Assess or inspect", "The Armorer · Repair connection", "Foundlings · Manage historical references", "CLI · Install, update or select a retained runtime", "Exit"}
+	choices := []string{"Signet · Create a new local memory bank", "Signet · Connect an existing local clone", "Signet · Inspect selected memory and sync status", "Signet · Synchronize with its configured remote", "Foundlings · Manage historical references", "CLI · Install, update or select a retained runtime", "Exit"}
 	for {
 		if m.outputErr != nil {
 			return 1
@@ -114,14 +87,8 @@ func runMenu(ctx context.Context, args []string, input io.Reader, out io.Writer)
 			case 3:
 				err = m.sync()
 			case 4:
-				err = m.connect()
-			case 5:
-				err = m.armorer()
-			case 6:
-				err = m.repair()
-			case 7:
 				err = m.foundlings()
-			case 8:
+			case 5:
 				err = m.chooseRelease()
 			}
 		}
@@ -314,30 +281,6 @@ func (m *menu) outcome(title string, v api.Envelope) error {
 		if v.Error.FoundlingResult != nil {
 			m.foundlingReceipt(*v.Error.FoundlingResult)
 		}
-		if v.Error.ConnectionReport != nil {
-			m.report(*v.Error.ConnectionReport)
-		}
-		if v.Error.ConnectionResult != nil {
-			m.connectionResult(*v.Error.ConnectionResult)
-		}
-		if v.Error.ClaudeConnectionReport != nil {
-			m.claudeReport(*v.Error.ClaudeConnectionReport)
-		}
-		if v.Error.ClaudeConnectionResult != nil {
-			m.claudeResult(*v.Error.ClaudeConnectionResult)
-		}
-		if v.Error.PiConnectionReport != nil {
-			m.piReport(*v.Error.PiConnectionReport)
-		}
-		if v.Error.PiConnectionResult != nil {
-			m.piResult(*v.Error.PiConnectionResult)
-		}
-		if v.Error.HermesConnectionResult != nil {
-			m.hermesResult(*v.Error.HermesConnectionResult)
-		}
-		if v.Error.HermesConnectionReport != nil {
-			m.hermesReport(*v.Error.HermesConnectionReport)
-		}
 		if v.Error.SyncStatus != nil {
 			m.jsonBlock("Synchronization receipt", v.Error.SyncStatus)
 		}
@@ -462,9 +405,9 @@ func (m *menu) setup(create bool) error {
 	if create {
 		title = "[PASS] Local signet ready"
 	}
-	body = "Selected for this menu. Connect Codex, Pi, Claude Code or Hermes when ready. No synchronization was performed; inspect its existing Git configuration before synchronizing."
+	body = "Selected for this menu. To give agents this memory, serve it with mandalore serve and install the Claude plugin. No synchronization was performed; inspect its existing Git configuration before synchronizing."
 	if create {
-		body = "Remote synchronization is not configured. Keep this private bank backed up; configure its native Git origin separately. Next: connect Codex, Pi, Claude Code or Hermes. No agent was launched."
+		body = "Remote synchronization is not configured. Keep this private bank backed up; configure its native Git origin separately. Next: serve it with mandalore serve and install the Claude plugin. No agent was launched."
 	}
 	m.block(console.Block{Title: title, Body: body, Tone: console.Success, Fields: []console.Field{{Label: "Signet", Value: root}, {Label: "Binding", Value: path}}})
 	return nil
@@ -528,172 +471,4 @@ func (m *menu) sync() error {
 	}
 	m.jsonBlock("Delivery status", v.Result)
 	return nil
-}
-
-func (m *menu) nativeProfile() error {
-	// Resolve defaults only when a native journey is selected; lack of Codex
-	// must not prevent memory-only setup or even opening/exiting the menu.
-	return connectionDefaults(&m.profile)
-}
-
-func (m *menu) connect() error {
-	harness, err := m.chooseHarness()
-	if err != nil {
-		return err
-	}
-	if harness == "pi" {
-		return m.connectPi()
-	} else if harness == "hermes" {
-		return m.connectHermes()
-	} else if harness == "claude-code" {
-		return m.connectClaude()
-	}
-	if err := m.nativeProfile(); err != nil {
-		return err
-	}
-	binary, err := m.input("Trusted local Mandalore runtime (not a download)", m.binary)
-	if err != nil {
-		return err
-	}
-	transport, err := m.selectSessionTransport("codex", m.profile)
-	if err != nil {
-		return err
-	}
-	v := m.call("connection_plan", install.Options{SessionTransportVersion: transport, StateDir: m.profile.StateDir, NativeHome: m.profile.NativeHome, NativeBinary: m.profile.NativeBinary, Binary: binary, Binding: m.binding}, false)
-	if !v.OK {
-		return m.outcome("Connection preview", v)
-	}
-	return m.applyPlan(v.Result.(install.Plan))
-}
-
-func (m *menu) applyPlan(p install.Plan) error {
-	m.connectionPreview(p)
-	if err := m.confirm(); err != nil {
-		return err
-	}
-	v := m.call("connection_apply", p, false)
-	if !v.OK && v.Error != nil && v.Error.ConnectionResult != nil && v.Error.ConnectionResult.Phase == "deferred" {
-		if err := m.confirmStoppedSessions(); err != nil {
-			return err
-		}
-		v = m.call("connection_apply", install.ApplyInput{Plan: p, SessionsStopped: true}, false)
-	}
-	if err := m.outcome("Native connection verified", v); err != nil {
-		return err
-	}
-	m.connectionResult(v.Result.(install.Result))
-	m.binary = p.Binary
-	return nil
-}
-
-func (m *menu) confirmStoppedSessions() error {
-	m.block(console.Block{Title: "Connection update deferred", Body: "Replacing this plugin can remove files used by existing Codex sessions. Exit every Codex session using this profile first; idle or paused is not enough. If this menu is running inside one of those sessions, defer and run it from a separate terminal after exiting. Your CLI update, if completed, remains installed."})
-	if m.outputErr != nil {
-		return m.outputErr
-	}
-	n, err := m.selectItem("Have all affected Codex sessions exited?", []string{"No · Defer plugin update", "Yes · Sessions exited; apply this update"}, 0)
-	if err != nil {
-		return err
-	}
-	if n == 0 {
-		return console.ErrBack
-	}
-	return m.ctx.Err()
-}
-
-func (m *menu) connectionPreview(p install.Plan) {
-	m.block(console.Block{Title: "Review Codex connection", Body: "Apply executes the selected trusted binaries and manages this native plugin registration. A hash identifies bytes; it does not prove publisher trust. Retain old source/runtime copies; native cache may be replaced. No signet edits or authentication setup. Review hooks and start a fresh native session afterward.", Fields: []console.Field{
-		{Label: "Session transport", Value: sessionTransportLabel(p.SessionTransportVersion)}, {Label: "Signet ID", Value: p.SignetID}, {Label: "Binding", Value: p.Binding}, {Label: "Selected runtime", Value: p.Binary}, {Label: "Runtime SHA256", Value: p.BinarySHA256}, {Label: "Pinned runtime", Value: p.Runtime}, {Label: "Native binary", Value: p.NativeBinary}, {Label: "Native SHA256", Value: p.NativeSHA256}, {Label: "Native profile", Value: p.NativeHome}, {Label: "Installation state", Value: p.StateDir}, {Label: "Managed package", Value: p.Root}, {Label: "Package version", Value: p.Version}, {Label: "Embedded package SHA256", Value: p.PackageSHA256},
-	}})
-}
-
-func (m *menu) connectionResult(r install.Result) {
-	m.block(console.Block{Title: "Connection receipt", Body: r.Notice, Fields: []console.Field{{Label: "Completed phase", Value: r.Phase}, {Label: "Target", Value: r.Connection.Root}, {Label: "Previous source", Value: r.PreviousRoot}, {Label: "Fresh session required", Value: strconv.FormatBool(r.RequiresFreshSession)}}})
-}
-
-func (m *menu) report(r install.Report) {
-	m.block(console.Block{Title: "The Armorer · Connection inspection", Body: r.Notice})
-	for _, check := range r.Checks {
-		tone := console.Warning
-		if check.Status == "pass" {
-			tone = console.Success
-		}
-		if check.Status == "fail" {
-			tone = console.Failure
-		}
-		m.block(console.Block{Title: "[" + strings.ToUpper(check.Status) + "] " + check.Name, Body: check.Detail, Tone: tone})
-	}
-	if r.Connection != nil {
-		m.block(console.Block{Title: "Retained connection", Fields: []console.Field{{Label: "Root", Value: r.Connection.Root}, {Label: "Binding", Value: r.Connection.Binding}}})
-	}
-}
-
-func (m *menu) doctor() error {
-	harness, err := m.chooseHarness()
-	if err != nil {
-		return err
-	}
-	if harness == "pi" {
-		return m.doctorPi()
-	} else if harness == "hermes" {
-		return m.doctorHermes()
-	} else if harness == "claude-code" {
-		return m.doctorClaude()
-	}
-	if err := m.nativeProfile(); err != nil {
-		return err
-	}
-	return m.nativeInspection("codex", m.profile)
-}
-
-func (m *menu) repair() error {
-	harness, err := m.chooseHarness()
-	if err != nil {
-		return err
-	}
-	if harness == "pi" {
-		return m.repairPi()
-	} else if harness == "hermes" {
-		return m.repairHermes()
-	} else if harness == "claude-code" {
-		return m.repairClaude()
-	}
-	root, err := m.input("Retained managed connection root (shown by The Armorer)", "")
-	if err != nil {
-		return err
-	}
-	v := m.call("connection_repair_plan", install.RepairInput{Root: root, NativeBinary: m.profile.NativeBinary}, false)
-	if !v.OK {
-		return m.outcome("Repair preview", v)
-	}
-	return m.applyPlan(v.Result.(install.Plan))
-}
-
-func sessionTransportLabel(version int) string {
-	if version == 1 {
-		return "Enabled session · Automatic refresh before turns and delivery after saves"
-	}
-	return "Legacy connection · Model-directed delivery"
-}
-
-func (m *menu) selectSessionTransport(harness string, p install.Profile) (int, error) {
-	mode, _, exists, err := install.ExistingSessionMode(harness, p)
-	if err != nil {
-		return 0, err
-	}
-	if !exists {
-		return 1, nil
-	}
-	def := 0
-	if mode == 0 {
-		def = 1
-	}
-	n, err := m.selectItem("Session transport", []string{"Enabled session · Automatic refresh and delivery", "Preserve legacy · Model-directed delivery"}, def)
-	if err != nil {
-		return 0, err
-	}
-	if n == 0 {
-		return 1, nil
-	}
-	return 0, nil
 }

@@ -38,135 +38,6 @@ Binding selection is `--binding FILE`, then `MANDALORE_BINDING`, then the platfo
 config default. A newly created/connected binding becomes selected for this menu.
 Use explicit bindings for additional banks; no cwd discovery or shell edits occur.
 
-## Native connection journeys
-
-Connection setup, Armorer assessment/inspection and repair first ask for **Codex**,
-**Pi** or **Claude Code**. All three are supported by
-[release 1.3.0](releases/1.3.0.md). Each keeps its own native-profile defaults. Native executables must
-already be installed; these journeys do not install a harness, log into a
-provider or copy authentication/session files.
-
-### Assess this machine first
-
-In current-source builds, **The Armorer · Assess or inspect** offers **Assess
-this machine** by default. This works before native binaries, profiles or a
-signet exist. It reads selected setup metadata without running programs,
-contacting a provider, reading remembered content or changing product state.
-This post-1.0.0 addition does not modify the published 1.0.0 executable.
-
-Review the displayed defaults, choose **Edit selection** to change one path, or
-assess them directly. Editable paths are the native executable/profile,
-installation state, binding and an optional owned retained root. `:default`
-restores that field's default; `:none` clears the optional root. No newest
-generation is inferred: an unselected root does not mean no connection exists.
-
-The result separates **Support**, **Setup**, and scenario-specific **Evidence**.
-Completed means fixed observations finished, not that the connection is healthy.
-Unknown or historical evidence alone is not a reason to repair. A single next
-step identifies what to investigate; narrow terminals stack the status fields.
-**Details** explains exact identities, findings, declarations and evidence links.
-**Show agent follow-up prompt** displays optional guidance without starting an
-agent, changing learning behavior or authorizing repair. Recheck fresh state
-before acting on that snapshot.
-
-**Run native checks**, or the submenu's **Inspect native connection**, is a
-separate default-No choice. It shows the selected program/profile and warns that
-native programs may create logs/cache. It never automatically repairs or retries;
-its result does not rewrite the preceding static assessment. Both interfaces use
-the same [administration operations](interface.md#non-executing-machine-assessment).
-
-### Codex
-
-**Connect/update** asks for a trusted local Mandalore executable and previews its
-hash, the preparing toolkit's embedded plugin identity, bound signet, native
-executable/profile and retained installation paths. Applying executes selected
-binaries. A digest identifies bytes, not publisher trust. The menu and JSON CLI
-use the same revalidated plan. It does not launch agents or accept hook trust.
-
-Preview does not create a missing native profile. Explicit apply creates the
-selected profile directory before Codex inventories plugins; new directories use
-owner-only permissions. Existing profile permissions and unrelated contents are
-preserved. An empty profile can remain after a later failure; inspect the reported
-phase before retrying. Native inventory errors name the failed operation without
-including raw subprocess output. This preparation does not enroll credentials.
-
-The managed connection pins a retained runtime and binding, so exports are not
-needed. Explicit environment overrides still win; doctor reports conflicts.
-Old managed source/runtime copies are retained, but native cache can be replaced.
-Unmanaged or edited registrations are not silently removed. Start a fresh native
-session and review exact hooks afterward. No native credentials are copied.
-
-**Inspect native connection** labels pass, fail and not-tested independently. It inspects structure
-and native inventory; it does not prove login, hook trust, live MCP, remote
-freshness or active context. **The Armorer · Repair connection** asks for a retained connection root
-(shown by inspection), previews a fresh generation and requires approval. Unknown
-edits or missing ownership evidence are refused. Partial native failures show
-completed phase and retained paths; inspect before retrying, not assumed rollback.
-
-`--state-dir DIR`, `--native-home DIR` and `--native-binary FILE` select an explicit
-installation/profile. `--binary FILE` sets the local artifact offered by the menu.
-Codex is required only for Codex journeys, not opening the menu or memory setup.
-Current exact-candidate acceptance is recorded in [the v1.1.0 release record](releases/1.1.0.md).
-No assistant launcher, capability framework or live predecessor import is added.
-
-### Codex update handoff
-
-For Codex updates, replacement is deferred until affected sessions have exited.
-The menu offers a separate default-No handoff confirmation; paused/idle is not
-enough. A completed CLI update stays installed if plugin activation is deferred.
-See [deferred Codex upgrades](runbook.md#deferred-codex-upgrades) for the standalone
-apply command and restart/trust checks. This does not change Pi's reload contract.
-
-### Pi
-
-Pi setup asks for a trusted Mandalore executable, binding, native profile,
-installation state, native executable and memory access mode. New writable
-setup defaults to **Enabled session · Automatic refresh and delivery**. The
-reviewed plan records this permission as `session_transport_version: 1`.
-Enforced read-only is a separate connection choice, not a mode automatically
-entered for ordinary questions. Repair preserves the existing access and
-transport mode; it does not silently opt a legacy connection into transport. Preview executes the selected
-runtime's read-only planner so its own embedded package is used. Review paths,
-identities and effects, then separately confirm application (default No).
-
-Pi defaults to `PI_CODING_AGENT_DIR`, otherwise its native `.pi/agent` directory.
-Explicit profile/path flags prefill the menu. Pi 0.85.1 with Node 24.1.0/macOS
-arm64 is the original tested baseline. From Mandalore 1.5.0, other Pi releases
-are checked for the required native capabilities instead of refused solely by
-version. Other versions/platform execution must not be inferred from
-cross-builds. See [independent agent upgrades](launch.md#upgrade-native-agents-independently).
-
-After installation, launch ordinary `pi` in any project using the selected native
-profile. The signet is bound independently of cwd. Start a fresh session or use
-native reload after a connection update. Per-turn reads refresh memory, not code.
-
-The Armorer distinguishes structural health from untested login, live tools,
-remote freshness and active context. Repair requires an owned retained root and
-intact matching runtime/binding. It creates a fresh generation while preserving
-the old one and its access mode; it does not fix credentials or overwrite edits.
-An interrupted remove/install may leave no active registration. Inspect its
-phase/attempt receipt before recovery. See the [Pi guide](../plugins/pi/README.md)
-and [engineering evidence](evidence/pi/README.md).
-
-### Claude Code
-
-Claude Code uses the shared MCP runtime with an explicit guarded binding.
-Choose its native profile (`CLAUDE_CONFIG_DIR`, otherwise `.claude`), executable
-(`claude`), installation state and memory access mode. Preview reads the selected
-runtime's own package and requires a separate default-No application decision.
-The original tested baseline is Claude Code 2.1.278. From Mandalore 1.5.0, newer
-releases can connect when the required native capabilities and registration
-checks pass; an exact version match is not required. Prefer the installation's
-stable launcher so native updates can preserve existing connections. See
-[independent agent upgrades](launch.md#upgrade-native-agents-independently).
-
-The plugin adds native memory skills and bounded local startup/per-prompt context.
-It preserves native auto memory and asks the agent not to duplicate signet records
-into native notes. Existing native notes and loaded conversation context are
-separate from Mandalore's withdrawal controls. See the
-[Claude Code guide](../plugins/claude-code/README.md) for coexistence and lifecycle
-behavior, typed CLI examples, stopped-session updates and owned recovery.
-
 ## CLI installation and updates
 
 **CLI · Install, update or select a retained runtime** offers the latest published
@@ -177,21 +48,8 @@ as `mandalore release install`, including `--plain` and optional `--prefix DIR`.
 
 The preview shows source and content identities, compatibility, destination,
 previous runtime and effects. Confirmation defaults to No. Applying activates only
-an owned CLI launcher and retains older runtimes; it changes no memory or native
-connections. A launcher outside PATH is shown as a full command, not silently added
+an owned CLI launcher and retains older runtimes; it changes no memory. A launcher outside PATH is shown as a full command, not silently added
 to shell settings. Missing receipt fields are displayed as None.
-
-After CLI success, optionally choose one native connection. Claude Code is
-available in 1.3.0. Its preview executes
-the verified new runtime to prepare **its own embedded package**, then asks for a
-second confirmation before native activation. CLI success and any later native
-failure are reported separately. The default leaves connections unchanged; a
-successful update requires a fresh native session. Use this release journey when
-updating runtime and plugin together. The older local-artifact Codex journey above
-still previews the running toolkit's embedded plugin without executing the selected
-artifact; its `--binary` flag is not a release-package selector. Pi and Claude Code
-local-artifact journeys delegate to the selected executable. Their identities use
-their own package metadata, not the release manifest's Codex plugin hash.
 
 If activation was interrupted, inspect the retained phase and pending record and
 reapply its exact reviewed plan through the [CLI recovery interface](interface.md#apply-a-reviewed-cli-installation).
@@ -238,37 +96,12 @@ clone, fetch, execute source scripts or provision credentials. See
 
 ## Agent-ready equivalents
 
-The plugin's **The Armorer** skill provides conversational administration: ask
-"check my Mandalore setup", "connect these old notes", or "update Mandalore".
-It uses structured CLI operations, not menu navigation. **This Is the Way** stays
-focused on ordinary recall and learning; administrative guidance loads on demand.
-
-Managed Codex installations generate a skill-local `references/connection.json` with
-the retained runtime, binding and native installation paths. Those machine-local
-values are ownership-checked projection, not public package or signet content.
-The skill works without a global PATH entry and does not assume MCP process
-exports are available in the agent shell. Explicit target/override differences
-must be resolved before changes. Public unconnected plugins have no such file;
-an agent needs a supplied runtime or one on PATH and the missing setup choices.
-Managed Pi packages provide equivalent local context in package-root
-`connection.json` (the skill's `../../connection.json`), including binding guards
-and enforced access mode. These values are not exported into the agent shell.
-The skill cannot bootstrap itself before the plugin is installed.
-
-`mandalore connection armorer` is the read-only inspection command;
-`connection doctor` remains a compatibility alias. The typed operation is still
-`connection_doctor` for Codex, `pi_connection_doctor` for Pi and
-`claude_code_connection_doctor` for Claude Code. Add `--harness pi` or
-`--harness claude-code` to the corresponding human command; omitting it retains
-the Codex default. A diagnostic
-request does not authorize repair or sync.
-Requested setup/update/repair follows the existing preview/apply contracts;
-native authentication and hook trust remain separate, and a structural pass
-does not establish live memory or remote health. Shell access is required for
-administration, even when memory MCP works.
+Agents connect to memory through the 2.0 server, not this menu: install the
+[Claude plugin](../plugins/claude/README.md) and point it at the server. Its
+**The Armorer** skill diagnoses that connection without a shell.
 
 Use `mandalore operations` for schemas and [the interface](interface.md) for
-`signet`, `memory`, `foundling`, `connection`, `release` and `call` commands. Agents should use structured
+`signet`, `memory`, `foundling`, `release` and `call` commands. Agents should use structured
 operations rather than menu keys. Installation operations remain CLI-only; they
 do not enlarge the bound memory MCP tool set. Complete JSON receipts are available
 there while the menu shows human summaries.
@@ -277,43 +110,7 @@ Exit status is 0 on ordinary exit, 1 if an operation/output failed during the
 invocation, 2 for invalid flags and 130 for process-context cancellation.
 Exiting or cancelling never undoes an earlier completed step.
 
-## Session synchronization and opting out
-
-New enabled-session connections authorize bounded refresh before memory context
-and delivery after semantic saves. Typed planning uses `--session-sync`, producing
-`session_transport_version: 1`; omitting it preserves legacy planning semantics.
-For example:
-
-```sh
-mandalore connection plan --harness claude-code --session-sync \
-  --binding /example/binding.json > connection-plan.json
-```
-
-Review the complete plan before applying it. `--session-sync` cannot be combined
-with `--memory-read-only`. Existing installations without a session policy retain
-their old behavior until explicitly updated. Repair preserves the selected mode;
-changing permissions requires a new reviewed connection plan and any applicable
-stopped-session handoff.
-
-“Don't remember this” tells the agent not to save that material. Transport of
-previously saved records remains enabled. To stop Mandalore altogether, disable
-the complete native plugin/package and start a fresh session without its hooks,
-MCP/native tools, skills or memory context. Omitting skills alone does not remove
-other components. Check every native resource source, including project settings
-and explicitly loaded extensions; a second enabled copy can still attach.
-
-Disabling cannot remove context already loaded into a model, and native agent
-memory/logging remains independently controlled. No personal signet migration or
-native-memory configuration change is part of enabling this transport policy.
-
-## Named memory environments
-
-After establishing each native connection in its dedicated profile, use the
-[launcher guide](launch.md) to configure a machine-local name and default agent.
-`mandalore launch work --agent claude-code` selects that connection for one
-session. `--preview` inspects the selection; it does not launch, fetch or install.
-Shell aliases stay in local shell configuration. Native authentication and
-profile setup remain native-owned.
+## Foundling references
 
 The foundling menu distinguishes legacy historical references from canon signet
 references. Verify the source identity and bootstrap Git pin before registering

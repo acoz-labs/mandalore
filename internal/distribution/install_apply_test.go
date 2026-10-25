@@ -391,7 +391,7 @@ func TestRuntimeVersionVerificationBindsEveryIdentity(t *testing.T) {
 		t.Fatal(err)
 	}
 	m := p.Source.Manifest.Manifest
-	fields := map[string]any{"name": "mandalore", "version": m.Version, "source_commit": m.SourceCommit, "os": p.OS, "arch": p.Arch, "go_version": m.GoVersion, "protocol_version": 1, "codex_hook_protocol": 1, "signet_read_versions": []int{1}, "signet_write_versions": []int{1}, "plugin_version": m.Version, "plugin_sha256": m.PluginSHA256}
+	fields := map[string]any{"name": "mandalore", "version": m.Version, "source_commit": m.SourceCommit, "os": p.OS, "arch": p.Arch, "go_version": m.GoVersion, "protocol_version": 1, "signet_read_versions": []int{1}, "signet_write_versions": []int{1}}
 	raw, _ := json.Marshal(map[string]any{"protocol_version": 1, "ok": true, "result": fields})
 	if err := verifyRuntimeVersion(raw, p); err != nil {
 		t.Fatal("valid metadata refused", err)

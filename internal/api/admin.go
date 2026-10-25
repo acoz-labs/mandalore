@@ -45,3 +45,10 @@ var administration = []Operation{
 		return binding.Bind(in.Repository, in.Binding, in.DeviceLabel, in.Actor)
 	}),
 }
+
+// unboundOperation runs without a selected binding.
+func unboundOperation[I, O any](name, description string, readOnly bool, fn func(context.Context, I) (O, error)) Operation {
+	op := operation(name, description, readOnly, func(ctx context.Context, _ *memory.Service, input I) (O, error) { return fn(ctx, input) })
+	op.RequiresBinding = false
+	return op
+}

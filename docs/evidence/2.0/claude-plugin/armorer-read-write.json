@@ -1,0 +1,34 @@
+{
+  "run": "armorer-read-write",
+  "mcp_servers": [
+    {
+      "name": "plugin:mandalore:mandalore",
+      "status": "connected"
+    }
+  ],
+  "hooks": [
+    {
+      "hook": "UserPromptSubmit",
+      "outcome": "success",
+      "output": ""
+    }
+  ],
+  "context": [
+    {
+      "type": "hook_success",
+      "hookName": "UserPromptSubmit",
+      "hookEvent": "UserPromptSubmit",
+      "stderr": "",
+      "seconds_after_prompt": 0.006
+    }
+  ],
+  "tools_called": [
+    "Skill",
+    "ToolSearch",
+    "mcp__plugin_mandalore_mandalore__memory_scopes"
+  ],
+  "answer": "Your Mandalore memory is working. It's connected with read-write access.\n\n- **Connection:** I called `memory_scopes` against `http://localhost:28730/mcp` and it succeeded. No sign-in or authorization error came back.\n- **Signet:** `signet-686d502932b381a54da6e20485bab41e`, which holds 1 record. It's the only scope on the server so far; there are no project, account or task scopes yet.\n- **Access:** The `memory_remember` tool is available and the server didn't say the connection is read-only, so this client can save memories as well as recall them. I didn't save anything to test writing.\n\nYou don't need to fix anything.",
+  "is_error": false,
+  "wall_seconds": 11.37,
+  "api_seconds": 10.59
+}

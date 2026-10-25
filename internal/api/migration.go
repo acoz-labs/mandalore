@@ -30,11 +30,11 @@ func migrationError(err error, result *migration.Result) error {
 }
 
 var migrations = []Operation{
-	connectionOperation("migration_preflight", "Read-only bounded validation of an explicit My Friday memory-only bank, output path and optional legacy binding/native inventory. No predecessor execution, signet activation, Git copying or data writes. Native listing may produce native-owned logs.", true, func(ctx context.Context, in migration.Options) (migration.Plan, error) {
+	unboundOperation("migration_preflight", "Read-only bounded validation of an explicit My Friday memory-only bank, output path and optional legacy binding/native inventory. No predecessor execution, signet activation, Git copying or data writes. Native listing may produce native-owned logs.", true, func(ctx context.Context, in migration.Options) (migration.Plan, error) {
 		p, err := migration.Preflight(ctx, in)
 		return p, migrationError(err, nil)
 	}),
-	connectionOperation("migration_apply", "Convert an explicitly reviewed migration plan into a new retained bundle. Requires writers_stopped acknowledgement; preserves original source bytes and authorship. Does not bind, activate, initialize Git or synchronize. Inspect partial publication receipts before retrying.", false, func(ctx context.Context, in migration.ApplyInput) (migration.Result, error) {
+	unboundOperation("migration_apply", "Convert an explicitly reviewed migration plan into a new retained bundle. Requires writers_stopped acknowledgement; preserves original source bytes and authorship. Does not bind, activate, initialize Git or synchronize. Inspect partial publication receipts before retrying.", false, func(ctx context.Context, in migration.ApplyInput) (migration.Result, error) {
 		r, err := migration.Apply(ctx, in)
 		return r, migrationError(err, &r)
 	}),

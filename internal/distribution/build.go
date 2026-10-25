@@ -259,54 +259,7 @@ func Build(ctx context.Context, o BuildOptions) (ParsedManifest, error) {
 	if err != nil || !ValidVersion(releaseVersion) {
 		return ParsedManifest{}, errors.New("tracked VERSION must contain a canonical release version")
 	}
-	p, err := PreparePlugin(os.DirFS(filepath.Join(work, "plugins", "codex")), releaseVersion)
-	if err != nil {
-		return ParsedManifest{}, err
-	}
-	for name, data := range p.Files {
-		if err := os.WriteFile(filepath.Join(work, "plugins", "codex", filepath.FromSlash(name)), data, pluginMode(name)); err != nil {
-			return ParsedManifest{}, err
-		}
-	}
-	// The source export is bounded, tracked and symlink-free. Stamp the Pi
-	// manifest here as well, so every target embeds this release's identity.
-	piManifest := filepath.Join(work, "plugins", "pi", "package", "package.json")
-	piSource, err := os.ReadFile(piManifest)
-	if err != nil {
-		return ParsedManifest{}, err
-	}
-	piStamped, err := preparePiManifest(piSource, releaseVersion)
-	if err != nil {
-		return ParsedManifest{}, err
-	}
-	if err := os.WriteFile(piManifest, piStamped, 0600); err != nil {
-		return ParsedManifest{}, err
-	}
-	claudeManifest := filepath.Join(work, "plugins", "claude-code", "package", ".claude-plugin", "plugin.json")
-	claudeSource, err := os.ReadFile(claudeManifest)
-	if err != nil {
-		return ParsedManifest{}, err
-	}
-	claudeStamped, err := prepareClaudeManifest(claudeSource, releaseVersion)
-	if err != nil {
-		return ParsedManifest{}, err
-	}
-	if err := os.WriteFile(claudeManifest, claudeStamped, 0600); err != nil {
-		return ParsedManifest{}, err
-	}
-	hermesManifest := filepath.Join(work, "plugins", "hermes", "package", "plugin.yaml")
-	hermesSource, err := os.ReadFile(hermesManifest)
-	if err != nil {
-		return ParsedManifest{}, err
-	}
-	hermesStamped, err := prepareHermesManifest(hermesSource, releaseVersion)
-	if err != nil {
-		return ParsedManifest{}, err
-	}
-	if err := os.WriteFile(hermesManifest, hermesStamped, 0600); err != nil {
-		return ParsedManifest{}, err
-	}
-	m := Manifest{FormatVersion: 1, Product: "mandalore", Version: releaseVersion, Tag: "v" + releaseVersion, SourceCommit: commit, GoVersion: PinnedGo, ProtocolVersion: 1, SignetReadVersions: []int{1, 2}, SignetWriteVersions: []int{1, 2}, PluginSHA256: p.SHA256}
+	m := Manifest{FormatVersion: 1, Product: "mandalore", Version: releaseVersion, Tag: "v" + releaseVersion, SourceCommit: commit, GoVersion: PinnedGo, ProtocolVersion: 1, SignetReadVersions: []int{1, 2}, SignetWriteVersions: []int{1, 2}}
 	for _, target := range [][2]string{{"darwin", "amd64"}, {"darwin", "arm64"}, {"linux", "amd64"}, {"linux", "arm64"}} {
 		a := Asset{Kind: "cli", OS: target[0], Arch: target[1], Name: "mandalore_" + releaseVersion + "_" + target[0] + "_" + target[1]}
 		file := filepath.Join(payload, a.Name)
@@ -332,7 +285,7 @@ func Build(ctx context.Context, o BuildOptions) (ParsedManifest, error) {
 	for _, item := range []struct {
 		kind, name string
 		data       []byte
-	}{{"codex-plugin", "mandalore_" + releaseVersion + "_codex.zip", p.Archive}, {"bootstrap", "install.sh", bootstrap}} {
+	}{{"bootstrap", "install.sh", bootstrap}} {
 		if err := os.WriteFile(filepath.Join(payload, item.name), item.data, 0600); err != nil {
 			return ParsedManifest{}, err
 		}

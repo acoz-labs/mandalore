@@ -244,23 +244,20 @@ func verifyRuntimeVersion(raw []byte, p InstallPlan) error {
 		Protocol int  `json:"protocol_version"`
 		OK       bool `json:"ok"`
 		Result   struct {
-			Name          string `json:"name"`
-			Version       string `json:"version"`
-			Source        string `json:"source_commit"`
-			OS            string `json:"os"`
-			Arch          string `json:"arch"`
-			Go            string `json:"go_version"`
-			Protocol      int    `json:"protocol_version"`
-			Hook          int    `json:"codex_hook_protocol"`
-			Read          []int  `json:"signet_read_versions"`
-			Write         []int  `json:"signet_write_versions"`
-			PluginVersion string `json:"plugin_version"`
-			PluginSHA     string `json:"plugin_sha256"`
+			Name     string `json:"name"`
+			Version  string `json:"version"`
+			Source   string `json:"source_commit"`
+			OS       string `json:"os"`
+			Arch     string `json:"arch"`
+			Go       string `json:"go_version"`
+			Protocol int    `json:"protocol_version"`
+			Read     []int  `json:"signet_read_versions"`
+			Write    []int  `json:"signet_write_versions"`
 		} `json:"result"`
 	}
 	m := p.Source.Manifest.Manifest
-	if err := strictjson.Decode(raw, &v, 16<<10); err != nil || !v.OK || v.Protocol != 1 || v.Result.Name != "mandalore" || v.Result.Version != m.Version || v.Result.Source != m.SourceCommit || v.Result.OS != p.OS || v.Result.Arch != p.Arch || v.Result.Go != m.GoVersion || v.Result.Protocol != m.ProtocolVersion || v.Result.Hook != 1 || v.Result.PluginVersion != m.Version || v.Result.PluginSHA != m.PluginSHA256 || !reflect.DeepEqual(v.Result.Read, m.SignetReadVersions) || !reflect.DeepEqual(v.Result.Write, m.SignetWriteVersions) {
-		return errors.New("runtime version, source, target, protocol, schema or embedded plugin differs from its manifest")
+	if err := strictjson.Decode(raw, &v, 16<<10); err != nil || !v.OK || v.Protocol != 1 || v.Result.Name != "mandalore" || v.Result.Version != m.Version || v.Result.Source != m.SourceCommit || v.Result.OS != p.OS || v.Result.Arch != p.Arch || v.Result.Go != m.GoVersion || v.Result.Protocol != m.ProtocolVersion || !reflect.DeepEqual(v.Result.Read, m.SignetReadVersions) || !reflect.DeepEqual(v.Result.Write, m.SignetWriteVersions) {
+		return errors.New("runtime version, source, target, protocol or schema differs from its manifest")
 	}
 	return nil
 }

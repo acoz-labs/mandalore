@@ -12,22 +12,13 @@ Go is pinned to 1.26.4 in mise, the module toolchain, CI and the development
 container. The module language baseline is Go 1.26.0. CI rejects a different
 active toolchain; do not install or use an unrecorded latest runtime.
 
-The dependency-free Pi extension is authored as JavaScript; Node 24.1.0 is pinned
-in mise, CI and the development container for its builtin test runner, matching
-the initial inspected Pi 0.85.1 engineering baseline. There is no npm install,
-transpiler or runtime package download. Run `mise exec -- node --test
-plugins/pi/test/*.test.mjs` for focused adapter tests. Node is a native Pi/test
-prerequisite, not a dependency of the standalone Go memory engine or release
-payload builder. A test pin is not a claim that other native versions are tested.
-
-The Hermes adapter uses Python's standard library, with Python 3.9+
-required for its focused tests: `python3 -B -m unittest discover -s
-plugins/hermes/test -v`. `bin/ci` runs these tests, and the development container
-installs Python 3. Engineering checks have used Python 3.9.6 locally and the
-inspected Hermes runtime's Python 3.14.7; this does not establish acceptance of
-every intervening Python or Hermes release. No separate Python dependency
-installation is needed for the adapter. Native Hermes retains its own managed
-dependencies and profile requirements; see [Hermes integration](hermes.md).
+The [Claude plugin](../plugins/claude/README.md) is JSON and Markdown with no
+build step. `bin/ci` greps its skills for 1.x sync, session, binding and
+`connection.json` guidance, and runs `claude plugin validate --strict` on the
+plugin and the marketplace when Claude Code is on PATH. The development container
+has no Claude Code, so there it prints a notice and skips that step; run `bin/ci`
+on a host with Claude Code before review. Native checks are recorded with
+[`docs/evidence/2.0/claude-plugin-native.sh`](evidence/2.0/claude-plugin-native.sh).
 
 Use synthetic banks and disposable project workspaces. Native integration tests
 may inherit existing native resources and authentication with explicit local
@@ -95,24 +86,6 @@ widens that empty-file window and verifies the durable save, cancelled fetch and
 stopped child. Run it alongside `TestSaveAndSyncCancellationDuringFetchKeepsReceipt`
 with `-race -count=20` after changing the cancellation fixture or observer.
 
-### Readiness regression tests
-
-For readiness changes, run the focused `internal/readiness` and CLI assessment
-tests before full CI. The compiled boundary probe places marker-writing native
-and dependency traps on PATH, inventories all fixture paths/bytes/modes/mtimes
-and empty directories, and counts connections to configured proxy/provider
-endpoints. That instrumentation is not a system-wide network sandbox. Reader
-allowlists separately exclude remembered-content reads. The private executable-
-path seam models replacement independently of host-specific loader path behavior;
-the assessment must retain process metadata and label new bytes as on-disk only.
-There are no public fake-platform, identity or evidence-catalog inputs.
-
-The [readiness evidence](evidence/machine-readiness/README.md) records controlled
-matcher mutation, failing-first defects, read limits and source-bound terminal
-checks. Keep unknown/stale/partial results distinct and validate the actual menu
-at narrow/normal widths before claiming rendered readiness. Cross-builds, synthetic
-path replacement and component tests do not establish native acceptance.
-
 ## Local distribution candidates
 
 From a clean committed repository, run:
@@ -126,11 +99,9 @@ source repository. This builds local engineering artifacts only: no release,
 tag, native connection or signet is created. `VERSION` declares the intended
 release version; unstamped development binaries continue to report `0.0.0-dev`.
 
-The builder exports the exact commit, refuses unsafe archive entries, stamps
-the Codex plugin and embedded Pi package in that private export and compiles all
-four supported targets. Pi's separate `pi_package_inspect` metadata carries its
-package identity; the generic version response and eight-file inventory stay
-unchanged.
+The builder exports the exact commit, refuses unsafe archive entries and
+compiles all four supported targets. A release publishes seven files: the four
+binaries, the bootstrap, the manifest and its checksums.
 Go 1.26.4, disabled CGO, trimpath, isolated build/module caches, readonly module
 resolution and the public Go module proxy/checksum database are explicit. Ambient
 Go workspace/configuration and provider tokens are not passed to those children.
@@ -367,13 +338,13 @@ binary against official-release checksums. Curl 8.4+ is required because earlier
 versions do not enforce the size limit during unknown-length transfers.
 See [curl's size-limit contract](https://curl.se/docs/manpage.html#--max-filesize).
 The manual alternative is downloading and verifying the platform binary yourself.
-Release discovery, planning, explicit plan/apply, the interactive install journey
-and selected native handoff are implemented. [v1.0.0](releases/1.0.0.md) is the
+Release discovery, planning, explicit plan/apply and the interactive install
+journey are implemented. [v1.0.0](releases/1.0.0.md) is the
 first published, owner-accepted installer. Other engineering candidates must not
 be presented as accepted releases merely because their version label matches.
 
 Synthetic bootstrap tests substitute download/host commands and never contact a
-provider. Run `go test ./internal/distribution ./internal/install ./cmd/mandalore`
+provider. Run `go test ./internal/distribution ./cmd/mandalore`
 under the pinned toolchain for package/build and process-bound regressions.
 The real subprocess output tests are important: directly testing a writer's `Write`
 method alone would miss an `io.Copy`/promoted `ReadFrom` limit bypass.

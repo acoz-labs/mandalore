@@ -1,0 +1,8 @@
+Validating marketplace manifest: <repo>/.claude-plugin/marketplace.json
+
+ℹ Advice (does not change the verdict):
+
+  ❯ <repo>/README.md: This README has no line that installs "mandalore" from a marketplace. Add the install line, which works in one step on Claude Code 2.1.275 or later.
+      /plugin install mandalore --marketplace acoz-labs/mandalore
+
+✔ Validation passed

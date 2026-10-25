@@ -1,0 +1,30 @@
+{
+  "run": "stalled",
+  "mcp_servers": [
+    {
+      "name": "plugin:mandalore:mandalore",
+      "status": "pending"
+    }
+  ],
+  "hooks": [
+    {
+      "hook": "UserPromptSubmit",
+      "outcome": "error",
+      "output": "MCP server 'plugin:mandalore:mandalore' not connected"
+    }
+  ],
+  "context": [
+    {
+      "type": "hook_non_blocking_error",
+      "hookName": "UserPromptSubmit",
+      "hookEvent": "UserPromptSubmit",
+      "stderr": "MCP server 'plugin:mandalore:mandalore' not connected",
+      "seconds_after_prompt": 3.005
+    }
+  ],
+  "tools_called": [],
+  "answer": "ok",
+  "is_error": false,
+  "wall_seconds": 7.82,
+  "api_seconds": 2.06
+}

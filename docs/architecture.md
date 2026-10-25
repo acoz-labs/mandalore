@@ -17,19 +17,20 @@ responses, and immutable foundling registration/routing/citation validation. See
 [format contract](signet-format.md) and [extraction inventory](memory-extraction.md).
 `internal/api`, `internal/binding` and `cmd/mandalore` provide
 the [shared local interface](interface.md). `internal/sync` now supplies explicit
-[Git checkpoints and reconciliation](synchronization.md). `plugins/codex` supplies
-1.x memory skills. `internal/install` supplies explicit native connection plans,
-retained runtime/package publication and doctor/repair; `internal/console` supplies
-presentation-only terminal prompts and reports. The [guided menu](setup.md)
+[Git checkpoints and reconciliation](synchronization.md). `plugins/claude` is the
+one 2.0 plugin: an HTTP MCP server URL, a `memory_context` hook and two skills, with
+no runtime. `internal/console` supplies presentation-only terminal prompts and
+reports. The [guided menu](setup.md)
 delegates to shared operations rather than owning a second implementation.
 `internal/distribution` supplies strict release identity, pinned builds, candidate
 transport, owned CLI activation/recovery and verified same-byte publication.
 Maintainer commands and workflows coordinate nomination, acceptance guards and
 release-ledger finalization outside the memory MCP surface.
-`plugins/pi` and `plugins/claude-code` supply the other 1.x native adapters. [Codex](codex-native-evidence.md)
-and [Pi engineering evidence](evidence/pi/README.md) are separate from product
-acceptance. Published v1.2.0 includes Codex, Pi and format2 withdrawal. Claude Code and
-session-authorized transport require new exact-candidate acceptance and release.
+The 1.x Codex, Pi, Claude Code and Hermes adapters and their installer left the
+build in 2.0 (#163); [Codex](codex-native-evidence.md) and
+[Pi engineering evidence](evidence/pi/README.md) remain as historical records.
+`internal/cutover` keeps the 1.x connection discovery and disable that
+`server migrate` needs to retire old clients.
 
 | Location | Responsibility |
 | --- | --- |
@@ -43,89 +44,24 @@ session-authorized transport require new exact-candidate acceptance and release.
 | `internal/binding` | Local signet selection and originating-device identity |
 | `internal/foundlings` | Bounded local/Git reference observation, clone-local connections and verified selective promotion |
 | `internal/server` | Single-writer Streamable HTTP MCP server: config, authenticators, scoped tools, `memory_context`, per-client authorship, push-only backup, status and reconcile |
-| `internal/install` | Native connections, runtime pinning, doctor/update/repair |
-| `internal/readiness` | Non-executing setup observations, support declarations, exact scenario evidence and bounded follow-up guidance |
+| `internal/cutover` | 1.x clone retirement: finding and disabling 1.x native connections through each harness's own commands |
 | `internal/distribution` | Versioned assets, provenance and byte verification, owned CLI installation and phased publication |
 | `cmd/build-artifacts`, `cmd/candidate-transport`, `cmd/promote-candidate`, `cmd/release-publication` | Repository-maintainer build/verification/publication entrypoints; not memory tools |
 | `internal/migration` | Read-only legacy census, explicit out-of-place conversion and retained recovery receipts |
 | `internal/console` | Presentation-only terminal prompts, navigation and bounded-width reports |
-| `plugins/codex` | First native plugin and `this-is-the-way` skill |
-| `plugins/pi` | Embedded native extension, guarded CLI transport, memory/Armorer skills and tests |
-| `plugins/claude-code` | Embedded native plugin, guarded MCP/hooks and shared memory/Armorer skills |
+| `plugins/claude` | The Claude plugin: server URL, `memory_context` hook, `this-is-the-way` and `the-armorer` |
 
 ## Ownership and trust
 
-Machine readiness is CLI-only administration. `internal/readiness` owns one
-assessor used by the menu and typed/human CLI. Its reviewed format-1 catalog
-separates intended targets, dependencies and immutable engineering/accepted
-scenario evidence. No online registry or caller-supplied evidence is consulted.
-No executable self-hash is embedded: measured disk bytes, process metadata and
-retained-runtime identities stay separate. Missing scenario identities are not
-wildcards; historical evidence is not a diagnosis of broken software.
-
-The assessor follows a fixed read set: executable fingerprints, directory presence,
-binding/manifest/enrolled-device identity, and optionally one explicitly selected
-owned receipt/runtime. It reuses pure memory validators and installer receipt
-projections, not full store validation or native Doctor/Prepare/Apply routines.
-Ownership/selection checks precede following retained paths. Managed metadata
-redirects and special files are refused; selected executable aliases can resolve
-to a regular target. Bounded streamed reads check cancellation and changes in
-identity, size, mode and mtime. This is not loaded-image attestation, a filesystem
-lease or protection from a hostile local user; OS access-time/cache bookkeeping
-can occur. No product state, credential, remembered content or network is involved.
-Binding reads are capped at 16 KiB, manifest/device reads at 4 MiB, Codex/Pi
-receipts at 32/64 KiB and runtime/native fingerprints at 128/512 MiB. Cancellation
-is checked between chunks, not a hard deadline for blocked kernel/filesystem I/O.
-
-Assessment has no persistent state or recovery transaction. Optional fixed-text
-guidance is an assessment-time snapshot and no new authority. Native inspection
-is an explicit subsequent operation with separately disclosed log/cache effects.
-See the [assessment interface](interface.md#non-executing-machine-assessment).
-
 The private signet owns knowledge/history, not native sessions or credentials.
-Local bindings own clone paths and device enrollment. Generated connections own
-only declared managed files. The public repository owns code, schemas, templates
+Local bindings own clone paths and device enrollment. The public repository owns code, schemas, templates
 and synthetic tests. Do not retain an assistant-framework dependency merely to
 avoid extracting memory primitives.
 
-Installation is CLI-only administration, not another bound memory tool. Plans
-identify the preparing toolkit's embedded plugin and selected trusted runtime
-separately; applying revalidates bytes, paths and binding identity before execution.
-Retained content-addressed runtimes and versioned package generations avoid
-in-place overwrite. Native commands own registration/cache, not hand-edited native
-configuration. Ownership receipts and filesystem integrity protect recovery;
-unknown edits or partial publication are preserved for inspection. A structural
-doctor does not establish authentication, hook trust, live tools or fresh context.
-
-Pi owns native tools, authentication, resources and sessions. Mandalore registers
-the bound memory catalog once, preserves native tool selection and appends fresh
-bounded evidence to the existing system prompt per turn. It does not accumulate
-persistent attachment messages or scan transcripts. An explicitly enabled
-session authorizes transport before context and after semantic writes; legacy
-context callbacks remain local-only. Shutdown cancels/reaps owned calls. Confirmed learning and delivery
-remain semantic tool use; lifecycle synchronization is a separate unresolved
-workstream, not implemented by these context hooks.
-
-Pi's generated connection pins runtime/package hashes, binding bytes and signet
-identity. Go validates the same bytes it hashes, preventing later binding changes
-from silently redirecting calls. Native tools return one full envelope with only
-operation/ok metadata, retaining nested save/delivery outcomes after cancellation.
-There is no JavaScript memory engine, MCP proxy or credential broker.
-
-Pi registration uses native install/remove commands against the selected profile.
-Inventory preserves unrelated packages and resource filters; foreign, ambiguous
-or edited state is refused. The menu executes the selected runtime's own planner
-and apply operation. Repair uses the owned generation's intact runtime and keeps
-its binding/access mode. Replacement is phased rather than atomic: interruption
-can leave the connection inactive with retained receipts.
-
-CLI distribution and native connection ownership are separate. A release plan
-pins a manifest, platform binary, embedded plugin and observed prefix state;
+A release plan pins a manifest, platform binary and observed prefix state;
 apply retains content-addressed bytes and replaces only a verified owned launcher.
 An incomplete activation retains its exact pending plan for identity-checked
-recovery. Selecting a native update delegates fixed typed operations to the
-verified new runtime so an older installer's plugin cannot substitute for it.
-Neither CLI rollback nor native repair migrates memory schemas.
+recovery. CLI rollback never migrates memory schemas.
 
 The maintainer path builds product bytes once, retains and verifies the exact
 Actions archive, derives a candidate identity, and requires independent acceptance

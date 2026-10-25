@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/acoz-labs/mandalore/internal/install"
 	"github.com/acoz-labs/mandalore/internal/memory"
 )
 
@@ -22,7 +21,7 @@ type NativeProfile struct {
 	Binary  string `json:"native_binary"`
 }
 
-type Disabler func(context.Context, install.LegacyConnection) error
+type Disabler func(context.Context, LegacyConnection) error
 
 type Retirement struct {
 	Clone    string `json:"clone"`
@@ -30,11 +29,11 @@ type Retirement struct {
 	// Disabled lists what this run disabled. An interrupted earlier run's
 	// disables are in its failure message; Clear lists every profile now
 	// verified to have no enabled connection.
-	Disabled []install.LegacyConnection `json:"disabled_this_run"`
-	Clear    []NativeProfile            `json:"profiles_clear"`
-	Note     string                     `json:"note"`
-	ReadOnly bool                       `json:"read_only"`
-	Notice   string                     `json:"notice"`
+	Disabled []LegacyConnection `json:"disabled_this_run"`
+	Clear    []NativeProfile    `json:"profiles_clear"`
+	Note     string             `json:"note"`
+	ReadOnly bool               `json:"read_only"`
+	Notice   string             `json:"notice"`
 }
 
 // PartialError is a failure after the command already changed something.
@@ -63,7 +62,7 @@ func Retire(ctx context.Context, clone, serverURL string, profiles []NativeProfi
 	if err != nil {
 		return out, errors.New("clone is not a readable signet")
 	}
-	out.Clone, out.SignetID, out.Disabled, out.Clear = store.Root, store.Signet.ID, []install.LegacyConnection{}, []NativeProfile{}
+	out.Clone, out.SignetID, out.Disabled, out.Clear = store.Root, store.Signet.ID, []LegacyConnection{}, []NativeProfile{}
 	// Once a disable has run, a failure has changed native state.
 	stopped := func(err error) error {
 		if len(out.Disabled) == 0 {
@@ -76,7 +75,7 @@ func Retire(ctx context.Context, clone, serverURL string, profiles []NativeProfi
 		return &PartialError{Err: err, Written: "disabled " + strings.Join(done, ", ") + "; the clone itself was not changed"}
 	}
 	for _, p := range profiles {
-		found, err := install.FindLegacyConnections(ctx, p.Harness, p.Home, p.Binary)
+		found, err := FindLegacyConnections(ctx, p.Harness, p.Home, p.Binary)
 		if err != nil {
 			return out, stopped(fmt.Errorf("%s profile inventory failed: %w", p.Harness, err))
 		}
@@ -86,7 +85,7 @@ func Retire(ctx context.Context, clone, serverURL string, profiles []NativeProfi
 			}
 			out.Disabled = append(out.Disabled, c)
 		}
-		if still, err := install.FindLegacyConnections(ctx, p.Harness, p.Home, p.Binary); err != nil || len(still) > 0 {
+		if still, err := FindLegacyConnections(ctx, p.Harness, p.Home, p.Binary); err != nil || len(still) > 0 {
 			return out, stopped(fmt.Errorf("%s still shows an enabled Mandalore connection, and the clone was not changed", p.Harness))
 		}
 		out.Clear = append(out.Clear, p)

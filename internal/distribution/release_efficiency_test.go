@@ -216,7 +216,7 @@ func TestReleaseVerificationRequestBudget(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Logf("requests=%d distinct_assets=%d", requests, len(assets))
-	if requests != 13 || len(assets) != 8 {
+	if requests != 12 || len(assets) != 7 {
 		t.Fatal("full verification budget or asset coverage changed")
 	}
 	for path, count := range assets {

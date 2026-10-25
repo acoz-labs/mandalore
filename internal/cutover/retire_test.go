@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/acoz-labs/mandalore/internal/cutover"
-	"github.com/acoz-labs/mandalore/internal/install"
 	"github.com/acoz-labs/mandalore/internal/testfixture"
 )
 
@@ -54,7 +53,7 @@ func TestRetireDisablesDetectedConnectionsFirst(t *testing.T) {
 	profiles := []cutover.NativeProfile{{Harness: "claude-code", Home: home, Binary: "/fixture/bin/claude"}}
 
 	// A failed disable leaves the clone as it was.
-	_, err := cutover.Retire(context.Background(), clone, "https://memory.example.com", profiles, func(context.Context, install.LegacyConnection) error {
+	_, err := cutover.Retire(context.Background(), clone, "https://memory.example.com", profiles, func(context.Context, cutover.LegacyConnection) error {
 		return errors.New("synthetic failure")
 	})
 	if err == nil {
@@ -68,12 +67,12 @@ func TestRetireDisablesDetectedConnectionsFirst(t *testing.T) {
 	}
 
 	// A disable that reports success but leaves the plugin enabled is caught.
-	if _, err := cutover.Retire(context.Background(), clone, "https://memory.example.com", profiles, func(context.Context, install.LegacyConnection) error { return nil }); err == nil {
+	if _, err := cutover.Retire(context.Background(), clone, "https://memory.example.com", profiles, func(context.Context, cutover.LegacyConnection) error { return nil }); err == nil {
 		t.Fatal("retire trusted a disable that changed nothing")
 	}
 
-	var disabled []install.LegacyConnection
-	r, err := cutover.Retire(context.Background(), clone, "https://memory.example.com", profiles, func(_ context.Context, c install.LegacyConnection) error {
+	var disabled []cutover.LegacyConnection
+	r, err := cutover.Retire(context.Background(), clone, "https://memory.example.com", profiles, func(_ context.Context, c cutover.LegacyConnection) error {
 		disabled = append(disabled, c)
 		claudeProfile(t, home, false) // what `claude plugin disable` does
 		return nil
@@ -85,7 +84,7 @@ func TestRetireDisablesDetectedConnectionsFirst(t *testing.T) {
 		t.Fatalf("disabled %v, result %+v", disabled, r)
 	}
 	// Rerunning finishes or confirms the retirement without disabling again.
-	if _, err := cutover.Retire(context.Background(), clone, "https://memory.example.com", profiles, func(context.Context, install.LegacyConnection) error {
+	if _, err := cutover.Retire(context.Background(), clone, "https://memory.example.com", profiles, func(context.Context, cutover.LegacyConnection) error {
 		t.Fatal("disabled an already disabled connection")
 		return nil
 	}); err != nil {
@@ -107,7 +106,7 @@ func TestRetireReportsDisablesBeforeAFailure(t *testing.T) {
 	claudeProfile(t, second, true)
 	profiles := []cutover.NativeProfile{{Harness: "claude-code", Home: first, Binary: "/fixture/bin/claude"}, {Harness: "claude-code", Home: second, Binary: "/fixture/bin/claude"}}
 	calls := 0
-	_, err := cutover.Retire(context.Background(), clone, "https://memory.example.com", profiles, func(_ context.Context, c install.LegacyConnection) error {
+	_, err := cutover.Retire(context.Background(), clone, "https://memory.example.com", profiles, func(_ context.Context, c cutover.LegacyConnection) error {
 		if calls++; calls == 2 {
 			return errors.New("synthetic failure")
 		}
@@ -121,7 +120,7 @@ func TestRetireReportsDisablesBeforeAFailure(t *testing.T) {
 	if _, err := os.Lstat(filepath.Join(clone, cutover.RetiredNote)); !errors.Is(err, os.ErrNotExist) {
 		t.Fatal("RETIRED.md written after a failed disable")
 	}
-	r, err := cutover.Retire(context.Background(), clone, "https://memory.example.com", profiles, func(_ context.Context, c install.LegacyConnection) error {
+	r, err := cutover.Retire(context.Background(), clone, "https://memory.example.com", profiles, func(_ context.Context, c cutover.LegacyConnection) error {
 		claudeProfile(t, c.Home, false)
 		return nil
 	})
