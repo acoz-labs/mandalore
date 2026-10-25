@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 	"sync/atomic"
+	"syscall"
 	"testing"
 	"time"
 
@@ -1385,6 +1386,57 @@ func TestTokenReadFailure(t *testing.T) {
 		if resp, out := e.postForm(t, e.agent, "/token", form); resp.StatusCode != http.StatusOK {
 			t.Errorf("%s once the state reads: %d %v", name, resp.StatusCode, out)
 		}
+	}
+}
+
+// An update whose save succeeds has happened even when rereading the saved
+// file fails, so it reports no error, and a redemption saved that way keeps
+// its code used and its tokens.
+func TestUpdateSavedButUnreadable(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("root reads the write-only state file this test uses to fail the reread")
+	}
+	t.Setenv("HOME", t.TempDir())
+	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
+	e.enrollOwner(t)
+	redirect := "https://claude.ai/api/mcp/auth_callback"
+	client := e.registerClient(t, "Synthetic", redirect)
+	tok := e.tokens(t, client, redirect, "/mcp", "", ScopeReadWrite)
+	grants := pendingGrants(t, e, client, redirect, tok)
+	state := filepath.Join(e.config.StateDir, oauthStateFile)
+	a := e.server.oauth
+	// The umask makes the saved file write-only, so its reread fails. No
+	// server test runs in parallel, so it reaches no other test.
+	saveUnreadable := func(save func() error) error {
+		old := syscall.Umask(0o477)
+		defer syscall.Umask(old)
+		return save()
+	}
+	t.Cleanup(func() { _ = os.Chmod(state, 0600) })
+
+	if err := saveUnreadable(func() error { return a.store.update(func(*oauthState) error { return nil }) }); err != nil {
+		t.Fatalf("update with an unreadable saved state: %v", err)
+	}
+	if err := os.Chmod(state, 0600); err != nil {
+		t.Fatal(err)
+	}
+	var out tokenResponse
+	err := saveUnreadable(func() (err error) { out, err = a.redeem(client, grants["redeem"]); return err })
+	if err != nil || out.AccessToken == "" {
+		t.Fatalf("redeem with an unreadable saved state: %v %+v", err, out)
+	}
+	if _, err := os.ReadFile(state); err == nil {
+		t.Fatal("the saved state was readable, so the reread did not fail")
+	}
+	if err := os.Chmod(state, 0600); err != nil {
+		t.Fatal(err)
+	}
+	if e.mcpStatus(t, "/mcp", out.AccessToken) != http.StatusOK {
+		t.Fatal("the saved tokens do not work")
+	}
+	resp, body := e.postForm(t, e.agent, "/token", grants["redeem"])
+	if resp.StatusCode != http.StatusBadRequest || body["error_description"] != "authorization code was already used" {
+		t.Fatalf("redeem the saved code again: %d %v", resp.StatusCode, body)
 	}
 }
 
