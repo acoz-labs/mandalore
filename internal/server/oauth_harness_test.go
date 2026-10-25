@@ -354,6 +354,13 @@ func (e *oauthEnv) tokens(t *testing.T, client, redirect, path, scope string, gr
 // mcpStatus sends one MCP ping with a bearer token and returns the status.
 func (e *oauthEnv) mcpStatus(t *testing.T, path, token string) int {
 	t.Helper()
+	status, _ := e.mcpChallenge(t, path, token)
+	return status
+}
+
+// mcpChallenge sends one MCP ping and returns the status and WWW-Authenticate.
+func (e *oauthEnv) mcpChallenge(t *testing.T, path, token string) (int, string) {
+	t.Helper()
 	req, _ := http.NewRequest(http.MethodPost, publicURL+path, strings.NewReader(`{"jsonrpc":"2.0","id":1,"method":"ping"}`))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json, text/event-stream")
@@ -365,7 +372,7 @@ func (e *oauthEnv) mcpStatus(t *testing.T, path, token string) int {
 		t.Fatal(err)
 	}
 	resp.Body.Close()
-	return resp.StatusCode
+	return resp.StatusCode, resp.Header.Get("WWW-Authenticate")
 }
 
 // bearer returns an MCP session that sends a fixed access token.
