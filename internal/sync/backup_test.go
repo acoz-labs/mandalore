@@ -33,11 +33,23 @@ func TestPushOnlyDeliversWithoutFetchingAndRefusesRemoteAhead(t *testing.T) {
 	if _, err := a.Checkpoint(ctx); err != nil {
 		t.Fatal(err)
 	}
+	// The remote commit is not local yet: the last pushed head tells.
+	if state, err := a.RemoteState(ctx, remote, head); err != nil || state != RemoteDiverged {
+		t.Fatalf("divergence not detected: %q %v", state, err)
+	}
 	if _, err := a.Push(ctx, remote); !errors.Is(err, ErrRemoteAhead) {
 		t.Fatalf("push over remote-ahead: %v", err)
 	}
+	before := gitTest(t, a.store.Root, "rev-parse", "HEAD")
 	if _, err := a.FastForward(ctx, remote); !errors.Is(err, ErrDiverged) {
 		t.Fatalf("divergent fast-forward: %v", err)
+	}
+	if gitTest(t, a.store.Root, "rev-parse", "HEAD") != before {
+		t.Fatal("refused reconcile moved main")
+	}
+	// Fetched, the remote commit is local and ancestry decides.
+	if state, err := a.RemoteState(ctx, remote, ""); err != nil || state != RemoteDiverged {
+		t.Fatalf("fetched divergence: %q %v", state, err)
 	}
 }
 
@@ -48,8 +60,8 @@ func TestFastForwardReconcilesARemoteAheadCheckout(t *testing.T) {
 	if out, err := b.Sync(ctx, 10*time.Second); err != nil || !out.Delivered {
 		t.Fatal(out, err)
 	}
-	if ahead, _ := a.RemoteAhead(ctx, remote); !ahead {
-		t.Fatal("remote ahead not detected")
+	if state, err := a.RemoteState(ctx, remote, ""); err != nil || state != RemoteAheadOf {
+		t.Fatalf("remote ahead not detected: %q %v", state, err)
 	}
 	out, err := a.FastForward(ctx, remote)
 	if err != nil || out.State != "synchronized" || out.Head != out.RemoteHead {

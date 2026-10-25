@@ -8,11 +8,9 @@ connection installers described below still generate those removed entry points
 and leave with the plugins in #163.
 
 The development CLI uses one typed operation dispatcher. It does
-do not supply a model, replace native agent identity, discover memory from cwd,
+not supply a model, replace native agent identity, discover memory from cwd,
 or discover transport permission from conversation text. Default administrative
-CLI calls retain their declared local/network effects. Explicitly enabled native
-sessions add software-controlled transport through a pinned session policy.
-CLI-only connection operations install the native
+CLI calls retain their declared local/network effects. CLI-only connection operations install the native
 plugin after explicit approval; they are not memory MCP tools. The
 [guided menu](setup.md) delegates to these same operations. Explicit Git work is
 described in [synchronization](synchronization.md). Exact-candidate/release
@@ -583,31 +581,14 @@ Strict object input rejects duplicate, unknown or incorrectly cased fields,
 wrong types, missing required fields, trailing objects and excessive nesting.
 Arguments are at most 32 KiB. Semantic envelopes are at most 64 KiB; recall's
 default result budget is 8192 bytes (range 1024–32768). Default page/result limit
-is 5 (range 1–50); zero is invalid, not an implicit default. MCP newline input
-frames have a separate 256 KiB limit. Schemas and duplicated text/structured
-content add protocol overhead outside the semantic result budget.
+is 5 (range 1–50); zero is invalid, not an implicit default. The
+[server](server.md) caps MCP request bodies at 64 KiB; schemas and duplicated
+text/structured content add protocol overhead outside the semantic result budget.
 
 `--read-only` refuses mutations before reading their stdin or touching a binding.
-Default administrative reads and discovery do not journal, repair, enroll or
-sync. Enabled-session lifecycle entry points attempt transport before context
-assembly under the selected policy; they never extract memories or enroll Git. A running
-MCP server retains one binding; changing its local file requires restarting the
-server. Reads load current local records; no persistent model context is refreshed
-merely by updating those records.
-
-Without a session policy, `memory_context` assembles fresh local orientation, up to three bank-wide recall
-hits within 4096 result bytes, and five routing scopes. It truncates its prompt
-query to 2048 UTF-8 bytes and caps the encoded packet at 16383 bytes. The packet
-labels retrieved data as untrusted evidence, never reads native transcripts or
-automatically scans foundlings, and does not save or synchronize even for an
-explicit consolidation cue. Read failures return a compact warning without raw
-file contents. Native adapters must preserve their host prompt and separately
-honor connection read-only settings; a packet is not authorization to mutate.
-An enabled session refreshes through its separate policy-aware boundary before
-calling the local context builder.
-Omitting `prompt` returns orientation only after opening the guarded binding,
-without scanning records; an explicitly supplied empty prompt performs local
-bank-wide recall. Attachment validation is not a whole-bank health check.
+Reads and discovery do not journal, repair, enroll or sync. Reads load current
+local records. Lifecycle context for agents is the server's `memory_context`
+tool, described in the [server contract](server.md#tools).
 
 ## Binding and provenance
 

@@ -34,6 +34,9 @@ func TestConfigValidation(t *testing.T) {
 		"listen without host":         func(c *Config) { c.Listen = ":8730" },
 		"non-loopback test listener":  func(c *Config) { c.Listen = "192.0.2.1:8730" },
 		"public URL with credentials": func(c *Config) { c.PublicURL = "https://user@memory.example.com" },
+		"loopback trust behind a public URL": func(c *Config) {
+			c.Auth, c.TestClients, c.LocalScope, c.PublicURL = AuthLoopbackTrust, nil, ScopeReadWrite, "https://memory.example.com"
+		},
 	} {
 		c := validConfig()
 		c.TestClients = append([]TestClient{}, c.TestClients...)
@@ -41,6 +44,15 @@ func TestConfigValidation(t *testing.T) {
 		if err := c.Validate(); err == nil {
 			t.Errorf("%s accepted", name)
 		}
+	}
+}
+
+func TestInsecureTestNeedsATestBuild(t *testing.T) {
+	saved := newTestAuthenticator
+	t.Cleanup(func() { newTestAuthenticator = saved })
+	newTestAuthenticator = nil
+	if err := validConfig().Validate(); err == nil || !strings.Contains(err.Error(), "test builds") {
+		t.Fatalf("insecure-test accepted outside a test build: %v", err)
 	}
 }
 

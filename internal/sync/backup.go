@@ -10,7 +10,7 @@ import (
 // contain. A single writer must not push over them; an operator reconciles.
 var ErrRemoteAhead = errors.New("remote ahead: run mandalore server reconcile")
 
-var ErrDiverged = errors.New("local and remote history diverged; reconcile refuses anything but a fast-forward")
+var ErrDiverged = errors.New("diverged: local and remote both have commits; manual recovery needed")
 
 func (s *Synchronizer) remoteHead(ctx context.Context, remote string) (string, error) {
 	if !validRemote(remote) {
@@ -27,31 +27,60 @@ func (s *Synchronizer) remoteHead(ctx context.Context, remote string) (string, e
 	return head, nil
 }
 
-// RemoteAhead reports whether remote main has a commit outside local history.
-// It reads only the remote ref and local objects: it never fetches.
-func (s *Synchronizer) RemoteAhead(ctx context.Context, remote string) (bool, error) {
+// Remote states relative to local main.
+const (
+	RemoteCurrent  = "current"  // remote main is empty or in local history
+	RemoteAheadOf  = "ahead"    // remote has commits; local main can fast-forward
+	RemoteDiverged = "diverged" // both sides have commits the other lacks
+)
+
+// RemoteState compares remote main with local main without fetching. When
+// the remote commit is not local, pushed (the last head this checkout pushed,
+// if known) tells ahead from diverged: local commits after it are unpushed.
+func (s *Synchronizer) RemoteState(ctx context.Context, remote, pushed string) (string, error) {
 	observed, err := s.remoteHead(ctx, remote)
-	if err != nil || observed == "" {
-		return false, err
+	if err != nil {
+		return "", err
+	}
+	if observed == "" {
+		return RemoteCurrent, nil
 	}
 	local, err := s.head(ctx)
 	if err != nil {
-		return false, err
+		return "", err
 	}
 	if local == "" {
-		return true, nil
+		return RemoteAheadOf, nil
 	}
 	if _, err := s.git(ctx, "cat-file", "-e", observed+"^{commit}"); err != nil {
 		if ctx.Err() != nil {
-			return false, ctx.Err()
+			return "", ctx.Err()
 		}
-		return true, nil
+		if pushed != "" && pushed != local {
+			return RemoteDiverged, nil
+		}
+		return RemoteAheadOf, nil
 	}
-	_, err = s.git(ctx, "merge-base", "--is-ancestor", observed, local)
-	if isExit(err, 1) {
-		return true, nil
+	for _, check := range [][2]string{{observed, local}, {local, observed}} {
+		_, err = s.git(ctx, "merge-base", "--is-ancestor", check[0], check[1])
+		if err == nil {
+			if check[0] == observed {
+				return RemoteCurrent, nil
+			}
+			return RemoteAheadOf, nil
+		}
+		if !isExit(err, 1) {
+			return "", err
+		}
 	}
-	return false, err
+	return RemoteDiverged, nil
+}
+
+// RemoteAhead reports whether remote main has a commit outside local history.
+// It reads only the remote ref and local objects: it never fetches.
+func (s *Synchronizer) RemoteAhead(ctx context.Context, remote string) (bool, error) {
+	state, err := s.RemoteState(ctx, remote, "")
+	return state != RemoteCurrent, err
 }
 
 // Push delivers committed local main to remote main without fetching or
@@ -100,6 +129,7 @@ func (s *Synchronizer) FastForward(ctx context.Context, remote string) (Status, 
 		}
 		if observed == "" || observed == local {
 			out.State, out.Phase, out.RemoteHead = "synchronized", "complete", observed
+			out.Notice = "Already current with the remote; nothing to fast-forward."
 			return nil
 		}
 		if _, err := s.git(ctx, "fetch", "--no-tags", "--no-recurse-submodules", remote, "refs/heads/main:refs/remotes/origin/main"); err != nil {
@@ -129,6 +159,7 @@ func (s *Synchronizer) FastForward(ctx context.Context, remote string) (Status, 
 			return err
 		}
 		out.Head, out.State, out.Phase = out.RemoteHead, "synchronized", "complete"
+		out.Notice = "Fast-forwarded to the validated remote head."
 		return nil
 	})
 	return out, err

@@ -36,9 +36,9 @@ The file is strict JSON: unknown, duplicate or mistyped fields are refused.
 | `public_url` | The origin clients use, such as `https://memory.example.com`. HTTPS unless loopback. It sets the Host and Origin allowlist (plus loopback names on the listen port). |
 | `state_dir` | Server state: client device enrollments and backup state, per signet. Never inside a signet. |
 | `owner.name` | The actor recorded on every write. |
-| `auth` | `loopback-trust` or `insecure-test`. Both are refused unless `listen` is loopback. |
+| `auth` | `loopback-trust` or `insecure-test`. Both are refused unless `listen` is loopback; `loopback-trust` also needs a loopback `public_url`. |
 | `local_scope` | `read` or `read-write`, the scope of the `local` client under `loopback-trust`. |
-| `test_clients` | `insecure-test` only: `id`, `kind`, `scope`, bearer `token` (16+ bytes) and the `signets` slugs it may use. For tests. |
+| `test_clients` | `insecure-test` only: `id`, `kind`, `scope`, bearer `token` (16+ bytes) and the `signets` slugs it may use. |
 | `signets[]` | Up to 16. `slug`, absolute `root` (an existing Git checkout on `main`), its `signet_id`, the server's enrolled `device_id` in it, and the backup `remote`. |
 
 One signet serves at `/mcp`. Several serve at `/s/<slug>/mcp`. Each signet has its
@@ -52,9 +52,15 @@ per signet. A `Client` has an ID, a kind (recorded as the write's harness) and a
 scope. An unknown client gets `401`; a known client without access to that
 signet gets `403`.
 
-- `loopback-trust`: a loopback peer that addresses the server as `127.0.0.1` or
-  `localhost` is the client `local`. Any local process can use it.
-- `insecure-test`: static bearer tokens from `test_clients`.
+- `loopback-trust`: a direct loopback peer that addresses the server as
+  `127.0.0.1` or `localhost` is the client `local`. Any local process can use it.
+  It is refused with a non-loopback `public_url`, and a request carrying proxy
+  forwarding headers (`Forwarded`, `X-Forwarded-*`, `X-Real-IP`,
+  `CF-Connecting-IP`, `CF-Ray`, `True-Client-IP`, `X-Client-IP`, `Via`) gets
+  `401`, so a same-host proxy or tunnel that rewrites Host can't relay internet
+  traffic as the local client.
+- `insecure-test`: static bearer tokens from `test_clients`. It exists only in
+  the server package's test builds; a release binary refuses it at config load.
 
 ## Tools
 
@@ -95,24 +101,47 @@ so a failed push never fails a save. The save receipt says `durable: true` and
 At startup the server checks each remote without fetching. If the remote has
 commits the checkout lacks, another writer is still alive: the server refuses to
 serve that signet (`503`) and logs `remote ahead: run mandalore server reconcile`.
-An unreachable remote doesn't block serving.
+An unreachable remote doesn't block serving: saves stay durable locally, and the
+server keeps checking the remote every minute while it's unreachable or a push is
+pending. If a push or check then finds the remote ahead, the signet keeps serving
+reads but refuses writes (`backup.remote_ahead`), so nothing widens the gap.
+
+### Diverged history
+
+If the server saved while its remote was unreachable and another writer pushed in
+the same window, both sides have commits the other lacks. The server logs
+`diverged: local and remote both have commits; manual recovery needed`, refuses
+writes, and on restart refuses to serve the signet. `server status` shows
+`"remote": "diverged"`, and `server reconcile` refuses without changing anything.
+Under a single writer this means a second writer broke the model. To recover:
+
+1. Find and stop the other writer (usually a 1.x clone still syncing).
+2. Stop the server.
+3. In the signet root, fetch the remote and merge it:
+   `git fetch <remote> main && git merge --no-ff FETCH_HEAD`. Signet records are
+   append-only files with unique names, so the merge should not conflict. If it
+   does, abort it and inspect both histories; don't resolve by deleting records.
+4. Start the server. Its first checkpoint validates the whole signet before it
+   pushes the merge; an invalid signet is not pushed.
 
 ## Admin commands
 
 - `mandalore server status --config FILE` prints, per signet: head, last push,
-  pending push, backup state, and the remote's state now (`current`, `ahead` or
-  `unreachable`).
+  pending push, backup state, and the remote's state now (`current`, `ahead`,
+  `diverged` or `unreachable`).
 - `mandalore server reconcile --config FILE [--signet SLUG]` fetches the remote,
   validates it as the same signet with append-only history, and fast-forwards.
-  It refuses uncommitted or divergent local history and never merges or
-  discards. Restart the server afterwards.
+  It refuses uncommitted or diverged local history and never merges or
+  discards (see [Diverged history](#diverged-history)). Restart the server
+  afterwards.
 
 ## Read cache
 
 The server is each signet's only writer, so it keeps the validated revision graph
 and per-revision term index in memory between its own writes; every write drops
-them. On a synthetic 1,000-record signet `memory_context` measures about 7 ms
-p95 on a development laptop (`go test -bench MemoryContext ./internal/server/`),
-against a 300 ms target. A change made to the checkout by another process isn't
+them. On a synthetic 1,000-record signet, `memory_context` measures about 7 ms
+p95 between writes and about 165 ms p95 on the first call after a write, on a
+development laptop, against a 300 ms target. `bin/ci` asserts both on a plain
+build; the race detector slows the post-write path about fivefold. A change made to the checkout by another process isn't
 seen until the server's next write or restart, which is why the server must be
 the only writer.

@@ -102,6 +102,32 @@ func TestMemoryContextLatencyOnLargeSignet(t *testing.T) {
 	}
 }
 
+// The read cache drops on every write, so the first call after a save reads
+// and validates the whole signet. The race detector slows that path several
+// times over, so the bound is asserted on plain builds; bin/ci runs one.
+func TestMemoryContextAfterWriteLatency(t *testing.T) {
+	f := testfixture.New(t, large)
+	f.Service.CacheReads()
+	samples := make([]time.Duration, 20)
+	for i := range samples {
+		if _, err := f.Service.Remember(memory.Write{Kind: "fact", Summary: "Fresh note", Body: fmt.Sprintf("Synthetic note %d", i), Basis: "observation", Reason: "Latency sample"}); err != nil {
+			t.Fatal(err)
+		}
+		start := time.Now()
+		text := contextFor(t, f.Service, "prompt", fmt.Sprintf("status of signal-%06d", i*50))
+		samples[i] = time.Since(start)
+		if !strings.Contains(text, fmt.Sprintf("signal-%06d", i*50)) {
+			t.Fatalf("sample %d missed its record", i)
+		}
+	}
+	slices.Sort(samples)
+	p95 := samples[len(samples)*95/100-1]
+	t.Logf("memory_context after a write: p95 %s over %d samples (race detector: %v)", p95, len(samples), raceEnabled)
+	if !raceEnabled && p95 >= 300*time.Millisecond {
+		t.Fatalf("p95 %s after a write exceeds 300ms", p95)
+	}
+}
+
 func BenchmarkMemoryContext(b *testing.B) {
 	f := testfixture.New(b, large)
 	f.Service.CacheReads()

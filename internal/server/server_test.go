@@ -452,7 +452,7 @@ func TestRemoteAheadBlocksUntilReconcile(t *testing.T) {
 func TestLoopbackTrustAndHTTPBoundary(t *testing.T) {
 	a := testfixture.NewServerSignet(t, "alpha")
 	c := testConfig(t, a)
-	c.Auth, c.TestClients, c.LocalScope = AuthLoopbackTrust, nil, ScopeRead
+	c.Auth, c.TestClients, c.LocalScope, c.PublicURL = AuthLoopbackTrust, nil, ScopeRead, "http://"+listen
 	s, h, _ := startServer(t, c)
 	session := connect(t, h, "/mcp", "")
 	init := session.InitializeResult()
@@ -466,7 +466,7 @@ func TestLoopbackTrustAndHTTPBoundary(t *testing.T) {
 		name, host, origin, path, method string
 		status                           int
 	}{
-		{"public host is not loopback-trusted", "memory.example.com", "", "/mcp", "POST", 401},
+		{"loopback name on another port", "localhost:9999", "", "/mcp", "POST", 404},
 		{"unknown host", "other.example", "", "/mcp", "POST", 404},
 		{"foreign origin", listen, "https://other.example", "/mcp", "POST", 403},
 		{"unknown route", listen, "", "/admin", "POST", 404},
@@ -487,6 +487,17 @@ func TestLoopbackTrustAndHTTPBoundary(t *testing.T) {
 				t.Fatal("response leaked the signet path")
 			}
 		})
+	}
+	// A same-host proxy that rewrites Host is still a relay, not the local user.
+	for _, header := range forwardingHeaders {
+		r := httptest.NewRequest("POST", "http://"+listen+"/mcp", strings.NewReader(`{}`))
+		r.RemoteAddr = "127.0.0.1:50000"
+		r.Header.Set(header, "203.0.113.9")
+		w := httptest.NewRecorder()
+		s.Handler().ServeHTTP(w, r)
+		if w.Code != http.StatusUnauthorized {
+			t.Fatalf("forwarded request with %s trusted: %d", header, w.Code)
+		}
 	}
 	r := httptest.NewRequest("GET", "http://"+listen+"/healthz", nil)
 	r.RemoteAddr = "192.0.2.1:50000"
@@ -516,4 +527,138 @@ func TestInstructionsAreShort(t *testing.T) {
 			}
 		}
 	}
+}
+
+// cloneWriter is a second, 1.x-style writer on a clone of the signet's remote.
+func cloneWriter(t *testing.T, s testfixture.ServerSignet) string {
+	t.Helper()
+	dir := filepath.Join(t.TempDir(), "other")
+	testfixture.Git(t, s.Root, "clone", s.Remote, dir)
+	return dir
+}
+
+func otherWrite(t *testing.T, s testfixture.ServerSignet, dir, remote, body string) {
+	t.Helper()
+	m, err := memory.OpenService(dir, memory.Authorship{DeviceID: s.DeviceID, Actor: "Synthetic Owner", Harness: "cli"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := m.Remember(memory.Write{Kind: "fact", Summary: "Other writer", Body: body, Basis: "user-direction", Reason: "Synthetic"}); err != nil {
+		t.Fatal(err)
+	}
+	testfixture.Git(t, dir, "add", "memory")
+	testfixture.Git(t, dir, "commit", "-m", "Other writer")
+	testfixture.Git(t, dir, "push", remote, "main")
+}
+
+func remoteOf(g *signet) string {
+	g.backupMu.Lock()
+	defer g.backupMu.Unlock()
+	return g.backup.Remote
+}
+
+// A remote unreachable at startup that returns ahead pauses writes before any
+// diverge, so reconcile can still fast-forward.
+func TestRemoteAheadAtRuntimePausesWritesAndReconciles(t *testing.T) {
+	a := testfixture.NewServerSignet(t, "alpha")
+	c := testConfig(t, a)
+	testfixture.Git(t, a.Root, "push", a.Remote, "main")
+	other := cloneWriter(t, a)
+	hidden := a.RemoteDir + ".away"
+	if err := os.Rename(a.RemoteDir, hidden); err != nil {
+		t.Fatal(err)
+	}
+	ctx, stop := context.WithCancel(context.Background())
+	defer stop()
+	s, h, logs := startServerUntil(t, ctx, c)
+	if !strings.Contains(logs.String(), "remote unreachable at startup") {
+		t.Fatalf("log %q", logs.String())
+	}
+	otherWrite(t, a, other, "file://"+hidden, "Written while the server was offline")
+	if err := os.Rename(hidden, a.RemoteDir); err != nil {
+		t.Fatal(err)
+	}
+	g := s.signets["/mcp"]
+	eventually(t, 5*time.Second, "retry notices the remote is ahead", func() bool { return remoteOf(g) == "ahead" })
+	if !strings.Contains(logs.String(), "signet a: remote ahead: run mandalore server reconcile") {
+		t.Fatalf("log %q", logs.String())
+	}
+	session := connect(t, h, "/mcp", writeToken)
+	if r, text := call(t, session, "memory_remember", rememberArgs("paused-request-00001", "Must not save")); !r.IsError || !strings.Contains(text, "backup.remote_ahead") {
+		t.Fatalf("write accepted while remote ahead: %s", text)
+	}
+	if r, _ := call(t, session, "memory_recall", map[string]any{}); r.IsError {
+		t.Fatal("reads stopped while remote ahead")
+	}
+	stop()
+	h.Close()
+	if st, err := Status(context.Background(), c); err != nil || st[0].Remote != "ahead" {
+		t.Fatalf("status %+v: %v", st, err)
+	}
+	if _, err := Reconcile(context.Background(), c, "a"); err != nil {
+		t.Fatalf("reconcile after a paused signet: %v", err)
+	}
+	_, h2, _ := startServer(t, c)
+	_, text := call(t, connect(t, h2, "/mcp", writeToken), "memory_remember", rememberArgs("paused-request-00002", "Saved after reconcile"))
+	receipt(t, text)
+}
+
+// Writes on both sides while offline are a split brain: the server names it,
+// keeps refusing writes, and reconcile refuses without changing anything.
+func TestDivergedSignetStaysRefused(t *testing.T) {
+	a := testfixture.NewServerSignet(t, "alpha")
+	c := testConfig(t, a)
+	ctx, stop := context.WithCancel(context.Background())
+	defer stop()
+	s, h, logs := startServerUntil(t, ctx, c)
+	g := s.signets["/mcp"]
+	eventually(t, 5*time.Second, "first push", func() bool { return remoteHead(t, a) != "" })
+	other := cloneWriter(t, a)
+	hidden := a.RemoteDir + ".away"
+	if err := os.Rename(a.RemoteDir, hidden); err != nil {
+		t.Fatal(err)
+	}
+	session := connect(t, h, "/mcp", writeToken)
+	_, text := call(t, session, "memory_remember", rememberArgs("diverged-request-0001", "Server wrote offline"))
+	receipt(t, text)
+	eventually(t, 5*time.Second, "push fails while offline", func() bool { return remoteOf(g) == "unreachable" })
+	otherWrite(t, a, other, "file://"+hidden, "Other writer wrote too")
+	if err := os.Rename(hidden, a.RemoteDir); err != nil {
+		t.Fatal(err)
+	}
+	eventually(t, 5*time.Second, "divergence named", func() bool { return remoteOf(g) == "diverged" })
+	if !strings.Contains(logs.String(), "signet a: diverged: local and remote both have commits; manual recovery needed") {
+		t.Fatalf("log %q", logs.String())
+	}
+	if r, text := call(t, session, "memory_remember", rememberArgs("diverged-request-0002", "Must not save")); !r.IsError || !strings.Contains(text, "backup.remote_ahead") {
+		t.Fatalf("write accepted while diverged: %s", text)
+	}
+	stop()
+	h.Close()
+	head := testfixture.Git(t, a.Root, "rev-parse", "HEAD")
+	if st, err := Status(context.Background(), c); err != nil || st[0].Remote != "diverged" {
+		t.Fatalf("status %+v: %v", st, err)
+	}
+	if _, err := Reconcile(context.Background(), c, "a"); err == nil || !strings.Contains(err.Error(), "diverged: local and remote both have commits; manual recovery needed") {
+		t.Fatalf("reconcile on diverged history: %v", err)
+	}
+	if testfixture.Git(t, a.Root, "rev-parse", "HEAD") != head || testfixture.Git(t, a.Root, "status", "--porcelain") != "" {
+		t.Fatal("refused reconcile changed the checkout")
+	}
+	_, h2, logs2 := startServer(t, c)
+	if code := post(t, h2, "/mcp", writeToken); code != http.StatusServiceUnavailable || !strings.Contains(logs2.String(), "diverged") {
+		t.Fatalf("restarted diverged signet served: %d %s", code, logs2.String())
+	}
+	// The manual recovery in docs/server.md: merge, restart, and the merge pushes.
+	testfixture.Git(t, a.Root, "fetch", a.Remote, "main")
+	testfixture.Git(t, a.Root, "merge", "--no-ff", "-m", "Recover diverged history", "FETCH_HEAD")
+	_, h3, logs3 := startServer(t, c)
+	if strings.Contains(logs3.String(), "diverged") || strings.Contains(logs3.String(), "remote ahead") {
+		t.Fatalf("still blocked after manual recovery: %s", logs3.String())
+	}
+	_, text = call(t, connect(t, h3, "/mcp", writeToken), "memory_remember", rememberArgs("diverged-request-0003", "Saved after recovery"))
+	receipt(t, text)
+	eventually(t, 5*time.Second, "recovered history reaches the remote", func() bool {
+		return grepRepo(t, a.RemoteDir, "Server wrote offline") && grepRepo(t, a.RemoteDir, "Saved after recovery")
+	})
 }

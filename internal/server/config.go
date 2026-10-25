@@ -25,6 +25,7 @@ type Config struct {
 	Owner     Owner  `json:"owner"`
 	// Auth selects the authenticator. OAuth is the production default once it
 	// exists; until then a loopback-only mode must be named explicitly.
+	// insecure-test is accepted only by test builds.
 	Auth        string         `json:"auth"`
 	LocalScope  Scope          `json:"local_scope,omitempty"`
 	TestClients []TestClient   `json:"test_clients,omitempty"`
@@ -110,6 +111,14 @@ func (c Config) Validate() error {
 		}
 	default:
 		return errors.New("auth must be loopback-trust or insecure-test")
+	}
+	if c.Auth == AuthInsecureTest && newTestAuthenticator == nil {
+		return errors.New("auth insecure-test exists only in test builds")
+	}
+	// A non-loopback public URL means a proxy or tunnel relays requests, and a
+	// relayed request must never become the trusted local client.
+	if c.Auth == AuthLoopbackTrust && !loopbackHost(u.Hostname()) {
+		return errors.New("auth loopback-trust requires a loopback public_url")
 	}
 	if (c.Auth == AuthLoopbackTrust) != c.LocalScope.valid() {
 		return errors.New("local_scope (read or read-write) is required with loopback-trust and only there")

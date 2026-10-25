@@ -143,6 +143,9 @@ func (s *signet) call(ctx context.Context, c Client, name string, raw []byte) *s
 	if isWrite(name) && !c.CanWrite() {
 		return result(api.Failure("access.denied", "This client is read-only.", false))
 	}
+	if isWrite(name) && s.writesPaused() {
+		return result(api.Failure("backup.remote_ahead", "Writes are paused: the backup remote has commits this server lacks. Nothing was saved; the operator must reconcile (see mandalore server status).", false))
+	}
 	if name == "memory_context" {
 		var in ContextInput
 		if strictjson.Decode(raw, &in, api.MaxInputBytes) != nil {

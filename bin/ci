@@ -51,6 +51,9 @@ python3 -B -m unittest discover -s plugins/hermes/test -v
 go mod verify
 git --version
 go test -race ./...
+# The race detector slows memory_context's post-write path several times over;
+# assert its 300 ms p95 bound (criterion 7) on a plain build too.
+go test -count=1 -run '^TestMemoryContext(LatencyOnLargeSignet|AfterWriteLatency)$' ./internal/server/
 go vet ./...
 for target_os in darwin linux; do
   for target_arch in amd64 arm64; do

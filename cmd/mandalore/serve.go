@@ -69,9 +69,10 @@ func runServer(ctx context.Context, args []string, out io.Writer) int {
 		}
 		status, err := server.Reconcile(ctx, c, slug)
 		if err != nil {
-			return emit(out, api.Failure("reconcile.refused", "Reconcile refused: "+err.Error()+". Nothing was merged or discarded.", false))
+			return emit(out, api.Failure("reconcile.refused", "Reconcile refused: "+err.Error()+". Nothing was merged or discarded; see docs/server.md.", false))
 		}
-		return emit(out, api.Success(map[string]any{"signet": slug, "status": status, "notice": "Restart the server to serve this signet."}))
+		status.Notice += " Restart the server to serve this signet."
+		return emit(out, api.Success(map[string]any{"signet": slug, "status": status}))
 	}
 	return bad(out, "Use server status|reconcile --config FILE.")
 }

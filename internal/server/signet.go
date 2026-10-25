@@ -74,7 +74,7 @@ func openSignet(c Config, sc SignetConfig, logger *log.Logger, t timing) (*signe
 	case AuthLoopbackTrust:
 		s.auth = loopbackTrust{scope: c.LocalScope}
 	case AuthInsecureTest:
-		s.auth = newStaticTokens(c.TestClients, sc.Slug)
+		s.auth = newTestAuthenticator(c.TestClients, sc.Slug)
 	}
 	if err := os.MkdirAll(s.state, 0700); err != nil {
 		return nil, fmt.Errorf("signet %s: cannot create its state directory", sc.Slug)
@@ -134,9 +134,12 @@ func (s *signet) author(c Client) (memory.Authorship, error) {
 // startup refuses to serve a signet whose remote has commits the checkout
 // lacks: a surprise remote commit means another writer is still alive.
 func (s *signet) startup(ctx context.Context) {
+	s.backupMu.Lock()
+	pushed := s.backup.Head
+	s.backupMu.Unlock()
 	check, cancel := context.WithTimeout(ctx, s.timing.push)
 	defer cancel()
-	ahead, err := s.git.RemoteAhead(check, s.config.Remote)
+	state, err := s.git.RemoteState(check, s.config.Remote, pushed)
 	s.backupMu.Lock()
 	defer s.backupMu.Unlock()
 	// A previous run's failure is rechecked here; the first push settles it.
@@ -144,17 +147,40 @@ func (s *signet) startup(ctx context.Context) {
 	if s.backup.Pending {
 		s.backup.State = "pending"
 	}
+	s.backup.Remote = "" // recheck, so a blocked signet logs why on every start
 	switch {
 	case err != nil:
 		s.backup.Remote = "unreachable"
 		s.log.Printf("signet %s: remote unreachable at startup; serving and retrying backup", s.config.Slug)
-	case ahead:
-		s.blocked, s.backup.Remote, s.backup.State = true, "ahead", "failed"
-		s.log.Printf("signet %s: remote ahead: run mandalore server reconcile", s.config.Slug)
+	case state == signetsync.RemoteCurrent:
+		s.backup.Remote = state
 	default:
-		s.backup.Remote = "current"
+		s.blocked = true
+		s.remoteMoved(state)
 	}
 	s.saveBackup()
+}
+
+// remoteMoved records that the remote has commits this checkout lacks and
+// pauses writes, so a fast-forward reconcile stays possible. It logs once per
+// change. The caller holds backupMu.
+func (s *signet) remoteMoved(state string) {
+	if s.backup.Remote != state {
+		if state == signetsync.RemoteDiverged {
+			s.log.Printf("signet %s: diverged: local and remote both have commits; manual recovery needed (see docs/server.md)", s.config.Slug)
+		} else {
+			s.log.Printf("signet %s: remote ahead: run mandalore server reconcile", s.config.Slug)
+		}
+	}
+	s.backup.State, s.backup.Remote = "failed", state
+}
+
+// writesPaused reports whether the remote is ahead or diverged. Reads continue;
+// writes would only widen what reconcile has to repair.
+func (s *signet) writesPaused() bool {
+	s.backupMu.Lock()
+	defer s.backupMu.Unlock()
+	return s.backup.Remote == signetsync.RemoteAheadOf || s.backup.Remote == signetsync.RemoteDiverged
 }
 
 // wrote records a published write and schedules a debounced push. It returns
@@ -184,8 +210,8 @@ func (s *signet) saveBackup() {
 }
 
 // deliver pushes after writes settle for the debounce interval, and retries
-// on a timer while a push is pending. A failed push is never fatal: the
-// memory is already durable in the checkout.
+// on a timer while a push is pending or the remote is not known current. A
+// failed push is never fatal: the memory is already durable in the checkout.
 func (s *signet) deliver(ctx context.Context) {
 	retry := time.NewTicker(s.timing.retry)
 	defer retry.Stop()
@@ -201,10 +227,12 @@ func (s *signet) deliver(ctx context.Context) {
 			case <-time.After(s.timing.debounce):
 			}
 		case <-retry.C:
+			// Retry pending pushes, and keep checking a remote not known to be
+			// current, so one that returns ahead pauses writes before the next.
 			s.backupMu.Lock()
-			pending := s.backup.Pending
+			idle := !s.backup.Pending && s.backup.Remote == signetsync.RemoteCurrent
 			s.backupMu.Unlock()
-			if !pending {
+			if idle {
 				continue
 			}
 		}
@@ -219,10 +247,18 @@ func (s *signet) push(ctx context.Context) {
 	s.mu.Lock()
 	_, err := s.git.Checkpoint(ctx)
 	s.mu.Unlock()
-	var head string
+	var head, state string
 	if err == nil {
+		s.backupMu.Lock()
+		pushed := s.backup.Head
+		s.backupMu.Unlock()
 		pushCtx, cancel := context.WithTimeout(ctx, s.timing.push)
 		head, err = s.git.Push(pushCtx, s.config.Remote)
+		if errors.Is(err, signetsync.ErrRemoteAhead) {
+			if state, err = s.git.RemoteState(pushCtx, s.config.Remote, pushed); err == nil {
+				err = signetsync.ErrRemoteAhead
+			}
+		}
 		cancel()
 	}
 	if ctx.Err() != nil {
@@ -232,15 +268,13 @@ func (s *signet) push(ctx context.Context) {
 	defer s.backupMu.Unlock()
 	defer s.saveBackup()
 	switch {
-	case errors.Is(err, signetsync.ErrRemoteAhead):
-		if s.backup.Remote != "ahead" {
-			s.log.Printf("signet %s: remote ahead: run mandalore server reconcile", s.config.Slug)
-		}
-		s.backup.State, s.backup.Remote, s.backup.LastError = "failed", "ahead", err.Error()
+	case errors.Is(err, signetsync.ErrRemoteAhead) && state != signetsync.RemoteCurrent:
+		s.remoteMoved(state)
+		s.backup.LastError = state
 	case err != nil:
-		s.backup.State, s.backup.Remote, s.backup.LastError = "pending", "unreachable", "push not confirmed; retrying"
+		s.backup.Remote, s.backup.LastError = "unreachable", "push not confirmed; retrying"
 	default:
-		s.backup.Remote, s.backup.LastError = "current", ""
+		s.backup.Remote, s.backup.LastError = signetsync.RemoteCurrent, ""
 		if head != "" {
 			s.backup.Head, s.backup.LastPush = head, time.Now().UTC().Format(time.RFC3339)
 		}

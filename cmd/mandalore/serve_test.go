@@ -27,7 +27,7 @@ func TestServerCommandsRequireExplicitConfiguration(t *testing.T) {
 
 func TestServerConfigurationIsStrictAndDoesNotLeak(t *testing.T) {
 	valid := func(mutate func(map[string]any)) string {
-		c := map[string]any{"listen": "127.0.0.1:8730", "public_url": "https://memory.example.com", "state_dir": "/fixture/private/state", "owner": map[string]any{"name": "Example"}, "auth": "loopback-trust", "local_scope": "read",
+		c := map[string]any{"listen": "127.0.0.1:8730", "public_url": "http://127.0.0.1:8730", "state_dir": "/fixture/private/state", "owner": map[string]any{"name": "Example"}, "auth": "loopback-trust", "local_scope": "read",
 			"signets": []any{map[string]any{"slug": "primary", "root": "/fixture/private/signet", "signet_id": "signet-fixture", "device_id": "device-fixture", "remote": "file:///fixture/private/remote.git"}}}
 		mutate(c)
 		raw, _ := json.Marshal(c)
@@ -50,7 +50,13 @@ func TestServerConfigurationIsStrictAndDoesNotLeak(t *testing.T) {
 			c["test_clients"] = []any{map[string]any{"id": "c1", "kind": "test", "scope": "read", "token": "never-emit-fixture-token", "signets": []string{"primary"}}}
 		})},
 		{"plain HTTP public URL", valid(func(c map[string]any) { c["public_url"] = "http://memory.example.com" })},
-		{"public URL with a path", valid(func(c map[string]any) { c["public_url"] = "https://memory.example.com/mcp" })},
+		{"public URL with a path", valid(func(c map[string]any) { c["public_url"] = "http://127.0.0.1:8730/mcp" })},
+		{"loopback trust behind a public URL", valid(func(c map[string]any) { c["public_url"] = "https://memory.example.com" })},
+		{"insecure test in a release build", valid(func(c map[string]any) {
+			c["auth"] = "insecure-test"
+			delete(c, "local_scope")
+			c["test_clients"] = []any{map[string]any{"id": "c1", "kind": "test", "scope": "read", "token": "never-emit-fixture-token", "signets": []string{"primary"}}}
+		})},
 		{"missing auth", valid(func(c map[string]any) { delete(c, "auth") })},
 		{"signet root unavailable", valid(func(map[string]any) {})},
 	} {
