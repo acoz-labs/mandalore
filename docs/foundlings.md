@@ -50,9 +50,11 @@ fabricated source hashes or manually bypass a refused promotion. Source changes,
 withdrawals and disconnection cannot erase already-promoted memories or model
 context; correction and withdrawal in the destination remain separate decisions.
 
-Refresh has an aggregate three-second foreground deadline. All sources share the
-first two seconds for fetch and materialization; the final second is reserved for
-validating eligible stale snapshots. There are no retries. Eligible blobs are read
+Each reference's refresh has its own three-second deadline: the first two
+seconds for fetch and materialization, the rest for validation. Up to four
+references refresh at once, so a stalled or failing source affects only itself.
+Checking a prior snapshot for stale use has its own one-second bound. There are
+no retries within a refresh. Eligible blobs are read
 from the private fetch stage in batches (one size check, then content batches
 capped by the Git output bound) rather than one Git process per blob, and each
 blob is rehashed against its tree identity. A timeout, cancellation,
@@ -60,9 +62,11 @@ authentication failure or unavailable branch is reported separately from
 successful validation. A `timeout` receipt names the phase that ran out in
 `timeout_phase`: `fetch`, `materialize` (object reads and snapshot files),
 `validate` (snapshot identity and persistence) or `stale_validation` (checking a
-prior snapshot). It never includes source content. Only a still-eligible
-verified prior snapshot may be used as stale, with its commit, observation
-time and age; no snapshot means unavailable. A configured ID with no canon
+prior snapshot). It never includes source content. After a timeout,
+cancellation, authentication failure, transport failure or missing branch, a
+still-eligible verified prior snapshot stays served as stale, with its commit,
+observation time and age; an interrupted refresh never replaces it. No
+snapshot means unavailable. A configured ID with no canon
 registration reports `not_registered`.
 Invalid, disconnected or conflicting registrations withhold access. Source
 identity/format errors must not be represented as a fresh success. Successful

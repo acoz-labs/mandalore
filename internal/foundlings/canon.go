@@ -10,6 +10,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -123,18 +124,20 @@ func canonRead(root, name string, v any) error {
 func referenceFile(id string) string { return "reference-" + id + ".json" }
 func latestFile(id string) string    { return "verified-" + id + ".json" }
 
-// Refresh fetches and verifies every canon reference within one bounded budget
-// and publishes each receipt for reads, which never fetch. A failed fetch keeps
-// the last verified snapshot, reported stale with its age.
+// Each reference's refresh has its own budget: fetch and materialization get
+// the first two seconds and validation the rest. Up to four run at once, so a
+// stalled source never delays or fails another.
+const (
+	canonFetchBudget   = 2 * time.Second
+	canonRefreshBudget = 3 * time.Second
+	canonParallel      = 4
+)
+
+// Refresh fetches and verifies every canon reference and publishes each receipt
+// for reads, which never fetch. A failed or interrupted fetch keeps the last
+// verified snapshot, reported stale with its age.
 func (m *Manager) Refresh(parent context.Context) ([]CanonReceipt, error) {
-	started := time.Now()
-	ctx, cancel := context.WithDeadline(parent, started.Add(3*time.Second))
-	defer cancel()
-	// All sources share one fetch budget. Reserve the final second for validating
-	// eligible stale snapshots instead of passing an expired fetch context to reads.
-	fetchCtx, stopFetch := context.WithDeadline(ctx, started.Add(2*time.Second))
-	defer stopFetch()
-	regs, err := m.canonReferences(ctx)
+	regs, err := m.canonReferences(parent)
 	if err != nil {
 		return nil, err
 	}
@@ -145,67 +148,97 @@ func (m *Manager) Refresh(parent context.Context) ([]CanonReceipt, error) {
 	if err != nil {
 		return nil, err
 	}
-	out := []CanonReceipt{}
-	for _, reg := range regs {
-		checked := m.now().UTC().Format(time.RFC3339Nano)
-		receipt := canonBase(reg, "")
-		if reg.State != "active" {
-			receipt.Reason = reg.State
-		} else {
-			fresh, e := m.fetchCanon(fetchCtx, root, reg)
-			if e == nil && ctx.Err() != nil {
-				e = &canonPhaseError{"validate", ctx.Err()}
-			}
-			if e == nil {
-				receipt = fresh
-				if e = canonWrite(root, latestFile(reg.FoundlingID), receipt); e != nil {
-					return nil, e
-				}
-			} else {
-				receipt.Reason = canonFailure(e)
-				var phase *canonPhaseError
-				if receipt.Reason == "timeout" && errors.As(e, &phase) {
-					receipt.TimeoutPhase = phase.phase
-				}
-				var prior CanonReceipt
-				if ctx.Err() == nil && (receipt.Reason == "timeout" || receipt.Reason == "transport_unavailable" || receipt.Reason == "authentication_failed" || receipt.Reason == "absent_branch") && canonRead(root, latestFile(reg.FoundlingID), &prior) == nil && prior.FoundlingID == reg.FoundlingID && prior.RegistrationID == receipt.RegistrationID && prior.SourceSignetID == receipt.SourceSignetID {
-					if _, e = m.openCanon(ctx, root, prior); e == nil {
-						prior.State = "stale"
-						prior.Reason = receipt.Reason
-						prior.TimeoutPhase = receipt.TimeoutPhase
-						receipt = prior
-					} else if errors.Is(ctx.Err(), context.DeadlineExceeded) {
-						receipt.TimeoutPhase = "stale_validation"
-					}
-				}
-			}
-		}
-		receipt.CheckedAt = checked
-
-		if interrupted := ctx.Err(); interrupted != nil {
-			receipt.State = "unavailable"
-			receipt.Reason = canonFailure(interrupted)
-			if receipt.Reason != "timeout" {
-				receipt.TimeoutPhase = ""
-			} else if receipt.TimeoutPhase == "" {
-				receipt.TimeoutPhase = "validate"
-			}
-		} else if receipt.State != "unavailable" {
-			current, ce := m.memory.Foundling(reg.FoundlingID)
-			if ce != nil || current.State != "active" || len(current.HeadIDs) != 1 || current.HeadIDs[0] != receipt.RegistrationID {
-				receipt.State = "unavailable"
-				receipt.Reason = "registration_changed"
-				if ce == nil && current.State != "active" {
-					receipt.Reason = current.State
-				}
-			}
-		}
-		if err = canonWrite(root, referenceFile(reg.FoundlingID), receipt); err != nil {
-			return nil, err
-		}
-		out = append(out, m.aged(receipt))
+	out := make([]CanonReceipt, len(regs))
+	errs := make([]error, len(regs))
+	slots := make(chan struct{}, canonParallel)
+	var wg sync.WaitGroup
+	for i, reg := range regs {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			slots <- struct{}{}
+			defer func() { <-slots }()
+			out[i], errs[i] = m.refreshReference(parent, root, reg)
+		}()
+	}
+	wg.Wait()
+	if err := errors.Join(errs...); err != nil {
+		return nil, err
 	}
 	return out, nil
+}
+
+func (m *Manager) refreshReference(parent context.Context, root string, reg memory.FoundlingSummary) (CanonReceipt, error) {
+	checked := m.now().UTC().Format(time.RFC3339Nano)
+	receipt := canonBase(reg, "")
+	if reg.State != "active" {
+		receipt.Reason = reg.State
+	} else {
+		started := time.Now()
+		ctx, cancel := context.WithDeadline(parent, started.Add(canonRefreshBudget))
+		defer cancel()
+		fetchCtx, stopFetch := context.WithDeadline(ctx, started.Add(canonFetchBudget))
+		defer stopFetch()
+		fresh, e := m.fetchCanon(fetchCtx, root, reg)
+		if e == nil && ctx.Err() != nil {
+			e = &canonPhaseError{"validate", ctx.Err()}
+		}
+		if e == nil {
+			receipt = fresh
+			if e = canonWrite(root, latestFile(reg.FoundlingID), receipt); e != nil {
+				return CanonReceipt{}, e
+			}
+		} else {
+			receipt = m.keepVerified(parent, root, receipt, e)
+		}
+	}
+	receipt.CheckedAt = checked
+	if receipt.State != "unavailable" {
+		current, ce := m.memory.Foundling(reg.FoundlingID)
+		if ce != nil || current.State != "active" || len(current.HeadIDs) != 1 || current.HeadIDs[0] != receipt.RegistrationID {
+			receipt.State = "unavailable"
+			receipt.Reason = "registration_changed"
+			if ce == nil && current.State != "active" {
+				receipt.Reason = current.State
+			}
+		}
+	}
+	if err := canonWrite(root, referenceFile(reg.FoundlingID), receipt); err != nil {
+		return CanonReceipt{}, err
+	}
+	return m.aged(receipt), nil
+}
+
+// keepVerified reports a failed fetch. After a transient failure, timeout or
+// interruption it serves the last verified snapshot as stale; a source that
+// fetched but failed identity or format checks is withheld.
+func (m *Manager) keepVerified(parent context.Context, root string, receipt CanonReceipt, e error) CanonReceipt {
+	receipt.Reason = canonFailure(e)
+	var phase *canonPhaseError
+	if receipt.Reason == "timeout" && errors.As(e, &phase) {
+		receipt.TimeoutPhase = phase.phase
+	}
+	switch receipt.Reason {
+	case "timeout", "cancelled", "transport_unavailable", "authentication_failed", "absent_branch":
+	default:
+		return receipt
+	}
+	var prior CanonReceipt
+	if canonRead(root, latestFile(receipt.FoundlingID), &prior) != nil || prior.FoundlingID != receipt.FoundlingID || prior.RegistrationID != receipt.RegistrationID || prior.SourceSignetID != receipt.SourceSignetID {
+		return receipt
+	}
+	// Checking the prior snapshot reads only local files. It has its own bound,
+	// so an interrupted or over-budget refresh still keeps it.
+	check, cancel := context.WithTimeout(context.WithoutCancel(parent), time.Second)
+	defer cancel()
+	if _, err := m.openCanon(check, root, prior); err != nil {
+		if errors.Is(check.Err(), context.DeadlineExceeded) {
+			receipt.Reason, receipt.TimeoutPhase = "timeout", "stale_validation"
+		}
+		return receipt
+	}
+	prior.State, prior.Reason, prior.TimeoutPhase = "stale", receipt.Reason, receipt.TimeoutPhase
+	return prior
 }
 
 // canonBase is a reference's receipt before any verified snapshot.
@@ -370,6 +403,11 @@ func (m *Manager) fetchCanon(ctx context.Context, root string, reg memory.Foundl
 		return r, err
 	}
 	defer os.RemoveAll(stage)
+	if m.fetchHook != nil {
+		if err = m.fetchHook(ctx, reg.FoundlingID); err != nil {
+			return r, err
+		}
+	}
 	if _, err = canonGit(ctx, stage, m.canonTransport != nil, "init", "--quiet"); err != nil {
 		return r, err
 	}

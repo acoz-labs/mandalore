@@ -176,13 +176,15 @@ Foundlings follow [the foundlings contract](foundlings.md); the server adds how
 they are configured and refreshed.
 
 - **Canon.** The server refreshes each `canon` reference at startup and every
-  `canon_refresh_minutes`, through the verified fetch path (3-second budget,
-  batched blob reads, read-only: it never writes the source's remote). A refresh
+  `canon_refresh_minutes`, through the verified fetch path (a 3-second budget per
+  reference, up to four in parallel, batched blob reads, read-only: it never
+  writes the source's remote). One stalled source never delays another. A refresh
   runs outside the signet lock, so it never delays reads or saves. Reads use the
   latest verified snapshot and never fetch; each result carries `commit`,
-  `observed_at` and `age_seconds`. A failed refresh keeps the previous verified
-  snapshot, reported `stale` with its age and `reason`; with none it is
-  `unavailable`. Snapshots are cached in the checkout's ignored `.mandalore/canon`.
+  `observed_at` and `age_seconds`. A failed or interrupted refresh keeps the
+  previous verified snapshot, reported `stale` with its age and `reason`; with
+  none it is `unavailable`. On shutdown the server lets a refresh in flight
+  record its receipts. Snapshots are cached in the checkout's ignored `.mandalore/canon`.
   The server needs read-only Git access to each source's remote.
 - **Legacy.** `legacy` roots replace clone-local connections; reads verify the
   root against the registration's pin, and an unreadable root (logged at startup)

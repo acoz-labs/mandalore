@@ -22,6 +22,8 @@ type Server struct {
 	hosts   map[string]bool
 	origins map[string]bool
 	oauth   *authServer
+	// refreshing tracks the canon refresh loops Start runs.
+	refreshing sync.WaitGroup
 }
 
 var defaultTiming = timing{debounce: 2 * time.Second, retry: time.Minute, push: 30 * time.Second}
@@ -81,7 +83,11 @@ func (s *Server) Start(ctx context.Context) {
 	for _, g := range s.signets {
 		if !g.blocked {
 			go g.deliver(ctx)
-			go g.refreshCanon(ctx)
+			s.refreshing.Add(1)
+			go func() {
+				defer s.refreshing.Done()
+				g.refreshCanon(ctx)
+			}()
 		}
 	}
 }
@@ -186,6 +192,8 @@ func (s *Server) Run(ctx context.Context) error {
 		cancel()
 	}
 	stop()
+	// A refresh in flight finishes recording its receipts, within its budget.
+	s.refreshing.Wait()
 	final, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	for _, g := range s.signets {

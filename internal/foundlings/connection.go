@@ -20,6 +20,8 @@ type Manager struct {
 	memory         *memory.Service
 	canonTransport func(string) string
 	clock          func() time.Time
+	// fetchHook runs before each canon fetch, in tests only, to stall or fail it.
+	fetchHook func(ctx context.Context, id string) error
 	// A configured Manager serves only the listed canon references and reads
 	// legacy references from configured roots instead of local connections.
 	configured bool

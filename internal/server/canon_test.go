@@ -92,7 +92,6 @@ func canonConfig(t *testing.T) (Config, testfixture.ServerSignet, *canonSource, 
 func startCanonServer(t *testing.T, c Config, every time.Duration) (*Server, *httptest.Server) {
 	t.Helper()
 	ctx, cancel := context.WithCancel(context.Background())
-	t.Cleanup(cancel)
 	t2 := fastTiming
 	t2.canon = every
 	s, err := newServer(c, &syncBuffer{}, t2)
@@ -100,6 +99,8 @@ func startCanonServer(t *testing.T, c Config, every time.Duration) (*Server, *ht
 		t.Fatal(err)
 	}
 	s.Start(ctx)
+	// Stop the refresh loop before the test's directories are removed.
+	t.Cleanup(func() { cancel(); s.refreshing.Wait() })
 	h := httptest.NewServer(s.Handler())
 	t.Cleanup(h.Close)
 	return s, h
@@ -357,5 +358,67 @@ func TestFoundlingToolsFollowConfiguration(t *testing.T) {
 	}
 	if read["foundling_canon_promote"] || !write["foundling_canon_promote"] || write["foundling_search"] || write["foundling_promote"] || write["foundling_refresh"] {
 		t.Fatalf("unexpected foundling tools: %v", write)
+	}
+}
+
+// One canon source failing never affects another on the same signet, and a
+// cancelled refresh leaves both served.
+func TestCanonSourcesFailIndependently(t *testing.T) {
+	p := testfixture.NewServerSignet(t, "primary")
+	healthy, failing := newCanonSource(t), newCanonSource(t)
+	primary, err := memory.OpenService(p.Root, memory.Authorship{DeviceID: p.DeviceID, Actor: "Synthetic Owner", Harness: "test"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	remotes := map[string]string{}
+	ids := map[*canonSource]string{}
+	for name, c := range map[string]*canonSource{"healthy": healthy, "failing": failing} {
+		locator := "https://git.example.com/synthetic/" + name + ".git"
+		reg, err := primary.WriteFoundling(memory.FoundlingWrite{Name: "Synthetic " + name, Description: "Reference signet", Mode: "canon", Branch: "main", SourceSignetID: c.SignetID,
+			Source: memory.FoundlingSource{Kind: "git", Locator: locator}, Pin: memory.SourcePin{Algorithm: "git-sha1", Value: testfixture.Git(t, c.Root, "rev-parse", "HEAD")}, State: "active", Reason: "Synthetic canon registration"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		remotes[locator], ids[c] = c.Remote, reg.FoundlingID
+	}
+	saved := canonTransport
+	canonTransport = func(locator string) string { return remotes[locator] }
+	t.Cleanup(func() { canonTransport = saved })
+	config := testConfig(t, p)
+	config.Signets[0].Canon = []string{ids[failing], ids[healthy]}
+	_, h := startCanonServer(t, config, time.Hour)
+	session := connect(t, h, "/mcp", readToken)
+	eventually(t, 10*time.Second, "startup refresh serves both", func() bool {
+		return recallCanon(t, session, ids[healthy]).OK && recallCanon(t, session, ids[failing]).OK
+	})
+	moved := failing.RemoteDir + ".offline"
+	if err := os.Rename(failing.RemoteDir, moved); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := os.Rename(moved, failing.RemoteDir); err != nil {
+			t.Fatal(err)
+		}
+	}()
+	head := healthy.publish(t, "Canon convention: the healthy source moved on.")
+	refreshed, err := RefreshCanon(context.Background(), config, "a")
+	if err != nil || len(refreshed[0].Canon) != 2 {
+		t.Fatal(refreshed, err)
+	}
+	if stale, fresh := refreshed[0].Canon[0], refreshed[0].Canon[1]; stale.State != "stale" || fresh.State != "available" || fresh.Commit != head {
+		t.Fatalf("refresh: %+v", refreshed)
+	}
+	if got := recallCanon(t, session, ids[healthy]); !recalls(got, "Canon convention: the healthy source moved on.") {
+		t.Fatalf("healthy source not refreshed: %+v", got)
+	}
+	cancelled, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, err := RefreshCanon(cancelled, config, "a"); err == nil {
+		t.Fatal("cancelled refresh reported success")
+	}
+	for c, want := range map[*canonSource]string{healthy: "available", failing: "stale"} {
+		if got := recallCanon(t, session, ids[c]); !got.OK || got.Result.Reference.State != want {
+			t.Fatalf("cancelled refresh changed what is served: %+v", got)
+		}
 	}
 }

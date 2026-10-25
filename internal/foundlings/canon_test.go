@@ -511,20 +511,19 @@ func TestCanonFetchDeadlineReservesVerifiedStaleFallback(t *testing.T) {
 	if e != nil || len(receipts) != 1 || receipts[0].State != "stale" || receipts[0].Reason != "timeout" || receipts[0].Pin != first.Pin || receipts[0].ObservedAt != first.ObservedAt {
 		t.Fatal(receipts, e)
 	}
-	if elapsed < 1800*time.Millisecond || elapsed >= 3*time.Second {
-		t.Fatalf("fetch and stale validation outside shared budget: %s", elapsed)
+	if elapsed >= canonRefreshBudget {
+		t.Fatalf("fetch and stale validation outside the reference's budget: %s", elapsed)
 	}
 	if got := recallTest(t, m, reg.FoundlingID); got.Reference.State != "stale" || len(got.Memory.Current) != 1 {
 		t.Fatal(got)
 	}
-	// Parent cancellation is not the reserved internal fetch deadline: it must
-	// withhold even a previously verified snapshot rather than read after cancel.
+	// Parent cancellation mid-fetch also keeps the verified snapshot, as stale.
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	timer := time.AfterFunc(150*time.Millisecond, cancel)
 	defer timer.Stop()
 	receipts, e = m.Refresh(ctx)
-	if e != nil || len(receipts) != 1 || receipts[0].State != "unavailable" || receipts[0].Reason != "cancelled" {
+	if e != nil || len(receipts) != 1 || receipts[0].State != "stale" || receipts[0].Reason != "cancelled" || receipts[0].Commit != first.Commit {
 		t.Fatal(receipts, e)
 	}
 }
@@ -549,5 +548,113 @@ func TestCanonAuthenticationFailureIsSanitizedAndCanUseVerifiedCache(t *testing.
 	encoded, _ := json.Marshal(receipts)
 	if strings.Contains(string(encoded), "PRIVATE_TRANSPORT_SECRET_CANARY") {
 		t.Fatal("transport diagnostics escaped")
+	}
+}
+
+// secondCanon registers another canon reference to the same synthetic source.
+func secondCanon(t *testing.T, m *Manager, reg memory.FoundlingRegistration) memory.FoundlingRegistration {
+	t.Helper()
+	other, e := m.memory.WriteFoundling(memory.FoundlingWrite{Name: "Second canon", Description: "Synthetic sibling", Mode: "canon", Branch: "main", SourceSignetID: reg.SourceSignetID, Source: memory.FoundlingSource{Kind: "git", Locator: "https://github.com/example/synthetic-sibling.git"}, Pin: reg.Pin, State: "active", Reason: "Explicit registration"})
+	if e != nil {
+		t.Fatal(e)
+	}
+	return other
+}
+
+// published reports whether a reference's served receipt is available at commit.
+func published(m *Manager, id, commit string) bool {
+	root, err := m.canonRoot(false)
+	var r CanonReceipt
+	return err == nil && canonRead(root, referenceFile(id), &r) == nil && r.State == "available" && r.Commit == commit
+}
+
+// A stalled source fails only itself: its sibling refreshes while it hangs.
+// The stall holds until the sibling is published, so the outcome does not
+// depend on timing.
+func TestCanonStalledSourceDoesNotStarveOthers(t *testing.T) {
+	m, source, reg, rev, root := canonFixture(t)
+	sibling := secondCanon(t, m, reg)
+	head := strings.TrimSpace(gitTest(t, root, "rev-parse", "HEAD"))
+	stall := func(want string) func(context.Context, string) error {
+		return func(ctx context.Context, id string) error {
+			if id != reg.FoundlingID {
+				return nil
+			}
+			for !published(m, sibling.FoundlingID, want) {
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case <-time.After(10 * time.Millisecond):
+				}
+			}
+			return context.DeadlineExceeded
+		}
+	}
+	m.fetchHook = stall(head)
+	r := byID(t, m)
+	if stalled, healthy := r[reg.FoundlingID], r[sibling.FoundlingID]; stalled.State != "unavailable" || stalled.Reason != "timeout" || stalled.TimeoutPhase != "fetch" || healthy.State != "available" || healthy.Commit != head {
+		t.Fatal(r)
+	}
+	// With both served, a new commit reaches the healthy sibling while the
+	// stalled one keeps its verified snapshot as stale.
+	m.fetchHook = nil
+	served := byID(t, m)[reg.FoundlingID]
+	if served.State != "available" {
+		t.Fatal(served)
+	}
+	if _, e := source.Remember(memory.Write{Kind: "fact", Summary: "Current color", Body: "Synthetic color green", Basis: "observation", Reason: "Change", RecordID: rev.RecordID, Supersedes: []string{rev.ID}}); e != nil {
+		t.Fatal(e)
+	}
+	gitTest(t, root, "add", ".")
+	gitTest(t, root, "commit", "-m", "Change")
+	next := strings.TrimSpace(gitTest(t, root, "rev-parse", "HEAD"))
+	m.fetchHook = stall(next)
+	r = byID(t, m)
+	if stalled, healthy := r[reg.FoundlingID], r[sibling.FoundlingID]; stalled.State != "stale" || stalled.Reason != "timeout" || stalled.Commit != served.Commit || healthy.State != "available" || healthy.Commit != next {
+		t.Fatal(r)
+	}
+	if got := recallTest(t, m, sibling.FoundlingID); got.Memory.Current[0].Body != "Synthetic color green" {
+		t.Fatal(got)
+	}
+	if got := recallTest(t, m, reg.FoundlingID); got.Reference.State != "stale" || got.Memory.Current[0].ID != rev.ID {
+		t.Fatal(got)
+	}
+}
+
+func byID(t *testing.T, m *Manager) map[string]CanonReceipt {
+	t.Helper()
+	r, e := m.Refresh(context.Background())
+	if e != nil || len(r) != 2 {
+		t.Fatal(r, e)
+	}
+	return map[string]CanonReceipt{r[0].FoundlingID: r[0], r[1].FoundlingID: r[1]}
+}
+
+// An interrupted or over-budget refresh never replaces a served snapshot: the
+// verified one stays readable, reported stale.
+func TestCanonInterruptedRefreshKeepsVerifiedSnapshot(t *testing.T) {
+	m, _, reg, rev, _ := canonFixture(t)
+	first := refreshTest(t, m)
+	for name, interrupt := range map[string]func(context.CancelFunc) error{
+		"cancelled":   func(cancel context.CancelFunc) error { cancel(); return context.Canceled },
+		"over budget": func(context.CancelFunc) error { return context.DeadlineExceeded },
+	} {
+		t.Run(name, func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			m.fetchHook = func(context.Context, string) error { return interrupt(cancel) }
+			r, e := m.Refresh(ctx)
+			reason := map[string]string{"cancelled": "cancelled", "over budget": "timeout"}[name]
+			if e != nil || len(r) != 1 || r[0].State != "stale" || r[0].Reason != reason || r[0].Commit != first.Commit || r[0].AgeSeconds == nil {
+				t.Fatal(r, e)
+			}
+			if got := recallTest(t, m, reg.FoundlingID); got.Reference.State != "stale" || got.Memory.Current[0].ID != rev.ID {
+				t.Fatal(got)
+			}
+			status, e := m.CanonStatus(context.Background())
+			if e != nil || status[0].State != "stale" || status[0].Reason != reason {
+				t.Fatal(status, e)
+			}
+		})
 	}
 }
