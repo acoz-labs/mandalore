@@ -43,7 +43,7 @@ build in 2.0 (#163); [Codex](codex-native-evidence.md) and
 | `internal/sync` | Local checkpoints, recoverable Git synchronization, push-only backup and fast-forward reconcile |
 | `internal/binding` | Local signet selection and originating-device identity |
 | `internal/foundlings` | Bounded local/Git reference observation, clone-local connections and verified selective promotion |
-| `internal/server` | Single-writer Streamable HTTP MCP server: config, authenticators, scoped tools, `memory_context`, per-client authorship, push-only backup, status and reconcile |
+| `internal/server` | Single-writer Streamable HTTP MCP server: config, authenticators, scoped tools, `memory_context`, per-installation authorship, push-only backup, status and reconcile |
 | `internal/cutover` | 1.x clone retirement: finding and disabling 1.x native connections through each harness's own commands |
 | `internal/distribution` | Versioned assets, provenance and byte verification, owned CLI installation and phased publication |
 | `cmd/build-artifacts`, `cmd/candidate-transport`, `cmd/promote-candidate`, `cmd/release-publication` | Repository-maintainer build/verification/publication entrypoints; not memory tools |

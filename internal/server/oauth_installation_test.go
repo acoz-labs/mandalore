@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"maps"
@@ -14,7 +15,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/acoz-labs/mandalore/internal/memory"
 	"github.com/acoz-labs/mandalore/internal/testfixture"
+	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 // serveDocument serves a synthetic client ID metadata document over TLS,
@@ -743,5 +746,167 @@ func TestMigratedExpiredFamily(t *testing.T) {
 	}
 	if got := mustClients(t, c); len(got) != 0 {
 		t.Fatalf("after prune: %+v", got)
+	}
+}
+
+// authorOf reads the authorship of a saved revision.
+func authorOf(t *testing.T, s testfixture.ServerSignet, saved Receipt) memory.Authorship {
+	t.Helper()
+	var r memory.Revision
+	readJSON(t, filepath.Join(s.Root, "memory/records", saved.RecordID, saved.ID+".json"), &r)
+	return r.Authorship
+}
+
+// Issue #211: two installations of one metadata-document client write with
+// distinct authorship, and the client's device from before 2.0.3 keeps the
+// records it authored.
+func TestInstallationsHaveTheirOwnAuthorship(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	a := testfixture.NewServerSignet(t, "alpha")
+	e := startOAuth(t, a)
+	docURL := serveDocument(t, e)
+	e.enrollOwner(t)
+	// 2.0.2 keyed a client's device by its client_id alone.
+	kind := clientKind(docURL, true, nil)
+	res := e.server.signets["/mcp"].call(context.Background(), Client{ID: docURL, Name: "Synthetic Code", Kind: kind, Scope: ScopeReadWrite}, "memory_remember", mustJSON(t, rememberArgs("authorship-before-0001", "Written before 2.0.3")))
+	before := receipt(t, res.Content[0].(*sdk.TextContent).Text)
+	shared := authorOf(t, a, before)
+
+	redirect := "http://127.0.0.1:7/callback"
+	first := e.tokens(t, docURL, redirect, "/mcp", "", ScopeReadWrite)
+	e.clock.advance(time.Second)
+	second := e.tokens(t, docURL, redirect, "/mcp", "", ScopeReadWrite)
+	listed := installations(t, e.config, docURL)
+	if len(listed) != 2 {
+		t.Fatalf("installations %+v", listed)
+	}
+	devices := map[string]string{}
+	write := func(token, id string) memory.Authorship {
+		t.Helper()
+		_, text := call(t, e.bearer(t, "/mcp", token), "memory_remember", rememberArgs(id, "Written by "+id))
+		return authorOf(t, a, receipt(t, text))
+	}
+	// Each installation writes twice, interleaved, so a handler or device
+	// cached for the first can't serve the second.
+	for _, round := range []string{"0001", "0002"} {
+		for i, tok := range []map[string]any{first, second} {
+			got := write(tok["access_token"].(string), "authorship-installation-"+string(rune('a'+i))+round)
+			in := listed[i].Installation
+			if prev, ok := devices[in]; ok && prev != got.DeviceID {
+				t.Fatalf("installation %s changed device: %s → %s", in, prev, got.DeviceID)
+			}
+			devices[in] = got.DeviceID
+			if got.Actor != "Synthetic Owner" || got.Harness != kind || got.DeviceID == shared.DeviceID {
+				t.Fatalf("installation %s authorship %+v", in, got)
+			}
+		}
+	}
+	if devices[listed[0].Installation] == devices[listed[1].Installation] {
+		t.Fatalf("two installations share a device: %v", devices)
+	}
+	saved := map[string]string{}
+	readJSON(t, filepath.Join(e.config.StateDir, "signets", "a", "devices.json"), &saved)
+	if want := map[string]string{docURL: shared.DeviceID, listed[0].Installation: devices[listed[0].Installation], listed[1].Installation: devices[listed[1].Installation]}; !maps.Equal(saved, want) {
+		t.Fatalf("devices.json %v, want %v", saved, want)
+	}
+	// Provenance names each installation, so the owner can match a device
+	// to `server clients list`.
+	for in, device := range devices {
+		var d memory.Device
+		readJSON(t, filepath.Join(a.Root, "provenance/devices", device+".json"), &d)
+		if !strings.HasPrefix(d.Label, "Synthetic Code installation "+in+" ("+kind+"), approved ") {
+			t.Fatalf("device label %q", d.Label)
+		}
+	}
+	// The record written before 2.0.3 keeps its authorship.
+	if got := authorOf(t, a, before); got != shared {
+		t.Fatalf("historical authorship %+v, want %+v", got, shared)
+	}
+}
+
+func mustJSON(t *testing.T, v any) []byte {
+	t.Helper()
+	raw, err := json.Marshal(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return raw
+}
+
+// Issue #211: state as 2.0.2 saves it, with two Claude Code installations it
+// migrated (no hint or label) and a hosted-app DCR client, each with a device
+// 2.0.2 enrolled per client_id. After the upgrade every live token keeps
+// working with no consent, the hosted app keeps its device, and each Claude
+// Code installation writes as its own device.
+func TestUpgradeFrom202KeepsGrants(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	a := testfixture.NewServerSignet(t, "alpha")
+	c := oauthConfig(t, a)
+	now := time.Now().UTC().Truncate(time.Second)
+	code := "https://claude.ai/oauth/claude-code-client-metadata"
+	chat, web := "client-synthetichostedapp0001", "https://claude.ai/api/mcp/auth_callback"
+	registered := now.Add(-48 * time.Hour)
+	st := oauthState{Version: stateVersion, Clients: map[string]*oauthClient{
+		code: {ID: code, Name: "Claude Code", Kind: "claude.ai", RedirectURIs: []string{"http://localhost/callback"}, Document: true, Registered: registered, Legacy: map[string]Scope{"a": ScopeReadWrite}},
+		chat: {ID: chat, Name: "Synthetic Chat", Kind: "claude.ai", RedirectURIs: []string{web}, Registered: registered, Legacy: map[string]Scope{"a": ScopeReadWrite}},
+	}, Installations: map[string]*installation{}, Tokens: map[string]*oauthToken{}}
+	type family struct{ client, installation, access, refresh string }
+	var families []family
+	for i, client := range []string{code, code, chat} {
+		in := "inst-" + hashSecret("migrated\x00" + client + string(rune('0'+i)))[:16]
+		issued := now.Add(-time.Duration(i+1) * 10 * time.Minute)
+		st.Installations[in] = &installation{ID: in, Client: client, Grants: map[string]Scope{"a": ScopeReadWrite}, FirstSeen: registered, LastUsed: issued}
+		f := family{client: client, installation: in, access: secret(), refresh: secret()}
+		id := hashSecret(secret())
+		st.Tokens[hashSecret(f.access)] = &oauthToken{Kind: tokenAccess, Client: client, Installation: in, Signet: "a", Family: id, Scope: ScopeReadWrite, Expires: issued.Add(accessTTL)}
+		st.Tokens[hashSecret(f.refresh)] = &oauthToken{Kind: tokenRefresh, Client: client, Installation: in, Signet: "a", Family: id, Scope: ScopeReadWrite, Expires: issued.Add(refreshTTL)}
+		families = append(families, f)
+	}
+	path := filepath.Join(c.StateDir, oauthStateFile)
+	if err := writeState(path, st); err != nil {
+		t.Fatal(err)
+	}
+	before := mustClients(t, c)
+
+	e := startOAuthConfig(t, c)
+	e.enrollOwner(t)
+	// 2.0.2 enrolled one device per client_id.
+	old := map[string]memory.Authorship{}
+	for _, client := range []string{code, chat} {
+		res := e.server.signets["/mcp"].call(context.Background(), Client{ID: client, Name: st.Clients[client].Name, Kind: "claude.ai", Scope: ScopeReadWrite}, "memory_remember", mustJSON(t, rememberArgs("upgrade-before-"+client[len(client)-8:], "Written by 2.0.2")))
+		old[client] = authorOf(t, a, receipt(t, res.Content[0].(*sdk.TextContent).Text))
+	}
+
+	devices := map[string]string{}
+	for _, f := range families {
+		if e.mcpStatus(t, "/mcp", f.access) != http.StatusOK || !canWrite(t, e, f.access) {
+			t.Fatalf("%s: a 2.0.2 access token stopped working", f.installation)
+		}
+		_, text := call(t, e.bearer(t, "/mcp", f.access), "memory_remember", rememberArgs("upgrade-after-"+f.installation, "Written by 2.0.3"))
+		got := authorOf(t, a, receipt(t, text))
+		devices[f.installation] = got.DeviceID
+		if shared := got.DeviceID == old[f.client].DeviceID; shared != (f.client == chat) {
+			t.Fatalf("%s wrote as %s; 2.0.2's device for %s is %s", f.installation, got.DeviceID, f.client, old[f.client].DeviceID)
+		}
+		if resp, out := e.refresh(t, f.client, f.refresh); resp.StatusCode != http.StatusOK {
+			t.Fatalf("%s: refresh %d %v", f.installation, resp.StatusCode, out)
+		}
+	}
+	if devices[families[0].installation] == devices[families[1].installation] {
+		t.Fatalf("the two Claude Code installations share a device: %v", devices)
+	}
+	// The hosted app re-authorizes with no consent page.
+	_, challenge := pkce()
+	if status, _ := authorizePage(t, e.browser, authorizeURL(chat, web, challenge, publicURL+"/mcp", "")); status != http.StatusSeeOther {
+		t.Fatalf("hosted app re-authorization: %d", status)
+	}
+	after := mustClients(t, c)
+	if len(after) != len(before) {
+		t.Fatalf("clients %+v → %+v", before, after)
+	}
+	for i := range after {
+		if after[i].Installation != before[i].Installation || after[i].Hint != "" || after[i].Status != "approved" {
+			t.Fatalf("installation %+v, was %+v", after[i], before[i])
+		}
 	}
 }

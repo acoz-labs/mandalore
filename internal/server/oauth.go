@@ -461,11 +461,21 @@ func (a *authServer) consent(w http.ResponseWriter, r *http.Request) {
 		a.page(w, http.StatusBadRequest, errorPage{Message: "Approval failed: " + err.Error() + "."})
 		return
 	}
-	client := Client{ID: req.client.ID, Name: req.client.Name, Kind: req.client.Kind, Scope: scope}
+	client := Client{ID: req.client.ID, Name: req.client.Name, Kind: req.client.Kind, Installation: shared(req.client, req.installation), Scope: scope}
 	if err := a.signets[req.signet].enroll(client); err != nil {
 		a.log.Printf("signet %s: cannot enroll an approved client's device yet; it enrolls on first write", req.signet)
 	}
 	a.grant(w, r, req, narrow(req.requested, scope))
+}
+
+// shared returns the installation a Client carries: a metadata-document
+// client's, since its installations share one client_id. A DCR registration
+// is its own installation and keeps the device it enrolled before 2.0.3.
+func shared(c *oauthClient, installation string) string {
+	if c.Document {
+		return installation
+	}
+	return ""
 }
 
 // userAgentHint keeps the printable start of a User-Agent, which tells the
@@ -861,7 +871,7 @@ func (a *authServer) verifier(slug string) auth.TokenVerifier {
 			in, lastUsed = t.Installation, st.Installations[t.Installation].LastUsed
 			scope := narrow(t.Scope, grant)
 			info = &auth.TokenInfo{Scopes: scopeNames(scope), Expiration: t.Expires, UserID: c.ID,
-				Extra: map[string]any{"client": Client{ID: c.ID, Name: c.Name, Kind: c.Kind, Scope: scope}}}
+				Extra: map[string]any{"client": Client{ID: c.ID, Name: c.Name, Kind: c.Kind, Installation: shared(c, in), Scope: scope}}}
 			return nil
 		})
 		if err == nil && !a.now().Before(lastUsed.Add(lastUsedEvery)) {

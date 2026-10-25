@@ -47,7 +47,7 @@ type signet struct {
 	canon      *foundlings.Manager
 
 	mu       sync.Mutex
-	devices  map[string]string // client ID → enrolled device ID
+	devices  map[string]string // Client.device() → enrolled device ID
 	handlers map[string]http.Handler
 
 	backupMu sync.Mutex
@@ -180,18 +180,21 @@ func writeState(path string, v any) error {
 // author resolves the client's device, enrolling one on its first write. The
 // caller holds s.mu.
 func (s *signet) author(c Client) (memory.Authorship, error) {
-	device := s.devices[c.ID]
+	device := s.devices[c.device()]
 	if device == "" {
 		var err error
 		name := c.Name
 		if name == "" {
 			name = c.ID
 		}
+		if c.Installation != "" {
+			name += " installation " + c.Installation
+		}
 		device, err = s.memory.EnrollClientDevice(fmt.Sprintf("%s (%s), approved %s", name, c.Kind, time.Now().UTC().Format("2006-01-02")))
 		if err != nil {
 			return memory.Authorship{}, err
 		}
-		s.devices[c.ID] = device
+		s.devices[c.device()] = device
 		if err := writeState(filepath.Join(s.state, "devices.json"), s.devices); err != nil {
 			return memory.Authorship{}, err
 		}
@@ -207,7 +210,7 @@ func (s *signet) enroll(c Client) error {
 		return nil
 	}
 	s.mu.Lock()
-	_, known := s.devices[c.ID]
+	_, known := s.devices[c.device()]
 	_, err := s.author(c)
 	s.mu.Unlock()
 	if err == nil && !known {
