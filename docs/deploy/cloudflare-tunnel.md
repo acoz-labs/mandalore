@@ -81,7 +81,7 @@ The server's paths fall into these groups:
 | --- | --- | --- |
 | `/authorize`, `/consent`, `/owner/*`, `/.well-known/*` | The owner's browser, and clients reading metadata | Owner passkey and session |
 | `/mcp`, `/s/<slug>/mcp`, `/token` | Claude's servers and Claude Code | OAuth bearer tokens and codes |
-| `/register` | Clients using dynamic registration, such as claude.ai | Nothing grants access before the owner approves, but anyone can fill the server's registration limits: allow it only from the clients that need it (rule 2) |
+| `/register` | Clients using dynamic registration, such as claude.ai | Nothing grants access before the owner approves, but anyone can use up the server's shared registration budget: allow it only from the clients that need it (rule 2) |
 | Anything else, including `/healthz` | Nobody from outside | None needed: block it |
 
 `/healthz` answers loopback peers, and through the tunnel every request comes
@@ -122,27 +122,36 @@ Set up these rules:
 
    If another client needs dynamic registration, add its published egress
    range to the rule's `ip.src` set. If it has no fixed range, the only edge
-   protection left is the optional rate limit below, which can't prevent a
-   lockout.
+   protection left is the optional rate limit below, and a flood can delay
+   its registrations until it stops.
 
-   The rule is needed because the server limits registrations per peer address
-   (10 per 10 minutes) and holds at most 20 pending registrations, shared by
-   everyone, for 24 hours. Behind the tunnel every request comes from
-   `cloudflared` on loopback, so the server sees one peer. Anyone who can
-   reach `/register` can use up both limits within minutes, and every new
-   registration is then refused, yours included. Approved clients keep
-   working. The rule narrows who can reach `/register` to traffic from
-   Anthropic. Anyone with a Claude account can still add your URL as a
-   connector and register through it, but random internet sources can't. To
-   clear abandoned pending registrations, list them with
-   `mandalore server clients list` and remove them with
+   The server protects itself without the rule, but the rule keeps random
+   internet sources from using up its registration budget. The server allows
+   10 registrations per 10 minutes from everyone together, not per address:
+   behind the tunnel every request comes from `cloudflared` on loopback, and
+   the server trusts no forwarded address header such as `X-Forwarded-For` or
+   `CF-Connecting-IP`. Over the limit, `/register` answers 429 with
+   `Retry-After`, so while a flood lasts, new registrations wait, yours
+   included; within 10 minutes of it stopping they succeed again. At most 20
+   registrations wait for approval at once. A new one evicts the oldest
+   waiting registration, and any left expire after 24 hours, so abandoned or
+   hostile registrations can't fill the server for good. A registration
+   survives at least 10 minutes of a flood, longer than its consent page
+   stays valid; one evicted before you approve it just registers again.
+   Eviction never touches approved clients, and nothing an anonymous
+   registrant does approves a client: every code still needs your passkey.
+
+   The rule narrows who can reach `/register` to traffic from Anthropic, so
+   the limit is shared with Claude accounts only. Anyone with a Claude account
+   can still add your URL as a connector and register through it, but random
+   internet sources can't. To clear abandoned pending registrations, list
+   them with `mandalore server clients list` and remove them with
    `mandalore server clients revoke`.
 
    A Cloudflare rate limiting rule on `/register` counted by `ip.src` can be
-   added as an extra layer. It slows a single source, but it doesn't prevent
-   the lockout. Free counts in 10-second periods and Pro in periods of at most
-   1 minute, so one source can still fill the server's limits within minutes,
-   and many sources aren't limited at all.
+   added as an extra layer. It slows a single source, but it doesn't stop
+   many sources from using up the server's budget. Free counts in 10-second
+   periods and Pro in periods of at most 1 minute.
 
 3. **Leave the rest open.** Allow everyone on `/authorize`, `/consent`,
    `/owner/*` and `/.well-known/*`; the passkey protects them. Put no IP rule on

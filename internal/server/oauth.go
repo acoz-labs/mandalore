@@ -11,9 +11,10 @@ import (
 	"log"
 	"maps"
 	"mime"
-	"net"
 	"net/http"
 	"net/url"
+	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -30,7 +31,7 @@ const (
 	codeTTL        = 2 * time.Minute
 	requestTTL     = 10 * time.Minute
 	maxFormBytes   = 16384
-	registerLimit  = 10 // registrations per peer address per registerWindow
+	registerLimit  = 10 // registrations per registerWindow, from all peers together
 	registerWindow = 10 * time.Minute
 	maxInFlight    = 64 // codes, consent requests, ceremonies or sessions held in memory
 )
@@ -55,7 +56,7 @@ type authServer struct {
 	requests   map[string]*authRequest
 	sessions   map[string]*ownerSession
 	ceremonies map[string]*ceremony
-	registered map[string][]time.Time // peer address → recent registrations
+	registered []time.Time // registrations within the last registerWindow
 }
 
 type authCode struct {
@@ -86,7 +87,7 @@ func newAuthServer(c Config, signets map[string]*signet, logger *log.Logger, now
 	}
 	a := &authServer{issuer: c.origin(), owner: c.Owner.Name, store: store, documents: &documents{client: documentClient(), now: now, cache: map[string]document{}},
 		webauthn: w, signets: signets, resources: map[string]string{}, log: logger, now: now,
-		codes: map[string]*authCode{}, requests: map[string]*authRequest{}, sessions: map[string]*ownerSession{}, ceremonies: map[string]*ceremony{}, registered: map[string][]time.Time{}}
+		codes: map[string]*authCode{}, requests: map[string]*authRequest{}, sessions: map[string]*ownerSession{}, ceremonies: map[string]*ceremony{}}
 	a.endpoints = map[string]http.Handler{
 		"/.well-known/oauth-authorization-server": http.HandlerFunc(a.metadata),
 		"/register":              http.HandlerFunc(a.register),
@@ -168,8 +169,9 @@ func (a *authServer) register(w http.ResponseWriter, r *http.Request) {
 		oauthError(w, http.StatusBadRequest, "invalid_client_metadata", "registration requires application/json")
 		return
 	}
-	if !a.allowRegistration(r) {
-		oauthError(w, http.StatusTooManyRequests, "temporarily_unavailable", "too many registrations from this address; retry later")
+	if wait := a.allowRegistration(); wait > 0 {
+		w.Header().Set("Retry-After", strconv.Itoa(int((wait+time.Second-1)/time.Second)))
+		oauthError(w, http.StatusTooManyRequests, "temporarily_unavailable", "too many registrations; retry later")
 		return
 	}
 	var meta clientMetadata
@@ -190,16 +192,10 @@ func (a *authServer) register(w http.ResponseWriter, r *http.Request) {
 	client.Kind = clientKind(client.ID, false, meta.RedirectURIs)
 	client.Name = displayName(meta.ClientName, client.Kind)
 	err := a.store.update(func(st *oauthState) error {
-		if st.pending(now) >= maxPending {
-			return errTooManyPending
-		}
+		st.evictPending(now)
 		st.Clients[client.ID] = client
 		return nil
 	})
-	if errors.Is(err, errTooManyPending) {
-		oauthError(w, http.StatusServiceUnavailable, "temporarily_unavailable", "too many registrations are waiting for approval")
-		return
-	}
 	if err != nil {
 		oauthError(w, http.StatusInternalServerError, "server_error", err.Error())
 		return
@@ -210,32 +206,21 @@ func (a *authServer) register(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-var errTooManyPending = errors.New("too many pending registrations")
-
-// allowRegistration limits registrations per peer address.
-func (a *authServer) allowRegistration(r *http.Request) bool {
-	peer, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		peer = r.RemoteAddr
-	}
+// allowRegistration limits registrations from all peers together: behind a
+// tunnel every peer is the tunnel, so a per-address limit is one shared
+// bucket anyway, and no forwarded address header is trusted. It returns how
+// long to wait when the limit is reached. A flood therefore delays new
+// registrations by at most registerWindow after it stops.
+func (a *authServer) allowRegistration() time.Duration {
 	now := a.now()
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	if len(a.registered) > 1024 {
-		clear(a.registered)
+	a.registered = slices.DeleteFunc(a.registered, func(t time.Time) bool { return now.Sub(t) >= registerWindow })
+	if len(a.registered) >= registerLimit {
+		return a.registered[0].Add(registerWindow).Sub(now)
 	}
-	recent := a.registered[peer][:0]
-	for _, t := range a.registered[peer] {
-		if now.Sub(t) < registerWindow {
-			recent = append(recent, t)
-		}
-	}
-	if len(recent) >= registerLimit {
-		a.registered[peer] = recent
-		return false
-	}
-	a.registered[peer] = append(recent, now)
-	return true
+	a.registered = append(a.registered, now)
+	return 0
 }
 
 // requestedScope parses an OAuth scope parameter. It returns "" when the
