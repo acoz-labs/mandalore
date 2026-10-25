@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -16,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 	"sync/atomic"
+	"syscall"
 	"testing"
 	"time"
 
@@ -1206,11 +1208,30 @@ func TestRevocationByExpiredToken(t *testing.T) {
 	}
 }
 
-// When the OAuth state can't be read, /revoke and /token say the server
-// failed rather than that the client is unknown, which would send it to
-// authorize again. Nothing is revoked, and the tokens work once the state
-// reads again.
+// When the OAuth state can't be read, because it is corrupt or the server
+// may not read it, /revoke and /token say the server failed rather than that
+// the client is unknown, which would send it to authorize again. Nothing is
+// revoked, and the tokens work once the state reads again.
 func TestOAuthStateReadFailure(t *testing.T) {
+	for name, unreadable := range map[string]func(t *testing.T, state string, good []byte) error{
+		"corrupt": func(_ *testing.T, state string, _ []byte) error {
+			return os.WriteFile(state, []byte(`{"clients": corrupt`), 0600)
+		},
+		"permission denied": func(t *testing.T, state string, good []byte) error {
+			if os.Geteuid() == 0 {
+				t.Skip("root reads the unreadable state file this test uses to fail the read")
+			}
+			if err := os.WriteFile(state, append(good, '\n'), 0600); err != nil {
+				return err
+			}
+			return os.Chmod(state, 0)
+		},
+	} {
+		t.Run(name, func(t *testing.T) { testOAuthStateReadFailure(t, unreadable) })
+	}
+}
+
+func testOAuthStateReadFailure(t *testing.T, unreadable func(t *testing.T, state string, good []byte) error) {
 	t.Setenv("HOME", t.TempDir())
 	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
 	e.enrollOwner(t)
@@ -1222,9 +1243,10 @@ func TestOAuthStateReadFailure(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(state, []byte(`{"clients": corrupt`), 0600); err != nil {
+	if err := unreadable(t, state, good); err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() { _ = os.Chmod(state, 0600) })
 
 	for name, test := range map[string]struct {
 		path   string
@@ -1244,6 +1266,9 @@ func TestOAuthStateReadFailure(t *testing.T) {
 		}
 	}
 
+	if err := os.Chmod(state, 0600); err != nil {
+		t.Fatal(err)
+	}
 	if err := os.WriteFile(state, good, 0600); err != nil {
 		t.Fatal(err)
 	}
@@ -1275,5 +1300,213 @@ func TestRevocationWriteFailure(t *testing.T) {
 	}
 	if e.mcpStatus(t, "/mcp", tok["access_token"].(string)) != http.StatusOK || liveTokens(t, e.config, client) != 2 {
 		t.Fatal("a failed revocation revoked tokens")
+	}
+}
+
+// When /token can't save the state, redemption and refresh answer 500
+// server_error rather than invalid_grant and issue nothing. The code and the
+// refresh token stay usable once the state saves again.
+func TestTokenSaveFailure(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("root ignores the read-only state directory this test uses to fail the write")
+	}
+	t.Setenv("HOME", t.TempDir())
+	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
+	e.enrollOwner(t)
+	redirect := "https://claude.ai/api/mcp/auth_callback"
+	client := e.registerClient(t, "Synthetic", redirect)
+	tok := e.tokens(t, client, redirect, "/mcp", "", ScopeReadWrite)
+	grants := pendingGrants(t, e, client, redirect, tok)
+	state := filepath.Join(e.config.StateDir, oauthStateFile)
+	before, err := os.ReadFile(state)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(e.config.StateDir, 0500); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(e.config.StateDir, 0700) })
+	for name, form := range grants {
+		resp, out := e.postForm(t, e.agent, "/token", form)
+		if resp.StatusCode != http.StatusInternalServerError || out["error"] != "server_error" || out["access_token"] != nil {
+			t.Errorf("%s without a writable state: %d %v", name, resp.StatusCode, out)
+		}
+	}
+	if err := os.Chmod(e.config.StateDir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if after, _ := os.ReadFile(state); string(after) != string(before) {
+		t.Fatal("a failed save changed the state")
+	}
+	for name, form := range grants {
+		if resp, out := e.postForm(t, e.agent, "/token", form); resp.StatusCode != http.StatusOK {
+			t.Errorf("%s once the state saves: %d %v", name, resp.StatusCode, out)
+		}
+	}
+}
+
+// When the state can't be read by the update that redeems or refreshes, as
+// when it changes after the client check, both grants fail as the store's
+// failure, and the code and refresh token still work once it reads again.
+func TestTokenReadFailure(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("root reads the unreadable state file this test uses to fail the read")
+	}
+	t.Setenv("HOME", t.TempDir())
+	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
+	e.enrollOwner(t)
+	redirect := "https://claude.ai/api/mcp/auth_callback"
+	client := e.registerClient(t, "Synthetic", redirect)
+	tok := e.tokens(t, client, redirect, "/mcp", "", ScopeReadWrite)
+	grants := pendingGrants(t, e, client, redirect, tok)
+	state := filepath.Join(e.config.StateDir, oauthStateFile)
+	good, err := os.ReadFile(state)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The server reads the client before it updates, so the update is called
+	// directly, with the file changed and unreadable since that read.
+	if err := os.WriteFile(state, append(good, '\n'), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(state, 0); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(state, 0600) })
+	a := e.server.oauth
+	for name, grant := range map[string]func(string, url.Values) (tokenResponse, error){"redeem": a.redeem, "refresh": a.refresh} {
+		if out, err := grant(client, grants[name]); !errors.Is(err, errStore) || out.AccessToken != "" {
+			t.Errorf("%s without a readable state: %v %+v", name, err, out)
+		}
+	}
+	if err := os.Chmod(state, 0600); err != nil {
+		t.Fatal(err)
+	}
+	for name, form := range grants {
+		if resp, out := e.postForm(t, e.agent, "/token", form); resp.StatusCode != http.StatusOK {
+			t.Errorf("%s once the state reads: %d %v", name, resp.StatusCode, out)
+		}
+	}
+}
+
+// An update whose save succeeds has happened even when rereading the saved
+// file fails, so it reports no error, and a redemption saved that way keeps
+// its code used and its tokens.
+func TestUpdateSavedButUnreadable(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("root reads the write-only state file this test uses to fail the reread")
+	}
+	t.Setenv("HOME", t.TempDir())
+	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
+	e.enrollOwner(t)
+	redirect := "https://claude.ai/api/mcp/auth_callback"
+	client := e.registerClient(t, "Synthetic", redirect)
+	tok := e.tokens(t, client, redirect, "/mcp", "", ScopeReadWrite)
+	grants := pendingGrants(t, e, client, redirect, tok)
+	state := filepath.Join(e.config.StateDir, oauthStateFile)
+	a := e.server.oauth
+	// The umask makes the saved file write-only, so its reread fails. No
+	// server test runs in parallel, so it reaches no other test.
+	saveUnreadable := func(save func() error) error {
+		old := syscall.Umask(0o477)
+		defer syscall.Umask(old)
+		return save()
+	}
+	t.Cleanup(func() { _ = os.Chmod(state, 0600) })
+
+	if err := saveUnreadable(func() error { return a.store.update(func(*oauthState) error { return nil }) }); err != nil {
+		t.Fatalf("update with an unreadable saved state: %v", err)
+	}
+	if err := os.Chmod(state, 0600); err != nil {
+		t.Fatal(err)
+	}
+	var out tokenResponse
+	err := saveUnreadable(func() (err error) { out, err = a.redeem(client, grants["redeem"]); return err })
+	if err != nil || out.AccessToken == "" {
+		t.Fatalf("redeem with an unreadable saved state: %v %+v", err, out)
+	}
+	if _, err := os.ReadFile(state); err == nil {
+		t.Fatal("the saved state was readable, so the reread did not fail")
+	}
+	if err := os.Chmod(state, 0600); err != nil {
+		t.Fatal(err)
+	}
+	if e.mcpStatus(t, "/mcp", out.AccessToken) != http.StatusOK {
+		t.Fatal("the saved tokens do not work")
+	}
+	resp, body := e.postForm(t, e.agent, "/token", grants["redeem"])
+	if resp.StatusCode != http.StatusBadRequest || body["error_description"] != "authorization code was already used" {
+		t.Fatalf("redeem the saved code again: %d %v", resp.StatusCode, body)
+	}
+}
+
+// pendingGrants returns a redemption of a new, unused authorization code and
+// a refresh of tok, both for client.
+func pendingGrants(t *testing.T, e *oauthEnv, client, redirect string, tok map[string]any) map[string]url.Values {
+	t.Helper()
+	verifier, challenge := pkce()
+	loc := e.visit(t, authorizeURL(client, redirect, challenge, publicURL+"/mcp", ""), ScopeReadWrite)
+	return map[string]url.Values{
+		"redeem": {"grant_type": {"authorization_code"}, "client_id": {client}, "code": {loc.Query().Get("code")},
+			"redirect_uri": {redirect}, "code_verifier": {verifier}},
+		"refresh": {"grant_type": {"refresh_token"}, "client_id": {client}, "refresh_token": {tok["refresh_token"].(string)}},
+	}
+}
+
+// Real grant errors keep their exact responses: an unknown, expired or reused
+// code, and a rotated refresh token and the family its reuse revoked.
+func TestTokenGrantErrorBodies(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
+	e.enrollOwner(t)
+	redirect := "https://claude.ai/api/mcp/auth_callback"
+	client := e.registerClient(t, "Synthetic", redirect)
+	post := func(form url.Values) string {
+		t.Helper()
+		resp, err := e.agent.PostForm(publicURL+"/token", form)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		raw, _ := io.ReadAll(resp.Body)
+		return resp.Status + " " + string(raw)
+	}
+	grant := func(reason string) string {
+		return `400 Bad Request {"error":"invalid_grant","error_description":"` + reason + `"}` + "\n"
+	}
+	code := func() url.Values {
+		verifier, challenge := pkce()
+		loc := e.visit(t, authorizeURL(client, redirect, challenge, publicURL+"/mcp", ""), ScopeReadWrite)
+		return url.Values{"grant_type": {"authorization_code"}, "client_id": {client}, "code": {loc.Query().Get("code")},
+			"redirect_uri": {redirect}, "code_verifier": {verifier}}
+	}
+	refresh := func(token any) url.Values {
+		return url.Values{"grant_type": {"refresh_token"}, "client_id": {client}, "refresh_token": {token.(string)}}
+	}
+
+	unknown := code()
+	unknown.Set("code", "unknown")
+	if got := post(unknown); got != grant("authorization code is invalid or expired") {
+		t.Errorf("unknown code: %s", got)
+	}
+	expired := code()
+	e.clock.advance(codeTTL)
+	if got := post(expired); got != grant("authorization code is invalid or expired") {
+		t.Errorf("expired code: %s", got)
+	}
+	reused := code()
+	if got := post(reused); !strings.HasPrefix(got, "200 ") {
+		t.Fatalf("redeem: %s", got)
+	}
+	if got := post(reused); got != grant("authorization code was already used") {
+		t.Errorf("reused code: %s", got)
+	}
+	first := e.tokens(t, client, redirect, "/mcp", "", ScopeReadWrite)
+	_, second := e.postForm(t, e.agent, "/token", refresh(first["refresh_token"]))
+	if got := post(refresh(first["refresh_token"])); got != grant("refresh token was already used; its tokens are revoked") {
+		t.Errorf("reused refresh token: %s", got)
+	}
+	if got := post(refresh(second["refresh_token"])); got != grant("refresh token is invalid or expired") {
+		t.Errorf("refresh token of a revoked family: %s", got)
 	}
 }

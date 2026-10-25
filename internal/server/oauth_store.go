@@ -94,6 +94,16 @@ type ownerState struct {
 	EnrollmentReplaces bool `json:"enrollment_replaces,omitempty"`
 }
 
+// errStore matches every failure to lock, read or save the OAuth state, so
+// callers can tell the server's failure from an error fn returns.
+var errStore = errors.New("OAuth state store failure")
+
+// storeError is a store failure with the message the client sees.
+type storeError string
+
+func (e storeError) Error() string        { return string(e) }
+func (e storeError) Is(target error) bool { return target == errStore }
+
 // oauthStore is the state file in state_dir. The server and the admin CLI
 // share it: writers hold a file lock, and readers reload whenever the file
 // changes, so a revoke from the CLI takes effect on the next request.
@@ -261,27 +271,29 @@ func (s *oauthStore) view(fn func(*oauthState) error) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if err := s.reload(); err != nil {
-		return errors.New("OAuth state unreadable")
+		return storeError("OAuth state unreadable")
 	}
 	return fn(&s.state)
 }
 
 // update applies fn to the latest state under the file lock and saves it if
 // fn succeeds. Expired tokens, pending clients and enrollments are pruned.
+// Once the save succeeds the update has happened, so it reports no error even
+// if rereading the saved file fails.
 func (s *oauthStore) update(fn func(*oauthState) error) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	fd, err := syscall.Open(filepath.Join(s.dir, "oauth.lock"), syscall.O_CREAT|syscall.O_RDWR|syscall.O_NOFOLLOW|syscall.O_CLOEXEC, 0600)
 	if err != nil {
-		return errors.New("OAuth state unavailable")
+		return storeError("OAuth state unavailable")
 	}
 	defer syscall.Close(fd)
 	if err := syscall.Flock(fd, syscall.LOCK_EX); err != nil {
-		return errors.New("OAuth state unavailable")
+		return storeError("OAuth state unavailable")
 	}
 	defer syscall.Flock(fd, syscall.LOCK_UN)
 	if err := s.reload(); err != nil {
-		return errors.New("OAuth state unreadable")
+		return storeError("OAuth state unreadable")
 	}
 	next := s.state.clone()
 	if err := fn(&next); err != nil {
@@ -290,10 +302,11 @@ func (s *oauthStore) update(fn func(*oauthState) error) error {
 	next.prune(s.now())
 	next.writeLegacy()
 	if err := writeState(s.path(), next); err != nil {
-		return errors.New("cannot save OAuth state")
+		return storeError("cannot save OAuth state")
 	}
-	s.seen = nil
-	return s.reload()
+	s.state, s.seen = next, nil
+	_ = s.reload() // records the saved file; on failure the next read retries
+	return nil
 }
 
 // clone copies the state deeply enough that a failed update leaves the
