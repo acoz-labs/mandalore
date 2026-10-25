@@ -115,7 +115,11 @@ func TestInstallUpgradesAndRollsBackRetained1xPrefix(t *testing.T) {
 }
 
 func TestInstallRefusesTampered1xRetainedRuntime(t *testing.T) {
-	for _, kind := range []string{"manifest", "binary", "codex-claim"} {
+	for kind, want := range map[string]string{
+		"manifest":    "retained manifest no longer matches its receipt identity",
+		"binary":      "retained runtime does not match its manifest",
+		"codex-claim": "retained manifest is not a readable release manifest: retained 1.x Codex package claim is invalid",
+	} {
 		t.Run(kind, func(t *testing.T) {
 			o, legacy := legacyInstallOptions(t)
 			root := retainedRoot(o.Prefix, legacy, runtime.GOOS, runtime.GOARCH)
@@ -148,8 +152,8 @@ func TestInstallRefusesTampered1xRetainedRuntime(t *testing.T) {
 				}
 				fixtureLegacyInstall(t, o.Prefix, b, binary)
 			}
-			if _, err := PlanInstall(context.Background(), o); err == nil {
-				t.Fatal("tampered 1.x install accepted")
+			if _, err := PlanInstall(context.Background(), o); err == nil || err.Error() != want {
+				t.Fatalf("tampered 1.x install: got %v, want %q", err, want)
 			}
 		})
 	}
