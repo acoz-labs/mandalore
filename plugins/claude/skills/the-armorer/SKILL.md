@@ -20,7 +20,8 @@ Work through these in order and stop at the first that applies:
    calls `plugin:mandalore:mandalore`). Take the exact server name, such as
    `claude.ai My Memory`, from its heading in the MCP server instructions; if
    you can't see it, ask the user to copy it from `/mcp`. Ask the user to
-   confirm in `/mcp` that its URL is `${user_config.server_url}`. Diagnosis:
+   confirm in `/mcp` that its URL is `${user_config.server_url}`; if it differs,
+   this check doesn't apply, so go on to the next. Diagnosis:
    "The claude.ai connector '<name>' replaces the plugin's server, so memory
    isn't recalled on each prompt." Fix: add this to `~/.claude/settings.json`,
    with the exact name, then restart Claude Code:
