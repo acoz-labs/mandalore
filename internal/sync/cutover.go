@@ -41,15 +41,11 @@ func (s *Synchronizer) InspectClone(ctx context.Context) (CloneState, error) {
 			out.Uncommitted = append(out.Uncommitted, entry[3:])
 		}
 	}
-	ignored, err := s.git(ctx, "ls-files", "--others", "--ignored", "--exclude-standard", "-z")
+	ignored, err := s.ignoredPortable(ctx)
 	if err != nil {
 		return out, err
 	}
-	for _, path := range strings.Split(ignored, "\x00") {
-		if allowedPath(path) {
-			out.Uncommitted = append(out.Uncommitted, path)
-		}
-	}
+	out.Uncommitted = append(out.Uncommitted, ignored...)
 	remote, err := s.git(ctx, "remote", "get-url", "--all", "origin")
 	if isExit(err, 2) {
 		out.Remote = "none"

@@ -105,6 +105,10 @@ func TestGitProcessCancellationAndOutputBounds(t *testing.T) {
 	if err == nil || out != "" || strings.Contains(err.Error(), "PRIVATE-CANARY") {
 		t.Fatal("unbounded/reflected output", err)
 	}
+	var limit *OutputLimitError
+	if !errors.As(err, &limit) || err.Error() != "Git version output exceeded the 1048576-byte limit" {
+		t.Fatal("output limit not reported as one", err)
+	}
 	if ctx2.Err() != nil {
 		t.Fatal("output bound relied on whole-operation timeout")
 	}

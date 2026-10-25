@@ -7,6 +7,7 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -25,9 +26,24 @@ type commandError struct {
 }
 
 func (e *commandError) Error() string {
+	var limit *OutputLimitError
+	if errors.As(e.cause, &limit) {
+		return limit.Error()
+	}
 	return "Git " + e.operation + " failed; inspect local synchronization state"
 }
 func (e *commandError) Unwrap() error { return e.cause }
+
+// OutputLimitError reports a Git command stopped for exceeding an output limit.
+// It carries no raw output.
+type OutputLimitError struct {
+	Command string
+	Limit   int
+}
+
+func (e *OutputLimitError) Error() string {
+	return "Git " + e.Command + " output exceeded the " + strconv.Itoa(e.Limit) + "-byte limit"
+}
 
 // Drop repository/config/identity redirection from the caller, but retain native
 // credential-helper environment and SSH agent access. We never persist secrets.
@@ -44,13 +60,15 @@ func cleanEnvironment() []string {
 }
 
 type limitedOutput struct {
-	buffer bytes.Buffer
-	limit  int
-	cancel context.CancelFunc
+	buffer   bytes.Buffer
+	limit    int
+	cancel   context.CancelFunc
+	exceeded bool
 }
 
 func (b *limitedOutput) Write(p []byte) (int, error) {
 	if len(p) > b.limit-b.buffer.Len() {
+		b.exceeded = true
 		b.cancel()
 		return 0, errors.New("Git output limit exceeded")
 	}
@@ -117,6 +135,10 @@ func (s *Synchronizer) gitOutput(parent context.Context, limit int, args ...stri
 		cause := err
 		if parent.Err() != nil {
 			cause = parent.Err()
+		} else if stdout.exceeded {
+			cause = &OutputLimitError{Command: args[0], Limit: stdout.limit}
+		} else if stderr.exceeded {
+			cause = &OutputLimitError{Command: args[0] + " stderr", Limit: stderr.limit}
 		}
 		return "", &commandError{operation: args[0], exitCode: code, cause: cause}
 	}
