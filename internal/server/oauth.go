@@ -64,7 +64,7 @@ type authCode struct {
 	redirect, challenge, signet string
 	scope                       Scope
 	expires                     time.Time
-	used                        bool
+	used                        bool // claimed by a redemption; released if its save fails
 }
 
 // authRequest is a validated /authorize request waiting for the owner.
@@ -571,6 +571,11 @@ func (a *authServer) token(w http.ResponseWriter, r *http.Request) {
 	default:
 		code, err = "unsupported_grant_type", errors.New("grant_type must be authorization_code or refresh_token")
 	}
+	if errors.Is(err, errStore) {
+		// The grant may be fine: a retry can succeed once the state works.
+		oauthError(w, http.StatusInternalServerError, "server_error", err.Error())
+		return
+	}
 	var oe *tokenError
 	if errors.As(err, &oe) {
 		code = oe.code
@@ -710,6 +715,13 @@ func (a *authServer) redeem(clientID string, f url.Values) (tokenResponse, error
 		out = a.issue(st, t, key, narrow(c.scope, grant))
 		return nil
 	})
+	if errors.Is(err, errStore) {
+		// Nothing was issued, so the code stays redeemable. A redemption
+		// racing this one saw it used and was refused as a replay.
+		a.mu.Lock()
+		c.used = false
+		a.mu.Unlock()
+	}
 	return out, err
 }
 
