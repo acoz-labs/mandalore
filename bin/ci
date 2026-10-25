@@ -54,14 +54,19 @@ done
   exit 1
 }
 [[ -z "$(gofmt -l internal cmd)" ]] || { echo "Run gofmt on internal/ and cmd/." >&2; exit 1; }
-[[ "$(node --version)" == "v24.1.0" ]] || {
-  echo "Node 24.1.0 is required for Pi adapter tests; use mise exec -- bin/ci." >&2
+# The skills describe the 2.0 server; 1.x sync, session, binding and
+# connection guidance must not come back (#163 acceptance 4).
+if grep -r -n -i -E 'memory_sync|session_sync|binding|connection\.json' plugins/claude/skills; then
+  echo "Skills reference 1.x sync, sessions, bindings or connection.json." >&2
   exit 1
-}
-# connection.test.mjs drives the 1.x stdio/session runtime that 2.0 removed
-# (#167); the Pi plugin and this step leave the build in #163.
-node --test $(ls plugins/pi/test/*.test.mjs | grep -v '/connection\.test\.mjs$')
-python3 -B -m unittest discover -s plugins/hermes/test -v
+fi
+# Claude Code's own validator, when this host has it; the container doesn't.
+if command -v claude >/dev/null 2>&1; then
+  claude plugin validate --strict plugins/claude
+  claude plugin validate --strict .
+else
+  echo "NOTICE: claude not found; strict plugin validation skipped on this host." >&2
+fi
 go mod verify
 git --version
 go test -race ./...

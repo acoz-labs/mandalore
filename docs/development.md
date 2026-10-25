@@ -12,22 +12,13 @@ Go is pinned to 1.26.4 in mise, the module toolchain, CI and the development
 container. The module language baseline is Go 1.26.0. CI rejects a different
 active toolchain; do not install or use an unrecorded latest runtime.
 
-The dependency-free Pi extension is authored as JavaScript; Node 24.1.0 is pinned
-in mise, CI and the development container for its builtin test runner, matching
-the initial inspected Pi 0.85.1 engineering baseline. There is no npm install,
-transpiler or runtime package download. Run `mise exec -- node --test
-plugins/pi/test/*.test.mjs` for focused adapter tests. Node is a native Pi/test
-prerequisite, not a dependency of the standalone Go memory engine or release
-payload builder. A test pin is not a claim that other native versions are tested.
-
-The Hermes adapter uses Python's standard library, with Python 3.9+
-required for its focused tests: `python3 -B -m unittest discover -s
-plugins/hermes/test -v`. `bin/ci` runs these tests, and the development container
-installs Python 3. Engineering checks have used Python 3.9.6 locally and the
-inspected Hermes runtime's Python 3.14.7; this does not establish acceptance of
-every intervening Python or Hermes release. No separate Python dependency
-installation is needed for the adapter. Native Hermes retains its own managed
-dependencies and profile requirements; see [Hermes integration](hermes.md).
+The [Claude plugin](../plugins/claude/README.md) is JSON and Markdown with no
+build step. `bin/ci` greps its skills for 1.x sync, session, binding and
+`connection.json` guidance, and runs `claude plugin validate --strict` on the
+plugin and the marketplace when Claude Code is on PATH. The development container
+has no Claude Code, so there it prints a notice and skips that step; run `bin/ci`
+on a host with Claude Code before review. Native checks are recorded with
+[`docs/evidence/2.0/claude-plugin-native.sh`](evidence/2.0/claude-plugin-native.sh).
 
 Use synthetic banks and disposable project workspaces. Native integration tests
 may inherit existing native resources and authentication with explicit local

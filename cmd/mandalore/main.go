@@ -15,7 +15,6 @@ import (
 	"github.com/acoz-labs/mandalore/internal/binding"
 	"github.com/acoz-labs/mandalore/internal/foundlings"
 	"github.com/acoz-labs/mandalore/internal/memory"
-	"github.com/acoz-labs/mandalore/internal/readiness"
 )
 
 var version = "0.0.0-dev"
@@ -49,9 +48,6 @@ const help = `Mandalore — durable memory across tools
                                                  macOS: ask, then unload the agent and remove its plist
   mandalore menu [--plain]                       Guided setup, inspection and recovery
   mandalore operations                          JSON schemas and implemented operations
-  mandalore launch NAME [--agent NAME] [--preview] [-- native arguments]
-  mandalore launch configure|list|schema|--help   Machine-local named environments
-  mandalore connection apply --sessions-stopped  Apply a reviewed plan after affected Codex sessions exit
   mandalore version                             Runtime/protocol version
   mandalore release inspect [--version VERSION | --candidate DIR]
   mandalore release plan [--version VERSION | --candidate DIR | --retained SHA256] --prefix DIR
@@ -74,23 +70,11 @@ const help = `Mandalore — durable memory across tools
   mandalore foundling status|canon-scopes|canon-recall|canon-heads|canon-promote --binding FILE < input.json
   mandalore foundling refresh --binding FILE < session.json
   mandalore call OPERATION --binding FILE < input.json
-  mandalore connection plan [--binary FILE] [--binding FILE] [profile options]
-  mandalore connection apply < approved-plan.json
-  mandalore connection assess --harness codex|pi|claude-code|hermes [profile options] [--binding FILE] [--connection-root DIR] [--prompt]
-  mandalore connection armorer [profile options]  The Armorer: read-only inspection
-  mandalore connection doctor [profile options]   Compatibility alias
-  mandalore connection repair --connection-root DIR [--apply]
   mandalore migration preflight --source DIR --output NEW-DIR --device-label LABEL --actor NAME
   mandalore migration apply --writers-stopped < reviewed-preflight.json
   mandalore export preview [--binding PATH] < selection.json
   mandalore export apply [--read-only] < reviewed-preview.json
 
-Profile options: --state-dir DIR, --native-home DIR, --native-binary FILE.
-Connection harness: --harness codex|pi|claude-code|hermes (required for assess; otherwise default codex).
-Pi and Claude Code plan --memory-read-only enforces read-only memory in the installed connection;
---read-only instead prohibits mutations by this CLI invocation.
-Connection plan/armorer/doctor/repair preview do not activate a connection.
-Connection assess never executes programs or changes state; --prompt only adds guidance.
 Migration preflight accepts optional --legacy-binding FILE and explicit
 --native-home DIR --native-binary FILE for native inventory. No implicit defaults.
 Migration does not activate a writer or copy Git history/configuration.
@@ -109,19 +93,11 @@ Optional connection guards: --binding-sha256 SHA256 --signet-id ID (both require
 Binding selection: explicit file, then MANDALORE_BINDING, then platform config.
 No cwd-based bank discovery. Local saves and delivery receipts are distinct.
 Release inspection/planning are read-only; apply changes only the selected CLI installation.
-Release install/menu use default-No previews; a native connection update is a separate choice.
+Release install/menu use default-No previews.
 Publication uses separate maintainer acceptance/release gates; local builds are not releases.
 `
 
 func main() {
-	// Cancel bounded preflight on interruption without closing interactive stdin.
-	// Exec resets caught signal handlers when the native process takes over.
-	if len(os.Args) > 1 && os.Args[1] == "launch" {
-		launchContext, cancelLaunch := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-		code := runLaunch(launchContext, os.Args[2:], os.Stdin, os.Stdout, os.Stderr)
-		cancelLaunch()
-		os.Exit(code)
-	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	go func() { <-ctx.Done(); _ = os.Stdin.Close() }()
 	code := run(ctx, os.Args[1:], os.Stdin, os.Stdout, os.Stderr)
@@ -140,15 +116,11 @@ func bad(out io.Writer, message string) int {
 }
 
 func run(ctx context.Context, args []string, input io.Reader, out, errout io.Writer) int {
-	ctx = readiness.WithBuild(ctx, version, sourceCommit)
 	if len(args) > 0 && args[0] == "serve" {
 		return runServe(ctx, args[1:], out, errout)
 	}
 	if len(args) > 0 && args[0] == "server" {
 		return runServer(ctx, args[1:], input, out, errout)
-	}
-	if len(args) > 0 && args[0] == "launch" {
-		return runLaunch(ctx, args[1:], input, out, errout)
 	}
 	if len(args) > 0 && args[0] == "export" {
 		return runExport(ctx, args[1:], input, out)
@@ -161,9 +133,6 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 	}
 	if len(args) > 0 && args[0] == "menu" {
 		return runMenu(ctx, args[1:], input, out)
-	}
-	if len(args) > 0 && args[0] == "connection" {
-		return runConnection(ctx, args[1:], input, out)
 	}
 	if len(args) == 0 || args[0] == "help" || args[0] == "--help" || args[0] == "-h" {
 		_, err := io.WriteString(out, help)

@@ -89,7 +89,7 @@ func TestReleaseInspectionPinsCommitManifestAndAssets(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if r.ID != 42 || r.Manifest.Manifest.SourceCommit != f.manifest.SourceCommit || len(r.Assets) != 8 || r.Manifest.SHA256 == "" {
+		if r.ID != 42 || r.Manifest.Manifest.SourceCommit != f.manifest.SourceCommit || len(r.Assets) != 7 || r.Manifest.SHA256 == "" {
 			t.Fatalf("incomplete pinned inspection: %+v", r)
 		}
 		for _, a := range r.Assets {

@@ -9,9 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/acoz-labs/mandalore/internal/api"
 	"github.com/acoz-labs/mandalore/internal/binding"
-	"github.com/acoz-labs/mandalore/internal/install"
 )
 
 func menuTrial(t *testing.T, script string, args ...string) (string, int) {
@@ -22,7 +20,7 @@ func menuTrial(t *testing.T, script string, args ...string) (string, int) {
 }
 
 func TestMenuExitAndIncompleteInputDoNotConsent(t *testing.T) {
-	for _, script := range []string{"", "10\n", ":back\n", "1\n", "garbage\n10\n"} {
+	for _, script := range []string{"", "7\n", ":back\n", "1\n", "garbage\n7\n"} {
 		out, code := menuTrial(t, script)
 		if code != 0 || !strings.Contains(out, "Opening this menu changes nothing") || strings.Contains(out, "\x1b") {
 			t.Fatal(code, out)
@@ -31,7 +29,7 @@ func TestMenuExitAndIncompleteInputDoNotConsent(t *testing.T) {
 }
 
 func TestMenuCreatePreviewDefaultNoAndEOF(t *testing.T) {
-	for _, consent := range []string{"\n10\n", "2", ":back\n10\n"} {
+	for _, consent := range []string{"\n7\n", "2", ":back\n7\n"} {
 		dir := t.TempDir()
 		root, path := filepath.Join(dir, "signet"), filepath.Join(dir, "binding.json")
 		script := strings.Join([]string{"1", root, "Synthetic", "Test machine", "Test actor", path}, "\n") + "\n" + consent
@@ -123,7 +121,7 @@ func TestMenuCannotApplyIfPreviewCannotBeDisplayed(t *testing.T) {
 }
 
 func TestMenuOverlongInputStopsWithoutReadingFollowingConsent(t *testing.T) {
-	out, code := menuTrial(t, strings.Repeat("x", 8192)+"\n10\n")
+	out, code := menuTrial(t, strings.Repeat("x", 8192)+"\n7\n")
 	if code != 1 || !strings.Contains(out, "answer exceeds") {
 		t.Fatal(code, out)
 	}
@@ -156,43 +154,6 @@ func TestMenuExistingSignetGetsIndependentBindingWithoutGitInit(t *testing.T) {
 	}
 	if _, err := os.Lstat(filepath.Join(root, ".git")); !os.IsNotExist(err) {
 		t.Fatal("connect initialized Git")
-	}
-}
-
-func TestMenuConnectionPreviewDoesNotRunArtifact(t *testing.T) {
-	dir := t.TempDir()
-	root, path := filepath.Join(dir, "signet"), filepath.Join(dir, "binding.json")
-	v, code := cli(t, []string{"signet", "create", "--repository", root, "--name", "Synthetic", "--device-label", "Original"}, "")
-	if code != 0 {
-		t.Fatal(v)
-	}
-	if _, err := binding.Bind(root, path, "Test", "Synthetic"); err != nil {
-		t.Fatal(err)
-	}
-	binary := filepath.Join(dir, "do-not-execute")
-	if err := os.WriteFile(binary, []byte("not executable code"), 0700); err != nil {
-		t.Fatal(err)
-	}
-	state, native := filepath.Join(dir, "state"), filepath.Join(dir, "native")
-	out, code := menuTrial(t, "5\n1\n\n\n10\n", "--binding", path, "--binary", binary, "--native-binary", binary, "--state-dir", state, "--native-home", native)
-	if code != 0 || !strings.Contains(out, "Review Codex connection") || !strings.Contains(out, "Native profile") || !strings.Contains(out, "Runtime SHA256") {
-		t.Fatal(code, out)
-	}
-	for _, p := range []string{state, native} {
-		if _, err := os.Lstat(p); !os.IsNotExist(err) {
-			t.Fatal("preview wrote files", p)
-		}
-	}
-}
-
-func TestMenuReportsNativePartialPhase(t *testing.T) {
-	var out bytes.Buffer
-	m := &menu{out: &out}
-	v := api.Failure("connection.failed", "test failure", true)
-	v.Error.ConnectionResult = &install.Result{Phase: "marketplace-registered", PreviousRoot: "/synthetic/previous", Connection: install.Plan{Root: "/synthetic/target"}}
-	err := m.outcome("connection", v)
-	if err == nil || !strings.Contains(err.Error(), "No automatic rollback") || !strings.Contains(out.String(), "marketplace-registered") || !strings.Contains(out.String(), "/synthetic/previous") {
-		t.Fatal(err, out.String())
 	}
 }
 

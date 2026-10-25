@@ -93,7 +93,7 @@ behavior. Detailed contracts and current tests belong to the linked documents.
 | `internal/memorybank/{binding,service,pages}.go` | `internal/binding`, shared service/CLI contracts in [interface](interface.md) | Explicit local binding, compact bounded memory access; no assistant discovery |
 | `internal/memorymcp/server.go` | `internal/mcp`, `internal/api`, `cmd/mandalore` | Shared local stdio concept; new strict memory-only operation catalog, not assistant CLI copy |
 | `internal/portable/sync.go`, `sync_transport.go` | `internal/sync`; [synchronization](synchronization.md) | Append-only Git delivery/endpoint concepts; hosting-account adapters and credential helpers excluded |
-| `internal/memorycodex`, `internal/memoryinstall`, `plugins/codex` | `internal/codex`, `internal/install`, `plugins/codex`; [Codex package](../plugins/codex/README.md) | Thin native hooks/MCP and pinned connection concepts; no inherited native home, account rules or assistant launcher |
+| `internal/memorycodex`, `internal/memoryinstall`, `plugins/codex` | `internal/codex`, `internal/install`, `plugins/codex` (removed in 2.0) | Thin native hooks/MCP and pinned connection concepts; no inherited native home, account rules or assistant launcher |
 | `internal/portable/references.go`, `reference_read.go`, reference menu | `internal/foundlings`; [foundlings](foundlings.md) | Reference/pin lessons adapted into separate historical evidence and explicit promotion; no wholesale historical-memory import |
 | Assistant-aware CLI/menu and installation modules | [setup](setup.md), [migration](#explicit-memory-only-conversion) | Generic navigation/receipt lessons only; memory-only journeys and explicit conversion, no capability management |
 

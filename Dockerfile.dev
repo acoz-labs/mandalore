@@ -1,8 +1,4 @@
-FROM node:24.1.0-bookworm-slim AS node-runtime
-
 FROM golang:1.26.4-bookworm
-
-COPY --from=node-runtime /usr/local/bin/node /usr/local/bin/node
 
 RUN apt-get update && apt-get install -y --no-install-recommends python3 && rm -rf /var/lib/apt/lists/*
 

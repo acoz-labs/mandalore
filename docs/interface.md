@@ -165,9 +165,8 @@ Published v1.0.0 has not been modified by this development change.
 
 `mandalore version` is read-only and does not need a signet binding. It reports
 the runtime version, source commit (empty for an unstamped development build),
-actual Go version, OS/architecture, protocol and hook compatibility, supported
-signet read/write schema versions, and the actual embedded plugin version/digest.
-The plugin digest uses the same content-map encoding as native connection plans.
+actual Go version, OS/architecture, protocol, and supported signet read/write
+schema versions.
 These declarations support verification; they are not publisher authentication or
 proof that the binary has passed independent acceptance. See
 [candidate builds](development.md#local-distribution-candidates).
@@ -256,7 +255,7 @@ Retained selection verifies a compatible manifest and platform binary beneath
 `PREFIX/lib/mandalore/releases/sha256-MANIFEST/OS_ARCH/`. A serialized plan is not
 proof that its observations remain current or authorization to change connections.
 Activation is a separate explicit operation described below. The interactive
-equivalent is [the guided release journey](#guided-cli-installation-and-native-handoff).
+equivalent is [the guided release journey](#guided-cli-installation).
 
 ## Apply a reviewed CLI installation
 
@@ -341,7 +340,7 @@ Only compatible declared protocol/schema and the current platform are accepted.
 The newer runtime stays retained. No signet data is rewritten, and a CLI rollback
 does not by itself roll back a separately installed native connection.
 
-## Guided CLI installation and native handoff
+## Guided CLI installation
 
 ```sh
 mandalore release install --candidate /example/candidate --prefix /example/tools
@@ -356,27 +355,8 @@ PATH or shell configuration. `--read-only` refuses the journey before reading in
 use inspect/plan instead. EOF, Back and cancellation stop subsequent steps without
 undoing an installation already completed.
 
-After CLI verification, keeping native connections unchanged is the default. An
-optional Codex or Pi handoff asks for the selected binding, native executable/profile
-and installation state. Flags `--binding`, `--native-binary`, `--native-home` and
-`--state-dir` prefill these choices; CLI-only installation does not require them.
-Preparing that handoff **executes the explicitly trusted installed runtime** via
-its `call connection_plan --read-only` (Codex) or `call pi_connection_plan --read-only`
-(Pi) operation. The parent verifies its
-bounded JSON plan against the selected paths, executable/binding hashes and release
-package identity. Pi uses its own metadata, not the manifest's Codex hash.
-It never substitutes the parent's embedded package.
-
-A second default-No confirmation precedes that same runtime's
-`call connection_apply` or `call pi_connection_apply`. Native authentication is inherited normally, not copied;
-raw failed output is suppressed. A typed partial receipt remains visible even
-when the subprocess exits unsuccessfully. CLI installation success remains distinct
-from native failure. Start a fresh native session after a successful connection
-update; existing threads do not reload their plugin context automatically.
-
-Agents do not need to drive menu keys: use the typed release operations, then invoke
-the verified installed executable's existing connection plan/apply operations with
-explicit options. This adds no memory MCP tools. An interrupted CLI activation is
+Agents do not need to drive menu keys: use the typed release operations. This adds
+no memory MCP tools. An interrupted CLI activation is
 still recovered by reapplying its saved exact plan as described above, not by
 selecting a different release in the menu.
 
@@ -417,178 +397,6 @@ when the relevant ID has not already been discovered. Reusing a known ID routes
 a fresh recall, not a cached answer. Recall defaults to five hits and an 8192-byte
 result budget; increase these only when needed. See [retrieval](retrieval.md) for
 lexical limits, completeness/conflict semantics and measured scale behavior.
-
-## Machine-ready contract
-
-### Non-executing machine assessment
-
-Current-source builds add the unbound, CLI-only `connection_assess` operation:
-
-```sh
-mandalore connection assess --harness pi --prompt
-mandalore connection assess --harness codex --binding /example/binding.json --connection-root /example/owned-generation
-mandalore call connection_assess < assessment-input.json
-```
-
-The typed input requires `harness` (`codex` or `pi`), with optional `state_dir`,
-`native_home`, `native_binary`, `binding`, `connection_root` and `include_prompt`.
-There is no separate `pi_connection_assess`. Paths must be absolute, control-free
-and at most 4096 bytes. Defaults use platform installation state, explicit/native
-profile environment selection and a bounded non-executing PATH lookup. Binding
-selection follows the normal explicit/environment/platform order. There is no
-cwd lookup or automatic retained-root selection. Missing binaries are findings;
-invalid defaults can be corrected with explicit paths.
-
-Assessment is read-only, idempotent and non-network. It needs no bound memory
-service and is not a memory MCP/native tool. It executes no subprocess, creates
-no directory/lock and reads no remembered content, credentials or transcripts.
-`--read-only` is accepted; it does not change ordinary learning policy.
-
-The format-1 report has `complete`, `harness`, `selection`, `toolkit`, optional
-`retained`, `declarations`, `components`, `untested`, `next_action`, optional
-`prompt` and `notice`. There is deliberately no aggregate healthy flag:
-
-| Dimension | Meaning |
-| --- | --- |
-| `support` | supported, unsupported or unknown contract target |
-| `setup` | present, verified-static, missing, inconsistent or unknown observation |
-| `evidence` | verified, historical or none for the named recorded scenario |
-| `complete` | Fixed observations completed; not live integration health |
-
-`verified-static` names a narrow binding-identity or retained-byte check, not
-whole-bank/package health. Exact evidence requires every identity applicable to
-that scenario. A source/version label, shim hash or cross-build is insufficient.
-Executing process stamps/embedded package and separately measured on-disk bytes
-are distinct; disk fingerprints do not attest loaded programs. An explicitly
-selected retained runtime is measured separately, never executed. Receipt package
-identities are declarations, not proof of active registration or loaded context.
-
-Missing setup still returns a successful report. Malformed or unreadable observed
-metadata produces partial findings without discarding unrelated observations.
-Invalid selection is `input.invalid`; corrupt bundled declarations are
-`readiness.invalid`. Cancellation returns `operation.cancelled`, exit 130 and no
-successful report/prompt. The normal 32 KiB input/64 KiB envelope bounds apply;
-oversized output fails rather than silently truncating findings. Prompt output is
-bounded to 8 KiB and derives from fixed finding/action codes, never private paths
-or raw metadata. `--prompt` adds it to JSON; it does not execute the guidance.
-
-Native inspection remains a separate explicit command/choice. It may execute the
-selected harness and create its logs/cache even with `--read-only`. The menu
-discloses those effects before a default-No confirmation; automation's existing
-inspection command remains its explicit execution choice. Neither path repairs,
-syncs, authenticates or proves provider/live-session behavior implicitly.
-
-### Native inspection and recovery
-
-The plugin's on-demand **The Armorer** skill drives these administrative
-operations through shell access. Human inspection is
-`mandalore connection armorer [profile options]`; `connection doctor` is a
-compatible alias with identical flags, JSON reports and exit status. The typed
-name remains `connection_doctor` to preserve existing automation. Repair remains
-`connection_repair_plan` followed by `connection_apply`, not an effect of
-inspection. No administrative tools are added to memory MCP.
-
-Pi uses `connection ... --harness pi` and the CLI-only typed operations
-`pi_connection_plan`, `pi_connection_apply`, `pi_connection_doctor` and
-`pi_connection_repair_plan`. The omitted harness remains Codex. Pi plans include
-explicit profile/runtime/binding paths, byte identities, selected signet,
-read-only memory choice, native settings observation and previous ownership.
-Apply errors preserve `pi_connection_result`; diagnostic failures preserve
-`pi_connection_report`. The apply receipt names its retained attempt and last
-phase, distinguishing uncertain native effects from completed verification.
-Interrupted or changed plans require inspection and a fresh recovery preview,
-not automatic retries. See the [Pi guide](../plugins/pi/README.md).
-
-`mandalore operations` lists versioned input/result JSON schemas, read/write and
-idempotency annotations, `requires_binding` and `cli_only` visibility.
-`mandalore call OPERATION --binding FILE < input.json`
-uses the same decoder and methods as the human commands and MCP tools.
-
-| Operation | Human command | MCP |
-| --- | --- | --- |
-| `connection_assess` | `connection assess --harness codex\|pi` | Not exposed; no binding required |
-| `signet_create`, `signet_bind` | `signet create`, `signet bind` | Not exposed |
-| `migration_preflight`, `migration_apply` | `migration preflight`, `migration apply` | Not exposed |
-| `memory_recall`, `memory_scopes`, `memory_history` | `memory recall`, `scopes`, `history` | Bound signet only |
-| `memory_journal`, `memory_inspect` | `memory journal`, `inspect` | Bound signet only |
-| `pi_package_inspect` | `call pi_package_inspect` with `{}` | Not exposed; unbound embedded-package metadata |
-| `pi_connection_plan`, `pi_connection_apply`, `pi_connection_doctor`, `pi_connection_repair_plan` | `connection plan/apply/armorer/repair --harness pi` | Not exposed; explicit native administration |
-| `memory_remember`, `memory_journal_append` | `memory remember`, `journal-append` | Bound signet only |
-| `memory_git_init`, `memory_checkpoint` | `memory git-init`, `checkpoint` | Bound signet only |
-| `foundling_list`, `foundling_inspect`, `foundling_search`, `foundling_read`, `foundling_promote` | `foundling list`, `inspect`, `search`, `read`, `promote` | Bound signet only |
-| `foundling_preview`, `foundling_register`, `foundling_connect`, `foundling_disconnect`, `foundling_history` | `foundling preview`, `register`, `connect`, `disconnect`, `history` | Not exposed; still require a selected binding |
-
-Every operation returns `{protocol_version, ok, result}` or
-`{protocol_version, ok, error}`. The current protocol is 1. The catalog describes
-the semantic result schema; MCP advertises its complete envelope schema and
-returns the same envelope in structured content and a text fallback. Tool errors
-also set MCP `isError`. MCP protocol/framing errors remain SDK transport errors,
-not operation results. Startup diagnostics use stderr, never protocol stdout.
-
-Migration administration uses explicit source/output/device-label/actor inputs;
-it never loads the normal binding default. `migration_preflight` accepts optional
-`legacy_binding`, `native_home` and `native_binary`. `migration_apply` accepts
-`{"plan": <preflight-result>, "writers_stopped": true}`. The human apply command
-accepts either the raw plan or its successful preflight envelope on stdin, plus
-`--writers-stopped`. Both routes call the same dispatcher; `--read-only` refuses
-apply before reading input. `migration.failed` (exit 1) may include a
-`migration_result` with phase, published state and retained staging/output paths.
-This administration-only error detail is not added to MCP's memory-tool schemas.
-See [migration](migration.md) for supported data, snapshot limits and handoff.
-
-Foundling administration separates portable registrations from ignored clone-local
-paths. Preview takes `source: {kind, locator}` and an absolute `local_root`.
-Register takes `name`, `description`, `source`, the exact preview `pin`, and
-`reason`; optional `local_root` connects after registration. Without a local root,
-registration is metadata-only, not proof of source availability. Updates also
-require `foundling_id` and explicit predecessor registration IDs in `supersedes`.
-Replacing a local connection requires its `expected_connection_id`.
-
-Registration/connection is not one atomic transaction. A failed setup can return
-`error.foundling_result` with a phase, compact completed registration receipt and
-connection publication/durability result. Inspect those before retrying; do not
-create a duplicate registration because its connection failed. These administrative
-error details are excluded from MCP's memory-tool schemas.
-
-`foundling connect` takes `foundling_id`, `registration_revision_id`, `local_root`
-and an optional `expected_connection_id`. `foundling disconnect` takes the foundling
-ID, exact single active registration revision and a reason; it appends history,
-not deletion. Resolve conflicts explicitly through registration updates first.
-Concurrent metadata writes can produce visible conflicting heads; a receipt is
-evidence of the appended revision, not an enduring availability guarantee.
-
-The human read commands support `--foundling-id`, `--query` (search), `--limit`
-(list/history/search), `--offset` (list/history/search/read), `--registration-id`
-(search/read), `--excerpt-bytes` and `--budget-bytes` (search), and `--locator`,
-`--limit-bytes` (read). Setup mutations, preview and promotion accept JSON on stdin;
-use the catalog for exact schemas. Search defaults to three results (range 1–10),
-512-byte previews (128–1024) and an 8192-byte serialized-result budget (2048–32768).
-Read defaults to 1024 content bytes (range 1–8192).
-Search queries require 1–16 nonempty literal terms, at most 1024 UTF-8 bytes;
-matching is case-insensitive substring matching without stemming. Invalid queries
-return `input.invalid`, not a suggestion to inspect or repair the source.
-Search-result offsets are document ranks; continuing above zero requires the exact
-returned registration revision and the same query. Each excerpt's offsets instead
-select UTF-8 bytes within its file. New pagination fields are additive; existing
-explicit read sizes remain supported. A `foundling.budget` error asks for a larger
-supported result budget for that same page, not source repair or a blind retry.
-Promotion supplies exact foundling/registration/locator/file-SHA fields and a normal `write`, without its
-`external_origin`: verified provenance is generated. Optional original author/date
-are distinct from current incorporation authorship. Read-only rejects every mutation.
-See [foundlings](foundlings.md) for source limits, reference authority and examples.
-
-Strict object input rejects duplicate, unknown or incorrectly cased fields,
-wrong types, missing required fields, trailing objects and excessive nesting.
-Arguments are at most 32 KiB. Semantic envelopes are at most 64 KiB; recall's
-default result budget is 8192 bytes (range 1024–32768). Default page/result limit
-is 5 (range 1–50); zero is invalid, not an implicit default. The
-[server](server.md) caps MCP request bodies at 64 KiB; schemas and duplicated
-text/structured content add protocol overhead outside the semantic result budget.
-
-`--read-only` refuses mutations before reading their stdin or touching a binding.
-Reads and discovery do not journal, repair, enroll or sync. Reads load current
-local records. Lifecycle context for agents is the server's `memory_context`
-tool, described in the [server contract](server.md#tools).
 
 ## Binding and provenance
 
@@ -662,83 +470,6 @@ conversation or installed native plugin. Native Codex acceptance is recorded in
 [v1.0.0](releases/1.0.0.md); subsequent Pi engineering evidence remains distinct
 from new candidate acceptance in [the Pi evidence](evidence/pi/README.md).
 
-## Development connection management
-
-The CLI embeds the public Codex package. `connection plan` previews explicit
-runtime, binding and native profile selection without executing binaries or
-writing files. `connection apply` accepts that successful JSON envelope or its
-raw plan object on stdin and revalidates inputs before activation. A plan
-identifies the runtime, native executable, binding and embedded package bytes;
-the selected runtime must also pass machine/protocol and read-only hook probes.
-Checksums establish identity, not publisher trust.
-
-Codex replacement/repair defaults to `connection.failed` with
-`error.connection_result.phase: "deferred"` when an existing registration would
-need mutation. No native registration/cache mutation occurs in that refusal.
-Inventory may create native logs, and a late refusal can retain staged copies;
-this is not a filesystem-wide read-only operation. Exit all sessions using the
-selected Codex profile, then use `connection apply --sessions-stopped` with the
-reviewed plan on stdin. Repair-and-apply also accepts this flag. Idle sessions
-are not stopped. The flag is rejected for Pi and preview-only journeys.
-
-The typed `connection_apply` input remains the flattened plan fields, with an
-optional `sessions_stopped` boolean. It belongs only to that invocation, never
-to the plan identity or installation receipt. Existing raw plans still work for
-fresh installation and verified identical replay. An identical registration with
-verified retained source/runtime/cache returns `installed: true`, `phase:
-"verified"` without reinstalling; this does not prove live-session readiness.
-Missing dependencies are not accepted as a successful no-op.
-
-The release menu delegates to the selected runtime's own embedded package.
-It inspects that runtime's operation catalog first. A runtime advertising the
-boolean accepts the acknowledgement; a legacy runtime receives only its original
-raw plan and requires an explicit stopped-session handoff before any delegated
-apply, because it cannot enforce the new guard itself. An unreadable or ambiguous
-catalog is a refusal, not permission to attempt legacy apply.
-
-`connection doctor` returns structural checks and explicit `not-tested` entries
-for native login, hook trust, live MCP, remote freshness and active-session
-context. An unhealthy report has a nonzero exit and `error.connection_report`.
-`connection repair --connection-root DIR` only previews a fresh generation;
-`--apply` explicitly applies it. Edited/unknown state and changed bindings are
-preserved and require inspection, not blind overwrites.
-
-Profile flags are `--state-dir`, `--native-home` and `--native-binary`. Defaults
-are the platform config directory's `mandalore/installation`, existing
-`CODEX_HOME` (otherwise the native home directory's `.codex`) and Codex on PATH.
-Plan additionally accepts `--binary` (default current CLI) and `--binding`
-(the ordinary explicit/environment/platform binding selection). These paths
-must be separate from Git-backed memory. No shell configuration is written.
-Generated local defaults still yield to explicit `MANDALORE_BIN/BINDING` values;
-doctor flags an override that selects a different connection.
-
-The equivalent catalog operations are `connection_plan`, `connection_apply`,
-`connection_doctor` and `connection_repair_plan`. All are CLI-only, not bound
-memory MCP tools. The shared API takes raw typed objects; the human apply command
-also accepts its own plan envelope for convenient preview/apply workflows.
-Read-only mode refuses apply. Connection failures use `connection.failed`
-(exit 1), retain `connection_result` when application started, and identify the
-last completed phase. Cancellation can retain that receipt too. Do not infer
-rollback from a nonzero exit or repeat an ambiguous native mutation blindly.
-Installation result/report schemas are intentionally absent from bound memory
-MCP error schemas, keeping machine-administration details out of agent context.
-
-Runtime and package copies are retained. Native registration changes use native
-Codex commands, not handwritten profile edits; unknown marketplace ownership or
-active legacy/duplicate memory plugins prevent activation. A partial generation
-is not overwritten. Repair requires an intact ownership receipt and an intact
-runtime copy or explicitly selected trusted replacement. Native trust review and
-a fresh session remain separate from installation success.
-Native marketplace removal may delete Codex's installed cache. Recovery relies
-on retained managed source/runtime copies, not cache retention; edited cache
-files are refused before replacement so that native cleanup cannot erase them.
-
-The menu and published-release discovery are implemented; the Codex-first
-[v1.0.0 record](releases/1.0.0.md) records subsequent acceptance/publication.
-Later implementation or local installation does not confer new-candidate
-acceptance. Native behavior evidence is retained separately for
-[Codex](codex-native-evidence.md) and [Pi](evidence/pi/README.md).
-
 ## Scoped report export
 
 `export_preview` and `export_apply` are typed, CLI-only operations. They do not
@@ -798,44 +529,7 @@ references and aliases—is refused. Uninspectable reference metadata/roots fail
 closed. Restrictive modes are 0700 for new directories and 0600 for `report.json`.
 The output is a derived report, not a restorable bank or safe-publication promise.
 
-## Pi connection differences
-
-Use `connection plan/apply/armorer/repair --harness pi` or the corresponding
-`pi_connection_*` operations. Pi defaults to `PI_CODING_AGENT_DIR`, otherwise
-the native `.pi/agent` directory, and `pi` on PATH. Pi 0.85.1 is the original
-tested baseline; required CLI capabilities and registration determine
-compatibility for other versions. Pi/Node installation and model authentication
-are separate prerequisites.
-
-The plan's `read_only` (`--memory-read-only`) enforces memory access in the
-installed connection; common CLI `--read-only` prohibits this invocation's own
-mutations instead. Learning is the ordinary default. Repair preserves access
-mode and binding identity rather than adopting newer ambient configuration.
-
-Plans pin runtime/native/binding/package identities, profile settings and previous
-ownership. Native `pi install`/`remove` own registration, while retained files and
-receipts remain outside the signet/profile. Unknown, filtered, duplicated or
-edited Mandalore registrations are refused. Unrelated packages/resource filters
-are preserved. Each update/repair uses a fresh retained generation; interruption
-may leave no active registration, so inspect phase/attempt receipts before retry.
-
-Pi's menu delegates preview/apply to the explicitly selected runtime. Repair
-selects the owned generation's intact retained runtime, falling back only to its
-matching source bytes. Existing threads need restart or native reload to load
-changed code; the next-turn memory packet is independently read fresh.
-
-The native extension exposes the same 28 bound operations as MCP with sequential
-tool execution, shell-free arguments, binding guards and `pi` provenance.
-One complete envelope is returned in text, with only operation/ok metadata.
-Read nested delivery errors even if the outer save succeeded. Input/output bounds
-remain 32768/65536 bytes (catalog discovery allows 1 MiB). Tool calls have a
-45-second outer deadline; enabled startup/context calls use nine seconds to
-cover primary-signet and canon refresh budgets, while legacy context uses five
-seconds. Cancellation
-terminates owned process groups with bounded escalation; lost output can mean a
-write occurred and requires inspection, never an automatic retry.
-
-## Canon reference operations and local launching
+## Canon reference operations
 
 `foundling_register` accepts `mode`, `branch` and `source_signet_id` for canon;
 mode omission preserves legacy registration. `foundling_status` pages each
@@ -851,9 +545,3 @@ Canon reads never refresh; the server refreshes on a schedule and through
 bounded and paged; use their `next_offset` values rather than treating
 truncation as absence. Read the active operation catalog for bounds and continuation fields.
 See [foundlings](foundlings.md) for content and compatibility semantics.
-
-The separate `mandalore launch` CLI owns machine-local environment selection.
-`launch schema` describes its strict entry JSON; `configure`, `list` and
-`--preview` support setup and inspection. No model memory tool edits shell aliases
-or launches a second agent. See [launch](launch.md) for profile ownership and
-native argument boundaries.

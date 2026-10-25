@@ -113,15 +113,6 @@ func VerifyDirectory(path string) (ParsedManifest, error) {
 		if readErr != nil || closeErr != nil || n != a.Size || hex.EncodeToString(h.Sum(nil)) != a.SHA256 {
 			return ParsedManifest{}, errors.New("candidate payload size or digest mismatch")
 		}
-		if a.Kind == "codex-plugin" {
-			archive, err := readCandidateFile(dir, a.Name, MaxPluginBytes)
-			if err != nil || Digest(archive) != a.SHA256 {
-				return ParsedManifest{}, errors.New("candidate plugin changed during verification")
-			}
-			if err := VerifyPlugin(archive, p.Manifest.Version, p.Manifest.PluginSHA256); err != nil {
-				return ParsedManifest{}, err
-			}
-		}
 	}
 	// Bound enumeration too; an untrusted directory need not be small just because
 	// its manifest is. Transport receipts must remain outside the payload directory.

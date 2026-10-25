@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"flag"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -13,10 +12,8 @@ import (
 	"strings"
 
 	"github.com/acoz-labs/mandalore/internal/api"
-	"github.com/acoz-labs/mandalore/internal/binding"
 	"github.com/acoz-labs/mandalore/internal/console"
 	"github.com/acoz-labs/mandalore/internal/distribution"
-	"github.com/acoz-labs/mandalore/internal/install"
 )
 
 func runReleaseInstall(ctx context.Context, args []string, input io.Reader, out io.Writer) int {
@@ -28,10 +25,6 @@ func runReleaseInstall(ctx context.Context, args []string, input io.Reader, out 
 	f.StringVar(&o.Version, "version", "", "Explicit published version; otherwise latest stable")
 	f.StringVar(&o.Candidate, "candidate", "", "Explicit local candidate directory")
 	f.StringVar(&o.Retained, "retained", "", "Retained manifest SHA-256")
-	f.StringVar(&m.binding, "binding", "", "Optional selected connection binding; not used by CLI install")
-	f.StringVar(&m.profile.StateDir, "state-dir", "", "Optional native installation state")
-	f.StringVar(&m.profile.NativeHome, "native-home", "", "Optional native Codex profile")
-	f.StringVar(&m.profile.NativeBinary, "native-binary", "", "Optional native Codex executable")
 	plain := f.Bool("plain", false, "Use numbered line-oriented prompts")
 	readOnly := f.Bool("read-only", false, "Refuse this mutating journey")
 	if err := f.Parse(args); err != nil || f.NArg() != 0 {
@@ -47,9 +40,6 @@ func runReleaseInstall(ctx context.Context, args []string, input io.Reader, out 
 	if *readOnly {
 		return emit(out, api.Failure("operation.read_only", "Use release inspect or plan for a read-only task.", false))
 	}
-	m.piProfile = m.profile
-	m.hermesProfile = m.profile
-	m.claudeProfile = m.profile
 	check := o
 	if check.Prefix == "" {
 		check.Prefix = "/selection"
@@ -167,10 +157,7 @@ func (m *menu) installRelease(o distribution.InstallOptions) error {
 	if !launcherOnPath(r.Launcher) {
 		m.block(console.Block{Title: "Run the installed CLI", Body: "The launcher directory is not currently on PATH. No shell settings were changed; you can run this full path now.", Fields: []console.Field{{Label: "Command", Value: r.Launcher}}})
 	}
-	if m.outputErr != nil {
-		return m.outputErr
-	}
-	return m.offerReleaseConnection(p, r)
+	return m.outputErr
 }
 
 func launcherOnPath(launcher string) bool {
@@ -205,7 +192,7 @@ func (m *menu) releasePreview(p distribution.InstallPlan) {
 		previous = "Not installed in this prefix"
 	}
 	m.block(console.Block{Title: "Review CLI installation", Body: trust, Fields: []console.Field{{Label: "Version", Value: mf.Version}, {Label: "Source", Value: source}, {Label: "Platform", Value: p.OS + "/" + p.Arch}, {Label: "Prefix", Value: p.Prefix}, {Label: "Launcher", Value: p.Launcher}, {Label: "Previous runtime", Value: previous}, {Label: "Selected runtime", Value: p.Runtime}}})
-	m.block(console.Block{Title: "Artifact identity and effects", Body: "Only this CLI installation changes. Native connections, memory, credentials and shell settings remain unchanged; previous runtimes remain retained.", Fields: []console.Field{{Label: "Source commit", Value: mf.SourceCommit}, {Label: "Manifest SHA256", Value: p.Source.Manifest.SHA256}, {Label: "Binary SHA256", Value: p.Binary.SHA256}, {Label: "Embedded plugin SHA256", Value: mf.PluginSHA256}, {Label: "Retained target reusable", Value: strconv.FormatBool(p.RuntimeRetained)}, {Label: "Protocol / signet schema", Value: "1 / read 1, write 1"}}})
+	m.block(console.Block{Title: "Artifact identity and effects", Body: "Only this CLI installation changes. Native connections, memory, credentials and shell settings remain unchanged; previous runtimes remain retained.", Fields: []console.Field{{Label: "Source commit", Value: mf.SourceCommit}, {Label: "Manifest SHA256", Value: p.Source.Manifest.SHA256}, {Label: "Binary SHA256", Value: p.Binary.SHA256}, {Label: "Retained target reusable", Value: strconv.FormatBool(p.RuntimeRetained)}, {Label: "Protocol / signet schema", Value: "1 / read 1, write 1"}}})
 }
 
 func (m *menu) releaseResult(r distribution.InstallResult) {
@@ -225,82 +212,4 @@ func (m *menu) releaseResult(r distribution.InstallResult) {
 		quoted := "'" + strings.ReplaceAll(r.Pending, "'", "'\"'\"'") + "'"
 		m.block(console.Block{Title: "Recover the reviewed installation", Body: "Inspect the pending record and resolve the reported problem first. Then use the original Mandalore executable you launched, not an incomplete new launcher. This retries the stored plan and rechecks ownership and retained bytes; it does not create a fresh plan or change memory connections. The command below is one logical line; your terminal may visually wrap it. Copy the whole line without adding newlines.", Command: "mandalore release apply < " + quoted})
 	}
-}
-
-func (m *menu) offerReleaseConnection(p distribution.InstallPlan, r distribution.InstallResult) error {
-	n, err := m.selectItem("Update one native memory connection?", []string{"Keep native connections unchanged", "Preview one Codex connection with this runtime", "Preview one Pi connection with this runtime", "Preview one Claude Code connection with this runtime", "Preview one Hermes connection with this runtime"}, 0)
-	if err != nil {
-		return err
-	}
-	if n == 0 {
-		return nil
-	}
-	if m.binding == "" {
-		m.binding, err = binding.DefaultPath()
-		if err != nil {
-			return err
-		}
-	}
-	if n == 2 {
-		return m.offerPiRelease(p, r)
-	} else if n == 3 {
-		return m.offerClaudeRelease(p, r)
-	} else if n == 4 {
-		return m.offerHermesRelease(p, r)
-	}
-	if err := m.nativeProfile(); err != nil {
-		return fmt.Errorf("CLI installation remains complete; connection preview unavailable: %w", err)
-	}
-	for _, item := range []struct {
-		title string
-		value *string
-	}{{"Selected signet binding", &m.binding}, {"Selected native Codex profile", &m.profile.NativeHome}, {"Selected native installation state", &m.profile.StateDir}, {"Native Codex executable", &m.profile.NativeBinary}} {
-		*item.value, err = m.input(item.title, *item.value)
-		if err != nil {
-			return err
-		}
-	}
-	m.block(console.Block{Title: "Preparing selected connection preview", Body: "This executes the verified newly installed runtime to prepare its own embedded plugin. It does not yet activate a native connection."})
-	if m.outputErr != nil {
-		return m.outputErr
-	}
-	prepare := m.prepareSelectedConnection
-	if prepare == nil {
-		prepare = install.PrepareViaRuntime
-	}
-	transport, err := m.selectSessionTransport("codex", m.profile)
-	if err != nil {
-		return err
-	}
-	c, err := prepare(m.ctx, install.Options{SessionTransportVersion: transport, StateDir: m.profile.StateDir, NativeHome: m.profile.NativeHome, NativeBinary: m.profile.NativeBinary, Binary: r.Runtime, Binding: m.binding})
-	if err != nil {
-		return fmt.Errorf("CLI installation remains complete; connection preview failed: %w", err)
-	}
-	if c.Binary != r.Runtime || c.BinarySHA256 != p.Binary.SHA256 || c.PackageSHA256 != p.Source.Manifest.Manifest.PluginSHA256 || c.PackageVersion != p.Source.Manifest.Manifest.Version {
-		return errors.New("CLI installation remains complete; connection preview does not match the installed runtime and embedded plugin")
-	}
-	m.connectionPreview(c)
-	if err := m.confirm(); err != nil {
-		return err
-	}
-	apply := m.applySelectedConnection
-	if apply == nil {
-		apply = install.ApplyViaRuntimeAcknowledged
-	}
-	native, err := apply(m.ctx, c, false)
-	if err != nil && native.Phase == "deferred" {
-		if handoffErr := m.confirmStoppedSessions(); handoffErr != nil {
-			return handoffErr
-		}
-		native, err = apply(m.ctx, c, true)
-	}
-	if err != nil {
-		if native.Phase != "" {
-			m.connectionResult(native)
-		}
-		return fmt.Errorf("CLI installation remains complete; native connection needs inspection: %w", err)
-	}
-	m.block(console.Block{Title: "[PASS] Native connection verified", Body: "Start a fresh Codex session to load the updated plugin, hooks and memory tools.", Tone: console.Success})
-	m.connectionResult(native)
-	return m.outputErr
 }

@@ -1,21 +1,8 @@
-# Native integrations
+# Plugins
 
-Each harness gets a thin adapter over the same Mandalore memory engine.
-Do not duplicate storage, retrieval or supersession semantics.
+Mandalore 2.0 has one plugin, [Claude](claude/README.md), published from the
+repository's marketplace (`.claude-plugin/marketplace.json`). It connects Claude
+to a [Mandalore server](../docs/server.md) and carries no runtime of its own.
 
-- [Codex](codex/README.md): first integration, released.
-- [Pi](pi/README.md): released after Codex acceptance, issue #13.
-- [Claude Code](claude-code/README.md): released in 1.3.0, issue #14.
-- [Hermes](../docs/hermes.md): general-plugin integration released in 1.6.0, issue #153;
-  preserves built-in memory and exposes semantic memory tools, lifecycle context
-  and native `this-is-the-way` / `the-armorer` skills.
-
-[Release 1.3.0](../docs/releases/1.3.0.md) adds enabled-session automatic
-transport across all three integrations; existing connections require an
-explicit update to adopt that contract.
-
-All integrations reuse the shared runtime, explicit signet binding and memory
-semantics. Each has native setup, inspection and recovery paths. All plugins use
-the display name Mandalore; native identifiers use `mandalore`, and the principal
-memory skill is `this-is-the-way`. Native models, authentication and tools remain
-with the selected harness.
+The 1.x Codex, Pi, Claude Code and Hermes plugins were removed in 2.0. They stay
+in Git history and in the [1.x release records](../docs/releases/).

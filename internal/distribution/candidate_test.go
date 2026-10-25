@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	codexplugin "github.com/acoz-labs/mandalore/plugins/codex"
 	"golang.org/x/sys/unix"
 )
 
@@ -14,17 +13,9 @@ func candidateFixture(t *testing.T) (string, Manifest, []byte) {
 	t.Helper()
 	dir := t.TempDir()
 	m := fixtureManifest()
-	p, err := PreparePlugin(codexplugin.Files, m.Version)
-	if err != nil {
-		t.Fatal(err)
-	}
-	m.PluginSHA256 = p.SHA256
 	for i := range m.Assets {
 		a := &m.Assets[i]
 		data := []byte("synthetic payload for " + a.Name)
-		if a.Kind == "codex-plugin" {
-			data = p.Archive
-		}
 		a.Size, a.SHA256 = int64(len(data)), Digest(data)
 		if err := os.WriteFile(filepath.Join(dir, a.Name), data, 0600); err != nil {
 			t.Fatal(err)
@@ -59,20 +50,20 @@ func TestCandidateVerifiesAllFilesWithoutExecuting(t *testing.T) {
 		t.Fatal("verified wrong candidate")
 	}
 	entries, err := os.ReadDir(dir)
-	if err != nil || len(entries) != 8 {
+	if err != nil || len(entries) != 7 {
 		t.Fatal("verification wrote to candidate")
 	}
 	got, err := os.ReadFile(filepath.Join(dir, "SHA256SUMS"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(strings.Split(strings.TrimSpace(string(got)), "\n")) != 7 {
-		t.Fatal("checksum set does not cover manifest and all six payloads")
+	if len(strings.Split(strings.TrimSpace(string(got)), "\n")) != 6 {
+		t.Fatal("checksum set does not cover manifest and all five payloads")
 	}
 }
 
 func TestCandidateRejectsPartialChangedOrRedirectedFiles(t *testing.T) {
-	for _, kind := range []string{"cli", "codex-plugin", "bootstrap", "manifest", "checksums"} {
+	for _, kind := range []string{"cli", "bootstrap", "manifest", "checksums"} {
 		for _, mutation := range []string{"missing", "same-size-corruption", "symlink", "directory"} {
 			t.Run(kind+"/"+mutation, func(t *testing.T) {
 				dir, m, _ := candidateFixture(t)
@@ -126,28 +117,6 @@ func TestCandidateRejectsPartialChangedOrRedirectedFiles(t *testing.T) {
 				t.Fatal("undeclared candidate content accepted")
 			}
 		})
-	}
-}
-
-func TestCandidateRejectsIndividuallyHashedButMismatchedPlugin(t *testing.T) {
-	dir, m, _ := candidateFixture(t)
-	m.PluginSHA256 = Digest([]byte("different embedded package"))
-	b, err := EncodeManifest(m)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), b, 0600); err != nil {
-		t.Fatal(err)
-	}
-	sums, err := Checksums(b)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(dir, "SHA256SUMS"), sums, 0600); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := VerifyDirectory(dir); err == nil {
-		t.Fatal("plugin archive passed despite different embedded content identity")
 	}
 }
 

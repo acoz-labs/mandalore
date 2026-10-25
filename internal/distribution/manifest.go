@@ -17,11 +17,10 @@ import (
 const (
 	MaxManifestBytes  = 64 << 10
 	MaxBinaryBytes    = 128 << 20
-	MaxPluginBytes    = 4 << 20
 	MaxBootstrapBytes = 64 << 10
 )
 
-// Manifest v1 describes exactly four executable targets and one Codex package.
+// Manifest v1 describes exactly four executable targets and the bootstrap.
 // Manifest/checksum digests are external to avoid self-referential asset hashes.
 type Manifest struct {
 	FormatVersion       int     `json:"format_version"`
@@ -33,7 +32,6 @@ type Manifest struct {
 	ProtocolVersion     int     `json:"protocol_version"`
 	SignetReadVersions  []int   `json:"signet_read_versions"`
 	SignetWriteVersions []int   `json:"signet_write_versions"`
-	PluginSHA256        string  `json:"plugin_sha256"`
 	Assets              []Asset `json:"assets"`
 }
 
@@ -95,16 +93,16 @@ func (m Manifest) Validate() error {
 	if !ValidVersion(m.Version) || m.Tag != "v"+m.Version {
 		return errors.New("release version and tag must be matching canonical SemVer")
 	}
-	if !validHex(m.SourceCommit, 40) || len(m.GoVersion) > 32 || !goVersionPattern.MatchString(m.GoVersion) || !validHex(m.PluginSHA256, 64) {
-		return errors.New("release source, pinned toolchain or embedded plugin identity is invalid")
+	if !validHex(m.SourceCommit, 40) || len(m.GoVersion) > 32 || !goVersionPattern.MatchString(m.GoVersion) {
+		return errors.New("release source or pinned toolchain is invalid")
 	}
 	// Retain support for immutable format1 releases and the explicit format2
 	// extension. Unknown, duplicate or noncanonical claims still fail closed.
 	if m.ProtocolVersion != 1 || !supportedSignetVersions(m.SignetReadVersions) || !supportedSignetVersions(m.SignetWriteVersions) {
 		return errors.New("release protocol or signet compatibility is unsupported by this installer")
 	}
-	if len(m.Assets) != 6 {
-		return errors.New("release requires four CLI targets, one Codex package and one bootstrap")
+	if len(m.Assets) != 5 {
+		return errors.New("release requires four CLI targets and one bootstrap")
 	}
 	seen := map[string]bool{}
 	for _, a := range m.Assets {
@@ -116,8 +114,6 @@ func (m Manifest) Validate() error {
 				return errors.New("release CLI target is unsupported")
 			}
 			name, limit = "mandalore_"+m.Version+"_"+a.OS+"_"+a.Arch, MaxBinaryBytes
-		case "codex-plugin":
-			name, limit = "mandalore_"+m.Version+"_codex.zip", MaxPluginBytes
 		case "bootstrap":
 			name, limit = "install.sh", MaxBootstrapBytes
 		default:
@@ -131,7 +127,7 @@ func (m Manifest) Validate() error {
 		}
 		seen[name] = true
 	}
-	// Exactly six unique allowed names implies the complete fixed v1 matrix.
+	// Exactly five unique allowed names implies the complete fixed v1 matrix.
 	return nil
 }
 

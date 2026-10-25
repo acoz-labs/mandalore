@@ -38,7 +38,7 @@ func StageCandidateArchive(ctx context.Context, reader io.ReaderAt, size int64, 
 		return "", manifest, err
 	}
 	z, err := zip.NewReader(reader, size)
-	if err != nil || len(z.File) != 8 {
+	if err != nil || len(z.File) != 7 {
 		return "", manifest, errors.New("candidate archive changed before staging")
 	}
 	want := map[string]Asset{}

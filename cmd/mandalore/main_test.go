@@ -83,14 +83,14 @@ func TestCLIVisibilityAndUpgradeReadOnlyBeforeInput(t *testing.T) {
 	}
 }
 
-func TestVersionDeclaresMachineAndHookCompatibility(t *testing.T) {
+func TestVersionDeclaresMachineCompatibility(t *testing.T) {
 	v, code := cli(t, []string{"version"}, "")
 	if code != 0 || !v.OK {
 		t.Fatal(v, code)
 	}
 	r, ok := v.Result.(map[string]any)
-	if !ok || r["os"] != runtime.GOOS || r["arch"] != runtime.GOARCH || r["codex_hook_protocol"] != float64(1) {
-		t.Fatal("missing machine or hook compatibility", r)
+	if !ok || r["os"] != runtime.GOOS || r["arch"] != runtime.GOARCH {
+		t.Fatal("missing machine compatibility", r)
 	}
 }
 

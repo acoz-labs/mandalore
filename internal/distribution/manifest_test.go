@@ -15,14 +15,12 @@ func fixtureManifest() Manifest {
 		FormatVersion: 1, Product: "mandalore", Version: "1.0.0", Tag: "v1.0.0",
 		SourceCommit: strings.Repeat("a", 40), GoVersion: "go1.26.4",
 		ProtocolVersion: 1, SignetReadVersions: []int{1}, SignetWriteVersions: []int{1},
-		PluginSHA256: strings.Repeat("b", 64),
 	}
 	for _, target := range [][2]string{{"darwin", "amd64"}, {"darwin", "arm64"}, {"linux", "amd64"}, {"linux", "arm64"}} {
 		m.Assets = append(m.Assets, Asset{Kind: "cli", OS: target[0], Arch: target[1],
 			Name: "mandalore_1.0.0_" + target[0] + "_" + target[1], Size: 20, SHA256: strings.Repeat("c", 64)})
 	}
 	m.Assets = append(m.Assets,
-		Asset{Kind: "codex-plugin", Name: "mandalore_1.0.0_codex.zip", Size: 30, SHA256: strings.Repeat("d", 64)},
 		Asset{Kind: "bootstrap", Name: "install.sh", Size: 40, SHA256: strings.Repeat("e", 64)})
 	return m
 }
@@ -87,7 +85,6 @@ func TestManifestRejectsInvalidContracts(t *testing.T) {
 		"write incompatible":    func(m *Manifest) { m.SignetWriteVersions = []int{2} },
 		"schema duplicate":      func(m *Manifest) { m.SignetReadVersions = []int{1, 1} },
 		"schema missing":        func(m *Manifest) { m.SignetWriteVersions = nil },
-		"plugin digest":         func(m *Manifest) { m.PluginSHA256 = "invalid" },
 		"missing target":        func(m *Manifest) { m.Assets = m.Assets[1:] },
 		"duplicate asset":       func(m *Manifest) { m.Assets = append(m.Assets, m.Assets[0]) },
 		"duplicate target":      func(m *Manifest) { m.Assets[1] = m.Assets[0] },
@@ -100,12 +97,11 @@ func TestManifestRejectsInvalidContracts(t *testing.T) {
 		"zero size":             func(m *Manifest) { m.Assets[0].Size = 0 },
 		"negative size":         func(m *Manifest) { m.Assets[0].Size = -1 },
 		"oversize binary":       func(m *Manifest) { m.Assets[0].Size = 128<<20 + 1 },
-		"oversize plugin":       func(m *Manifest) { m.Assets[4].Size = 4<<20 + 1 },
-		"oversize bootstrap":    func(m *Manifest) { m.Assets[5].Size = 64<<10 + 1 },
+		"oversize bootstrap":    func(m *Manifest) { m.Assets[4].Size = 64<<10 + 1 },
 		"asset digest":          func(m *Manifest) { m.Assets[0].SHA256 = strings.Repeat("A", 64) },
 		"unknown kind":          func(m *Manifest) { m.Assets[4].Kind = "script" },
-		"plugin platform":       func(m *Manifest) { m.Assets[4].OS = "linux" },
-		"bootstrap arch":        func(m *Manifest) { m.Assets[5].Arch = "arm64" },
+		"bootstrap platform":    func(m *Manifest) { m.Assets[4].OS = "linux" },
+		"bootstrap arch":        func(m *Manifest) { m.Assets[4].Arch = "arm64" },
 	}
 	for name, change := range cases {
 		t.Run(name, func(t *testing.T) {
