@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -128,6 +129,13 @@ func TestServerOAuthAdminCommands(t *testing.T) {
 		{"server", "clients", "set-scope", "--client", "client-unknown", "--scope", "admin"},
 		{"server", "clients", "list", "--client", "x"},
 		{"server", "clients", "purge"},
+		{"server", "clients", "list", "--format", "yaml"},
+		{"server", "clients", "list", "extra"},
+		{"server", "clients", "label", "Synthetic desk"},
+		{"server", "clients", "label", "--installation", "inst-unknown"},
+		{"server", "clients", "label", "--installation", "inst-unknown", "one", "two"},
+		{"server", "clients", "label", "--installation", "inst-unknown", "Synthetic desk"},
+		{"server", "clients", "prune", "extra"},
 		{"server", "owner", "reset"},
 	} {
 		if code, v := cli(args...); code == 0 || v["ok"] != false {
@@ -135,15 +143,17 @@ func TestServerOAuthAdminCommands(t *testing.T) {
 		}
 	}
 
-	// A 2.0.1 state: one metadata-document client used by two installations.
+	// A 2.0.1 state: one metadata-document client used by two installations,
+	// and a third whose token has expired but is not yet pruned.
 	doc := "https://client.example.com/oauth/client-metadata"
 	expires := time.Now().Add(time.Hour)
 	raw, _ = json.Marshal(map[string]any{
 		"clients": map[string]any{doc: map[string]any{"id": doc, "name": "Synthetic Code", "kind": "client.example.com", "redirect_uris": []string{"http://localhost/callback"},
 			"metadata_document": true, "registered": time.Now().Add(-time.Hour), "grants": map[string]string{"primary": "read-write"}}},
 		"tokens": map[string]any{
-			"hash-one": map[string]any{"kind": "access", "client": doc, "signet": "primary", "family": "family-one", "scope": "read-write", "expires": expires},
-			"hash-two": map[string]any{"kind": "access", "client": doc, "signet": "primary", "family": "family-two", "scope": "read-write", "expires": expires},
+			"hash-one":  map[string]any{"kind": "access", "client": doc, "signet": "primary", "family": "family-one", "scope": "read-write", "expires": expires},
+			"hash-two":  map[string]any{"kind": "access", "client": doc, "signet": "primary", "family": "family-two", "scope": "read-write", "expires": expires},
+			"hash-gone": map[string]any{"kind": "access", "client": doc, "signet": "primary", "family": "family-gone", "scope": "read-write", "expires": time.Now().Add(-time.Hour)},
 		},
 	})
 	var config map[string]any
@@ -152,12 +162,58 @@ func TestServerOAuthAdminCommands(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(config["state_dir"].(string), "oauth.json"), raw, 0600); err != nil {
 		t.Fatal(err)
 	}
+	listText := func() string {
+		var text, errout bytes.Buffer
+		if code := run(context.Background(), []string{"server", "clients", "list", "--format", "text", "--config", path}, strings.NewReader(""), &text, &errout); code != 0 {
+			t.Fatalf("text list: %d %s", code, text.String())
+		}
+		return text.String()
+	}
+	_, v = cli("server", "clients", "list")
+	statuses := map[string][]string{}
+	for _, entry := range v["result"].([]any) {
+		in := entry.(map[string]any)
+		statuses[in["status"].(string)] = append(statuses[in["status"].(string)], in["installation"].(string))
+		if _, ok := in["label"]; !ok {
+			t.Fatalf("entry without a label field: %v", in)
+		}
+	}
+	if len(statuses["approved"]) != 2 || len(statuses["expired"]) != 1 {
+		t.Fatalf("clients list after migration: %v", v)
+	}
+	gone := statuses["expired"][0]
+	if text := listText(); !strings.Contains(text, gone+"  expired  Synthetic Code (client.example.com)\n") || !strings.Contains(text, "  live tokens  0\n") {
+		t.Fatalf("text list lacks the expired installation:\n%s", text)
+	}
+	if code, v := cli("server", "clients", "prune"); code != 0 || !slices.Equal(v["result"].(map[string]any)["pruned"].([]any), []any{gone}) {
+		t.Fatalf("prune: %d %v", code, v)
+	}
 	_, v = cli("server", "clients", "list")
 	listed := v["result"].([]any)
 	if len(listed) != 2 {
-		t.Fatalf("clients list after migration: %v", v)
+		t.Fatalf("clients list after prune: %v", v)
 	}
 	one := listed[0].(map[string]any)["installation"].(string)
+
+	// The label is the one argument, wherever it sits among the flags.
+	if code, v := cli("server", "clients", "label", "--installation", one, " Synthetic desk "); code != 0 || v["result"].(map[string]any)["label"] != "Synthetic desk" {
+		t.Fatalf("label: %d %v", code, v)
+	}
+	if code, v := cli("server", "clients", "label", "Synthetic\x1b[2J", "--installation", one); code == 0 || v["error"].(map[string]any)["code"] != "client.refused" {
+		t.Fatalf("label with an escape: %d %v", code, v)
+	}
+	if _, v := cli("server", "clients", "list"); v["result"].([]any)[0].(map[string]any)["label"] != "Synthetic desk" {
+		t.Fatalf("listed label: %v", v)
+	}
+	text := listText()
+	for _, want := range []string{one + "  approved  Synthetic Code (client.example.com)\n", "  label        Synthetic desk\n", "  client       " + doc + "\n", "  live tokens  1\n", "  grants       primary=read-write\n"} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("text list lacks %q:\n%s", want, text)
+		}
+	}
+	if code, v := cli("server", "clients", "prune"); code != 0 || len(v["result"].(map[string]any)["pruned"].([]any)) != 0 {
+		t.Fatalf("prune with nothing expired: %d %v", code, v)
+	}
 	if code, v := cli("server", "clients", "revoke", "--installation", one); code != 0 || v["result"].(map[string]any)["client"] != doc {
 		t.Fatalf("revoke installation: %d %v", code, v)
 	}

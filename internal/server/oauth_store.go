@@ -69,7 +69,13 @@ type installation struct {
 	Client    string           `json:"client"`
 	Grants    map[string]Scope `json:"grants"` // signet slug → scope
 	FirstSeen time.Time        `json:"first_seen"`
-	LastUsed  time.Time        `json:"last_used"` // last token issued
+	// LastUsed is the last token issue or, to within lastUsedEvery, the
+	// last authenticated MCP request.
+	LastUsed time.Time `json:"last_used"`
+	// Label is the owner's name for it, set with `server clients label`.
+	Label string `json:"label,omitempty"`
+	// Hint is the truncated User-Agent of the browser that approved it.
+	Hint string `json:"hint,omitempty"`
 }
 
 type oauthToken struct {
@@ -237,6 +243,27 @@ func (st *oauthState) newInstallation(client string, now time.Time) *installatio
 	in := &installation{ID: "inst-" + hashSecret(secret())[:16], Client: client, Grants: map[string]Scope{}, FirstSeen: now, LastUsed: now}
 	st.Installations[in.ID] = in
 	return in
+}
+
+// liveTokens counts each installation's tokens that can still be used.
+func (st *oauthState) liveTokens(now time.Time) map[string]int {
+	live := map[string]int{}
+	for _, t := range st.Tokens {
+		if !t.Used && now.Before(t.Expires) {
+			live[t.Installation]++
+		}
+	}
+	return live
+}
+
+// expired reports whether an installation can never be used again: one of a
+// document client with no live token, past the time its approval's code
+// could still be redeemed. Its next authorization is a new installation. A
+// DCR installation never expires, since its client authorizes again with
+// its grant.
+func (st *oauthState) expired(in *installation, live map[string]int, now time.Time) bool {
+	c := st.Clients[in.Client]
+	return c != nil && c.Document && live[in.ID] == 0 && !now.Before(in.LastUsed.Add(codeTTL))
 }
 
 // grantFor returns a token's current grant on its signet, or "" when the

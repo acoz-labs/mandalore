@@ -5,7 +5,9 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"maps"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/acoz-labs/mandalore/internal/api"
@@ -14,7 +16,8 @@ import (
 
 type serverFlags struct {
 	signet, client, scope string
-	installation          string
+	installation, format  string
+	label                 string // the one argument of server clients label
 	replace               bool
 }
 
@@ -28,8 +31,24 @@ func serverConfig(name string, args []string, out io.Writer, allowed ...string) 
 	f.StringVar(&v.client, "client", "", "OAuth client ID")
 	f.StringVar(&v.installation, "installation", "", "OAuth client installation ID")
 	f.StringVar(&v.scope, "scope", "", "read or read-write")
+	f.StringVar(&v.format, "format", "json", "json or text")
 	f.BoolVar(&v.replace, "replace", false, "Make the new passkey the only one")
-	ok := f.Parse(args) == nil && f.NArg() == 0 && *path != ""
+	// Arguments may sit between flags; only a command that allows "label"
+	// takes one, the label.
+	var rest []string
+	err := f.Parse(args)
+	for err == nil && f.NArg() > 0 {
+		rest = append(rest, f.Arg(0))
+		err = f.Parse(f.Args()[1:])
+	}
+	want := 0
+	if slices.Contains(allowed, "label") {
+		want = 1
+	}
+	ok := err == nil && *path != "" && len(rest) == want && (v.format == "json" || v.format == "text")
+	if len(rest) == 1 {
+		v.label = rest[0]
+	}
 	f.Visit(func(fl *flag.Flag) {
 		if fl.Name != "config" && !slices.Contains(allowed, fl.Name) {
 			ok = false
@@ -62,7 +81,7 @@ func runServe(ctx context.Context, args []string, out, errout io.Writer) int {
 	return 0
 }
 
-const serverUsage = "Use server status|reconcile|canon refresh|clients list|clients revoke|clients set-scope|owner enroll|install-launchd --config FILE, server uninstall-launchd, or server migrate."
+const serverUsage = "Use server status|reconcile|canon refresh|clients list|clients label|clients prune|clients revoke|clients set-scope|owner enroll|install-launchd --config FILE, server uninstall-launchd, or server migrate."
 
 func runServer(ctx context.Context, args []string, input io.Reader, out, errout io.Writer) int {
 	if len(args) == 0 {
@@ -137,7 +156,7 @@ func runServer(ctx context.Context, args []string, input io.Reader, out, errout 
 func runClients(command string, args []string, out io.Writer) int {
 	switch command {
 	case "list":
-		c, _, code, ok := serverConfig("server clients list", args, out)
+		c, f, code, ok := serverConfig("server clients list", args, out, "format")
 		if !ok {
 			return code
 		}
@@ -145,7 +164,31 @@ func runClients(command string, args []string, out io.Writer) int {
 		if err != nil {
 			return emit(out, api.Failure("server.invalid", err.Error(), false))
 		}
+		if f.format == "text" {
+			printClients(out, clients)
+			return 0
+		}
 		return emit(out, api.Success(clients))
+	case "label":
+		c, f, code, ok := serverConfig("server clients label", args, out, "installation", "label")
+		if !ok || f.installation == "" {
+			return orUsage(out, code, ok, "Use server clients label --config FILE --installation ID TEXT; an empty TEXT removes the label.")
+		}
+		if err := server.LabelInstallation(c, f.installation, f.label); err != nil {
+			return emit(out, api.Failure("client.refused", err.Error(), false))
+		}
+		return emit(out, api.Success(map[string]any{"installation": f.installation, "label": strings.TrimSpace(f.label)}))
+	case "prune":
+		c, _, code, ok := serverConfig("server clients prune", args, out)
+		if !ok {
+			return code
+		}
+		pruned, err := server.PruneInstallations(c)
+		if err != nil {
+			return emit(out, api.Failure("client.refused", err.Error(), false))
+		}
+		return emit(out, api.Success(map[string]any{"pruned": pruned,
+			"notice": fmt.Sprintf("Removed %d expired installations. Their client signs in again as a new installation.", len(pruned))}))
 	case "revoke":
 		c, f, code, ok := serverConfig("server clients revoke", args, out, "client", "installation")
 		if !ok || (f.client == "") == (f.installation == "") {
@@ -183,6 +226,51 @@ func runClients(command string, args []string, out io.Writer) int {
 			"notice": "Changed every installation of the client. To change one, use --installation ID from server clients list."}))
 	}
 	return bad(out, serverUsage)
+}
+
+// printClients writes server clients list as text: one block per entry.
+func printClients(out io.Writer, clients []server.ClientInfo) {
+	if len(clients) == 0 {
+		fmt.Fprintln(out, "No OAuth clients.")
+	}
+	for i, c := range clients {
+		if i > 0 {
+			fmt.Fprintln(out)
+		}
+		id := c.Installation
+		if id == "" {
+			id = c.ID
+		}
+		fmt.Fprintf(out, "%s  %s  %s (%s)\n", id, c.Status, c.Name, c.Kind)
+		field := func(name, value string) {
+			if value != "" {
+				fmt.Fprintf(out, "  %-12s %s\n", name, value)
+			}
+		}
+		stamp := func(t time.Time) string {
+			if t.IsZero() {
+				return ""
+			}
+			return t.UTC().Format(time.RFC3339)
+		}
+		var grants []string
+		for _, slug := range slices.Sorted(maps.Keys(c.Grants)) {
+			grants = append(grants, slug+"="+string(c.Grants[slug]))
+		}
+		if c.Installation != "" {
+			field("client", c.ID)
+		}
+		field("label", c.Label)
+		field("hint", c.Hint)
+		field("registered", stamp(c.Registered))
+		field("first seen", stamp(c.FirstSeen))
+		field("last used", stamp(c.LastUsed))
+		if c.Installation != "" {
+			field("live tokens", fmt.Sprint(c.Tokens))
+		}
+		field("grants", strings.Join(grants, " "))
+		field("redirects", strings.Join(c.RedirectURIs, " "))
+	}
 }
 
 // orUsage returns a parse failure already emitted, or emits the usage.

@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"io"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -436,4 +437,311 @@ func mustClients(t *testing.T, c Config) []ClientInfo {
 		t.Fatal(err)
 	}
 	return out
+}
+
+// userAgent sets the User-Agent of every request the client sends.
+func userAgent(c *http.Client, ua string) {
+	base := c.Transport
+	c.Transport = roundTripper(func(r *http.Request) (*http.Response, error) {
+		r = r.Clone(r.Context())
+		r.Header.Set("User-Agent", ua)
+		return base.RoundTrip(r)
+	})
+}
+
+// installationOf returns the one listed installation of a client.
+func installationOf(t *testing.T, c Config, client string) ClientInfo {
+	t.Helper()
+	listed := installations(t, c, client)
+	if len(listed) != 1 {
+		t.Fatalf("installations of %s: %+v", client, listed)
+	}
+	return listed[0]
+}
+
+// Issue #217: the owner tells installations apart by the approving
+// browser's hint, a label of their own and a last_used that authenticated
+// MCP use moves, at most once a minute.
+func TestInstallationIdentity(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
+	docURL := serveDocument(t, e)
+	e.enrollOwner(t)
+	browser := "Mozilla/5.0 (Synthetic OS 1.0) SyntheticBrowser/1.0"
+	// HTTP carries tabs and non-ASCII bytes in a header, but no escapes.
+	userAgent(e.browser, browser+"\u202e\t"+strings.Repeat(" padding", 30))
+	tok := e.tokens(t, docURL, "http://127.0.0.1:7/callback", "/mcp", "", ScopeRead)
+	access := tok["access_token"].(string)
+	in := installationOf(t, e.config, docURL)
+	if !strings.HasPrefix(in.Hint, browser+" padding") || len([]rune(in.Hint)) > maxHint || strings.ContainsAny(in.Hint, "\t\u202e") {
+		t.Fatalf("hint %q", in.Hint)
+	}
+	for ua, want := range map[string]string{"\x1b[2J" + browser + "\r\n": "[2J" + browser, "Synthetic\xff/1": "Synthetic/1", "": ""} {
+		if got := userAgentHint(ua); got != want {
+			t.Errorf("hint of %q: %q, want %q", ua, got, want)
+		}
+	}
+	// The installation records the hint and nothing else about the peer.
+	raw, err := os.ReadFile(filepath.Join(e.config.StateDir, oauthStateFile))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var saved struct {
+		Installations map[string]map[string]any `json:"installations"`
+	}
+	if err := json.Unmarshal(raw, &saved); err != nil {
+		t.Fatal(err)
+	}
+	if keys := slices.Sorted(maps.Keys(saved.Installations[in.Installation])); !slices.Equal(keys, []string{"client", "first_seen", "grants", "hint", "id", "last_used"}) {
+		t.Fatalf("saved installation fields %v", keys)
+	}
+
+	// MCP use within a minute of the last write saves nothing.
+	issued := in.LastUsed
+	e.clock.advance(lastUsedEvery - time.Second)
+	if e.mcpStatus(t, "/mcp", access) != http.StatusOK {
+		t.Fatal("MCP call refused")
+	}
+	if got := installationOf(t, e.config, docURL).LastUsed; !got.Equal(issued) {
+		t.Fatalf("last_used moved within a minute: %v → %v", issued, got)
+	}
+	// Past it, the next call moves last_used, and calls just after it don't.
+	e.clock.advance(time.Second)
+	used := e.clock.now()
+	if e.mcpStatus(t, "/mcp", access) != http.StatusOK {
+		t.Fatal("MCP call refused")
+	}
+	e.clock.advance(30 * time.Second)
+	_ = e.mcpStatus(t, "/mcp", access)
+	if got := installationOf(t, e.config, docURL).LastUsed; !got.Equal(used) {
+		t.Fatalf("last_used %v, want %v", got, used)
+	}
+	// An unknown token moves nothing.
+	e.clock.advance(time.Hour - 2*time.Minute)
+	if e.mcpStatus(t, "/mcp", secret()) != http.StatusUnauthorized {
+		t.Fatal("unknown token accepted")
+	}
+	if got := installationOf(t, e.config, docURL).LastUsed; !got.Equal(used) {
+		t.Fatalf("an unknown token moved last_used: %v", got)
+	}
+
+	// The owner's label, trimmed; refused labels change nothing.
+	id := in.Installation
+	if err := LabelInstallation(e.config, id, "  Synthetic desk "); err != nil {
+		t.Fatal(err)
+	}
+	for name, label := range map[string]string{
+		"escape":      "desk\x1b[2J",
+		"newline":     "desk\nforged line",
+		"bidi":        "desk\u202e",
+		"too long":    strings.Repeat("é", maxLabel+1),
+		"not UTF-8":   "desk\xff",
+		"zero width":  "de\u200bsk",
+		"tab":         "desk\tnote",
+		"delete char": "desk\x7f",
+	} {
+		if err := LabelInstallation(e.config, id, label); err == nil {
+			t.Errorf("%s: label accepted", name)
+		}
+	}
+	if err := LabelInstallation(e.config, "inst-unknown", "desk"); err == nil {
+		t.Error("labelled an unknown installation")
+	}
+	if got := installationOf(t, e.config, docURL); got.Label != "Synthetic desk" || got.Hint != in.Hint {
+		t.Fatalf("after labelling: %+v", got)
+	}
+	if err := LabelInstallation(e.config, id, strings.Repeat("é", maxLabel)); err != nil {
+		t.Fatalf("a label of %d characters: %v", maxLabel, err)
+	}
+	if err := LabelInstallation(e.config, id, ""); err != nil || installationOf(t, e.config, docURL).Label != "" {
+		t.Fatalf("clearing the label: %v", err)
+	}
+	if err := LabelInstallation(e.config, id, "Synthetic desk"); err != nil {
+		t.Fatal(err)
+	}
+	// A rotated refresh keeps the label and hint.
+	if resp, out := e.refresh(t, docURL, tok["refresh_token"].(string)); resp.StatusCode != http.StatusOK {
+		t.Fatalf("refresh: %d %v", resp.StatusCode, out)
+	} else {
+		access = out["access_token"].(string)
+	}
+	if got := installationOf(t, e.config, docURL); got.Label != "Synthetic desk" || got.Hint != in.Hint || !got.LastUsed.Equal(e.clock.now()) {
+		t.Fatalf("after refresh: %+v", got)
+	}
+}
+
+// Issue #217: a late failure to save last_used, the label or a prune, on a
+// read-only state directory, never refuses MCP use and changes nothing.
+func TestInstallationWritesReadOnlyState(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("root ignores the read-only state directory this test uses to fail the write")
+	}
+	t.Setenv("HOME", t.TempDir())
+	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
+	docURL := serveDocument(t, e)
+	e.enrollOwner(t)
+	access := e.tokens(t, docURL, "http://127.0.0.1:7/callback", "/mcp", "", ScopeRead)["access_token"].(string)
+	before := installationOf(t, e.config, docURL)
+	if err := os.Chmod(e.config.StateDir, 0500); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(e.config.StateDir, 0700) })
+	e.clock.advance(2 * lastUsedEvery)
+	for range 3 {
+		if e.mcpStatus(t, "/mcp", access) != http.StatusOK {
+			t.Fatal("a failed last_used save refused the MCP call")
+		}
+	}
+	if err := LabelInstallation(e.config, before.Installation, "Synthetic desk"); err == nil {
+		t.Fatal("label saved on a read-only state directory")
+	}
+	if _, err := PruneInstallations(e.config); err == nil {
+		t.Fatal("prune saved on a read-only state directory")
+	}
+	if got := installationOf(t, e.config, docURL); !got.LastUsed.Equal(before.LastUsed) || got.Label != "" {
+		t.Fatalf("a failed save changed the installation: %+v", got)
+	}
+	// Writable again, the next call past the minute saves last_used.
+	if err := os.Chmod(e.config.StateDir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	e.clock.advance(lastUsedEvery)
+	if e.mcpStatus(t, "/mcp", access) != http.StatusOK || !installationOf(t, e.config, docURL).LastUsed.Equal(e.clock.now()) {
+		t.Fatal("last_used did not recover once the state was writable")
+	}
+}
+
+// Issue #217: corrupt state makes labelling, pruning and listing fail
+// without rewriting the file.
+func TestInstallationWritesCorruptState(t *testing.T) {
+	c := oauthConfig(t, testfixture.NewServerSignet(t, "alpha"))
+	path := filepath.Join(c.StateDir, oauthStateFile)
+	corrupt := []byte(`{"installations": corrupt`)
+	if err := os.WriteFile(path, corrupt, 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := LabelInstallation(c, "inst-0000000000000000", "Synthetic desk"); err == nil {
+		t.Error("labelled in corrupt state")
+	}
+	if _, err := PruneInstallations(c); err == nil {
+		t.Error("pruned corrupt state")
+	}
+	if _, err := Clients(c); err == nil {
+		t.Error("listed corrupt state")
+	}
+	if raw, _ := os.ReadFile(path); string(raw) != string(corrupt) {
+		t.Fatal("corrupt state was rewritten")
+	}
+}
+
+// Issue #217 (#218 item 1): an installation of a document client with no
+// live token is listed as expired and can be pruned. A DCR installation
+// with no live token stays approved, since its client authorizes again with
+// its grant, and an approval whose code is unredeemed is not expired.
+func TestExpiredInstallations(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
+	docURL := serveDocument(t, e)
+	e.enrollOwner(t)
+	redirect, web := "http://127.0.0.1:7/callback", "https://claude.ai/api/mcp/auth_callback"
+	// The admin commands read the wall clock, so the server's clock starts
+	// in the past, and what it does now is that long ago for them.
+	e.clock.advance(-10 * time.Minute)
+	gone := e.tokens(t, docURL, redirect, "/mcp", "", ScopeRead)
+	kept := e.tokens(t, docURL, redirect, "/mcp", "", ScopeRead)
+	dcr := e.registerClient(t, "Synthetic Chat", web)
+	chat := e.tokens(t, dcr, web, "/mcp", "", ScopeRead)
+	for client, tok := range map[string]map[string]any{docURL: gone, dcr: chat} {
+		if resp, _ := e.revoke(t, url.Values{"client_id": {client}, "token": {tok["refresh_token"].(string)}}); resp.StatusCode != http.StatusOK {
+			t.Fatalf("logout: %d", resp.StatusCode)
+		}
+	}
+	// An approval made just now, whose code is unredeemed.
+	e.clock.advance(10 * time.Minute)
+	_, challenge := pkce()
+	if loc := e.visit(t, authorizeURL(docURL, redirect, challenge, publicURL+"/mcp", ""), ScopeRead); loc.Query().Get("code") == "" {
+		t.Fatalf("no code: %v", loc)
+	}
+	status := func() map[string]int {
+		out := map[string]int{}
+		for _, info := range mustClients(t, e.config) {
+			out[info.Status]++
+			if info.Status == "expired" && info.Tokens != 0 {
+				t.Fatalf("expired with live tokens: %+v", info)
+			}
+		}
+		return out
+	}
+	// The logged-out installation has expired; the live one, the DCR
+	// installation and the unredeemed approval have not.
+	if got := status(); got["approved"] != 3 || got["expired"] != 1 {
+		t.Fatalf("statuses %v", got)
+	}
+	// The unredeemed approval expires with its code.
+	if err := e.server.oauth.store.view(func(st *oauthState) error {
+		for _, at := range []time.Duration{codeTTL - time.Second, codeTTL} {
+			now := e.clock.now().Add(at)
+			live, n := st.liveTokens(now), 0
+			for _, in := range st.Installations {
+				if st.expired(in, live, now) {
+					n++
+				}
+			}
+			if want := map[bool]int{false: 1, true: 2}[at == codeTTL]; n != want {
+				t.Errorf("%v after the approval: %d expired, want %d", at, n, want)
+			}
+		}
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	pruned, err := PruneInstallations(e.config)
+	if err != nil || len(pruned) != 1 {
+		t.Fatalf("prune: %v %v", pruned, err)
+	}
+	if got := status(); got["approved"] != 3 || got["expired"] != 0 {
+		t.Fatalf("statuses after prune %v", got)
+	}
+	if e.mcpStatus(t, "/mcp", kept["access_token"].(string)) != http.StatusOK {
+		t.Fatal("prune ended a live installation")
+	}
+	if pruned, err := PruneInstallations(e.config); err != nil || len(pruned) != 0 {
+		t.Fatalf("second prune: %v %v", pruned, err)
+	}
+	// The DCR client still re-authorizes without consent.
+	_, challenge = pkce()
+	if status, _ := authorizePage(t, e.browser, authorizeURL(dcr, web, challenge, publicURL+"/mcp", "")); status != http.StatusSeeOther {
+		t.Fatalf("DCR re-authorization: %d", status)
+	}
+}
+
+// Issue #218 item 1: a 2.0.1 family whose tokens have all expired, but are
+// not yet pruned from the file, migrates to an expired installation that
+// prune removes with its client.
+func TestMigratedExpiredFamily(t *testing.T) {
+	c := oauthConfig(t, testfixture.NewServerSignet(t, "alpha"))
+	doc := "https://client.example.com/oauth/client-metadata"
+	issued := time.Now().Add(-refreshTTL - time.Hour)
+	state := map[string]any{
+		"clients": map[string]any{doc: map[string]any{"id": doc, "name": "Synthetic Code", "kind": "client.example.com", "redirect_uris": []string{"http://localhost/callback"},
+			"metadata_document": true, "registered": issued.Add(-time.Hour), "grants": map[string]Scope{"a": ScopeRead}}},
+		"tokens": map[string]any{
+			hashSecret(secret()): map[string]any{"kind": tokenAccess, "client": doc, "signet": "a", "family": "family-gone", "scope": ScopeRead, "expires": issued.Add(accessTTL)},
+			hashSecret(secret()): map[string]any{"kind": tokenRefresh, "client": doc, "signet": "a", "family": "family-gone", "scope": ScopeRead, "expires": issued.Add(refreshTTL)},
+		},
+		"owner": map[string]any{},
+	}
+	if err := writeState(filepath.Join(c.StateDir, oauthStateFile), state); err != nil {
+		t.Fatal(err)
+	}
+	if in := installationOf(t, c, doc); in.Status != "expired" || in.Tokens != 0 {
+		t.Fatalf("migrated expired family: %+v", in)
+	}
+	pruned, err := PruneInstallations(c)
+	if err != nil || len(pruned) != 1 {
+		t.Fatalf("prune: %v %v", pruned, err)
+	}
+	if got := mustClients(t, c); len(got) != 0 {
+		t.Fatalf("after prune: %+v", got)
+	}
 }

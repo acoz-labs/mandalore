@@ -33,7 +33,11 @@ const (
 	maxFormBytes   = 16384
 	registerLimit  = 10 // registrations per registerWindow, from all peers together
 	registerWindow = 10 * time.Minute
-	maxInFlight    = 64 // codes, consent requests, ceremonies or sessions held in memory
+	maxInFlight    = 64  // codes, consent requests, ceremonies or sessions held in memory
+	maxHint        = 120 // characters of the approving browser's User-Agent kept
+	// lastUsedEvery is how stale an installation's last_used may get before
+	// an authenticated MCP request saves it, so use writes at most this often.
+	lastUsedEvery = time.Minute
 )
 
 // authServer is the built-in OAuth 2.1 authorization server. Clients,
@@ -56,7 +60,8 @@ type authServer struct {
 	requests   map[string]*authRequest
 	sessions   map[string]*ownerSession
 	ceremonies map[string]*ceremony
-	registered []time.Time // registrations within the last registerWindow
+	registered []time.Time          // registrations within the last registerWindow
+	touched    map[string]time.Time // installation → last attempt to save its last_used
 }
 
 type authCode struct {
@@ -89,7 +94,7 @@ func newAuthServer(c Config, signets map[string]*signet, logger *log.Logger, now
 	}
 	a := &authServer{issuer: c.origin(), owner: c.Owner.Name, store: store, documents: &documents{client: documentClient(), now: now, cache: map[string]document{}},
 		webauthn: w, signets: signets, resources: map[string]string{}, log: logger, now: now,
-		codes: map[string]*authCode{}, requests: map[string]*authRequest{}, sessions: map[string]*ownerSession{}, ceremonies: map[string]*ceremony{}}
+		codes: map[string]*authCode{}, requests: map[string]*authRequest{}, sessions: map[string]*ownerSession{}, ceremonies: map[string]*ceremony{}, touched: map[string]time.Time{}}
 	a.endpoints = map[string]http.Handler{
 		"/.well-known/oauth-authorization-server": http.HandlerFunc(a.metadata),
 		"/register":              http.HandlerFunc(a.register),
@@ -448,6 +453,7 @@ func (a *authServer) consent(w http.ResponseWriter, r *http.Request) {
 			in = st.newInstallation(c.ID, a.now())
 		}
 		in.Grants[req.signet] = scope
+		in.Hint = userAgentHint(r.UserAgent())
 		req.installation = in.ID
 		return nil
 	})
@@ -460,6 +466,21 @@ func (a *authServer) consent(w http.ResponseWriter, r *http.Request) {
 		a.log.Printf("signet %s: cannot enroll an approved client's device yet; it enrolls on first write", req.signet)
 	}
 	a.grant(w, r, req, narrow(req.requested, scope))
+}
+
+// userAgentHint keeps the printable start of a User-Agent, which tells the
+// owner's browsers and systems apart without identifying a network.
+func userAgentHint(ua string) string {
+	ua = strings.Map(func(r rune) rune {
+		if unprintable(r) {
+			return -1
+		}
+		return r
+	}, strings.ToValidUTF8(ua, ""))
+	if r := []rune(ua); len(r) > maxHint {
+		ua = string(r[:maxHint])
+	}
+	return strings.TrimSpace(ua)
 }
 
 // grant issues a single-use authorization code and redirects to the client.
@@ -822,7 +843,11 @@ func (t *tokenChallenge) Unwrap() http.ResponseWriter { return t.ResponseWriter 
 // the client's current grant, which can only narrow the token's scope.
 func (a *authServer) verifier(slug string) auth.TokenVerifier {
 	return func(_ context.Context, token string, _ *http.Request) (*auth.TokenInfo, error) {
-		var info *auth.TokenInfo
+		var (
+			info     *auth.TokenInfo
+			in       string
+			lastUsed time.Time
+		)
 		err := a.store.view(func(st *oauthState) error {
 			t := st.Tokens[hashSecret(token)]
 			if t == nil || t.Kind != tokenAccess || t.Signet != slug || !a.now().Before(t.Expires) {
@@ -833,11 +858,41 @@ func (a *authServer) verifier(slug string) auth.TokenVerifier {
 				return auth.ErrInvalidToken
 			}
 			c := st.Clients[t.Client]
+			in, lastUsed = t.Installation, st.Installations[t.Installation].LastUsed
 			scope := narrow(t.Scope, grant)
 			info = &auth.TokenInfo{Scopes: scopeNames(scope), Expiration: t.Expires, UserID: c.ID,
 				Extra: map[string]any{"client": Client{ID: c.ID, Name: c.Name, Kind: c.Kind, Scope: scope}}}
 			return nil
 		})
+		if err == nil && !a.now().Before(lastUsed.Add(lastUsedEvery)) {
+			a.touch(in)
+		}
 		return info, err
+	}
+}
+
+// touch saves an installation's last use, at most once per lastUsedEvery
+// for each installation even when the save fails. A failure is logged and
+// never refuses the request.
+func (a *authServer) touch(id string) {
+	now := a.now()
+	a.mu.Lock()
+	maps.DeleteFunc(a.touched, func(_ string, at time.Time) bool { return !now.Before(at.Add(lastUsedEvery)) })
+	_, recent := a.touched[id]
+	if !recent {
+		a.touched[id] = now
+	}
+	a.mu.Unlock()
+	if recent {
+		return
+	}
+	err := a.store.update(func(st *oauthState) error {
+		if in := st.Installations[id]; in != nil && now.After(in.LastUsed) {
+			in.LastUsed = now
+		}
+		return nil
+	})
+	if err != nil {
+		a.log.Printf("cannot record an installation's last use: %v", err)
 	}
 }
