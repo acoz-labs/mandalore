@@ -56,8 +56,10 @@ Each signet's client comes from one authenticator. A `Client` has an ID, a name
 (its device label), a kind (recorded as the write's harness) and a scope.
 
 - `oauth` (default): OAuth 2.1 bearer tokens from the built-in authorization
-  server, below. A missing, unknown, expired or other-signet token gets `401`
-  with `WWW-Authenticate: Bearer resource_metadata="..."`.
+  server, below. A request with no bearer token gets `401` with
+  `WWW-Authenticate: Bearer resource_metadata="..."`. An unknown, expired,
+  revoked or other-signet token gets `401` with `WWW-Authenticate: Bearer
+  error="invalid_token", resource_metadata="..."` (RFC 6750 §3.1).
 - `loopback-trust`: a direct loopback peer that addresses the server as
   `127.0.0.1` or `localhost` is the client `local`, with `local_scope`. Any local
   process can use it. It is refused with a non-loopback `public_url`, and a
@@ -115,7 +117,7 @@ provider. All endpoints are on `public_url`:
 | `POST /register` | RFC 7591 dynamic registration (JSON). The client is pending, with no access, until the owner approves it. 10 registrations per 10 minutes from all peers together; over that it answers 429 with `Retry-After`. No forwarded address header is trusted. At most 20 pending: a new registration evicts the oldest pending one, never an approved client, and a pending client expires after 24 hours. |
 | `GET /authorize` | Authorization code request. |
 | `POST /consent` | The owner's approve or deny decision. |
-| `POST /token` | Form-encoded `authorization_code` and `refresh_token` grants. RFC 6749 error codes. |
+| `POST /token` | Form-encoded `authorization_code` and `refresh_token` grants. RFC 6749 error codes; a refresh from an unknown or revoked client gets `400 invalid_grant`. |
 | `/owner/*` | Passkey enrollment and sign-in. |
 
 **Clients.** A `client_id` is either a DCR registration or an HTTPS URL naming a
@@ -344,7 +346,9 @@ in throwaway volumes: the health check, `/healthz`, MCP `tools/list` through
 - `mandalore server clients list --config FILE` lists approved and pending OAuth
   clients: ID, name, kind, redirect URIs, grants per signet and live tokens.
 - `mandalore server clients revoke --config FILE --client ID` removes a client,
-  its grants and every token it holds. Its next MCP call gets `401`. The device
+  its grants and every token it holds. Its next MCP call gets `401
+  invalid_token` and its refresh `400 invalid_grant`, so the client authorizes
+  again, which needs the owner's passkey and consent. The device
   record stays in the signet's provenance; a DCR client must register again.
 - `mandalore server clients set-scope --config FILE --client ID --scope
   read|read-write [--signet SLUG]` changes the client's grant on one signet, or on

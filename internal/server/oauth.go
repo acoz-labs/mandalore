@@ -112,7 +112,7 @@ func newAuthServer(c Config, signets map[string]*signet, logger *log.Logger, now
 			a.endpoints["/.well-known/oauth-protected-resource"] = prm
 		}
 		g := signets[sc.Slug]
-		g.protected = auth.RequireBearerToken(a.verifier(sc.Slug), &auth.RequireBearerTokenOptions{ResourceMetadataURL: a.issuer + resourceMetadataPath(c, sc.Slug)})(g.authorized())
+		g.protected = invalidToken(auth.RequireBearerToken(a.verifier(sc.Slug), &auth.RequireBearerTokenOptions{ResourceMetadataURL: a.issuer + resourceMetadataPath(c, sc.Slug)})(g.authorized()))
 	}
 	return a, nil
 }
@@ -535,6 +535,12 @@ func (a *authServer) token(w http.ResponseWriter, r *http.Request) {
 	var known bool
 	_ = a.store.view(func(st *oauthState) error { known = st.Clients[clientID] != nil; return nil })
 	if !known {
+		// A revoked client's refresh token died with it. invalid_grant tells
+		// the client to authorize again, which still needs the owner.
+		if f.Get("grant_type") == "refresh_token" {
+			oauthError(w, http.StatusBadRequest, "invalid_grant", "unknown client; authorize again")
+			return
+		}
 		oauthError(w, http.StatusUnauthorized, "invalid_client", "unknown client")
 		return
 	}
@@ -666,6 +672,36 @@ func (a *authServer) issue(st *oauthState, client, signet, family string, scope 
 	st.Tokens[hashSecret(refresh)] = &oauthToken{Kind: tokenRefresh, Client: client, Signet: signet, Family: family, Scope: scope, Expires: now.Add(refreshTTL)}
 	return tokenResponse{AccessToken: access, TokenType: "Bearer", ExpiresIn: int(accessTTL.Seconds()), RefreshToken: refresh, Scope: strings.Join(scopeNames(scope), " ")}
 }
+
+// invalidToken adds RFC 6750 error="invalid_token" to the go-sdk's 401 when
+// the request presented a bearer token: an unknown, expired or revoked token
+// then tells the client to get a new one. A request with no credentials keeps
+// the bare challenge, as RFC 6750 section 3.1 asks.
+func invalidToken(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if f := strings.Fields(r.Header.Get("Authorization")); len(f) == 2 && strings.EqualFold(f[0], "bearer") {
+			w = &tokenChallenge{ResponseWriter: w}
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+type tokenChallenge struct{ http.ResponseWriter }
+
+func (t *tokenChallenge) WriteHeader(code int) {
+	if code == http.StatusUnauthorized {
+		challenges := t.Header()[http.CanonicalHeaderKey("WWW-Authenticate")]
+		for i, v := range challenges {
+			if rest, ok := strings.CutPrefix(v, "Bearer "); ok {
+				challenges[i] = `Bearer error="invalid_token", ` + rest
+			}
+		}
+	}
+	t.ResponseWriter.WriteHeader(code)
+}
+
+// Unwrap lets http.ResponseController reach the server's writer to flush.
+func (t *tokenChallenge) Unwrap() http.ResponseWriter { return t.ResponseWriter }
 
 // verifier checks an access token for one signet: its audience, expiry and
 // the client's current grant, which can only narrow the token's scope.

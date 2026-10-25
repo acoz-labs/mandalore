@@ -26,6 +26,8 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/oauthex"
 )
 
+const invalidTokenChallenge = `Bearer error="invalid_token", resource_metadata="` + publicURL + `/.well-known/oauth-protected-resource"`
+
 func toolNames(t *testing.T, e *oauthEnv, path, token string) []string {
 	t.Helper()
 	tools, err := e.bearer(t, path, token).ListTools(context.Background(), nil)
@@ -360,8 +362,8 @@ func TestAccessTokensExpireAfterAnHour(t *testing.T) {
 		t.Fatalf("expires_in %v", tok["expires_in"])
 	}
 	e.clock.advance(time.Hour)
-	if e.mcpStatus(t, "/mcp", tok["access_token"].(string)) != http.StatusUnauthorized {
-		t.Fatal("access token outlived an hour")
+	if code, challenge := e.mcpChallenge(t, "/mcp", tok["access_token"].(string)); code != http.StatusUnauthorized || challenge != invalidTokenChallenge {
+		t.Fatalf("access token outlived an hour: %d %q", code, challenge)
 	}
 }
 
@@ -451,15 +453,72 @@ func TestRevokeTakesEffectImmediately(t *testing.T) {
 	if err := RevokeClient(e.config, client); err != nil {
 		t.Fatal(err)
 	}
-	if code := e.mcpStatus(t, "/mcp", tok["access_token"].(string)); code != http.StatusUnauthorized {
-		t.Fatalf("after revoke: %d", code)
+	if code, challenge := e.mcpChallenge(t, "/mcp", tok["access_token"].(string)); code != http.StatusUnauthorized || challenge != invalidTokenChallenge {
+		t.Fatalf("after revoke: %d %q", code, challenge)
 	}
-	resp, _ := e.postForm(t, e.agent, "/token", url.Values{"grant_type": {"refresh_token"}, "client_id": {client}, "refresh_token": {tok["refresh_token"].(string)}})
-	if resp.StatusCode == http.StatusOK {
-		t.Fatal("refresh after revoke succeeded")
+	resp, out := e.postForm(t, e.agent, "/token", url.Values{"grant_type": {"refresh_token"}, "client_id": {client}, "refresh_token": {tok["refresh_token"].(string)}})
+	if resp.StatusCode != http.StatusBadRequest || out["error"] != "invalid_grant" {
+		t.Fatalf("refresh after revoke: %d %v", resp.StatusCode, out)
 	}
 	if err := RevokeClient(e.config, client); err == nil {
 		t.Fatal("revoking an unknown client succeeded")
+	}
+}
+
+// A revoked metadata document client is told to authorize again, and doing
+// so needs the owner's passkey and a fresh consent, like a new client.
+func TestRevokedClientReauthorizesThroughTheOwner(t *testing.T) {
+	var docURL string
+	doc := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]any{"client_id": docURL, "client_name": "Synthetic Code", "redirect_uris": []string{"http://127.0.0.1/callback"}})
+	}))
+	t.Cleanup(doc.Close)
+	docURL = doc.URL + "/oauth/client-metadata"
+	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
+	e.server.oauth.documents.client = doc.Client()
+	e.enrollOwner(t)
+	redirect := "http://127.0.0.1:7/callback"
+	tok := e.tokens(t, docURL, redirect, "/mcp", "", ScopeReadWrite)
+	if err := RevokeClient(e.config, docURL); err != nil {
+		t.Fatal(err)
+	}
+	for _, access := range []string{tok["access_token"].(string), "not-a-token"} {
+		if code, challenge := e.mcpChallenge(t, "/mcp", access); code != http.StatusUnauthorized || challenge != invalidTokenChallenge {
+			t.Fatalf("revoked or unknown token: %d %q", code, challenge)
+		}
+	}
+	if code, challenge := e.mcpChallenge(t, "/mcp", ""); code != http.StatusUnauthorized || challenge != `Bearer resource_metadata="`+publicURL+`/.well-known/oauth-protected-resource"` {
+		t.Fatalf("no token: %d %q", code, challenge)
+	}
+	resp, out := e.postForm(t, e.agent, "/token", url.Values{"grant_type": {"refresh_token"}, "client_id": {docURL}, "refresh_token": {tok["refresh_token"].(string)}})
+	if resp.StatusCode != http.StatusBadRequest || out["error"] != "invalid_grant" {
+		t.Fatalf("refresh after revoke: %d %v", resp.StatusCode, out)
+	}
+	// Without the owner's session the client gets the sign-in page, no code.
+	_, challenge := pkce()
+	stranger := &http.Client{Transport: e.agent.Transport, CheckRedirect: e.browser.CheckRedirect}
+	resp, err := stranger.Get(authorizeURL(docURL, redirect, challenge, publicURL+"/mcp", ""))
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusOK || resp.Header.Get("Location") != "" || !strings.Contains(string(body), `id="login"`) || strings.Contains(string(body), "code=") {
+		t.Fatalf("without the owner: %d %q", resp.StatusCode, resp.Header.Get("Location"))
+	}
+	// The owner sees the consent page again: the revoke forgot the approval.
+	resp, err = e.browser.Get(authorizeURL(docURL, redirect, challenge, publicURL+"/mcp", ""))
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ = io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusOK || csrfField.Find(body) == nil {
+		t.Fatalf("owner after revoke: %d %q", resp.StatusCode, resp.Header.Get("Location"))
+	}
+	tok = e.tokens(t, docURL, redirect, "/mcp", "", ScopeRead)
+	if e.mcpStatus(t, "/mcp", tok["access_token"].(string)) != http.StatusOK {
+		t.Fatal("token refused after re-authorization")
 	}
 }
 
@@ -834,7 +893,7 @@ func TestPendingRegistrationsAreEvicted(t *testing.T) {
 		t.Fatalf("approved client after the flood: %+v", clients[0])
 	}
 
-	if _, out := e.postForm(t, e.agent, "/token", url.Values{"grant_type": {"refresh_token"}, "client_id": {victim}, "refresh_token": {"x"}}); out["error"] != "invalid_client" {
+	if _, out := e.postForm(t, e.agent, "/token", url.Values{"grant_type": {"authorization_code"}, "client_id": {victim}, "code": {"x"}}); out["error"] != "invalid_client" {
 		t.Fatalf("evicted client at the token endpoint: %v", out)
 	}
 
@@ -877,7 +936,8 @@ func TestTokenEndpointErrors(t *testing.T) {
 	}{
 		"unknown grant":     {url.Values{"grant_type": {"password"}, "client_id": {client}}, 400, "unsupported_grant_type"},
 		"no client":         {url.Values{"grant_type": {"refresh_token"}}, 400, "invalid_request"},
-		"unknown client":    {url.Values{"grant_type": {"refresh_token"}, "client_id": {"client-unknown"}, "refresh_token": {"x"}}, 401, "invalid_client"},
+		"unknown client":    {url.Values{"grant_type": {"authorization_code"}, "client_id": {"client-unknown"}, "code": {"x"}}, 401, "invalid_client"},
+		"unknown refresh":   {url.Values{"grant_type": {"refresh_token"}, "client_id": {"client-unknown"}, "refresh_token": {"x"}}, 400, "invalid_grant"},
 		"dead refresh":      {url.Values{"grant_type": {"refresh_token"}, "client_id": {client}, "refresh_token": {"not-a-token"}}, 400, "invalid_grant"},
 		"access as refresh": {url.Values{"grant_type": {"refresh_token"}, "client_id": {client}, "refresh_token": {tok["access_token"].(string)}}, 400, "invalid_grant"},
 		"missing code":      {url.Values{"grant_type": {"authorization_code"}, "client_id": {client}}, 400, "invalid_request"},
