@@ -37,3 +37,5 @@ Profile: `artifact`. Follow [the local delivery runbook](delivery.md)
 and [portable evidence commands](operations/local-verification.md). All configured
 application validation remains required. Persistent staging and Actions are
 optional; independent acceptance and exact-artifact verification are mandatory.
+`bin/finalize-release artifact` and `bin/promote-candidate` are Actions-only and
+are not part of the local release; see [publication](delivery.md#publication-and-recovery).

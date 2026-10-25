@@ -214,7 +214,9 @@ publication; no credential or repository policy is configured by these tests.
 ## Guarded retained-candidate promotion
 
 `bin/promote-candidate` is explicit maintainer publication tooling, not a memory
-operation or a personal-agent capability:
+operation or a personal-agent capability. It runs only inside the `Release
+artifact` Actions workflow; elsewhere it refuses and points to
+`bin/promote-local-candidate`, the [local release path](delivery.md#publication-and-recovery):
 
 ```sh
 bin/promote-candidate --receipt transport.json --archive downloaded.zip \
@@ -296,7 +298,11 @@ See `release_efficiency_test.go` and `release_retry_test.go` for count, identity
 source-change, refusal, timing and explicit-retry regressions. This optimization
 and typed quota guidance are post-v1.0.0 engineering work, not yet release acceptance.
 
-`bin/finalize-release artifact` now requires `RELEASE_VERSION` as well as the
+`bin/finalize-release artifact` runs only in the `Release artifact` Actions
+workflow (`GITHUB_ACTIONS=true`). It authenticates that workflow's bot markers,
+so outside Actions it refuses with exit 64 and names the local release steps;
+don't run it, `--preflight` included, on the [local path](delivery.md#publication-and-recovery).
+`production` mode is unchanged. Artifact mode requires `RELEASE_VERSION` as well as the
 existing accepted SHA/identity and explicit issue set. After the existing
 issue-specific workflow-authored nomination/acceptance checks, it calls the live
 read-only verifier before any label/comment/body/closure mutation. It never creates

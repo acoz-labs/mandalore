@@ -143,6 +143,10 @@ func authorize(ctx context.Context, parsed distribution.ParsedManifest) error {
 	if os.Getenv("GITHUB_REPOSITORY") != "acoz-labs/mandalore" || os.Getenv("GH_TOKEN") == "" {
 		return errors.New("promotion requires the official repository context and an explicit GH_TOKEN")
 	}
+	// bin/finalize-release artifact --preflight only passes inside Actions.
+	if os.Getenv("GITHUB_ACTIONS") != "true" {
+		return errors.New("bin/promote-candidate runs only in the Release artifact Actions workflow; on the local release path use bin/promote-local-candidate (see docs/delivery.md)")
+	}
 	m := parsed.Manifest
 	env := []string{}
 	replace := map[string]string{"RELEASE_SHA": m.SourceCommit, "RELEASE_VERSION": m.Version, "RELEASE_ARTIFACT": parsed.Identity(), "STAGING_REQUIRED": "false", "GH_DEBUG": "", "GH_HOST": "github.com", "GITHUB_SERVER_URL": "https://github.com"}

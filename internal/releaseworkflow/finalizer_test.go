@@ -56,7 +56,7 @@ func fixture(t *testing.T, scenario string) (string, []string) {
 			t.Fatal(err)
 		}
 	}
-	env := []string{"PATH=" + filepath.Join(dir, "bin") + ":" + os.Getenv("PATH"), "HOME=" + dir, "TMPDIR=" + dir, "LANG=C", "GIT_CONFIG_NOSYSTEM=1", "GIT_CONFIG_GLOBAL=/dev/null", "GORACE=atexit_sleep_ms=0", "FINALIZER_TEST_EXECUTABLE=" + executable, "FINALIZER_FIXTURE=" + dir, "GITHUB_REPOSITORY=acoz-labs/mandalore", "GITHUB_SERVER_URL=https://github.com", "GITHUB_RUN_ID=123", "RELEASE_ISSUES=11", "RELEASE_VERSION=1.0.0", "RELEASE_SUMMARY=Synthetic release", "RELEASE_ROLLBACK=Synthetic rollback", "SMOKE_SUMMARY=Synthetic checks", "PRODUCTION_DEPLOYMENT_ID=45", "RELEASE_CONTROL_SHA=" + strings.Repeat("c", 40)}
+	env := []string{"PATH=" + filepath.Join(dir, "bin") + ":" + os.Getenv("PATH"), "HOME=" + dir, "TMPDIR=" + dir, "LANG=C", "GIT_CONFIG_NOSYSTEM=1", "GIT_CONFIG_GLOBAL=/dev/null", "GORACE=atexit_sleep_ms=0", "FINALIZER_TEST_EXECUTABLE=" + executable, "FINALIZER_FIXTURE=" + dir, "GITHUB_REPOSITORY=acoz-labs/mandalore", "GITHUB_SERVER_URL=https://github.com", "GITHUB_RUN_ID=123", "GITHUB_ACTIONS=true", "RELEASE_ISSUES=11", "RELEASE_VERSION=1.0.0", "RELEASE_SUMMARY=Synthetic release", "RELEASE_ROLLBACK=Synthetic rollback", "SMOKE_SUMMARY=Synthetic checks", "PRODUCTION_DEPLOYMENT_ID=45", "RELEASE_CONTROL_SHA=" + strings.Repeat("c", 40)}
 	runGit := func(args ...string) string {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
@@ -96,6 +96,14 @@ func fixture(t *testing.T, scenario string) (string, []string) {
 		state.Issue["body"] = "no implementation link"
 	case "wrong nomination":
 		state.Comments[0]["body"] = "no matching nomination"
+	case "local record":
+		// The local path's maintainer-authored sdlc-* receipts, with none of
+		// the workflow's bot markers or statuses.
+		state.Issue["labels"] = []any{}
+		state.Comments, state.Statuses = nil, nil
+		for _, marker := range []string{"sdlc-candidate-v1", "sdlc-evidence-v1", "sdlc-release-v1"} {
+			state.Comments = append(state.Comments, map[string]any{"body": "<!-- " + marker + " -->\n{\"sha\":\"" + sha + "\"}", "user": map[string]any{"login": "example-maintainer"}})
+		}
 	case "production":
 		state.Issue["labels"] = []any{map[string]any{"name": "delivery:ready-for-production"}}
 		state.Release = nil
@@ -233,6 +241,39 @@ func TestArtifactPreflightDoesNotRequirePublicationForAcceptedOpenIssues(t *test
 	}
 	if strings.Contains(fixtureLog(t, dir), "release-publication verify") {
 		t.Fatal("pre-publication preflight demanded a published candidate")
+	}
+}
+
+func TestArtifactFinalizerIsActionsOnlyAndNamesLocalPath(t *testing.T) {
+	dir, env := fixture(t, "local record")
+	local := []string{}
+	for _, entry := range env {
+		if entry != "GITHUB_ACTIONS=true" {
+			local = append(local, entry)
+		}
+	}
+	for _, args := range [][]string{{"artifact", "--preflight"}, {"artifact"}} {
+		out, err := runFinalizer(t, dir, local, args...)
+		if exit, ok := err.(*exec.ExitError); !ok || exit.ExitCode() != 64 {
+			t.Fatal("local run was not refused as unsupported", args, err, out)
+		}
+		for _, step := range []string{"Actions workflow", "sdlc-release nominate", "acceptance receipt", "promote-local-candidate", "release-publication verify", "sdlc-release record and finalize", "docs/delivery.md"} {
+			if !strings.Contains(out, step) {
+				t.Fatal("refusal does not name", step, out)
+			}
+		}
+	}
+	if log := fixtureLog(t, dir); log != "" {
+		t.Fatal("local refusal reached GitHub or the publisher", log)
+	}
+	// Inside Actions the local receipts still don't stand in for the
+	// workflow's markers.
+	out, err := runFinalizer(t, dir, env, "artifact", "--preflight")
+	if err == nil || !strings.Contains(out, "Issue #11 lacks delivery:ready-for-release") {
+		t.Fatal("local receipts authorized the Actions finalizer", err, out)
+	}
+	if log := fixtureLog(t, dir); strings.Contains(log, "gh issue edit") || strings.Contains(log, "gh issue close") {
+		t.Fatal("refusal mutated the ledger", log)
 	}
 }
 

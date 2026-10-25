@@ -233,7 +233,7 @@ func TestPromotionRetainsUncertainPublicationAndRefusesIncompleteSuccess(t *test
 }
 
 func TestAuthorizeInvokesBothBoundGuardsWithoutPolicyCredential(t *testing.T) {
-	for _, kind := range []string{"success", "gate refusal", "preflight refusal", "cancelled", "missing token"} {
+	for _, kind := range []string{"success", "gate refusal", "preflight refusal", "cancelled", "missing token", "outside actions"} {
 		t.Run(kind, func(t *testing.T) {
 			dir := t.TempDir()
 			t.Chdir(dir)
@@ -242,6 +242,7 @@ func TestAuthorizeInvokesBothBoundGuardsWithoutPolicyCredential(t *testing.T) {
 			}
 			t.Setenv("GITHUB_REPOSITORY", "acoz-labs/mandalore")
 			t.Setenv("GH_TOKEN", "synthetic-token")
+			t.Setenv("GITHUB_ACTIONS", "true")
 			t.Setenv("RELEASE_POLICY_READ_TOKEN", "must-not-reach-guards")
 			t.Setenv("GH_HOST", "example.invalid")
 			t.Setenv("GH_DEBUG", "api")
@@ -263,6 +264,9 @@ func TestAuthorizeInvokesBothBoundGuardsWithoutPolicyCredential(t *testing.T) {
 			}
 			if kind == "missing token" {
 				t.Setenv("GH_TOKEN", "")
+			}
+			if kind == "outside actions" {
+				t.Setenv("GITHUB_ACTIONS", "")
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
@@ -289,6 +293,9 @@ func TestAuthorizeInvokesBothBoundGuardsWithoutPolicyCredential(t *testing.T) {
 			}
 			if kind == "missing token" && len(log) != 0 {
 				t.Fatal("guard borrowed credentials")
+			}
+			if kind == "outside actions" && (len(log) != 0 || err == nil || !strings.Contains(err.Error(), "bin/promote-local-candidate")) {
+				t.Fatal("local promotion ran guards or did not name the local path", err, string(log))
 			}
 		})
 	}
