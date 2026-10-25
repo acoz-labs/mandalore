@@ -375,8 +375,12 @@ in throwaway volumes: the health check, `/healthz`, MCP `tools/list` through
 - `mandalore server clients set-scope --config FILE --installation ID --scope
   read|read-write [--signet SLUG]` changes one installation's grant on one
   signet, or on every signet it holds; `--client ID` changes every installation
-  of the client. Live tokens never exceed the new grant, and a wider grant
-  applies from the installation's next authorization.
+  of the client. Live tokens never exceed the new grant or the scope they were
+  issued with, and a refresh keeps that scope, so a wider grant gives live
+  tokens back at most what an earlier narrowing took. A DCR installation gets
+  a wider grant in full from its next authorization. A metadata-document
+  installation, new or migrated, never does: its next authorization is a new
+  installation, whose scope the owner picks on the consent page.
 
 ### Upgrading OAuth state from 2.0.1
 
