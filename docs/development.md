@@ -65,26 +65,17 @@ actual stdio without a model, authentication, native settings or global install.
 ### Cancellation regression tests
 
 Observe the intended subprocess phase before cancelling a phase-specific test;
-do not infer fetch entry from a short whole-operation timeout. The API regression
-uses a PATH-local synthetic Git wrapper, a fetch-entry marker and explicit parent
-cancellation with bounded worker cleanup. Normal and deliberately slow startup
-must both preserve post-checkpoint fetch evidence. A separate blocked-first-Git
-case verifies the real one-second operation deadline and conservative checkpoint-
-phase evidence before fetch. Both cases check that the observed process ended and
-the signet still validates. Failures print the structured envelope, not a pointer.
+do not infer it from a short whole-operation timeout. The Git toolkit regression
+uses a PATH-local synthetic Git wrapper that writes a phase marker, then cancels
+the parent and checks that the stopped receipt names that phase and no merge
+state is left. Run
+`mise exec go@1.26.10 -- go test -race -count=10 -run '^TestCancellationAtCheckpointIntegrationAndPush$' ./internal/sync`
+for repeated focused verification, then the complete `bin/ci`. Keep original
+failures and controlled reproductions in review evidence; a passing retry alone
+is not a root-cause analysis or independent acceptance of a candidate.
 
-Run `mise exec go@1.26.10 -- go test -race -count=10 -run '^TestSync(CancellationExposesPartialWriteEvidence|DeadlineBeforeCheckpointRetainsEvidence)$' ./internal/api`
-for repeated focused verification, then the complete `bin/ci`. This test repair
-does not change the product's timeout or retry contract. Keep original failures
-and controlled reproductions in review evidence; a passing retry alone is not a
-root-cause analysis or independent acceptance of a candidate.
-
-Combined save-and-sync cancellation also waits for a complete PID line, not just
-the marker file's existence: shell redirection creates that file before writing
-its contents. `TestSaveAndSyncCancellationWaitsForCompleteFetchMarker` deliberately
-widens that empty-file window and verifies the durable save, cancelled fetch and
-stopped child. Run it alongside `TestSaveAndSyncCancellationDuringFetchKeepsReceipt`
-with `-race -count=20` after changing the cancellation fixture or observer.
+The 1.x `memory_sync` and save-and-sync cancellation tests left the build with
+those tools in 2.0; Git history keeps them.
 
 ## Local distribution candidates
 
@@ -109,13 +100,13 @@ No home-directory or shell configuration is changed. Each tool process has a
 bounded output and five-minute deadline; the build has a twenty-minute deadline.
 Cancellation cleans its process group and the invocation's private export/cache.
 
-The candidate contains four raw executables, a deterministic Codex ZIP, reviewed
-bootstrap, manifest and checksums. Every payload digest and the separate embedded
-plugin identity are verified before a no-replace directory publication. Retrying
+The candidate contains four raw executables, the reviewed bootstrap, manifest
+and checksums. Every payload digest is verified before a no-replace directory
+publication. Retrying
 an existing destination is deliberately refused; select a new output directory.
 Candidate integrity is not native behavior, independent provenance or acceptance.
 
-Repeat with another absent output directory and compare all eight files to measure
+Repeat with another absent output directory and compare all seven files to measure
 reproducibility. [Recorded engineering evidence](evidence/distribution/README.md)
 includes two actual isolated builds and native metadata verification. This does
 not establish cross-host reproducibility or native Linux support by itself.
@@ -376,13 +367,10 @@ heads, original snapshot bytes/empty directories, lock observations, stale input
 typed/CLI parity and retained staging/publication failures. Cross-builds still
 do not establish native Linux filesystem/locking acceptance.
 
-The Codex plugin and skill also require their native validators when edited.
-The development check used the plugin-creator and skill-creator validators with
-an isolated `uv run --with PyYAML==6.0.2` environment; PyYAML is a validation
-dependency, not a runtime requirement. Go tests exercise the real shell bridge
-and compiled hook command. These structural checks do not establish model
-behavior: a native forward test caught an ambiguous no-save orientation sentence
-that the unit tests could not. Repeat relevant fresh-session scenarios after
+The Claude plugin's structural check is `claude plugin validate --strict` (see
+above). Structural checks do not establish model behavior: in 1.x a native
+forward test caught an ambiguous no-save orientation sentence that the unit
+tests could not. Repeat relevant fresh-session scenarios after skill or server
 instruction changes and record the exact tested binary/plugin identities.
 
 Foundling fixtures exercise bounded local files and standalone Git sources without

@@ -19,7 +19,7 @@ No live migration is implied.
 
 Development format2 adds `memory_withheld`, `memory_visibility_history`,
 `memory_withdraw` and
-`memory_restore` to the shared CLI/MCP/Pi contract. Ordinary format1 use remains
+`memory_restore` to the shared CLI and server contract. Ordinary format1 use remains
 supported. These operations do not automatically upgrade a bank.
 
 For explicit historical inspection/restoration when the ID is unknown,
@@ -144,22 +144,16 @@ external filesystem changes.
 
 ## MCP result presentation
 
-MCP returns the same complete envelope in `structuredContent` and a JSON text
-block for client compatibility. `isError` agrees with the envelope's `ok` flag.
-Keep both wire representations. For raw code-mode wrappers, the memory skill
-directs the agent to prepare selection before the first Mandalore call and reuse
-it for later responses, including errors. It guides the agent to print one
-equivalent envelope while preserving errors,
-provenance, conflicts and continuation metadata. Text-only, distinct content,
-unknown metadata and uncertain equivalence fall back intact. This is scoped
-presentation guidance, not a global renderer or a change to memory semantics.
-Do not retry an operation merely to render its receipt differently. Loading
-guidance after printing a raw first response cannot reclaim consumed context.
+The server returns each tool's complete envelope in `structuredContent` and as a
+JSON text block for client compatibility. `isError` agrees with the envelope's
+`ok` flag. Keep both wire representations. `memory_context` is the exception: it
+returns only the hook output as text (see [the server](server.md#tools)). Do not
+retry an operation merely to render its receipt differently.
 
-The [synthetic presentation checks](evidence/mcp-rendering/README.md) distinguish
-wire compatibility, selector behavior and observed native engineering runs from
-still-required exact-candidate product acceptance.
-Published v1.0.0 has not been modified by this development change.
+The 1.x memory skill also told agents in raw code-mode wrappers how to print one
+envelope; the 2.0 skill has no such guidance. The
+[synthetic presentation checks](evidence/mcp-rendering/README.md) are 1.x
+engineering history.
 
 `mandalore version` is read-only and does not need a signet binding. It reports
 the runtime version, source commit (empty for an unstamped development build),
@@ -408,8 +402,9 @@ A version-1 binding pins the canonical signet path/ID, enrolled device ID and
 actor. It must be a regular bounded JSON file outside the signet, including through
 symlink ancestors. Creation refuses existing destinations. Reads reject unknown
 fields/versions and changed bank identity. Labels and actors are user-supplied;
-hostnames are not discovered. Harness attribution comes from `--harness` (default
-`cli`, or `mcp` for the server), not from automatic native-session detection.
+hostnames are not discovered. CLI harness attribution comes from `--harness`
+(default `cli`), not from automatic native-session detection; the server records
+each client's kind instead.
 
 Short-lived bound CLI callers can also pass `--binding-sha256 SHA256 --signet-id ID`
 to pin a connection between invocations. Both nonempty values are required; the
@@ -450,8 +445,9 @@ messages. Conservative write ambiguity is intentional: publication followed by
 an I/O or response failure is not a proven rollback. A lost process/transport
 response may provide no envelope at all; inspect history/journal before retrying.
 
-Successful mutation receipts identify immutable records and say
-`durable_locally: true`, `synchronization: "not-requested"`. They do not promise
+Successful CLI mutation receipts identify immutable records and say
+`durable_locally: true`, `synchronization: "not-requested"`; the server's save
+receipts say `durable` and `backup` (see [the server](server.md#git-backup)). They do not promise
 remote delivery or exactly-once writes. Cancellation is checked at operation
 boundaries; synchronous filesystem work already underway is not transactionally
 rolled back or instantaneously interruptible. A published write retains its
@@ -464,14 +460,14 @@ create/correction/history, unrelated cwd, explicit binding precedence, no-write
 hashes, and the compiled server over Streamable HTTP with backup and a clean stop. Full race tests,
 vet and four platform builds run in `bin/ci`. Cross-builds are not native runtime
 acceptance. These tests use synthetic local data and an SDK client, not a model
-conversation or installed native plugin. Native Codex acceptance is recorded in
-[v1.0.0](releases/1.0.0.md); subsequent Pi engineering evidence remains distinct
-from new candidate acceptance in [the Pi evidence](evidence/pi/README.md).
+conversation or installed native plugin. 1.x native Codex acceptance is recorded
+in [v1.0.0](releases/1.0.0.md), and 1.x Pi engineering evidence in
+[the Pi evidence](evidence/pi/README.md).
 
 ## Scoped report export
 
 `export_preview` and `export_apply` are typed, CLI-only operations. They do not
-appear in the everyday MCP/Pi tool catalog. Agents can discover their schemas with
+appear in the server's tool catalog. Agents can discover their schemas with
 `mandalore operations` and call them using JSON stdin. No menu, network operation,
 checkpoint, journal or source mutation is part of export.
 

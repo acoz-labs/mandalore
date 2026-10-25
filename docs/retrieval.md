@@ -47,7 +47,7 @@ an installed agent binding, remote repositories or private memory.
 ```sh
 mise exec go@1.26.10 -- go test ./internal/testfixture ./internal/memory -run 'TestCorpus|TestNearestRank|TestRetrieval' -count=1
 mise exec go@1.26.10 -- go test -v ./internal/memory -run '^$' -bench '^BenchmarkRetrieval$' -benchtime=20x -count=1 -timeout=20m
-mise exec go@1.26.10 -- go test -v ./internal/codex -run '^$' -bench '^BenchmarkPromptHook$' -benchtime=20x -count=1 -timeout=20m
+mise exec go@1.26.10 -- go test -v ./internal/server -run '^$' -bench '^BenchmarkMemoryContext$' -benchtime=20x -count=1 -timeout=20m
 mise exec go@1.26.10 -- go test -v ./internal/foundlings -run '^$' -bench '^BenchmarkFoundlingRetrieval$' -benchtime=20x -count=1 -timeout=20m
 mise exec go@1.26.10 -- go test -v ./cmd/mandalore -run '^$' -bench '^BenchmarkCompiledRetrieval$' -benchtime=20x -count=1 -timeout=20m
 ```
@@ -64,8 +64,9 @@ Use `-v` to retain parent-benchmark fixture counts in the output; without it Go
 prints the leaf timings but can omit those setup logs.
 
 Memory measurements cover narrow, broad, empty and no-match reads, fresh service
-opening plus recall, and scope pages. Prompt-hook measurements include the actual
-read-only adapter, default recall, routing inventory and emitted JSON. Foundling
+opening plus recall, and scope pages. Prompt-hook measurements run the server's
+`memory_context` over a 1000-record signet with its read cache: ranked recall,
+the scope list and the emitted text. Foundling
 measurements cover separate 100/1000-file references with source verification,
 not just string matching. Compiled CLI measurements include process startup,
 binding/recall/encoding, pipe transfer and client decoding/validation from an
@@ -116,7 +117,7 @@ Explicit deep review, later conclusions and pinned traversal remain available.
 No ranking change, index, persistent retrieval cache, automatic summary or limit
 on a user's deliberate exhaustive scan is introduced.
 
-The [MCP presentation comparison](evidence/mcp-rendering/native.md) addresses
+The 1.x [MCP presentation comparison](evidence/mcp-rendering/native.md) addresses
 duplicate compatibility envelopes, not retrieval algorithms. In four synthetic
 Codex runs, candidate guidance removed eight duplicate representations per run
 and retained correct answers, historical attribution and truncation notices.

@@ -95,6 +95,15 @@ already-read model context remain outside revocation.
 
 ## Reading the result
 
+In 2.0 an agent sees only the server's save receipt: `durable: true` and
+`backup: pending|pushed|failed`. The operator reads each signet's backup and
+remote state with `mandalore server status` (see [Git backup](server.md#git-backup)
+and [admin commands](server.md#admin-commands)).
+
+The states below are the CLI's and the menu's, for a 1.x clone before the
+cutover. A checkpoint reports `local-only`; the menu's inspection and
+synchronization report the rest.
+
 | State | Meaning |
 | --- | --- |
 | `local-only` | Local checkpoint exists; no remote delivery was established |
@@ -109,10 +118,10 @@ without recording the URL. `checked_at` is the attempt time, updated when a push
 succeeds; it is not continuous remote observation. A delivered semantic conflict
 has `delivered: true` and `state: "conflicted"`, not an invented single answer.
 
-The bounded last-attempt receipt is atomically stored in ignored
-`.mandalore/sync-status.json`. Read-only status compares current head, dirty state
+The menu's bounded last-attempt receipt is atomically stored in ignored
+`.mandalore/sync-status.json`. Its read-only inspection compares current head, dirty state
 and remote identity with that receipt. New local memory or a changed remote
-invalidates a prior synchronized classification. Status never contacts the remote,
+invalidates a prior synchronized classification. Inspection never contacts the remote,
 initializes Git, repairs malformed receipts or claims that a remote has not changed
 since the last attempt. Its `last_attempt` is explicitly historical evidence.
 
@@ -120,8 +129,8 @@ Remote/auth failures leave checkpointed work pending and do not echo command
 output. Interrupted or failed operations expose conservative write ambiguity and
 the known phase/head in `error.sync_status`; inspect local history and the remote
 before retrying. A push may have reached the server even when its response was
-lost. There is no remote rollback or exactly-once promise. Native transport loss
-can prevent any final envelope from arriving.
+lost. There is no remote rollback or exactly-once promise. An interrupted process
+can stop before any final envelope arrives.
 
 ## Configuration and safety boundaries
 
