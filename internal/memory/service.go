@@ -37,6 +37,29 @@ func OpenReadOnlyService(root string) (*Service, error) {
 	return &Service{store: store}, nil
 }
 
+// As returns a view of the same store that records author on its writes. A
+// long-running writer serving several clients calls it per request; reads are
+// unaffected and the view shares the store's locks.
+func (s *Service) As(author Authorship) (*Service, error) {
+	if err := s.store.ValidateAuthorship(author); err != nil {
+		return nil, err
+	}
+	return &Service{store: s.store, author: author}, nil
+}
+
+// EnrollClientDevice records a new device for an approved client and returns
+// its ID. The device is the client's provenance in every revision it writes.
+func (s *Service) EnrollClientDevice(label string) (string, error) {
+	if !textWithin(label, 256) {
+		return "", errors.New("device label requires 1–256 bytes")
+	}
+	id := NewID("device")
+	if err := s.store.AddDevice(Device{Version: 1, ID: id, Label: label}); err != nil {
+		return "", err
+	}
+	return id, nil
+}
+
 func (s *Service) Harness() string { return s.author.Harness }
 
 func (s *Service) ID() string      { return s.store.Signet.ID }
@@ -248,6 +271,16 @@ func (s *Service) Recall(query string, scope *Scope, limit, budgetBytes int) (Re
 	}
 	p.Truncated = len(p.Current) < p.MatchingCount || len(p.Conflicts) < p.ConflictCount
 	return p, nil
+}
+
+// RecallAll ranks current evidence across every stored scope for lifecycle
+// context, where no scope is selected. Conflicts appear only when a competing
+// head matches the query; an empty query matches every record.
+func (s *Service) RecallAll(query string, limit int) (Packet, error) {
+	if len(query) > 2048 || limit < 1 || limit > 50 {
+		return Packet{}, errors.New("recall requires query <=2048 bytes and limit 1–50")
+	}
+	return s.store.Recall(Query{Text: query, Limit: limit, AllScopes: true}, time.Now())
 }
 
 func (s *Service) Scopes() ([]ScopeInfo, error) { return s.store.Scopes() }
