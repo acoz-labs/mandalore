@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"io"
 	"slices"
 	"time"
@@ -13,6 +14,7 @@ import (
 
 type serverFlags struct {
 	signet, client, scope string
+	installation          string
 	replace               bool
 }
 
@@ -24,6 +26,7 @@ func serverConfig(name string, args []string, out io.Writer, allowed ...string) 
 	path := f.String("config", "", "Server configuration file")
 	f.StringVar(&v.signet, "signet", "", "Signet slug")
 	f.StringVar(&v.client, "client", "", "OAuth client ID")
+	f.StringVar(&v.installation, "installation", "", "OAuth client installation ID")
 	f.StringVar(&v.scope, "scope", "", "read or read-write")
 	f.BoolVar(&v.replace, "replace", false, "Make the new passkey the only one")
 	ok := f.Parse(args) == nil && f.NArg() == 0 && *path != ""
@@ -144,23 +147,40 @@ func runClients(command string, args []string, out io.Writer) int {
 		}
 		return emit(out, api.Success(clients))
 	case "revoke":
-		c, f, code, ok := serverConfig("server clients revoke", args, out, "client")
-		if !ok || f.client == "" {
-			return orUsage(out, code, ok, "Use server clients revoke --config FILE --client ID.")
+		c, f, code, ok := serverConfig("server clients revoke", args, out, "client", "installation")
+		if !ok || (f.client == "") == (f.installation == "") {
+			return orUsage(out, code, ok, "Use server clients revoke --config FILE --client ID or --installation ID.")
 		}
-		if err := server.RevokeClient(c, f.client); err != nil {
+		if f.installation != "" {
+			client, err := server.RevokeInstallation(c, f.installation)
+			if err != nil {
+				return emit(out, api.Failure("client.refused", err.Error(), false))
+			}
+			return emit(out, api.Success(map[string]any{"installation": f.installation, "client": client, "revoked": true,
+				"notice": "Revoked this installation only. Other installations of the client keep working."}))
+		}
+		n, err := server.RevokeClient(c, f.client)
+		if err != nil {
 			return emit(out, api.Failure("client.refused", err.Error(), false))
 		}
-		return emit(out, api.Success(map[string]any{"client": f.client, "revoked": true}))
+		return emit(out, api.Success(map[string]any{"client": f.client, "revoked": true, "installations": n,
+			"notice": fmt.Sprintf("Revoked the client and every installation of it (%d). To revoke one, use --installation ID from server clients list.", n)}))
 	case "set-scope":
-		c, f, code, ok := serverConfig("server clients set-scope", args, out, "client", "scope", "signet")
-		if !ok || f.client == "" || f.scope == "" {
-			return orUsage(out, code, ok, "Use server clients set-scope --config FILE --client ID --scope read|read-write [--signet SLUG].")
+		c, f, code, ok := serverConfig("server clients set-scope", args, out, "client", "installation", "scope", "signet")
+		if !ok || (f.client == "") == (f.installation == "") || f.scope == "" {
+			return orUsage(out, code, ok, "Use server clients set-scope --config FILE --client ID or --installation ID --scope read|read-write [--signet SLUG].")
+		}
+		if f.installation != "" {
+			if err := server.SetInstallationScope(c, f.installation, f.signet, server.Scope(f.scope)); err != nil {
+				return emit(out, api.Failure("client.refused", err.Error(), false))
+			}
+			return emit(out, api.Success(map[string]any{"installation": f.installation, "scope": f.scope, "signet": f.signet}))
 		}
 		if err := server.SetClientScope(c, f.client, f.signet, server.Scope(f.scope)); err != nil {
 			return emit(out, api.Failure("client.refused", err.Error(), false))
 		}
-		return emit(out, api.Success(map[string]any{"client": f.client, "scope": f.scope, "signet": f.signet}))
+		return emit(out, api.Success(map[string]any{"client": f.client, "scope": f.scope, "signet": f.signet,
+			"notice": "Changed every installation of the client. To change one, use --installation ID from server clients list."}))
 	}
 	return bad(out, serverUsage)
 }

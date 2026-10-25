@@ -273,7 +273,9 @@ func (a *authServer) loginPage(w http.ResponseWriter, client *oauthClient) {
 	a.page(w, http.StatusOK, loginPage{Client: client.Name})
 }
 
-func (a *authServer) consentPage(w http.ResponseWriter, req *authRequest, id, csrf string) {
+// consentPage asks the owner to approve an authorization request. another
+// says other installations of the same document client are approved.
+func (a *authServer) consentPage(w http.ResponseWriter, req *authRequest, id, csrf string, another bool) {
 	u, _ := url.Parse(req.redirect)
 	write := req.requested != ScopeRead
 	// A document client names itself; the host that publishes the document
@@ -283,7 +285,7 @@ func (a *authServer) consentPage(w http.ResponseWriter, req *authRequest, id, cs
 		publisher = req.client.Kind
 	}
 	a.page(w, http.StatusOK, consentPage{Client: req.client.Name, Publisher: publisher, Host: u.Host, Loopback: loopbackRedirect(u), Signet: req.signet,
-		Write: write, Request: id, CSRF: csrf})
+		Another: another, Write: write, Request: id, CSRF: csrf})
 }
 
 type (
@@ -292,7 +294,7 @@ type (
 	loginPage   struct{ Client string }
 	consentPage struct {
 		Client, Publisher, Host, Signet, Request, CSRF string
-		Loopback, Write                                bool
+		Another, Loopback, Write                       bool
 	}
 )
 
@@ -393,6 +395,7 @@ for (const [id, fn] of [["enroll", enroll], ["login", login]]) {
 
 {{define "consent"}}<h1>Connect {{.Client}}?</h1>
 {{if .Publisher}}<p>Published by <strong>{{.Publisher}}</strong>. The application chooses its own name; trust it only if you know this publisher.</p>{{end}}
+{{if .Another}}<p>Other installations of this application are connected already. This is a new installation: approving it doesn't change their access, and they don't share this one.</p>{{end}}
 <p>It will reach the <strong>{{.Signet}}</strong> signet and send its access to</p>
 <p class="host">{{.Host}}</p>
 {{if .Loopback}}<p class="warn">This address is on the device that started the connection. Any program on that device can claim it, so approve only if you started this connection yourself just now.</p>{{end}}

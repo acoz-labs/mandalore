@@ -60,15 +60,17 @@ type authServer struct {
 }
 
 type authCode struct {
-	client, redirect, challenge, signet string
-	scope                               Scope
-	expires                             time.Time
-	used                                bool
+	client, installation        string
+	redirect, challenge, signet string
+	scope                       Scope
+	expires                     time.Time
+	used                        bool
 }
 
 // authRequest is a validated /authorize request waiting for the owner.
 type authRequest struct {
 	client            *oauthClient
+	installation      string // the installation the code is for, once known
 	redirect, state   string
 	challenge, signet string
 	requested         Scope
@@ -265,26 +267,35 @@ func scopeNames(s Scope) []string {
 	return []string{scopeRead}
 }
 
-// resolveClient finds a registered client or fetches a metadata document.
-// A document client is stored only once the owner approves it.
-func (a *authServer) resolveClient(r *http.Request, id string) (*oauthClient, error) {
-	var stored *oauthClient
+// resolveClient finds a registered client or fetches a metadata document,
+// with copies of the client's installations. A document client is stored
+// only once the owner approves an installation of it.
+func (a *authServer) resolveClient(r *http.Request, id string) (*oauthClient, []installation, error) {
+	var (
+		stored        *oauthClient
+		installations []installation
+	)
 	_ = a.store.view(func(st *oauthState) error {
 		if c := st.Clients[id]; c != nil {
 			cp := *c
 			stored = &cp
+			for _, in := range st.installationsOf(id) {
+				cp := *in
+				cp.Grants = maps.Clone(in.Grants)
+				installations = append(installations, cp)
+			}
 		}
 		return nil
 	})
 	if !isDocumentID(id) {
 		if stored == nil {
-			return nil, errors.New("unknown client_id")
+			return nil, nil, errors.New("unknown client_id")
 		}
-		return stored, nil
+		return stored, installations, nil
 	}
 	meta, err := a.documents.fetch(r.Context(), id)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if stored == nil {
 		stored = &oauthClient{ID: id, Document: true, Registered: a.now()}
@@ -292,12 +303,15 @@ func (a *authServer) resolveClient(r *http.Request, id string) (*oauthClient, er
 	stored.RedirectURIs = meta.RedirectURIs
 	stored.Kind = clientKind(id, true, meta.RedirectURIs)
 	stored.Name = displayName(meta.ClientName, stored.Kind)
-	return stored, nil
+	return stored, installations, nil
 }
 
 // authorize validates an authorization request. The owner signs in; an
-// approved client then gets a code at once, and a new one gets the consent
-// page.
+// approved DCR client then gets a code at once, and anything else gets the
+// consent page. Installations of a metadata-document client share its
+// client_id, so the server can't tell a new installation from an approved
+// one: every authorization of a document client is a new installation and
+// needs consent.
 func (a *authServer) authorize(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -310,7 +324,7 @@ func (a *authServer) authorize(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	client, err := a.resolveClient(r, q.Get("client_id"))
+	client, installations, err := a.resolveClient(r, q.Get("client_id"))
 	if err != nil {
 		a.page(w, http.StatusBadRequest, errorPage{Message: "This application isn't recognised: " + err.Error() + "."})
 		return
@@ -355,9 +369,12 @@ func (a *authServer) authorize(w http.ResponseWriter, r *http.Request) {
 		a.loginPage(w, client)
 		return
 	}
-	if grant, ok := client.Grants[slug]; ok {
-		a.grant(w, r, req, narrow(requested, grant))
-		return
+	if !client.Document && len(installations) > 0 {
+		if grant, ok := installations[0].Grants[slug]; ok {
+			req.installation = installations[0].ID
+			a.grant(w, r, req, narrow(requested, grant))
+			return
+		}
 	}
 	id := secret()
 	a.mu.Lock()
@@ -365,7 +382,7 @@ func (a *authServer) authorize(w http.ResponseWriter, r *http.Request) {
 	makeRoom(a.requests, func(r *authRequest) time.Time { return r.expires })
 	a.requests[id] = req
 	a.mu.Unlock()
-	a.consentPage(w, req, id, session.csrf)
+	a.consentPage(w, req, id, session.csrf, client.Document && len(installations) > 0)
 }
 
 // consent records the owner's decision on a pending authorization request.
@@ -419,10 +436,19 @@ func (a *authServer) consent(w http.ResponseWriter, r *http.Request) {
 		if req.client.Document {
 			c.Name, c.Kind, c.RedirectURIs = req.client.Name, req.client.Kind, req.client.RedirectURIs
 		}
-		if c.Grants == nil {
-			c.Grants = map[string]Scope{}
+		// A DCR client keeps its one installation; a document client gets
+		// a new one.
+		var in *installation
+		if !c.Document {
+			if found := st.installationsOf(c.ID); len(found) > 0 {
+				in = found[0]
+			}
 		}
-		c.Grants[req.signet] = scope
+		if in == nil {
+			in = st.newInstallation(c.ID, a.now())
+		}
+		in.Grants[req.signet] = scope
+		req.installation = in.ID
 		return nil
 	})
 	if err != nil {
@@ -442,7 +468,7 @@ func (a *authServer) grant(w http.ResponseWriter, r *http.Request, req *authRequ
 	a.mu.Lock()
 	a.prune()
 	makeRoom(a.codes, func(c *authCode) time.Time { return c.expires })
-	a.codes[hashSecret(code)] = &authCode{client: req.client.ID, redirect: req.redirect, challenge: req.challenge, signet: req.signet, scope: scope, expires: a.now().Add(codeTTL)}
+	a.codes[hashSecret(code)] = &authCode{client: req.client.ID, installation: req.installation, redirect: req.redirect, challenge: req.challenge, signet: req.signet, scope: scope, expires: a.now().Add(codeTTL)}
 	a.mu.Unlock()
 	v := url.Values{"code": {code}}
 	if req.state != "" {
@@ -676,12 +702,12 @@ func (a *authServer) redeem(clientID string, f url.Values) (tokenResponse, error
 	}
 	var out tokenResponse
 	err := a.store.update(func(st *oauthState) error {
-		client := st.Clients[clientID]
-		if client == nil || client.Grants[c.signet] == "" {
+		t := &oauthToken{Client: clientID, Installation: c.installation, Signet: c.signet}
+		grant := st.grantFor(t)
+		if grant == "" {
 			return errors.New("the grant was revoked")
 		}
-		grant := client.Grants[c.signet]
-		out = a.issue(st, clientID, c.signet, key, narrow(c.scope, grant))
+		out = a.issue(st, t, key, narrow(c.scope, grant))
 		return nil
 	})
 	return out, err
@@ -717,18 +743,17 @@ func (a *authServer) refresh(clientID string, f url.Values) (tokenResponse, erro
 			failed = &tokenError{"invalid_target", "resource does not match the refresh token"}
 			return nil
 		}
-		client := st.Clients[clientID]
-		if client == nil || client.Grants[t.Signet] == "" {
+		grant := st.grantFor(t)
+		if grant == "" {
 			failed = errors.New("the grant was revoked")
 			return nil
 		}
-		grant := client.Grants[t.Signet]
 		t.Used = true
 		scope := narrow(t.Scope, grant)
 		if requested != "" {
 			scope = narrow(requested, scope)
 		}
-		out = a.issue(st, clientID, t.Signet, t.Family, scope)
+		out = a.issue(st, t, t.Family, scope)
 		return nil
 	})
 	if err != nil {
@@ -737,12 +762,17 @@ func (a *authServer) refresh(clientID string, f url.Values) (tokenResponse, erro
 	return out, failed
 }
 
-// issue stores a new access and refresh token pair and returns it.
-func (a *authServer) issue(st *oauthState, client, signet, family string, scope Scope) tokenResponse {
+// issue stores a new access and refresh token pair for the client,
+// installation and signet of from, and returns it.
+func (a *authServer) issue(st *oauthState, from *oauthToken, family string, scope Scope) tokenResponse {
 	access, refresh := secret(), secret()
 	now := a.now()
-	st.Tokens[hashSecret(access)] = &oauthToken{Kind: tokenAccess, Client: client, Signet: signet, Family: family, Scope: scope, Expires: now.Add(accessTTL)}
-	st.Tokens[hashSecret(refresh)] = &oauthToken{Kind: tokenRefresh, Client: client, Signet: signet, Family: family, Scope: scope, Expires: now.Add(refreshTTL)}
+	st.Installations[from.Installation].LastUsed = now
+	t := oauthToken{Client: from.Client, Installation: from.Installation, Signet: from.Signet, Family: family, Scope: scope}
+	at, rt := t, t
+	at.Kind, at.Expires = tokenAccess, now.Add(accessTTL)
+	rt.Kind, rt.Expires = tokenRefresh, now.Add(refreshTTL)
+	st.Tokens[hashSecret(access)], st.Tokens[hashSecret(refresh)] = &at, &rt
 	return tokenResponse{AccessToken: access, TokenType: "Bearer", ExpiresIn: int(accessTTL.Seconds()), RefreshToken: refresh, Scope: strings.Join(scopeNames(scope), " ")}
 }
 
@@ -786,14 +816,11 @@ func (a *authServer) verifier(slug string) auth.TokenVerifier {
 			if t == nil || t.Kind != tokenAccess || t.Signet != slug || !a.now().Before(t.Expires) {
 				return auth.ErrInvalidToken
 			}
+			grant := st.grantFor(t)
+			if grant == "" {
+				return auth.ErrInvalidToken
+			}
 			c := st.Clients[t.Client]
-			if c == nil {
-				return auth.ErrInvalidToken
-			}
-			grant, ok := c.Grants[slug]
-			if !ok {
-				return auth.ErrInvalidToken
-			}
 			scope := narrow(t.Scope, grant)
 			info = &auth.TokenInfo{Scopes: scopeNames(scope), Expiration: t.Expires, UserID: c.ID,
 				Extra: map[string]any{"client": Client{ID: c.ID, Name: c.Name, Kind: c.Kind, Scope: scope}}}
