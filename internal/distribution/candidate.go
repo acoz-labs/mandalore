@@ -20,6 +20,10 @@ func Checksums(manifest []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	return p.checksums(), nil
+}
+
+func (p ParsedManifest) checksums() []byte {
 	sums := map[string]string{"manifest.json": p.SHA256}
 	for _, a := range p.Manifest.Assets {
 		sums[a.Name] = a.SHA256
@@ -33,7 +37,27 @@ func Checksums(manifest []byte) ([]byte, error) {
 	for _, name := range names {
 		b.WriteString(sums[name] + "  " + name + "\n")
 	}
-	return b.Bytes(), nil
+	return b.Bytes()
+}
+
+// PublishesExactly reports whether a release inventory is this manifest's: its
+// payloads, manifest.json and SHA256SUMS, each once and with the manifest's digest.
+func (p ParsedManifest) PublishesExactly(assets []ReleaseAsset) bool {
+	want := map[string]string{"manifest.json": p.SHA256, "SHA256SUMS": Digest(p.checksums())}
+	for _, a := range p.Manifest.Assets {
+		want[a.Name] = a.SHA256
+	}
+	if len(assets) != len(want) {
+		return false
+	}
+	for _, a := range assets {
+		digest, ok := want[a.Name]
+		if !ok || a.SHA256 != digest {
+			return false
+		}
+		delete(want, a.Name)
+	}
+	return true
 }
 
 // openCandidateFile accepts only a direct regular child of an already-open

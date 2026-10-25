@@ -141,12 +141,12 @@ fi
 
 verify_product_publication() {
   local publication_json
+  # The wrapper refuses any inventory other than the accepted manifest's.
   publication_json="$(bin/release-publication verify --version "$version" --identity "$artifact")" || return 1
   if ! jq -e --arg sha "$sha" --arg artifact "$artifact" --arg url "$release_url" '
     .phase == "publication-verified" and .identity == $artifact and
     .source_commit == $sha and .release_url == $url and
     (.release_id | type == "number" and . > 0) and
-    (.assets | type == "array" and length == 8) and
     (.pending_operation // "") == ""
   ' <<< "$publication_json" >/dev/null; then
     echo "Published product verification is incomplete or does not match the accepted release." >&2

@@ -18,6 +18,7 @@ import (
 
 type verifier interface {
 	VerifyPublication(context.Context, string, string) (distribution.PublicationReceipt, error)
+	Inspect(context.Context, string) (distribution.ReleaseView, error)
 }
 
 func run(ctx context.Context, args []string, out io.Writer, c verifier) error {
@@ -42,7 +43,12 @@ func run(ctx context.Context, args []string, out io.Writer, c verifier) error {
 	if err != nil {
 		return err
 	}
-	if r.Phase != "publication-verified" || r.Identity != s.Identity || r.SourceCommit != s.SourceCommit || r.URL != "https://github.com/acoz-labs/mandalore/releases/tag/"+url.PathEscape(s.Tag) || r.PendingOperation != "" || r.ReleaseID <= 0 || len(r.Assets) != 8 {
+	// The identity binds the manifest digest, so this is the accepted manifest.
+	view, err := c.Inspect(ctx, s.Version)
+	if err != nil {
+		return err
+	}
+	if r.Phase != "publication-verified" || r.Identity != s.Identity || r.SourceCommit != s.SourceCommit || r.URL != "https://github.com/acoz-labs/mandalore/releases/tag/"+url.PathEscape(s.Tag) || r.PendingOperation != "" || r.ReleaseID <= 0 || view.Manifest.Identity() != s.Identity || !view.Manifest.PublishesExactly(r.Assets) {
 		return errors.New("published verification returned an incomplete or different identity")
 	}
 	return json.NewEncoder(out).Encode(r)
