@@ -28,6 +28,20 @@ else
   [[ "$scan_status" == "1" ]] || { echo "Public-content scan failed." >&2; exit "$scan_status"; }
 fi
 
+# Deployment-facing docs and packaging name only placeholder or public service
+# hosts and addresses, never a real deployment's. A last label that is also a
+# file extension (md, sh, go, py, js, ts, mjs) is not treated as a host.
+deploy_files=(README.md docs/server.md docs/deploy packaging/server bin/publish-server-image)
+deploy_hosts=$(git grep -I -h -o -E '([A-Za-z0-9-]+\.)+[A-Za-z][A-Za-z0-9-]*' -- "${deploy_files[@]}" | sort -u |
+  grep -i -x -E '.*\.(com|net|org|io|dev|app|cloud|ai|me|xyz|lan|internal|local|localdomain|home|arpa|corp|[a-z]{2})' |
+  grep -i -v -x -E '.*\.(md|sh|go|py|js|ts|mjs)|([a-z0-9-]+\.)?example\.(com|net|org)|github\.com|ghcr\.io|claude\.ai|platform\.claude\.com' || true)
+deploy_addresses=$(git grep -I -h -o -E '[0-9]{1,3}(\.[0-9]{1,3}){3}' -- "${deploy_files[@]}" | sort -u |
+  grep -v -x -E '127\.0\.0\.1|0\.0\.0\.0|160\.79\.104\.0|(192\.0\.2|198\.51\.100|203\.0\.113)\.[0-9]+' || true)
+[[ -z "$deploy_hosts$deploy_addresses" ]] || {
+  echo "Unexpected hosts or addresses in deployment docs or packaging: $deploy_hosts $deploy_addresses" >&2
+  exit 1
+}
+
 for workflow in .github/workflows/*.yml; do
   if grep 'runs-on:' "$workflow" | grep -v -F '[self-hosted, trusted-linux-x64]'; then
     echo "Optional workflows must use trusted self-hosted runners: $workflow" >&2
