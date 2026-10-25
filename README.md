@@ -20,7 +20,7 @@ foundling consultation/selective promotion, retrieval evaluation, versioned
 candidate builds with guarded same-byte release tooling, and synthetic
 regression tests.
 
-2.0 isn't released yet; the latest release is [1.6.1](docs/releases/1.6.1.md).
+The latest release is [2.0.0](docs/releases/2.0.0.md).
 In 1.x each device synchronized its own Git clone around agent sessions,
 through a stdio MCP server, lifecycle hooks and native Claude Code, Codex, Pi
 and Hermes plugins; the [release records](docs/releases/) keep that history.
@@ -79,15 +79,14 @@ independent acceptance. See [SDLC](docs/operations/sdlc.md).
 
 ## Install
 
-Mandalore 2.0 is in development on `main` and not released yet; the latest
-release is [1.6.1](docs/releases/1.6.1.md), whose release records describe the
-1.x installation. In 2.0 one [server](docs/server.md) owns each signet and agents
+The latest release is [2.0.0](docs/releases/2.0.0.md); the
+[release records](docs/releases/) describe the 1.x installation. In 2.0 one [server](docs/server.md) owns each signet and agents
 connect to it over MCP:
 
-1. **Get `mandalore`.** Until 2.0.0 is published, build it from this repository
-   with `mise exec go@1.26.10 -- go build -o mandalore ./cmd/mandalore`, or build
-   the server image locally from [packaging/server](docs/server.md#docker). From
-   2.0.0 each release carries the binaries. A published image will follow
+1. **Get `mandalore`.** Install it with the release's bootstrap,
+   `sh install.sh 2.0.0` ([Installing 2.0](docs/releases/2.0.0.md#installing-20)),
+   or build the server image locally from [packaging/server](docs/server.md#docker).
+   A published image will follow
    ([#188](https://github.com/acoz-labs/mandalore/issues/188)).
 2. **Prepare the signet.** The server needs its own checkout. Coming from 1.x,
    follow [the cutover](docs/migration-2.0.md); for a new signet, see

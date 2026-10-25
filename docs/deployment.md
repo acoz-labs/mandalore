@@ -14,8 +14,8 @@ binaries, the bootstrap, the manifest and its checksums. 2.0.0 publishes no
 container image: operators build it from `packaging/server`, and a published
 [server image](delivery.md#server-image) will follow in #188. The
 [Claude plugin](../plugins/claude/README.md) isn't a release asset; it installs
-from the repository's marketplace. 2.0 isn't released yet. The latest release
-is [1.6.1](releases/1.6.1.md), and the [release records](releases/) keep the
+from the repository's marketplace. The latest release is
+[2.0.0](releases/2.0.0.md), and the [release records](releases/) keep the
 1.x history, when releases also shipped native plugin packages. Publication does
 not automatically update an existing installation.
 
