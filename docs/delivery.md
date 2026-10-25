@@ -77,6 +77,14 @@ authorize new self-acceptance. Do not rotate unrelated service credentials.
 If the publisher needs a narrowly scoped policy-read credential, resolve that
 access explicitly; do not silently skip the provider policy check.
 
+Don't run `bin/finalize-release artifact` (with or without `--preflight`) or
+`bin/promote-candidate` on this path. They belong to the disabled `Release
+artifact` Actions workflow and authenticate only that workflow's bot markers
+and statuses, which the local path never creates. Outside Actions, both refuse
+and name the local steps. The local equivalents are the gate that
+`promote-local-candidate` runs, `bin/release-publication verify` after
+publication, and `bin/sdlc-release record` and `finalize`.
+
 ## Server image
 
 Publishing a server image is deferred to

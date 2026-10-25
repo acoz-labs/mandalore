@@ -27,6 +27,18 @@ case "$mode" in
     exit 64
     ;;
 esac
+# Only the Release artifact workflow writes the bot nomination, acceptance and
+# status markers that artifact mode authenticates; the local path never does.
+if [[ "$mode" == "artifact" && "${GITHUB_ACTIONS:-}" != "true" ]]; then
+  cat >&2 <<'EOF'
+bin/finalize-release artifact runs only in the Release artifact Actions workflow.
+The local release path does not use it. Run instead: bin/sdlc-release nominate,
+an acceptance receipt (bin/sdlc-evidence run and publish), bin/promote-local-candidate
+(which runs bin/sdlc-release gate), bin/release-publication verify, then
+bin/sdlc-release record and finalize. See docs/delivery.md.
+EOF
+  exit 64
+fi
 
 repo="${GITHUB_REPOSITORY:-}"
 server_url="${GITHUB_SERVER_URL:-https://github.com}"
