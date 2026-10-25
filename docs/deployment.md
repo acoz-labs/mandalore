@@ -15,7 +15,7 @@ container image: operators build it from `packaging/server`, and a published
 [server image](delivery.md#server-image) will follow in #188. The
 [Claude plugin](../plugins/claude/README.md) isn't a release asset; it installs
 from the repository's marketplace. The latest release is
-[2.0.1](releases/2.0.1.md), and the [release records](releases/) keep the
+[2.0.2](releases/2.0.2.md), and the [release records](releases/) keep the
 1.x history, when releases also shipped native plugin packages. Publication does
 not automatically update an existing installation.
 
