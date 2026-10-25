@@ -8,6 +8,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 )
 
 // ClientInfo describes one installation of an OAuth client, or a pending
@@ -16,9 +18,11 @@ import (
 type ClientInfo struct {
 	ID           string           `json:"id"`
 	Installation string           `json:"installation,omitempty"`
+	Label        string           `json:"label"`
+	Hint         string           `json:"hint"`
 	Name         string           `json:"name"`
 	Kind         string           `json:"kind"`
-	Status       string           `json:"status"` // pending or approved
+	Status       string           `json:"status"` // pending, approved or expired
 	Registered   time.Time        `json:"registered"`
 	FirstSeen    time.Time        `json:"first_seen,omitzero"`
 	LastUsed     time.Time        `json:"last_used,omitzero"`
@@ -46,6 +50,7 @@ func Clients(c Config) ([]ClientInfo, error) {
 	out := []ClientInfo{}
 	now := time.Now()
 	err = store.view(func(st *oauthState) error {
+		live := st.liveTokens(now)
 		for _, cl := range st.Clients {
 			base := ClientInfo{ID: cl.ID, Name: cl.Name, Kind: cl.Kind, Status: "pending", Registered: cl.Registered, RedirectURIs: cl.RedirectURIs, Grants: map[string]Scope{}}
 			installations := st.installationsOf(cl.ID)
@@ -55,10 +60,9 @@ func Clients(c Config) ([]ClientInfo, error) {
 			for _, in := range installations {
 				info := base
 				info.Installation, info.Status, info.FirstSeen, info.LastUsed, info.Grants = in.ID, "approved", in.FirstSeen, in.LastUsed, maps.Clone(in.Grants)
-				for _, t := range st.Tokens {
-					if t.Installation == in.ID && !t.Used && now.Before(t.Expires) {
-						info.Tokens++
-					}
+				info.Label, info.Hint, info.Tokens = in.Label, in.Hint, live[in.ID]
+				if st.expired(in, live, now) {
+					info.Status = "expired"
 				}
 				out = append(out, info)
 			}
@@ -108,6 +112,61 @@ func RevokeInstallation(c Config, id string) (string, error) {
 		return nil
 	})
 	return client, err
+}
+
+// maxLabel is the longest installation label, in characters.
+const maxLabel = 64
+
+// LabelInstallation sets the owner's label for an installation, shown by
+// `server clients list`; an empty label removes it. A label is plain text:
+// at most maxLabel characters, with no control or formatting characters.
+func LabelInstallation(c Config, id, label string) error {
+	label = strings.TrimSpace(label)
+	if !utf8.ValidString(label) || utf8.RuneCountInString(label) > maxLabel || strings.IndexFunc(label, unprintable) >= 0 {
+		return fmt.Errorf("a label is plain text of at most %d characters, with no control characters", maxLabel)
+	}
+	store, err := adminStore(c)
+	if err != nil {
+		return err
+	}
+	return store.update(func(st *oauthState) error {
+		in := st.Installations[id]
+		if in == nil {
+			return fmt.Errorf("unknown installation %q", id)
+		}
+		in.Label = label
+		return nil
+	})
+}
+
+// unprintable matches control and formatting characters, such as escapes
+// and bidirectional overrides, that would let a label rewrite a terminal.
+func unprintable(r rune) bool { return unicode.IsControl(r) || unicode.Is(unicode.Cf, r) }
+
+// PruneInstallations removes every expired installation now, instead of a
+// day after its last use, and returns their IDs.
+func PruneInstallations(c Config) ([]string, error) {
+	store, err := adminStore(c)
+	if err != nil {
+		return nil, err
+	}
+	pruned := []string{}
+	err = store.update(func(st *oauthState) error {
+		now := store.now()
+		live := st.liveTokens(now)
+		for id, in := range st.Installations {
+			if st.expired(in, live, now) {
+				delete(st.Installations, id)
+				pruned = append(pruned, id)
+			}
+		}
+		sort.Strings(pruned)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return pruned, nil
 }
 
 // SetClientScope changes the grant of every installation of a client on one

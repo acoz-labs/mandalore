@@ -136,10 +136,15 @@ it has seen: each approval of a document client creates a new installation,
 and the token family that approval starts is that installation's. A DCR
 registration is made by one installation, so it has one installation, which
 later authorizations reuse. Each installation has an ID (`inst-…`), its own
-grants, a first-seen time (its approval) and a last-used time (its last token
-issue). An installation of a document client ends when its family does, by
-logout, refresh-token replay or revoke; it is pruned a day after its last use
-with no live token. A DCR installation lasts as long as its registration.
+grants, a first-seen time (its approval), a last-used time, a hint and an
+optional label (see [Telling installations apart](#telling-installations-apart)).
+An installation of a document client ends when its family does, by logout,
+refresh-token replay or revoke: once it has no live token and its approval's
+2-minute code can no longer be redeemed, it is `expired`, since its client's
+next authorization is a new installation. An expired installation is pruned
+a day after its last use, or at once by `server clients prune`. A DCR
+installation lasts as long as its registration, with or without live tokens,
+since it authorizes again with its grant.
 
 **Authorization.** PKCE S256 is required; `plain` or a missing challenge is
 refused. `resource` is required and must be one of the signets' MCP URLs. A
@@ -360,10 +365,21 @@ in throwaway volumes: the health check, `/healthz`, MCP `tools/list` through
 
 - `mandalore server owner enroll --config FILE [--replace]` prints the one-time
   owner passkey enrollment link (see [Owner approval](#owner-approval)).
-- `mandalore server clients list --config FILE` lists one entry per approved
-  installation, and one per pending client: client ID, installation ID, name,
-  kind, registered, first seen, last used, redirect URIs, grants per signet and
-  live tokens. Installations of a metadata-document client share its client ID.
+- `mandalore server clients list --config FILE [--format json|text]` lists one
+  entry per installation, and one per pending client: client ID, installation
+  ID, label, hint, name, kind, status (`approved`, `expired` or `pending`),
+  registered, first seen, last used, redirect URIs, grants per signet and live
+  tokens. Installations of a metadata-document client share its client ID.
+  `--format text` prints the same fields as one block per entry; the default
+  is the JSON envelope.
+- `mandalore server clients label --config FILE --installation ID TEXT` sets
+  the owner's label for an installation, such as `Work laptop`; an empty
+  `TEXT` (`""`) removes it. A label is plain text of at most 64 characters,
+  trimmed, with no control or formatting characters. Only someone who can run
+  admin commands against `state_dir` can set one; no HTTP path changes it.
+- `mandalore server clients prune --config FILE` removes every `expired`
+  installation now and lists their IDs. A client left with no installation goes
+  with them once its registration is a day old.
 - `mandalore server clients revoke --config FILE --installation ID` removes one
   installation, its grants and its tokens; other installations of the client
   keep working. `--client ID` instead removes the client and every
@@ -382,6 +398,40 @@ in throwaway volumes: the health check, `/healthz`, MCP `tools/list` through
   installation, new or migrated, never does: its next authorization is a new
   installation, whose scope the owner picks on the consent page.
 
+### Telling installations apart
+
+Each installation shows three things that tell it apart from others of the
+same client:
+
+- **Hint**: the first 120 characters of the `User-Agent` of the browser that
+  approved it on the consent page, with control and formatting characters
+  removed, such as the browser and operating system. It changes when a DCR
+  installation is approved again. No IP address or other network detail is
+  stored.
+- **Last used**: the last token issue or refresh, or authenticated MCP
+  request. An MCP request saves it only when the stored time is at least a
+  minute old, so it is accurate to a minute and costs at most one state write
+  per installation per minute. If the save fails, the request still succeeds,
+  the server logs it, and a request a minute later tries again.
+- **Label**: the owner's own name for it, from `server clients label`.
+
+To find which installation is which machine before revoking or narrowing one:
+
+1. Run `mandalore server clients list --config FILE --format text` and note
+   each installation's last used.
+2. On the machine, call any Mandalore tool, such as a recall, at least a
+   minute after its previous call, so the save isn't skipped. Keep other
+   machines idle meanwhile, or note which installations moved together.
+3. List again. The installation whose last used moved is that machine; label
+   it with `server clients label --installation ID TEXT`. A new sign-in by a
+   metadata-document client creates a new installation instead, whose first
+   seen is the sign-in.
+
+Installations migrated by 2.0.2 have no hint, and first seen is the same for
+all of a client's. Label them the same way, one machine at a time: call from
+the machine, see whose last used moved, and label it. An `expired` migrated
+installation has no live token, so no machine uses it; prune it.
+
 ### Upgrading OAuth state from 2.0.1
 
 2.0.0 and 2.0.1 kept one grant per `client_id`. 2.0.2 migrates
@@ -396,7 +446,11 @@ in throwaway volumes: the health check, `/healthz`, MCP `tools/list` through
   with no live tokens has nothing to migrate, and its next sign-in needs
   consent, as every new installation's does.
 - First seen is the client's registration time for migrated installations,
-  and last used is the family's last token issue.
+  and last used is the family's last token issue. They have no hint; see
+  [Telling installations apart](#telling-installations-apart) to label them.
+- A document-client family whose tokens have all expired, but are still in
+  the file, becomes an `expired` installation, which `server clients prune`
+  removes.
 
 Installation IDs of migrated state derive from the client and family, so
 `server clients list` shows the same IDs before and after the server first
