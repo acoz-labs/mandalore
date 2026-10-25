@@ -77,7 +77,7 @@ provider. All endpoints are on `public_url`:
 | --- | --- |
 | `/.well-known/oauth-protected-resource[/s/<slug>/mcp]` | RFC 9728 metadata per signet: `resource` is the signet's MCP URL, the only authorization server is this one, scopes `memory:read` and `memory:write`. One signet answers at the bare path (and at `/.well-known/oauth-protected-resource/mcp`). |
 | `/.well-known/oauth-authorization-server` | RFC 8414 metadata: S256 PKCE only, public clients (`none`), client ID metadata documents, `/register`, and `offline_access`. |
-| `POST /register` | RFC 7591 dynamic registration (JSON). The client is pending, with no access, until the owner approves it. At most 20 pending; a pending client expires after 24 hours; 10 registrations per peer address per 10 minutes. Behind a tunnel every request shares the tunnel's address. |
+| `POST /register` | RFC 7591 dynamic registration (JSON). The client is pending, with no access, until the owner approves it. 10 registrations per 10 minutes from all peers together; over that it answers 429 with `Retry-After`. No forwarded address header is trusted. At most 20 pending: a new registration evicts the oldest pending one, never an approved client, and a pending client expires after 24 hours. |
 | `GET /authorize` | Authorization code request. |
 | `POST /consent` | The owner's approve or deny decision. |
 | `POST /token` | Form-encoded `authorization_code` and `refresh_token` grants. RFC 6749 error codes. |

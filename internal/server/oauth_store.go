@@ -1,6 +1,7 @@
 package server
 
 import (
+	"cmp"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
@@ -8,6 +9,8 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"slices"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -202,14 +205,27 @@ func (st *oauthState) prune(now time.Time) {
 	}
 }
 
-func (st *oauthState) pending(now time.Time) int {
-	n := 0
+// evictPending makes room for one more pending client by removing the oldest
+// pending ones, so registrations that are never approved can't fill the cap
+// for good. A client with any grant is never touched. With maxPending at least
+// registerLimit, a new registration survives at least registerWindow, longer
+// than its consent request lasts.
+func (st *oauthState) evictPending(now time.Time) {
+	var pending []*oauthClient
 	for _, c := range st.Clients {
 		if len(c.Grants) == 0 && now.Before(c.Registered.Add(pendingTTL)) {
-			n++
+			pending = append(pending, c)
 		}
 	}
-	return n
+	if len(pending) < maxPending {
+		return
+	}
+	slices.SortFunc(pending, func(x, y *oauthClient) int {
+		return cmp.Or(x.Registered.Compare(y.Registered), strings.Compare(x.ID, y.ID))
+	})
+	for _, c := range pending[:len(pending)-maxPending+1] {
+		delete(st.Clients, c.ID)
+	}
 }
 
 // revokeFamily deletes every token issued from one authorization.

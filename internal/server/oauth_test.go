@@ -3,14 +3,17 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/netip"
 	"net/url"
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -690,40 +693,172 @@ func TestAuthorizationCodeReplayRevokesItsTokens(t *testing.T) {
 	}
 }
 
-// DCR: at most 20 pending registrations, 24 h expiry, rate-limited per address.
-func TestRegistrationLimits(t *testing.T) {
+// register posts one anonymous DCR registration from the test listener's
+// loopback peer, as every request through a tunnel arrives, and returns the
+// status and response.
+func (e *oauthEnv) register(t *testing.T, header http.Header) (*http.Response, map[string]any) {
+	t.Helper()
+	req, _ := http.NewRequest(http.MethodPost, publicURL+"/register", strings.NewReader(`{"redirect_uris":["https://claude.ai/api/mcp/auth_callback"]}`))
+	for k, v := range header {
+		req.Header[k] = v
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := e.agent.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	var out map[string]any
+	_ = json.NewDecoder(resp.Body).Decode(&out)
+	return resp, out
+}
+
+func pendingClients(t *testing.T, c Config) []string {
+	t.Helper()
+	clients, err := Clients(c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var ids []string
+	for _, cl := range clients {
+		if cl.Status == "pending" {
+			ids = append(ids, cl.ID)
+		}
+	}
+	return ids
+}
+
+// DCR is limited globally, never by a forwarded address: a flood from one
+// loopback peer delays registration by at most registerWindow once it stops.
+func TestRegistrationFloodRecovers(t *testing.T) {
 	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
-	register := func() int {
-		resp, _ := e.postJSON(t, e.agent, "/register", map[string]any{"redirect_uris": []string{"https://claude.ai/api/mcp/auth_callback"}})
-		return resp.StatusCode
-	}
 	for i := 0; i < registerLimit; i++ {
-		if code := register(); code != http.StatusCreated {
-			t.Fatalf("registration %d: %d", i, code)
+		if resp, out := e.register(t, http.Header{"X-Forwarded-For": {fmt.Sprintf("192.0.2.%d", i)}}); resp.StatusCode != http.StatusCreated {
+			t.Fatalf("registration %d: %d %v", i, resp.StatusCode, out)
+		}
+		e.clock.advance(time.Second)
+	}
+	for _, h := range []http.Header{{}, {"X-Forwarded-For": {"198.51.100.1"}}, {"X-Real-Ip": {"198.51.100.2"}}, {"Cf-Connecting-Ip": {"198.51.100.3"}}, {"Forwarded": {"for=198.51.100.4"}}} {
+		resp, out := e.register(t, h)
+		if resp.StatusCode != http.StatusTooManyRequests || out["error"] != "temporarily_unavailable" {
+			t.Fatalf("over the limit with %v: %d %v", h, resp.StatusCode, out)
+		}
+		if got, want := resp.Header.Get("Retry-After"), strconv.Itoa(int((registerWindow - registerLimit*time.Second).Seconds())); got != want {
+			t.Fatalf("Retry-After %q, want %q", got, want)
 		}
 	}
-	if code := register(); code != http.StatusTooManyRequests {
-		t.Fatalf("over the rate limit: %d", code)
+	// The window slides: the first registration ages out first.
+	e.clock.advance(registerWindow - registerLimit*time.Second)
+	if resp, _ := e.register(t, nil); resp.StatusCode != http.StatusCreated {
+		t.Fatalf("after the first registration left the window: %d", resp.StatusCode)
+	}
+	if resp, _ := e.register(t, nil); resp.StatusCode != http.StatusTooManyRequests || resp.Header.Get("Retry-After") != "1" {
+		t.Fatalf("while the rest are in the window: %d %q", resp.StatusCode, resp.Header.Get("Retry-After"))
 	}
 	e.clock.advance(registerWindow)
-	for i := registerLimit; i < maxPending; i++ {
-		if code := register(); code != http.StatusCreated {
-			t.Fatalf("registration %d: %d", i, code)
-		}
-	}
-	e.clock.advance(registerWindow)
-	if code := register(); code != http.StatusServiceUnavailable {
-		t.Fatalf("21st pending registration: %d", code)
-	}
-	e.clock.advance(pendingTTL)
-	if code := register(); code != http.StatusCreated {
-		t.Fatalf("after pending registrations expired: %d", code)
-	}
-	if clients, _ := Clients(e.config); len(clients) != 1 {
-		t.Fatalf("expired registrations kept: %d", len(clients))
+	client := e.registerClient(t, "Legitimate", "https://claude.ai/api/mcp/auth_callback")
+	if ids := pendingClients(t, e.config); !slices.Contains(ids, client) || len(ids) != registerLimit+2 {
+		t.Fatalf("pending after the flood: %v", ids)
 	}
 	if resp, out := e.postJSON(t, e.agent, "/register", "not an object"); resp.StatusCode != http.StatusBadRequest {
 		t.Fatalf("malformed registration: %d %v", resp.StatusCode, out)
+	}
+}
+
+// Pending clients past maxPending are evicted oldest first, and expire after
+// pendingTTL. Approved clients are never evicted and gain nothing: the owner
+// still signs in for every code. An evicted client can't be approved.
+func TestPendingRegistrationsAreEvicted(t *testing.T) {
+	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
+	e.enrollOwner(t)
+	redirect := "https://claude.ai/api/mcp/auth_callback"
+	approved := e.registerClient(t, "Approved", redirect)
+	tok := e.tokens(t, approved, redirect, "/mcp", "", ScopeRead)
+
+	victim := e.registerClient(t, "Victim", redirect)
+	e.clock.advance(registerWindow)
+	var (
+		flood         []string
+		consent, csrf [][]byte
+	)
+	for len(flood) < 3*maxPending {
+		if len(flood) == maxPending-1 {
+			// The victim is now the oldest pending client of a full cap:
+			// the owner opens its consent page just before the next
+			// registration evicts it.
+			_, challenge := pkce()
+			resp, err := e.browser.Get(authorizeURL(victim, redirect, challenge, publicURL+"/mcp", ""))
+			if err != nil {
+				t.Fatal(err)
+			}
+			page, _ := io.ReadAll(resp.Body)
+			resp.Body.Close()
+			if consent, csrf = requestField.FindSubmatch(page), csrfField.FindSubmatch(page); consent == nil || csrf == nil {
+				t.Fatalf("expected the consent page: %s", page)
+			}
+		}
+		e.clock.advance(registerWindow / registerLimit)
+		resp, out := e.register(t, nil)
+		if resp.StatusCode != http.StatusCreated {
+			t.Fatalf("registration %d: %d %v", len(flood), resp.StatusCode, out)
+		}
+		flood = append(flood, out["client_id"].(string))
+		pending := pendingClients(t, e.config)
+		if len(pending) > maxPending {
+			t.Fatalf("%d pending clients", len(pending))
+		}
+		// A registration outlives a full window of later ones.
+		if i := len(flood) - 1 - registerLimit; i >= 0 && !slices.Contains(pending, flood[i]) {
+			t.Fatalf("registration %d evicted within one window", i)
+		}
+		if len(flood) == maxPending {
+			if slices.Contains(pending, victim) {
+				t.Fatal("the oldest pending client was not evicted")
+			}
+			// Its consent request is still live but can't approve it.
+			resp, _ := e.postForm(t, e.browser, "/consent", url.Values{"request": {string(consent[1])}, "csrf": {string(csrf[1])}, "decision": {"approve"}, "scope": {string(ScopeReadWrite)}})
+			if resp.StatusCode != http.StatusBadRequest || slices.Contains(pendingClients(t, e.config), victim) {
+				t.Fatalf("approving an evicted client: %d", resp.StatusCode)
+			}
+		}
+	}
+	if want := flood[len(flood)-maxPending:]; !slices.Equal(pendingClients(t, e.config), want) {
+		t.Fatalf("pending %v, want the newest %v", pendingClients(t, e.config), want)
+	}
+	resp, refreshed := e.postForm(t, e.agent, "/token", url.Values{"grant_type": {"refresh_token"}, "client_id": {approved}, "refresh_token": {tok["refresh_token"].(string)}})
+	if resp.StatusCode != http.StatusOK || e.mcpStatus(t, "/mcp", refreshed["access_token"].(string)) != http.StatusOK {
+		t.Fatalf("the flood evicted an approved client: %d %v", resp.StatusCode, refreshed)
+	}
+	clients, _ := Clients(e.config)
+	if clients[0].ID != approved || clients[0].Status != "approved" {
+		t.Fatalf("approved client after the flood: %+v", clients[0])
+	}
+
+	if _, out := e.postForm(t, e.agent, "/token", url.Values{"grant_type": {"refresh_token"}, "client_id": {victim}, "refresh_token": {"x"}}); out["error"] != "invalid_client" {
+		t.Fatalf("evicted client at the token endpoint: %v", out)
+	}
+
+	// An approved client without an owner session gets the sign-in page, not a code.
+	e.browser.Jar, _ = cookiejar.New(nil)
+	_, challenge := pkce()
+	resp, err := e.browser.Get(authorizeURL(approved, redirect, challenge, publicURL+"/mcp", ""))
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusOK || resp.Header.Get("Location") != "" {
+		t.Fatalf("approved client without an owner session: %d %q", resp.StatusCode, resp.Header.Get("Location"))
+	}
+
+	e.clock.advance(pendingTTL)
+	if resp, _ := e.register(t, nil); resp.StatusCode != http.StatusCreated {
+		t.Fatalf("after pending registrations expired: %d", resp.StatusCode)
+	}
+	if ids := pendingClients(t, e.config); len(ids) != 1 {
+		t.Fatalf("expired registrations kept: %d", len(ids))
+	}
+	if clients, _ := Clients(e.config); len(clients) != 2 || clients[0].ID != approved {
+		t.Fatalf("clients after expiry: %+v", clients)
 	}
 }
 
