@@ -13,13 +13,9 @@ import (
 
 	"github.com/acoz-labs/mandalore/internal/api"
 	"github.com/acoz-labs/mandalore/internal/binding"
-	"github.com/acoz-labs/mandalore/internal/claudecode"
-	"github.com/acoz-labs/mandalore/internal/codex"
 	"github.com/acoz-labs/mandalore/internal/foundlings"
-	memorymcp "github.com/acoz-labs/mandalore/internal/mcp"
 	"github.com/acoz-labs/mandalore/internal/memory"
 	"github.com/acoz-labs/mandalore/internal/readiness"
-	"github.com/acoz-labs/mandalore/internal/sessionsync"
 )
 
 var version = "0.0.0-dev"
@@ -27,6 +23,10 @@ var sourceCommit = "" // Stamped only by the pinned exact-source release builder
 
 const help = `Mandalore — durable memory across tools
 
+  mandalore serve --config FILE                  Single-writer MCP server for configured signets
+  mandalore server status --config FILE          Per-signet head, last push, pending push and remote
+  mandalore server reconcile --config FILE [--signet SLUG]
+                                                 Fetch, validate and fast-forward a remote-ahead signet
   mandalore menu [--plain]                       Guided setup, inspection and recovery
   mandalore operations                          JSON schemas and implemented operations
   mandalore launch NAME [--agent NAME] [--preview] [-- native arguments]
@@ -48,17 +48,12 @@ const help = `Mandalore — durable memory across tools
   mandalore call signet_upgrade_preview|signet_upgrade_apply|signet_upgrade_recover < input.json
   mandalore call retention_preview --read-only < explicit-policy-selection.json
   mandalore memory remember|journal-append --binding FILE < input.json
-  mandalore memory remember-and-sync|journal-append-and-sync --binding FILE < input.json
-  mandalore memory git-init|checkpoint|sync-status --binding FILE
-  mandalore memory sync --binding FILE [--timeout-seconds 10]
+  mandalore memory git-init|checkpoint --binding FILE
   mandalore foundling list|inspect|history|search|read --binding FILE [options]
   mandalore foundling preview|register|connect|disconnect|promote --binding FILE < input.json
   mandalore foundling status|canon-scopes|canon-recall|canon-heads|canon-promote --binding FILE < input.json
-  mandalore foundling refresh --binding FILE [enabled-session guards] < session.json
+  mandalore foundling refresh --binding FILE < session.json
   mandalore call OPERATION --binding FILE < input.json
-  mandalore razor-crest serve --config FILE     Optional authenticated remote MCP
-  mandalore mcp --binding FILE [--harness NAME] [--read-only]
-  mandalore codex-memory-hook [--binding FILE]   Read-only native lifecycle JSON
   mandalore connection plan [--binary FILE] [--binding FILE] [profile options]
   mandalore connection apply < approved-plan.json
   mandalore connection assess --harness codex|pi|claude-code|hermes [profile options] [--binding FILE] [--connection-root DIR] [--prompt]
@@ -87,14 +82,12 @@ Foundling options: --foundling-id ID, --query TEXT (search), --limit N (list/his
 --excerpt-bytes N --budget-bytes N (search), --locator PATH --limit-bytes N (read).
 Search offsets select document ranks; read offsets select UTF-8 bytes.
 Foundling setup is CLI-only. Legacy uses pinned historical text; canon uses session-pinned signet evidence.
-Canon operations take structured JSON with the exact session_id from native lifecycle context.
-Canon refresh requires enabled-session policy guards; ordinary canon reads never fetch.
-MCP exposes legacy consultation plus canon status/scopes/recall/heads/promotion and explicit refresh.
+Canon operations take structured JSON with an exact session_id. Canon refresh is
+unavailable until the server serves canon references; ordinary canon reads never fetch.
 Common options: --binding FILE, --harness NAME, --read-only, --help.
 Optional connection guards: --binding-sha256 SHA256 --signet-id ID (both required).
 Binding selection: explicit file, then MANDALORE_BINDING, then platform config.
 No cwd-based bank discovery. Local saves and delivery receipts are distinct.
-Combined save-and-sync calls attempt delivery once; inspect saved and delivery separately.
 Release inspection/planning are read-only; apply changes only the selected CLI installation.
 Release install/menu use default-No previews; a native connection update is a separate choice.
 Publication uses separate maintainer acceptance/release gates; local builds are not releases.
@@ -128,8 +121,11 @@ func bad(out io.Writer, message string) int {
 
 func run(ctx context.Context, args []string, input io.Reader, out, errout io.Writer) int {
 	ctx = readiness.WithBuild(ctx, version, sourceCommit)
-	if len(args) > 0 && args[0] == "razor-crest" {
-		return runRazorCrest(ctx, args[1:], out)
+	if len(args) > 0 && args[0] == "serve" {
+		return runServe(ctx, args[1:], out, errout)
+	}
+	if len(args) > 0 && args[0] == "server" {
+		return runServer(ctx, args[1:], out)
 	}
 	if len(args) > 0 && args[0] == "launch" {
 		return runLaunch(ctx, args[1:], input, out, errout)
@@ -148,62 +144,6 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 	}
 	if len(args) > 0 && args[0] == "connection" {
 		return runConnection(ctx, args[1:], input, out)
-	}
-	if len(args) > 0 && args[0] == "claude-code-memory-hook" {
-		f := flag.NewFlagSet("claude-code-memory-hook", flag.ContinueOnError)
-		f.SetOutput(io.Discard)
-		path := f.String("binding", "", "Machine-local binding file")
-		digest := f.String("binding-sha256", "", "Expected binding hash")
-		signet := f.String("signet-id", "", "Expected signet identity")
-		policy := f.String("session-policy", "", "Reviewed session transport policy")
-		policyHash := f.String("session-policy-sha256", "", "Expected session policy hash")
-		if err := f.Parse(args[1:]); err != nil || f.NArg() != 0 {
-			_, err := io.WriteString(out, "{}\n")
-			if err != nil {
-				return 1
-			}
-			return 0
-		}
-		c, err := openSession(*policy, *policyHash, *path, binding.Guard{SHA256: *digest, SignetID: *signet})
-		if err != nil {
-			_, err := io.WriteString(out, "{\"systemMessage\":\"Mandalore session policy invalid; automatic refresh and memory context unavailable.\"}\n")
-			if err != nil {
-				return 1
-			}
-			return 0
-		}
-		if err := claudecode.RunSession(ctx, *path, binding.Guard{SHA256: *digest, SignetID: *signet}, c, input, out); err != nil {
-			return 1
-		}
-		return 0
-	}
-	if len(args) > 0 && args[0] == "codex-memory-hook" {
-		f := flag.NewFlagSet("codex-memory-hook", flag.ContinueOnError)
-		f.SetOutput(io.Discard)
-		path := f.String("binding", "", "Machine-local binding file")
-		digest := f.String("binding-sha256", "", "Expected binding hash")
-		signet := f.String("signet-id", "", "Expected signet identity")
-		policy := f.String("session-policy", "", "Reviewed session transport policy")
-		policyHash := f.String("session-policy-sha256", "", "Expected session policy hash")
-		if err := f.Parse(args[1:]); err != nil || f.NArg() != 0 {
-			_, err := io.WriteString(out, "{\"systemMessage\":\"Mandalore hook configuration is invalid; no memory was changed.\"}\n")
-			if err != nil {
-				return 1
-			}
-			return 0
-		}
-		c, err := openSession(*policy, *policyHash, *path, binding.Guard{SHA256: *digest, SignetID: *signet})
-		if err != nil {
-			_, err := io.WriteString(out, "{\"systemMessage\":\"Mandalore session policy invalid; automatic refresh and memory context unavailable.\"}\n")
-			if err != nil {
-				return 1
-			}
-			return 0
-		}
-		if err := codex.RunSession(ctx, *path, binding.Guard{SHA256: *digest, SignetID: *signet}, c, input, out); err != nil {
-			return 1
-		}
-		return 0
 	}
 	if len(args) == 0 || args[0] == "help" || args[0] == "--help" || args[0] == "-h" {
 		_, err := io.WriteString(out, help)
@@ -249,9 +189,6 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 			name = args[0] + "_" + strings.ReplaceAll(name, "-", "_")
 			human = true
 		}
-	case "mcp":
-		name = "mcp"
-		rest = args[1:]
 	default:
 		return emit(out, api.Failure("operation.unknown", "Unknown command; use --help.", false))
 	}
@@ -262,29 +199,20 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 			break
 		}
 	}
-	if selected == nil && args[0] != "mcp" {
+	if selected == nil {
 		return emit(out, api.Failure("operation.unknown", "Unknown operation; inspect the operation catalog.", false))
 	}
 	failureOut := out
-	if name == "mcp" {
-		failureOut = errout
-	}
 	f := flag.NewFlagSet(name, flag.ContinueOnError)
 	f.SetOutput(io.Discard)
 	path := f.String("binding", "", "Machine-local binding file")
-	harnessDefault := "cli"
-	if name == "mcp" {
-		harnessDefault = "mcp"
-	}
-	harness := f.String("harness", harnessDefault, "Attribution harness label")
+	harness := f.String("harness", "cli", "Attribution harness label")
 	readOnly := f.Bool("read-only", false, "Reject mutations")
-	policy := f.String("session-policy", "", "Reviewed session transport policy")
-	policyHash := f.String("session-policy-sha256", "", "Expected session policy hash")
 	bindingSHA := f.String("binding-sha256", "", "Expected binding bytes SHA-256; requires signet-id")
 	signetID := f.String("signet-id", "", "Expected signet identity; requires binding-sha256")
 	var repository, label, actor, displayName, query, kind, scopeID, recordID string
 	var foundlingID, registrationID, locator string
-	var limit, offset, budget, timeout, excerptBytes int
+	var limit, offset, budget, excerptBytes int
 	if human {
 		switch name {
 		case "signet_create", "signet_bind":
@@ -316,8 +244,6 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 			f.StringVar(&scopeID, "scope-id", "", "Stable scope ID")
 			f.IntVar(&limit, "limit", 5, "Page limit")
 			f.IntVar(&offset, "offset", 0, "Page offset")
-		case "memory_sync":
-			f.IntVar(&timeout, "timeout-seconds", 10, "Sync budget, 1–30 seconds")
 		case "foundling_list", "foundling_history":
 			f.IntVar(&limit, "limit", 5, "Page limit")
 			f.IntVar(&offset, "offset", 0, "Page offset")
@@ -377,7 +303,7 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 	if err := guard.Validate(); err != nil {
 		return bad(failureOut, "Connection guards require a lowercase SHA-256 and a valid signet ID together.")
 	}
-	if guard != (binding.Guard{}) && name != "mcp" && !selected.RequiresBinding {
+	if guard != (binding.Guard{}) && !selected.RequiresBinding {
 		return bad(failureOut, "Connection guards apply only to bound operations.")
 	}
 	if (kind == "") != (scopeID == "") {
@@ -386,11 +312,11 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 	if ctx.Err() != nil {
 		return emit(failureOut, api.Failure("operation.cancelled", "Operation cancelled before execution.", false))
 	}
-	if selected != nil && *readOnly && !selected.ReadOnly {
+	if *readOnly && !selected.ReadOnly {
 		return emit(out, api.Failure("operation.read_only", "Mutations are disabled for this connection.", false))
 	}
 	var service *memory.Service
-	if name == "mcp" || selected.RequiresBinding {
+	if selected.RequiresBinding {
 		var err error
 		if *path == "" {
 			*path, err = binding.DefaultPath()
@@ -403,33 +329,6 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 		}
 	}
 	a := api.New(service, *readOnly)
-	if *policy != "" || *policyHash != "" {
-		if *readOnly || service == nil {
-			return bad(failureOut, "Session transport requires an explicitly enabled bound connection; read-only cannot synchronize.")
-		}
-		c, err := openSession(*policy, *policyHash, *path, guard)
-		if err != nil {
-			return bad(failureOut, "Session transport policy or pinned selection is invalid.")
-		}
-		a, err = api.NewSession(service, c)
-		if err != nil {
-			return bad(failureOut, "Cannot enable selected session transport.")
-		}
-	}
-	if name == "mcp" {
-		reader, ok := input.(io.ReadCloser)
-		if !ok {
-			reader = io.NopCloser(input)
-		}
-		err := memorymcp.Run(ctx, a, reader, out)
-		if ctx.Err() != nil {
-			return emit(errout, api.Failure("operation.cancelled", "MCP server stopped.", false))
-		}
-		if err != nil {
-			return emit(errout, api.Failure("operation.io", "MCP transport failed; inspect the connection.", false))
-		}
-		return 0
-	}
 	var raw []byte
 	var value any
 	if human {
@@ -456,9 +355,7 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 			value = api.HistoryInput{RecordID: recordID, Offset: offset, Limit: &limit}
 		case "memory_journal":
 			value = api.JournalInput{Query: query, Limit: &limit}
-		case "memory_sync":
-			value = api.SyncInput{TimeoutSeconds: &timeout}
-		case "memory_inspect", "memory_git_init", "memory_checkpoint", "memory_sync_status":
+		case "memory_inspect", "memory_git_init", "memory_checkpoint":
 			value = struct{}{}
 		case "foundling_list":
 			value = api.PageInput{Offset: offset, Limit: &limit}
@@ -485,15 +382,4 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 		}
 	}
 	return emit(out, a.Call(ctx, name, raw))
-}
-
-func openSession(policy, policyHash, path string, guard binding.Guard) (*sessionsync.Coordinator, error) {
-	if policy == "" && policyHash == "" {
-		return nil, nil
-	}
-	runtime, err := os.Executable()
-	if err != nil {
-		return nil, err
-	}
-	return sessionsync.Open(policy, sessionsync.Selection{Binding: path, Guard: guard, Runtime: runtime, PolicySHA256: policyHash})
 }

@@ -21,6 +21,9 @@ type writeIntent struct {
 	Journal  *JournalEntry `json:"journal,omitempty"`
 }
 
+// ErrRequestMismatch means a key was reused with different input or author.
+var ErrRequestMismatch = errors.New("idempotency key payload mismatch")
+
 func (s *Service) intent(key, operation string, payload any) (string, string, error) {
 	if key == "" || len(key) > 1024 {
 		return "", "", errors.New("idempotency key requires 1–1024 bytes")
@@ -48,7 +51,7 @@ func (s *Service) RememberIdempotent(key string, input Write) (Revision, error) 
 		err = readJSON(path, &intent)
 		if err == nil {
 			if intent.Digest != digest || intent.Revision == nil || intent.Source == nil || intent.Journal != nil {
-				return errors.New("idempotency key payload mismatch")
+				return ErrRequestMismatch
 			}
 			result = *intent.Revision
 			var existing Revision
@@ -104,7 +107,7 @@ func (s *Service) AppendJournalIdempotent(key, kind, summary string) (JournalEnt
 		err = readJSON(path, &intent)
 		if err == nil {
 			if intent.Digest != digest || intent.Journal == nil || intent.Revision != nil || intent.Source != nil {
-				return errors.New("idempotency key payload mismatch")
+				return ErrRequestMismatch
 			}
 			entry = *intent.Journal
 		} else {

@@ -1,82 +1,21 @@
-# CLI and local MCP
+# CLI and operation catalog
 
-The development CLI and stdio server use one typed operation dispatcher. They
-do not supply a model, replace native agent identity, discover memory from cwd,
+Mandalore 2.0 serves agents only through the [server](server.md)
+(`mandalore serve`), which takes its tools from this catalog by scope. The 1.x
+stdio MCP server, native lifecycle hooks, enabled-session transport and the
+save-and-sync tools are gone from the build; Git history keeps them. The 1.x
+connection installers described below still generate those removed entry points
+and leave with the plugins in #163.
+
+The development CLI uses one typed operation dispatcher. It does
+not supply a model, replace native agent identity, discover memory from cwd,
 or discover transport permission from conversation text. Default administrative
-CLI calls retain their declared local/network effects. Explicitly enabled native
-sessions add software-controlled transport through a pinned session policy.
-CLI-only connection operations install the native
+CLI calls retain their declared local/network effects. CLI-only connection operations install the native
 plugin after explicit approval; they are not memory MCP tools. The
 [guided menu](setup.md) delegates to these same operations. Explicit Git work is
 described in [synchronization](synchronization.md). Exact-candidate/release
 acceptance and publication are recorded for [v1.0.0](releases/1.0.0.md).
 No live migration is implied.
-
-## Enabled-session API
-
-Managed native connections can select `session_transport_version: 1` through
-`connection plan --session-sync`. The generated policy pins its exact bytes,
-binding, signet and retained runtime. Native entry points supply both
-`--session-policy` and `--session-policy-sha256` alongside binding identity guards.
-Absent policy preserves the administrative/legacy API; it does not infer
-permission from installed skills, remembered content or environment selection.
-
-The active session catalog declares network effects for semantic writes and
-refreshing lifecycle context. `memory_session_catalog` is a CLI-only inspection
-of that selected catalog, not an additional memory tool or a synchronization.
-MCP/native tool clients receive the active schemas for their connection.
-
-Semantic write envelopes preserve the original `result` or partial `error` and
-add optional top-level `session_sync` metadata. Its `attempted` and `coalesced`
-fields describe invocation; `status` describes observed delivery/head/conflicts,
-and `error` describes a failed or interrupted attempt. A successful local write
-remains `ok: true` even when transport fails. Inspect the complete envelope;
-dropping `session_sync` drops delivery evidence. Reuse the saved identity when
-retrying transport, never resubmit the semantic write.
-
-Existing combined save operations retain their nested `saved`/`delivery` shape
-and make one software-controlled attempt in this mode. Ordinary remember/journal
-operations already trigger delivery, so models need no companion sync call.
-Default administrative commands retain their original schemas and local-only
-effects. Enforced read-only and enabled-session transport cannot be combined.
-
-## Save with bounded delivery
-
-In the default administrative and legacy connection catalog, `memory_remember`
-and `memory_journal_append` remain local-only, with unchanged inputs and
-annotations. Enabled-session catalogs declare post-write network effects and
-return separate save/delivery outcomes for semantic mutations. New network-capable companions are
-`memory_remember_and_sync` and `memory_journal_append_and_sync`. CLI equivalents:
-
-```sh
-mandalore memory remember-and-sync --binding /example/binding.json < record-and-delivery.json
-mandalore memory journal-append-and-sync --binding /example/binding.json < entry-and-delivery.json
-```
-
-Inputs nest the existing knowledge fields under `record` or journal fields under
-`entry`. Optional `timeout_seconds` bounds the delivery stage only: default 3,
-range 1–30. The operation catalog supplies authoritative schemas. Invalid shape,
-timeout or memory content is refused before publication; failed saves do not sync.
-Both companions are non-idempotent mutations. Read-only connections refuse them.
-
-On a successful local save the result contains `saved` and a typed `delivery`
-envelope. Outer `ok: true` (and CLI exit zero) means the save completed, **not**
-that delivery succeeded. `saved` retains signet/record/event identity and local
-durability; its synchronization field summarizes the delivery state. Inspect
-`delivery.result.delivered`, state, exact heads and conflicts, or `delivery.error`.
-`delivery.ok: true` can still mean pending or local-only. A conflict can be
-delivered without being semantically resolved. A failed delivery retains the
-successful save and sanitized error/phase evidence rather than turning it into
-an apparently failed write. Never repeat a save just to retry delivery.
-
-No transaction spans both stages. Another writer can act between them; ordinary
-sync validates and may deliver other valid pending work too. A cancelled/lost
-response may hide a save or completed push: inspect before retrying. No Git setup,
-credential enrollment, rollback, tight retry or background worker is implicit.
-Legacy connections use local-only tools for no-sync tasks and neither type under
-no-save/read-only. In enabled sessions, requests not to remember control content;
-transport of previously saved records remains enabled until actual disconnection.
-See [delivery semantics](synchronization.md#save-triggered-delivery).
 
 ## Explicit withdrawal, restoration and format upgrades
 
@@ -460,7 +399,6 @@ existing configuration:
 ./mandalore memory inspect --binding /example/local/binding.json
 ./mandalore memory remember --binding /example/local/binding.json < confirmed-memory.json
 ./mandalore memory recall --binding /example/local/binding.json --query project
-./mandalore mcp --binding /example/local/binding.json --harness example-agent
 ```
 
 `confirmed-memory.json` can contain:
@@ -573,11 +511,10 @@ uses the same decoder and methods as the human commands and MCP tools.
 | `migration_preflight`, `migration_apply` | `migration preflight`, `migration apply` | Not exposed |
 | `memory_recall`, `memory_scopes`, `memory_history` | `memory recall`, `scopes`, `history` | Bound signet only |
 | `memory_journal`, `memory_inspect` | `memory journal`, `inspect` | Bound signet only |
-| `memory_context` | `call memory_context` with JSON `prompt` | Not exposed; read-only native lifecycle packet |
 | `pi_package_inspect` | `call pi_package_inspect` with `{}` | Not exposed; unbound embedded-package metadata |
 | `pi_connection_plan`, `pi_connection_apply`, `pi_connection_doctor`, `pi_connection_repair_plan` | `connection plan/apply/armorer/repair --harness pi` | Not exposed; explicit native administration |
 | `memory_remember`, `memory_journal_append` | `memory remember`, `journal-append` | Bound signet only |
-| `memory_git_init`, `memory_checkpoint`, `memory_sync`, `memory_sync_status` | `memory git-init`, `checkpoint`, `sync`, `sync-status` | Bound signet only |
+| `memory_git_init`, `memory_checkpoint` | `memory git-init`, `checkpoint` | Bound signet only |
 | `foundling_list`, `foundling_inspect`, `foundling_search`, `foundling_read`, `foundling_promote` | `foundling list`, `inspect`, `search`, `read`, `promote` | Bound signet only |
 | `foundling_preview`, `foundling_register`, `foundling_connect`, `foundling_disconnect`, `foundling_history` | `foundling preview`, `register`, `connect`, `disconnect`, `history` | Not exposed; still require a selected binding |
 
@@ -644,31 +581,14 @@ Strict object input rejects duplicate, unknown or incorrectly cased fields,
 wrong types, missing required fields, trailing objects and excessive nesting.
 Arguments are at most 32 KiB. Semantic envelopes are at most 64 KiB; recall's
 default result budget is 8192 bytes (range 1024–32768). Default page/result limit
-is 5 (range 1–50); zero is invalid, not an implicit default. MCP newline input
-frames have a separate 256 KiB limit. Schemas and duplicated text/structured
-content add protocol overhead outside the semantic result budget.
+is 5 (range 1–50); zero is invalid, not an implicit default. The
+[server](server.md) caps MCP request bodies at 64 KiB; schemas and duplicated
+text/structured content add protocol overhead outside the semantic result budget.
 
 `--read-only` refuses mutations before reading their stdin or touching a binding.
-Default administrative reads and discovery do not journal, repair, enroll or
-sync. Enabled-session lifecycle entry points attempt transport before context
-assembly under the selected policy; they never extract memories or enroll Git. A running
-MCP server retains one binding; changing its local file requires restarting the
-server. Reads load current local records; no persistent model context is refreshed
-merely by updating those records.
-
-Without a session policy, `memory_context` assembles fresh local orientation, up to three bank-wide recall
-hits within 4096 result bytes, and five routing scopes. It truncates its prompt
-query to 2048 UTF-8 bytes and caps the encoded packet at 16383 bytes. The packet
-labels retrieved data as untrusted evidence, never reads native transcripts or
-automatically scans foundlings, and does not save or synchronize even for an
-explicit consolidation cue. Read failures return a compact warning without raw
-file contents. Native adapters must preserve their host prompt and separately
-honor connection read-only settings; a packet is not authorization to mutate.
-An enabled session refreshes through its separate policy-aware boundary before
-calling the local context builder.
-Omitting `prompt` returns orientation only after opening the guarded binding,
-without scanning records; an explicitly supplied empty prompt performs local
-bank-wide recall. Attachment validation is not a whole-bank health check.
+Reads and discovery do not journal, repair, enroll or sync. Reads load current
+local records. Lifecycle context for agents is the server's `memory_context`
+tool, described in the [server contract](server.md#tools).
 
 ## Binding and provenance
 
@@ -729,22 +649,13 @@ Successful mutation receipts identify immutable records and say
 remote delivery or exactly-once writes. Cancellation is checked at operation
 boundaries; synchronous filesystem work already underway is not transactionally
 rolled back or instantaneously interruptible. A published write retains its
-receipt when available. SIGINT/SIGTERM stop the process; clean MCP stdin EOF
-closes the server normally.
+receipt when available. SIGINT/SIGTERM stop the process.
 
 ## Verification boundary
 
-`mandalore codex-memory-hook [--binding FILE]` is a separate native adapter, not a
-shared memory operation. It is local-only without a session policy; an explicitly
-pinned enabled-session policy authorizes refresh before context assembly. It consumes native event JSON and emits
-Codex hook context/warnings rather than the CLI envelope. Invalid configuration
-or unavailable memory produces a nonblocking warning. See the
-[Codex integration](../plugins/codex/README.md) for budgets, installation and
-native verification boundaries. It does not belong in the MCP tool catalog.
-
-Tests cover strict schemas, binding isolation/replacement, CLI/MCP equivalence,
-compiled executable create/correction/history, unrelated cwd, explicit binding
-precedence, no-write hashes, real stdio, EOF and interruption. Full race tests,
+Tests cover strict schemas, binding isolation/replacement, compiled executable
+create/correction/history, unrelated cwd, explicit binding precedence, no-write
+hashes, and the compiled server over Streamable HTTP with backup and a clean stop. Full race tests,
 vet and four platform builds run in `bin/ci`. Cross-builds are not native runtime
 acceptance. These tests use synthetic local data and an SDK client, not a model
 conversation or installed native plugin. Native Codex acceptance is recorded in

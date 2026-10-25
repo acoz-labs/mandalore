@@ -16,10 +16,9 @@ import (
 	"github.com/acoz-labs/mandalore/internal/api"
 	"github.com/acoz-labs/mandalore/internal/foundlings"
 	"github.com/acoz-labs/mandalore/internal/memory"
-	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-func TestCompiledFoundlingCLIAndMCP(t *testing.T) {
+func TestCompiledFoundlingCLI(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
 	base, err := filepath.EvalSymlinks(t.TempDir())
@@ -84,7 +83,9 @@ func TestCompiledFoundlingCLIAndMCP(t *testing.T) {
 		invoke(nil, 0, "foundling", name, "--binding", bind, "--foundling-id", id)
 	}
 	invoke(nil, 0, "foundling", "list", "--binding", bind)
-	search := invoke(nil, 0, "foundling", "search", "--binding", bind, "--foundling-id", id, "--query", "Copper Finch")
+	if search := invoke(nil, 0, "foundling", "search", "--binding", bind, "--foundling-id", id, "--query", "Copper Finch"); !search.OK {
+		t.Fatal(search.Error)
+	}
 	page := invoke(nil, 0, "foundling", "search", "--binding", bind, "--foundling-id", id, "--query", "PaginationMarker")
 	if len(page.Result.(map[string]any)["items"].([]any)) != 3 {
 		t.Fatal("CLI did not use compact search default")
@@ -108,125 +109,15 @@ func TestCompiledFoundlingCLIAndMCP(t *testing.T) {
 		t.Fatal(excerpt, err)
 	}
 	before, sourceBefore := treeDigest(t, root), treeDigest(t, reference)
-	cmd := exec.CommandContext(ctx, binary, "mcp", "--binding", bind, "--harness", "synthetic-foundling-mcp")
-	cmd.Dir = cwd
-	var diagnostics bytes.Buffer
-	cmd.Stderr = &diagnostics
-	client, err := sdk.NewClient(&sdk.Implementation{Name: "synthetic-foundling", Version: "1"}, nil).Connect(ctx, &sdk.CommandTransport{Command: cmd, TerminateDuration: time.Second}, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = client.Close() })
-	tools, err := client.ListTools(ctx, nil)
-	if err != nil || len(tools.Tools) != 28 {
-		t.Fatal(tools, err)
-	}
-	inputBytes, outputBytes, descriptionBytes := 0, 0, 0
-	for _, tool := range tools.Tools {
-		inputJSON, _ := json.Marshal(tool.InputSchema)
-		outputJSON, _ := json.Marshal(tool.OutputSchema)
-		inputBytes += len(inputJSON)
-		outputBytes += len(outputJSON)
-		descriptionBytes += len(tool.Description)
-		if tool.Name == "foundling_register" || tool.Name == "foundling_connect" {
-			t.Fatal("CLI-only setup advertised through MCP")
-		}
-	}
-	t.Logf("MCP discovery: %d tools; input schemas %d bytes; output schemas %d bytes; descriptions %d bytes (not token counts or transport overhead)", len(tools.Tools), inputBytes, outputBytes, descriptionBytes)
-	if forbidden, err := client.CallTool(ctx, &sdk.CallToolParams{Name: "foundling_register", Arguments: map[string]any{}}); err == nil && (forbidden == nil || !forbidden.IsError) {
-		t.Fatal("CLI-only setup callable through MCP", forbidden)
-	}
-	result, err := client.CallTool(ctx, &sdk.CallToolParams{Name: "foundling_search", Arguments: map[string]any{"foundling_id": id, "query": "Copper Finch"}})
-	if err != nil || result.IsError {
-		t.Fatal(result, err)
-	}
-	data, _ = json.Marshal(result.StructuredContent)
-	var fromMCP api.Envelope
-	if err := json.Unmarshal(data, &fromMCP); err != nil || !reflect.DeepEqual(search, fromMCP) {
-		t.Fatal("CLI/MCP search mismatch", err)
-	}
-	for _, tc := range []struct {
-		name string
-		args map[string]any
-		want api.Envelope
-	}{
-		{"foundling_search", map[string]any{"foundling_id": id, "query": "PaginationMarker"}, page},
-		{"foundling_search", map[string]any{"foundling_id": id, "query": "PaginationMarker", "registration_revision_id": revision, "offset": 3, "excerpt_bytes": 1024, "budget_bytes": 32768, "limit": 10}, continued},
-		{"foundling_read", map[string]any{"foundling_id": id, "registration_revision_id": revision, "relative_locator": "page-00.md"}, initialRead},
-	} {
-		wire, err := client.CallTool(ctx, &sdk.CallToolParams{Name: tc.name, Arguments: tc.args})
-		if err != nil || wire.IsError {
-			t.Fatalf("progressive stdio request: %v %+v", err, wire)
-		}
-		encoded, _ := json.Marshal(wire.StructuredContent)
-		var actual api.Envelope
-		if err := json.Unmarshal(encoded, &actual); err != nil || !reflect.DeepEqual(actual, tc.want) {
-			t.Fatalf("progressive CLI/MCP mismatch: %s: %v", tc.name, err)
-		}
-	}
-	wireFailure, err := client.CallTool(ctx, &sdk.CallToolParams{Name: "foundling_search", Arguments: map[string]any{"foundling_id": id, "query": "EscapedMarker", "budget_bytes": 2048}})
-	if err != nil || !wireFailure.IsError {
-		t.Fatalf("stdio budget error: %v %+v", err, wireFailure)
-	}
-	data, _ = json.Marshal(wireFailure.StructuredContent)
-	var failureFromMCP api.Envelope
-	if err := json.Unmarshal(data, &failureFromMCP); err != nil || !reflect.DeepEqual(budgetFailure, failureFromMCP) {
-		t.Fatal("CLI/MCP budget error mismatch", err)
+	promotion := foundlings.PromotionInput{FoundlingID: id, RegistrationID: revision, Locator: "notes.md", ContentSHA256: excerpt.Origin.ContentSHA256, Write: memory.Write{Kind: "decision", Summary: "Project name", Body: "Silver Heron is current; Copper Finch was historical.", Basis: "import", Reason: "Adapt to current direction"}}
+	refused := invoke(promotion, 2, "foundling", "promote", "--binding", bind, "--read-only")
+	if refused.Error == nil || refused.Error.Code != "operation.read_only" {
+		t.Fatal(refused)
 	}
 	if !reflect.DeepEqual(before, treeDigest(t, root)) {
-		t.Fatal("MCP read saved memory")
+		t.Fatal("reads or refused promotion changed the signet")
 	}
-	promotion := foundlings.PromotionInput{FoundlingID: id, RegistrationID: revision, Locator: "notes.md", ContentSHA256: excerpt.Origin.ContentSHA256, Write: memory.Write{Kind: "decision", Summary: "Project name", Body: "Silver Heron is current; Copper Finch was historical.", Basis: "import", Reason: "Adapt to current direction"}}
-	result, err = client.CallTool(ctx, &sdk.CallToolParams{Name: "foundling_promote", Arguments: promotion})
-	if err != nil || result.IsError {
-		t.Fatal(result, err)
-	}
-	if err := client.Close(); err != nil || diagnostics.Len() != 0 {
-		t.Fatal(err, diagnostics.String())
-	}
-	readOnlyCmd := exec.CommandContext(ctx, binary, "mcp", "--binding", bind, "--read-only")
-	readOnlyCmd.Dir = cwd
-	readOnlyCmd.Stderr = &diagnostics
-	readOnlyClient, err := sdk.NewClient(&sdk.Implementation{Name: "synthetic-readonly", Version: "1"}, nil).Connect(ctx, &sdk.CommandTransport{Command: readOnlyCmd, TerminateDuration: time.Second}, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = readOnlyClient.Close() })
-	readOnlyBefore := treeDigest(t, root)
-	for _, tc := range []struct {
-		name string
-		args map[string]any
-		want api.Envelope
-	}{
-		{"foundling_search", map[string]any{"foundling_id": id, "query": "PaginationMarker"}, page},
-		{"foundling_search", map[string]any{"foundling_id": id, "query": "PaginationMarker", "registration_revision_id": revision, "offset": 3, "excerpt_bytes": 1024, "budget_bytes": 32768, "limit": 10}, continued},
-		{"foundling_read", map[string]any{"foundling_id": id, "registration_revision_id": revision, "relative_locator": "page-00.md"}, initialRead},
-	} {
-		wire, err := readOnlyClient.CallTool(ctx, &sdk.CallToolParams{Name: tc.name, Arguments: tc.args})
-		if err != nil || wire.IsError {
-			t.Fatalf("read-only retrieval refused: %s: %v %+v", tc.name, err, wire)
-		}
-		encoded, _ := json.Marshal(wire.StructuredContent)
-		var actual api.Envelope
-		if err := json.Unmarshal(encoded, &actual); err != nil || !reflect.DeepEqual(actual, tc.want) {
-			t.Fatalf("read-only retrieval changed result: %s: %v", tc.name, err)
-		}
-	}
-	denied, err := readOnlyClient.CallTool(ctx, &sdk.CallToolParams{Name: "foundling_promote", Arguments: promotion})
-	if err != nil || !denied.IsError {
-		t.Fatal("read-only MCP promoted reference", denied, err)
-	}
-	data, _ = json.Marshal(denied.StructuredContent)
-	var deniedEnvelope api.Envelope
-	if err := json.Unmarshal(data, &deniedEnvelope); err != nil || deniedEnvelope.Error == nil || deniedEnvelope.Error.Code != "operation.read_only" {
-		t.Fatal(deniedEnvelope, err)
-	}
-	if err := readOnlyClient.Close(); err != nil || diagnostics.Len() != 0 {
-		t.Fatal(err, diagnostics.String())
-	}
-	if !reflect.DeepEqual(readOnlyBefore, treeDigest(t, root)) {
-		t.Fatal("read-only retrieval/refused promotion changed signet")
-	}
+	invoke(promotion, 0, "foundling", "promote", "--binding", bind)
 	if !reflect.DeepEqual(sourceBefore, treeDigest(t, reference)) {
 		t.Fatal("promotion changed reference source")
 	}
@@ -234,10 +125,6 @@ func TestCompiledFoundlingCLIAndMCP(t *testing.T) {
 	data, _ = json.Marshal(remembered)
 	if !strings.Contains(string(data), "Silver Heron") {
 		t.Fatal(string(data))
-	}
-	refused := invoke(promotion, 2, "foundling", "promote", "--binding", bind, "--read-only")
-	if refused.Error == nil || refused.Error.Code != "operation.read_only" {
-		t.Fatal(refused)
 	}
 	invoke(api.FoundlingDisconnectInput{FoundlingID: id, RegistrationID: revision, Reason: "Disconnect while preserving history"}, 0, "foundling", "disconnect", "--binding", bind)
 	changed := invoke(map[string]any{"foundling_id": id, "query": "Copper"}, 1, "call", "foundling_search", "--binding", bind)

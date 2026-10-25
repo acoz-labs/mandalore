@@ -84,9 +84,7 @@ func TestPrivacyReadOnlyDeniesMutationNotDisclosure(t *testing.T) {
 			for _, call := range []struct{ name, input string }{
 				{"memory_remember", record},
 				{"memory_journal_append", journal},
-				{"memory_remember_and_sync", `{"record":` + record + `}`},
-				{"memory_journal_append_and_sync", `{"entry":` + journal + `}`},
-				{"memory_git_init", `{}`}, {"memory_checkpoint", `{}`}, {"memory_sync", `{}`},
+				{"memory_git_init", `{}`}, {"memory_checkpoint", `{}`},
 			} {
 				out := readOnly.Call(ctx, call.name, []byte(call.input))
 				if out.OK || out.Error == nil || out.Error.Code != "operation.read_only" || out.Error.WriteMayHaveOccurred {
@@ -102,10 +100,6 @@ func TestPrivacyReadOnlyDeniesMutationNotDisclosure(t *testing.T) {
 				if err != nil || !strings.Contains(string(raw), marker) {
 					t.Fatal("read-only hid existing evidence", operation, err)
 				}
-			}
-			text, warning := contextText(t, readOnly, "Privacy example")
-			if warning != "" || !strings.Contains(text, marker) {
-				t.Fatal("restricted content absent from native context", warning)
 			}
 			if !reflect.DeepEqual(before, privacyInventory(t, a.service.Root())) {
 				t.Fatal("read-only changed files, directories, content or modes")

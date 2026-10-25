@@ -1,39 +1,13 @@
 # Local-first Git synchronization
 
 Mandalore saves memory locally before network work. Explicit Git operations now
-share the same signet binding, exclusive writer lock and CLI/MCP dispatcher as
+share the same signet binding, exclusive writer lock and CLI dispatcher as
 recall/remember. They do not create hosting accounts or store credentials.
 
-## Session-authorized transport
-
-The next native integration contract separates semantic learning from transport.
-An explicitly enabled Mandalore session authorizes software-controlled refresh
-and delivery under a versioned policy pinned to its binding, signet and runtime.
-Existing connections without that policy retain legacy behavior; read-only
-connections never silently become synchronizing connections.
-
-At startup/resume and before each top-level user turn, the adapter waits for a
-bounded refresh attempt before assembling memory context. After a successful
-semantic save, the runtime attempts delivery once. This covers ordinary memories,
-journals, corrections, visibility changes and portable reference changes; it does
-not turn local-only administrative commands into network operations. Adjacent
-and overlapping callbacks are coalesced without treating repeated prompt text
-as the same user turn.
-
-The local write and delivery have separate receipts. Offline, busy, interrupted
-or conflicted delivery retains the saved identity and remains pending. Retry at
-the next foreground opportunity; do not repeat the semantic save. Exit callbacks
-are supplementary. No daemon, transcript scanning, automatic conflict resolution
-or delivery while all harnesses are closed is promised.
-
-“Don't remember this” prevents saving that content. It does not stop transport
-of already-saved records. To stop Mandalore, disable its whole native integration
-and begin a fresh session without its skills, hooks, tools or context. Skills-only
-disabling and a model acknowledgment are not a runtime disconnect. Already-loaded
-context and independent native memory remain outside Mandalore's revocation.
-
-The following explicit CLI operations and legacy connection guidance remain
-available with their declared local-only or network effects.
+The 1.x session-authorized transport (pinned session policies, lifecycle
+refresh and save-triggered delivery) left the build with 2.0, where the
+[server](server.md) owns Git. The explicit CLI operations below remain for 1.x
+clones until migration.
 
 ## Setup and commands
 
@@ -60,35 +34,19 @@ Unsupported remote-helper schemes, embedded passwords, multiple origin URLs and
 option-like/control-character endpoints are refused. The resolved fetch origin
 is also the push target; a separate push URL is not followed silently.
 
-Equivalent bound tools are `memory_git_init`, `memory_checkpoint`, `memory_sync`
-and read-only `memory_sync_status`. `mandalore call` accepts their cataloged JSON
-inputs. The default CLI/MCP catalog marks `memory_sync` and the two explicit save-and-sync
-companions as network-capable; its local-only tools retain their annotations.
-An authorized session catalog declares the additional post-write transport effects. Read-only
-mode refuses all mutations before execution. Native hooks/plugins are not installed by
-these commands.
+Equivalent bound tools are `memory_git_init` and `memory_checkpoint`;
+`mandalore call` accepts their cataloged JSON inputs. Read-only mode refuses all
+mutations before execution. Native hooks/plugins are not installed by these
+commands.
 
-## Save-triggered delivery
+## Server backup
 
-When both learning and delivery are allowed, `memory_remember_and_sync` or
-`memory_journal_append_and_sync` saves locally and makes at most one bounded
-delivery attempt through this same synchronizer. Their default delivery budget
-is three seconds, separate from local publication time. They reacquire the normal
-writer lock, preserve exact binding identity, and do not initialize Git or choose
-a remote. The [interface contract](interface.md#save-with-bounded-delivery)
-describes input nesting and the separate saved/delivery envelopes.
-
-Offline, busy, cancelled and conflicted delivery does not roll back or conceal
-the saved record/event. Report the actual receipt, retain its identity, and do not
-resubmit the save. Later authorized recovery uses standalone sync, after inspecting
-an ambiguous result. In legacy connections, no-sync chooses the existing local-only tools;
-read-only/no-save prohibits both paths. Enabled sessions use the software-controlled
-transport contract above. The agent's semantic permission decision
-is not made deterministic by combining operations. Once dispatched, the combined
-operation removes a separate post-save model request; it cannot guarantee network
-delivery, recover unrecorded knowledge or authorize a later lifecycle callback.
-See [native selection and measured context tradeoff](evidence/lifecycle-sync/inline-delivery.md)
-for contributor evidence and remaining acceptance limits.
+In 2.0 the [server](server.md) is each signet's only writer. It never fetches on
+reads; after writes it checkpoints and pushes `main` without forcing, and refuses
+a remote that is ahead until `mandalore server reconcile` fast-forwards it. The
+1.x `memory_sync`, `memory_sync_status` and save-and-sync tools are removed. The
+guided menu still synchronizes a selected 1.x clone directly until its 1.x
+journeys are removed.
 
 ## What happens
 
@@ -200,32 +158,14 @@ index lock or incomplete checkout requiring inspection; committed heads remain
 recovery evidence. Do not infer atomic multi-file checkout or remove a lock while
 its owner is alive. Installation recovery guidance belongs to #7.
 
-## Passive integration and verification
-
-A direct user `this is the way` asks the agent to consolidate warranted learning
-and finish with a short-budget delivery attempt when permitted. A final combined
-save counts; do not add a redundant sync. Otherwise use standalone sync, including
-already-pending delivery when no new record or journal entry is useful; do not
-manufacture content to cause a sync. Quoted, discussed or retrieved occurrences
-are not requests. Current read-only/no-save/no-sync directions still take
-precedence. Report local durability and the returned delivery state separately;
-an ambiguous/failed attempt is not permission to repeat writes or loop on sync.
-This is legacy agent guidance. The enabled-session contract above moves transport
-into software; discovery #55 remains historical evidence for that change.
-See the [native consolidation evidence](evidence/lifecycle-sync/consolidation.md)
-for observed before/after behavior, prohibitions, failures and test limits.
-
-Legacy native startup hooks remain read-only and retain agent-requested delivery
-under their existing content/transport restrictions. Enabled sessions instead
-use the pinned policy and software callbacks described above. Native candidate
-acceptance must measure actual lifecycle ordering, cancellation and interaction
-latency; earlier local-hook evidence cannot certify changed transport behavior.
+## Verification
 
 Tests use disposable local remotes and independent clones, preserving original
 device/harness and correction history through long-lived service handles. They
 cover competing semantic heads, file conflicts without merge-state damage,
 unavailable/controlled auth failure, racing pushes, cancellation receipts, unsafe
-candidate content, read-only status hashes and compiled CLI/stdin-MCP operations.
+candidate content, read-only status hashes, server push-only backup, remote-ahead refusal and
+fast-forward reconcile.
 Local clone tests are not two physical-machine native agent acceptance. Native
 journeys and platform-specific execution evidence must identify the exact
 candidate and tested versions; cross-builds alone do not establish either.

@@ -32,11 +32,7 @@ type ScopeVisibility struct {
 }
 
 func (s *Store) Scopes() ([]ScopeInfo, error) {
-	records, err := s.revisions()
-	if err != nil {
-		return nil, err
-	}
-	states, err := s.validateGraphState(records, nil)
+	records, states, err := s.graph()
 	if err != nil {
 		return nil, err
 	}
@@ -114,6 +110,9 @@ type Query struct {
 	// ExactScope omits bank-wide records when a narrower scope is selected.
 	// False includes signet-wide evidence alongside the selected scope.
 	ExactScope bool
+	// AllScopes ranks every stored scope in one pass and surfaces only the
+	// conflicts whose heads match the query. It overrides Scope and ExactScope.
+	AllScopes bool
 }
 type RevisionConflict struct {
 	RecordID  string     `json:"record_id"`
@@ -156,7 +155,8 @@ func (s *Store) validateGraphState(records []Revision, pending map[string]Source
 	}
 	// One graph validation shares successful device checks between revisions
 	// and their sources. Do not retain this memo on Store/Service: every later
-	// read or write must check current provenance again. Multi-file reads do
+	// read or write must check current provenance again (a sole writer's
+	// CacheReads reuses a validated graph only until its next write). Multi-file reads do
 	// not claim atomic snapshots against uncoordinated external filesystem edits.
 	device := memoizeDeviceValidation(s.deviceExists)
 	err := validateRevisionGraph(records, s.Signet.ID, s.Signet.Version, device, func(id string) error {
@@ -389,25 +389,52 @@ func inflected(base, word string) bool {
 	return strings.HasSuffix(base, "e") && (word == base+"d" || word == strings.TrimSuffix(base, "e")+"ing")
 }
 
-func relevance(r Revision, query string) int {
-	if strings.TrimSpace(query) == "" {
-		return 1
+func (s *Store) anyRelevant(revisions []Revision, query []string) bool {
+	for _, r := range revisions {
+		if s.reads.index(r).score(query) > 0 {
+			return true
+		}
 	}
-	tokens := map[string]int{}
+	return false
+}
+
+// termIndex is a revision's weighted terms: summary terms outweigh body terms
+// and identifiers outweigh both.
+type termIndex struct {
+	tokens, identifiers map[string]int
+}
+
+func indexTerms(r Revision) termIndex {
+	ix := termIndex{tokens: map[string]int{}, identifiers: map[string]int{}}
 	for _, t := range terms(r.Body) {
-		tokens[t]++
+		ix.tokens[t]++
 	}
 	for _, t := range terms(r.Summary) {
-		tokens[t] += 4
+		ix.tokens[t] += 4
 	}
-	identifiers := map[string]int{}
 	for _, t := range terms(r.ID + " " + r.RecordID + " " + r.Scope.ID) {
-		identifiers[t] += 8
+		ix.identifiers[t] += 8
+	}
+	return ix
+}
+
+// queryTerms is nil for a blank query, which matches every revision; a query
+// with no word characters matches none.
+func queryTerms(text string) []string {
+	if strings.TrimSpace(text) == "" {
+		return nil
+	}
+	return append([]string{}, terms(text)...)
+}
+
+func (ix termIndex) score(query []string) int {
+	if query == nil {
+		return 1
 	}
 	score := 0
-	for _, t := range terms(query) {
-		score += 4 * (tokens[t] + identifiers[t])
-		for word, weight := range tokens {
+	for _, t := range query {
+		score += 4 * (ix.tokens[t] + ix.identifiers[t])
+		for word, weight := range ix.tokens {
 			if word != t && (inflected(t, word) || inflected(word, t)) {
 				score += weight
 			}
@@ -416,13 +443,13 @@ func relevance(r Revision, query string) int {
 	return score
 }
 
+func relevance(r Revision, query string) int {
+	return indexTerms(r).score(queryTerms(query))
+}
+
 func (s *Store) Recall(q Query, now time.Time) (Packet, error) {
 	p := Packet{SignetID: s.Signet.ID, GeneratedAt: now.UTC().Format(time.RFC3339Nano), Current: []Revision{}, Conflicts: []RevisionConflict{}, Notice: "Current memory is scoped evidence. Verify volatile live state; conflicting revisions are not current guidance. An empty recall is not evidence that the fact is absent. Use memory scopes to discover stored scope IDs, then recall an explicitly selected scope; do not guess IDs or substitute cwd for a remembered entity."}
-	records, err := s.revisions()
-	if err != nil {
-		return p, err
-	}
-	states, err := s.validateGraphState(records, nil)
+	records, states, err := s.graph()
 	if err != nil {
 		return p, err
 	}
@@ -462,15 +489,19 @@ func (s *Store) recallHeads(q Query, p Packet, heads map[string][]Revision) Pack
 	// same bodies inside the sort comparator makes broad recalls needlessly
 	// expensive as a bank grows; compute each candidate's relevance only once.
 	scores := map[string]int{}
+	query := queryTerms(q.Text)
 	for recordID, revisions := range heads {
 		scoped := revisions[0].Scope
-		if q.ExactScope && scoped != q.Scope {
+		if !q.AllScopes && q.ExactScope && scoped != q.Scope {
 			continue
 		}
-		if scoped.Kind != "signet" && scoped != q.Scope {
+		if !q.AllScopes && scoped.Kind != "signet" && scoped != q.Scope {
 			continue
 		}
 		if scoped.Kind == "signet" && scoped.ID != s.Signet.ID {
+			continue
+		}
+		if len(revisions) > 1 && q.AllScopes && !s.anyRelevant(revisions, query) {
 			continue
 		}
 		if len(revisions) > 1 {
@@ -479,7 +510,7 @@ func (s *Store) recallHeads(q Query, p Packet, heads map[string][]Revision) Pack
 			p.Conflicts = append(p.Conflicts, RevisionConflict{RecordID: recordID, Revisions: revisions})
 			continue
 		}
-		if score := relevance(revisions[0], q.Text); score > 0 {
+		if score := s.reads.index(revisions[0]).score(query); score > 0 {
 			scores[revisions[0].ID] = score
 			p.Current = append(p.Current, revisions[0])
 		}

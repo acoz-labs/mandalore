@@ -58,7 +58,7 @@ To stop Mandalore activity, disable the complete native integration and start a
 fresh session without its skills, hooks, tools or context. Disabling only skills
 is insufficient; already-injected context cannot be recalled from the model.
 Native agent memory, logs and caches remain independently controlled by that
-harness. See [synchronization](synchronization.md#session-authorized-transport).
+harness. See [synchronization](synchronization.md).
 
 Existing enforced read-only connections are not silently upgraded. They reject
 mutating API operations before input decoding and do not authorize automatic

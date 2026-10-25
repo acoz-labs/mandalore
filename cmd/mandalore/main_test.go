@@ -94,24 +94,15 @@ func TestVersionDeclaresMachineAndHookCompatibility(t *testing.T) {
 	}
 }
 
-func TestHookConfigurationErrorsAreNativeWarnings(t *testing.T) {
-	for _, args := range [][]string{{"codex-memory-hook", "--unknown"}, {"codex-memory-hook", "extra"}, {"codex-memory-hook", "--binding", "/missing"}} {
+// 2.0 serves agents only through `mandalore serve`; the 1.x stdio server,
+// lifecycle hooks and Razor Crest are gone from the build.
+func TestOneXAgentCommandsAreRemoved(t *testing.T) {
+	for _, command := range []string{"mcp", "codex-memory-hook", "claude-code-memory-hook", "razor-crest"} {
 		var out, errout bytes.Buffer
-		code := run(context.Background(), args, strings.NewReader(`{"hook_event_name":"SessionStart"}`), &out, &errout)
-		var result map[string]any
-		if code != 0 || errout.Len() != 0 || json.Unmarshal(out.Bytes(), &result) != nil || result["systemMessage"] == nil {
-			t.Fatalf("blocking/malformed hook failure: %d %s %s", code, out.String(), errout.String())
-		}
-	}
-}
-
-func TestMCPStartupErrorsStayOffProtocolStdout(t *testing.T) {
-	for _, args := range [][]string{{"mcp", "--unknown"}, {"mcp", "extra"}, {"mcp", "--binding", filepath.Join(t.TempDir(), "missing.json")}} {
-		var out, errout bytes.Buffer
-		code := run(context.Background(), args, strings.NewReader(""), &out, &errout)
+		code := run(context.Background(), []string{command, "--binding", filepath.Join(t.TempDir(), "missing.json")}, strings.NewReader(""), &out, &errout)
 		var failure api.Envelope
-		if code == 0 || out.Len() != 0 || json.Unmarshal(errout.Bytes(), &failure) != nil || failure.Error == nil {
-			t.Fatalf("startup corrupted stdout: %d %s / %s", code, out.String(), errout.String())
+		if code != 2 || json.Unmarshal(out.Bytes(), &failure) != nil || failure.Error == nil || failure.Error.Code != "operation.unknown" {
+			t.Fatalf("%s: %d %s %s", command, code, out.String(), errout.String())
 		}
 	}
 }

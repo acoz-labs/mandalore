@@ -48,8 +48,8 @@ var visibilityOperations = []Operation{
 	operation("memory_visibility_history", "Inspect a record's current content/visibility heads and paged visibility decisions. Metadata includes reasons and authorship; content history is separate. Read before withdrawing or restoring. Pages may shift after writes.", true, func(_ context.Context, s *memory.Service, in HistoryInput) (memory.VisibilityHistory, error) {
 		return s.VisibilityHistory(in.RecordID, in.Offset, number(in.Limit, 5))
 	}),
-	operation("memory_withdraw", "Explicitly withhold a record from ordinary recall without deleting evidence. Requires format2, current expected content and visibility heads, and reason. Does not erase history, journals, foundlings, offline copies or existing model context. Saves locally only; sync separately when allowed.", false, visibilityDecision("withdraw")),
-	operation("memory_restore", "Explicitly restore reviewed record content using current expected content and visibility heads and a reason. Resolves visibility heads, not conflicting content revisions. Requires format2. Saves locally only; sync separately when allowed.", false, visibilityDecision("restore")),
+	operation("memory_withdraw", "Explicitly withhold a record from ordinary recall without deleting evidence. Requires format2, current expected content and visibility heads, and reason. Does not erase history, journals, foundlings, offline copies or existing model context. Does not attempt Git delivery.", false, visibilityDecision("withdraw")),
+	operation("memory_restore", "Explicitly restore reviewed record content using current expected content and visibility heads and a reason. Resolves visibility heads, not conflicting content revisions. Requires format2. Does not attempt Git delivery.", false, visibilityDecision("restore")),
 }
 
 func visibilityFailureEnvelope(e *visibilityFailure) Envelope {

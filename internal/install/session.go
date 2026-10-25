@@ -3,15 +3,27 @@ package install
 import (
 	"encoding/json"
 	"errors"
-	"github.com/acoz-labs/mandalore/internal/sessionsync"
 	"os"
 	"path/filepath"
 )
 
+// sessionPolicyFile is the 1.x enabled-session policy shape. Its runtime left
+// the build with 2.0; installers that write it are removed with the plugins.
+type sessionPolicyFile struct {
+	SchemaVersion int    `json:"schema_version"`
+	Mode          string `json:"mode"`
+	Binding       string `json:"binding"`
+	BindingSHA256 string `json:"binding_sha256"`
+	SignetID      string `json:"signet_id"`
+	Runtime       string `json:"runtime"`
+	RuntimeSHA256 string `json:"runtime_sha256"`
+	StateDir      string `json:"state_dir"`
+}
+
 // Policy bytes are generated from reviewed immutable connection identities.
 // Legacy plans omit the version and generate no session transport authority.
 func sessionPolicy(o Options, runtime, digest, bindingDigest, signet string) ([]byte, error) {
-	return json.MarshalIndent(sessionsync.Policy{SchemaVersion: 1, Mode: "enabled-session", Binding: o.Binding, BindingSHA256: bindingDigest, SignetID: signet, Runtime: runtime, RuntimeSHA256: digest, StateDir: o.StateDir}, "", "  ")
+	return json.MarshalIndent(sessionPolicyFile{SchemaVersion: 1, Mode: "enabled-session", Binding: o.Binding, BindingSHA256: bindingDigest, SignetID: signet, Runtime: runtime, RuntimeSHA256: digest, StateDir: o.StateDir}, "", "  ")
 }
 func sessionArgs(o Options, root, runtime, digest, bindingDigest, signet string) (string, error) {
 	if o.SessionTransportVersion == 0 {

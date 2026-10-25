@@ -53,6 +53,7 @@ type Source struct {
 type Store struct {
 	Root   string
 	Signet Signet
+	reads  *readCache
 }
 
 var directories = []string{".mandalore", "memory", "memory/records", "memory/events", "memory/sources", "provenance", "provenance/devices", "foundlings", "foundlings/registrations"}
@@ -263,6 +264,7 @@ func (s *Store) withExclusiveLock(allowPending bool, fn func() error) error {
 		return ErrWriterBusy
 	}
 	defer syscall.Flock(fd, syscall.LOCK_UN)
+	defer s.reads.drop()
 	if err := s.checkDirectories(); err != nil {
 		return err
 	}

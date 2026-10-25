@@ -2,16 +2,23 @@
 
 ## Current state
 
+`main` is 2.0 development. `internal/server` is the single-writer
+[server](server.md): it owns each configured signet, serves MCP over Streamable
+HTTP with per-client authorship, and backs each signet up by push-only Git. The
+1.x stdio MCP server (`internal/mcp`), native hook adapters (`internal/codex`,
+`internal/claudecode`), session transport (`internal/sessionsync`), their context
+assembler (`internal/memorycontext`) and Razor Crest (`internal/razorcrest`) left
+the build in #167. The paragraph below describes the remaining 1.x packages;
+installers and plugins leave in #163.
+
 `internal/memory` implements the signet engine as a library: immutable records,
 sources/devices, journals, supersession, scoped lexical recall, bounded service
 responses, and immutable foundling registration/routing/citation validation. See the
 [format contract](signet-format.md) and [extraction inventory](memory-extraction.md).
-`internal/api`, `internal/binding`, `internal/mcp` and `cmd/mandalore` now provide
+`internal/api`, `internal/binding` and `cmd/mandalore` provide
 the [shared local interface](interface.md). `internal/sync` now supplies explicit
-[Git checkpoints and reconciliation](synchronization.md). `internal/codex` and
-`plugins/codex` supply native lifecycle context and memory skills.
-`internal/sessionsync` adds pinned session transport policy and bounded foreground
-coordination around the shared Git engine; legacy adapters remain local-only. `internal/install` supplies explicit native connection plans,
+[Git checkpoints and reconciliation](synchronization.md). `plugins/codex` supplies
+1.x memory skills. `internal/install` supplies explicit native connection plans,
 retained runtime/package publication and doctor/repair; `internal/console` supplies
 presentation-only terminal prompts and reports. The [guided menu](setup.md)
 delegates to shared operations rather than owning a second implementation.
@@ -19,10 +26,7 @@ delegates to shared operations rather than owning a second implementation.
 transport, owned CLI activation/recovery and verified same-byte publication.
 Maintainer commands and workflows coordinate nomination, acceptance guards and
 release-ledger finalization outside the memory MCP surface.
-`plugins/pi` supplies a second native adapter over guarded, short-lived CLI calls;
-`internal/memorycontext` shares bounded local evidence assembly across harnesses.
-`internal/claudecode` and `plugins/claude-code` supply the third native adapter
-under the same session contract. [Codex](codex-native-evidence.md)
+`plugins/pi` and `plugins/claude-code` supply the other 1.x native adapters. [Codex](codex-native-evidence.md)
 and [Pi engineering evidence](evidence/pi/README.md) are separate from product
 acceptance. Published v1.2.0 includes Codex, Pi and format2 withdrawal. Claude Code and
 session-authorized transport require new exact-candidate acceptance and release.
@@ -35,13 +39,10 @@ session-authorized transport require new exact-candidate acceptance and release.
 | `internal/exportreport` | Bounded source snapshots, scoped derived reports and no-replace publication |
 | `internal/retention` | Read-only explicit policy/selection metadata review; no expiry or apply |
 | `internal/api`, `internal/strictjson` | Shared operations, bounded strict schemas, receipts and errors |
-| `internal/sync` | Local checkpoints and recoverable Git synchronization |
+| `internal/sync` | Local checkpoints, recoverable Git synchronization, push-only backup and fast-forward reconcile |
 | `internal/binding` | Local signet selection and originating-device identity |
 | `internal/foundlings` | Bounded local/Git reference observation, clone-local connections and verified selective promotion |
-| `internal/mcp` | Typed stdio MCP access over the same memory engine |
-| `internal/codex`, `internal/claudecode` | Bounded native event adapters; authorized session refresh before local context, no transcript access |
-| `internal/sessionsync` | Versioned pinned policy, bounded per-checkout transport coordination and receipt reuse |
-| `internal/memorycontext` | Shared bounded local orientation, bank-wide evidence and scope routing |
+| `internal/server` | Single-writer Streamable HTTP MCP server: config, authenticators, scoped tools, `memory_context`, per-client authorship, push-only backup, status and reconcile |
 | `internal/install` | Native connections, runtime pinning, doctor/update/repair |
 | `internal/readiness` | Non-executing setup observations, support declarations, exact scenario evidence and bounded follow-up guidance |
 | `internal/distribution` | Versioned assets, provenance and byte verification, owned CLI installation and phased publication |
@@ -183,7 +184,8 @@ snapshots but emits policy/relationship metadata only, without a lock or apply.
 
 Corrections preserve history through supersession edges. Concurrent heads remain
 conflicts; a successful Git merge does not prove semantic agreement. Reads must
-use current local state, not an unbounded stale process cache. Start with scoped
+use current local state, not an unbounded stale process cache; only the server,
+as sole writer, keeps the validated graph between its own writes. Start with scoped
 lexical retrieval, byte budgets, pagination and history access. Lexical tokens
 ignore terminal prose periods but preserve internal dots/hyphens; absent synonyms
 remain a limitation. A graph validation reuses successful device checks only
@@ -192,8 +194,8 @@ graph checks still run. See [retrieval](retrieval.md) for quality/freshness test
 measured history-growth costs and the evidence required before adding an index.
 
 Git remotes and harness executables are explicit dependencies. Local persistence
-works offline; cross-machine freshness requires successful sync. The initial MCP
-transport is local stdio. Remote hosting/authentication is deferred.
+works offline; cross-machine freshness requires successful sync. In 2.0 MCP is
+served only by the server over Streamable HTTP; OAuth arrives in #161.
 
 See [product](product.md), [migration](migration.md), and [delivery](deployment.md).
 

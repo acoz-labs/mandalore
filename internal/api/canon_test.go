@@ -14,8 +14,8 @@ import (
 )
 
 func TestCanonRegistrationContractAndReadOnlyBoundary(t *testing.T) {
-	a, s, _ := sessionFixture(t)
-	local := New(s, false)
+	local := fixture(t)
+	s := local.service
 	in := FoundlingRegisterInput{Mode: "canon", Branch: "main", SourceSignetID: "signet-source", Name: "Work", Description: "Synthetic work reference", Source: memory.FoundlingSource{Kind: "git", Locator: "https://example.invalid/work.git"}, Pin: memory.SourcePin{Algorithm: "git-sha1", Value: strings.Repeat("a", 40)}, Reason: "Explicit directional registration"}
 	raw, _ := json.Marshal(in)
 	out := local.Call(context.Background(), "foundling_register", raw)
@@ -27,10 +27,7 @@ func TestCanonRegistrationContractAndReadOnlyBoundary(t *testing.T) {
 	if err != nil || view.Mode != "canon" {
 		t.Fatal(view, err)
 	}
-	// Local-only context and refresh denial cannot upgrade transport or create cache.
-	if out := local.Call(context.Background(), "memory_context", []byte(`{}`)); !out.OK {
-		t.Fatal(out.Error)
-	}
+	// Refresh denial cannot upgrade transport or create cache.
 	if out := local.Call(context.Background(), "foundling_refresh", []byte(`{"session_id":"native-one"}`)); out.OK {
 		t.Fatal("local-only refresh enabled")
 	}
@@ -45,7 +42,7 @@ func TestCanonRegistrationContractAndReadOnlyBoundary(t *testing.T) {
 		t.Fatal("unknown snapshot selected")
 	}
 	// Missing native identity is refused before any remote/cache attempt.
-	out = a.Call(context.Background(), "foundling_refresh", []byte(`{"session_id":""}`))
+	out = local.Call(context.Background(), "foundling_refresh", []byte(`{"session_id":""}`))
 	if out.OK {
 		t.Fatal("missing ID accepted")
 	}
@@ -79,12 +76,6 @@ func TestCanonOperationSchemasExposeSessionAndEffects(t *testing.T) {
 	}
 	if op := ops["foundling_refresh"]; op.ReadOnly || op.Network {
 		t.Fatal("local catalog permits network", op)
-	}
-	a, _, _ := sessionFixture(t)
-	for _, op := range a.Catalog() {
-		if op.Name == "foundling_refresh" && (!op.Network || op.ReadOnly) {
-			t.Fatal(op)
-		}
 	}
 }
 
