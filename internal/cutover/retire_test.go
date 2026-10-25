@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/acoz-labs/mandalore/internal/cutover"
@@ -92,5 +93,39 @@ func TestRetireDisablesDetectedConnectionsFirst(t *testing.T) {
 	}
 	if _, err := cutover.Retire(context.Background(), clone, "ftp://memory.example.com", nil, nil); err == nil {
 		t.Fatal("retire accepted a non-HTTP server URL")
+	}
+}
+
+// A failure after one profile's disable reports what was already disabled,
+// and a rerun lists that profile as clear.
+func TestRetireReportsDisablesBeforeAFailure(t *testing.T) {
+	l := testfixture.NewLegacySignet(t, "device-a")
+	clone := l.Clones["device-a"].Root
+	restoreWrite(t, clone)
+	first, second := filepath.Join(t.TempDir(), "first"), filepath.Join(t.TempDir(), "second")
+	claudeProfile(t, first, true)
+	claudeProfile(t, second, true)
+	profiles := []cutover.NativeProfile{{Harness: "claude-code", Home: first, Binary: "/fixture/bin/claude"}, {Harness: "claude-code", Home: second, Binary: "/fixture/bin/claude"}}
+	calls := 0
+	_, err := cutover.Retire(context.Background(), clone, "https://memory.example.com", profiles, func(_ context.Context, c install.LegacyConnection) error {
+		if calls++; calls == 2 {
+			return errors.New("synthetic failure")
+		}
+		claudeProfile(t, c.Home, false)
+		return nil
+	})
+	var partial *cutover.PartialError
+	if !errors.As(err, &partial) || !strings.Contains(partial.Written, "mandalore@mandalore in ") || !strings.Contains(partial.Written, "first") {
+		t.Fatalf("failure after a disable: %v", err)
+	}
+	if _, err := os.Lstat(filepath.Join(clone, cutover.RetiredNote)); !errors.Is(err, os.ErrNotExist) {
+		t.Fatal("RETIRED.md written after a failed disable")
+	}
+	r, err := cutover.Retire(context.Background(), clone, "https://memory.example.com", profiles, func(_ context.Context, c install.LegacyConnection) error {
+		claudeProfile(t, c.Home, false)
+		return nil
+	})
+	if err != nil || len(r.Disabled) != 1 || len(r.Clear) != 2 || !r.ReadOnly {
+		t.Fatalf("rerun: %+v %v", r, err)
 	}
 }

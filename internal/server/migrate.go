@@ -45,10 +45,11 @@ type Migration struct {
 	Slug           string           `json:"slug"`
 	SignetID       string           `json:"signet_id"`
 	InitializedAt  string           `json:"initialized_at"`
-	RemoteHead     string           `json:"remote_head"`
+	ClonedHead     string           `json:"cloned_head"` // the remote head init checked receipts against
 	ServerDeviceID string           `json:"server_device_id"`
 	Devices        []DeviceEvidence `json:"devices"`
 	Pushed         bool             `json:"pushed"`
+	PushedHead     string           `json:"pushed_head,omitempty"` // the enrollment commit, once pushed
 	Notice         string           `json:"notice,omitempty"`
 }
 
@@ -74,6 +75,20 @@ func Init(ctx context.Context, in MigrateInit) (Migration, error) {
 	}
 	if _, err := os.Lstat(in.Root); !errors.Is(err, os.ErrNotExist) {
 		return out, errors.New("root already exists; init makes a fresh clone")
+	}
+	// The configuration and state are written last; catch an unwritable one
+	// before anything is pushed.
+	state := filepath.Join(c.StateDir, "signets", in.Slug)
+	if err := os.MkdirAll(state, 0700); err != nil {
+		return out, errors.New("cannot create the signet's state directory")
+	}
+	for _, path := range []string{in.ConfigPath + ".tmp", filepath.Join(state, "migration.json.tmp")} {
+		f, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
+		if err != nil {
+			return out, fmt.Errorf("cannot write beside %s", filepath.Base(strings.TrimSuffix(path, ".tmp")))
+		}
+		f.Close()
+		os.Remove(path)
 	}
 	receipts := map[string]cutover.Receipt{}
 	for _, path := range in.Preflights {
@@ -130,7 +145,7 @@ func Init(ctx context.Context, in MigrateInit) (Migration, error) {
 	if err != nil {
 		return out, err
 	}
-	if out.RemoteHead, err = g.Head(ctx); err != nil {
+	if out.ClonedHead, err = g.Head(ctx); err != nil {
 		return out, err
 	}
 	enrolled, err := store.DeviceIDs()
@@ -168,7 +183,7 @@ func Init(ctx context.Context, in MigrateInit) (Migration, error) {
 		return out, fmt.Errorf("device %s is marked lost but this signet has not enrolled it", id)
 	}
 	if len(missing) > 0 {
-		return out, fmt.Errorf("refused: no clean preflight for enrolled device(s) %s; pass each one's receipt with --preflight, or --device-lost ID --reason TEXT", strings.Join(missing, ", "))
+		return out, fmt.Errorf("no clean preflight for enrolled device(s) %s; pass each one's receipt with --preflight, or --device-lost ID --reason TEXT", strings.Join(missing, ", "))
 	}
 	service, err := memory.OpenReadOnlyService(checkout)
 	if err != nil {
@@ -181,9 +196,11 @@ func Init(ctx context.Context, in MigrateInit) (Migration, error) {
 	if err := os.Rename(checkout, in.Root); err != nil {
 		return out, errors.New("cannot move the new checkout to root")
 	}
-	// From here the checkout is at root; the configuration changes last.
+	// From here the checkout is at root and the configuration changes last;
+	// a failure says what is already written.
+	pushState := "not pushed"
 	late := func(what string) error {
-		return errors.New(what + "; the new checkout is at root and the configuration is unchanged")
+		return &cutover.PartialError{Err: errors.New(what), Written: fmt.Sprintf("the checkout at %s with server device %s enrolled (%s); the configuration is unchanged (see Recovery in docs/migration-2.0.md)", in.Root, out.ServerDeviceID, pushState)}
 	}
 	if g, err = signetsync.Open(in.Root, out.SignetID); err != nil {
 		return out, late("cannot reopen the checkout")
@@ -193,15 +210,13 @@ func Init(ctx context.Context, in MigrateInit) (Migration, error) {
 	}
 	out.InitializedAt = time.Now().UTC().Format(time.RFC3339)
 	push, cancel := context.WithTimeout(ctx, time.Minute)
-	_, err = g.Push(push, in.Remote)
+	out.PushedHead, err = g.Push(push, in.Remote)
 	cancel()
 	out.Pushed = err == nil
+	pushState = "pushed to the remote as " + short(out.PushedHead)
 	if !out.Pushed {
+		pushState = "push failed, so the remote may or may not have it"
 		out.Notice = "The enrollment commit is not pushed yet; the server pushes it when it starts. Verify after that."
-	}
-	state := filepath.Join(c.StateDir, "signets", in.Slug)
-	if err := os.MkdirAll(state, 0700); err != nil {
-		return out, late("cannot create the signet's state directory")
 	}
 	if err := writeState(filepath.Join(state, "migration.json"), out); err != nil {
 		return out, late("cannot record the migration in server state")
@@ -210,11 +225,14 @@ func Init(ctx context.Context, in MigrateInit) (Migration, error) {
 	if err := c.Validate(); err != nil {
 		return out, late(err.Error())
 	}
-	if err := writeState(in.ConfigPath, c); err != nil {
+	if err := writeConfig(in.ConfigPath, c); err != nil {
 		return out, late("cannot write the server configuration")
 	}
 	return out, nil
 }
+
+// writeConfig is init's last write; tests make it fail.
+var writeConfig = func(path string, c Config) error { return writeState(path, c) }
 
 // readConfig decodes a configuration strictly but, unlike LoadConfig, allows
 // it to have no signets yet.
@@ -314,31 +332,40 @@ func Verify(ctx context.Context, c Config, slug string) (Verification, error) {
 		p, err := m.Recall("migration verification canary", scope, 50, 32768)
 		return slices.ContainsFunc(p.Current, func(h memory.Hit) bool { return h.RecordID == id }), err
 	}
+	// From the canary write on, a failure says what is already written.
+	stage := "a canary write was attempted and may be partly saved"
+	late := func(what string) error {
+		return &cutover.PartialError{Err: errors.New(what), Written: stage + " in " + sc.Root + " (see Recovery in docs/migration-2.0.md)"}
+	}
 	canary, err := m.Remember(memory.Write{Kind: "fact", Summary: "Migration verification canary", Scope: scope, Basis: "observation",
 		Body:   "Written by mandalore server migrate verify at " + time.Now().UTC().Format(time.RFC3339) + " and withdrawn at once.",
 		Reason: "Prove the 2.0 server writes and pushes cleanly after the cutover."})
 	if err != nil {
-		return out, fmt.Errorf("canary write failed: %w", err)
+		return out, late("canary write failed: " + err.Error())
 	}
 	out.CanaryID = canary.RecordID
+	stage = "canary " + canary.RecordID + ", visible and not withdrawn, uncommitted"
 	if ok, err := visible(canary.RecordID); err != nil || !ok {
-		return out, errors.New("the canary is not visible after its write")
+		return out, late("the canary is not visible after its write")
 	}
 	if _, err := m.ChangeVisibility(run, "withdraw", memory.VisibilityWrite{RecordID: canary.RecordID, ContentHeads: []string{canary.ID}, VisibilityHeads: []string{}, Reason: "Migration verification canary"}); err != nil {
-		return out, fmt.Errorf("canary withdraw failed: %w", err)
+		return out, late("canary withdraw failed: " + err.Error())
 	}
+	stage = "canary " + canary.RecordID + ", withdrawn, uncommitted"
 	if ok, err := visible(canary.RecordID); err != nil || ok {
-		return out, errors.New("the canary is still visible after its withdrawal")
+		return out, late("the canary is still visible after its withdrawal")
 	}
 	if _, err := g.Checkpoint(run); err != nil {
-		return out, errors.New("cannot commit the canary")
+		return out, late("cannot commit the canary")
 	}
+	stage = "canary " + canary.RecordID + ", withdrawn and committed, not confirmed pushed"
 	pushed, err := g.Push(run, sc.Remote)
 	if err != nil {
-		return out, errors.New("the canary did not push cleanly")
+		return out, late("the canary did not push cleanly")
 	}
+	stage = "canary " + canary.RecordID + ", withdrawn, committed and pushed as " + short(pushed)
 	if out.RemoteHead, err = g.RemoteHead(run, sc.Remote); err != nil || out.RemoteHead != pushed {
-		return out, errors.New("the remote does not show the pushed canary")
+		return out, late("the remote does not show the pushed canary")
 	}
 	out.Head = pushed
 	out.Notice = "Verified: head equals the remote, and a withdrawn canary pushed cleanly. Start the server."

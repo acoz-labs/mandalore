@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/acoz-labs/mandalore/internal/install"
@@ -16,19 +17,35 @@ import (
 
 // NativeProfile names one harness profile retire inspects.
 type NativeProfile struct {
-	Harness, Home, Binary string
+	Harness string `json:"harness"`
+	Home    string `json:"native_home"`
+	Binary  string `json:"native_binary"`
 }
 
 type Disabler func(context.Context, install.LegacyConnection) error
 
 type Retirement struct {
-	Clone    string                     `json:"clone"`
-	SignetID string                     `json:"signet_id"`
-	Disabled []install.LegacyConnection `json:"disabled"`
+	Clone    string `json:"clone"`
+	SignetID string `json:"signet_id"`
+	// Disabled lists what this run disabled. An interrupted earlier run's
+	// disables are in its failure message; Clear lists every profile now
+	// verified to have no enabled connection.
+	Disabled []install.LegacyConnection `json:"disabled_this_run"`
+	Clear    []NativeProfile            `json:"profiles_clear"`
 	Note     string                     `json:"note"`
 	ReadOnly bool                       `json:"read_only"`
 	Notice   string                     `json:"notice"`
 }
+
+// PartialError is a failure after the command already changed something.
+// Written says what, so the operator can recover.
+type PartialError struct {
+	Err     error
+	Written string
+}
+
+func (e *PartialError) Error() string { return e.Err.Error() + "; already written: " + e.Written }
+func (e *PartialError) Unwrap() error { return e.Err }
 
 // RetiredNote is the file retire writes at the clone's root.
 const RetiredNote = "RETIRED.md"
@@ -46,21 +63,33 @@ func Retire(ctx context.Context, clone, serverURL string, profiles []NativeProfi
 	if err != nil {
 		return out, errors.New("clone is not a readable signet")
 	}
-	out.Clone, out.SignetID, out.Disabled = store.Root, store.Signet.ID, []install.LegacyConnection{}
+	out.Clone, out.SignetID, out.Disabled, out.Clear = store.Root, store.Signet.ID, []install.LegacyConnection{}, []NativeProfile{}
+	// Once a disable has run, a failure has changed native state.
+	stopped := func(err error) error {
+		if len(out.Disabled) == 0 {
+			return err
+		}
+		done := []string{}
+		for _, c := range out.Disabled {
+			done = append(done, fmt.Sprintf("%s %s in %s", c.Harness, c.Target, c.Home))
+		}
+		return &PartialError{Err: err, Written: "disabled " + strings.Join(done, ", ") + "; the clone itself was not changed"}
+	}
 	for _, p := range profiles {
 		found, err := install.FindLegacyConnections(ctx, p.Harness, p.Home, p.Binary)
 		if err != nil {
-			return out, fmt.Errorf("%s profile inventory failed: %w", p.Harness, err)
+			return out, stopped(fmt.Errorf("%s profile inventory failed: %w", p.Harness, err))
 		}
 		for _, c := range found {
 			if err := disable(ctx, c); err != nil {
-				return out, fmt.Errorf("%s disable failed; the clone was not changed: %w", p.Harness, err)
+				return out, stopped(fmt.Errorf("%s disable of %s failed, and the clone was not changed: %w", p.Harness, c.Target, err))
 			}
 			out.Disabled = append(out.Disabled, c)
 		}
 		if still, err := install.FindLegacyConnections(ctx, p.Harness, p.Home, p.Binary); err != nil || len(still) > 0 {
-			return out, fmt.Errorf("%s still shows an enabled Mandalore connection; the clone was not changed", p.Harness)
+			return out, stopped(fmt.Errorf("%s still shows an enabled Mandalore connection, and the clone was not changed", p.Harness))
 		}
+		out.Clear = append(out.Clear, p)
 	}
 	out.Note = filepath.Join(store.Root, RetiredNote)
 	note := fmt.Sprintf("# Retired 1.x clone\n\nRetired on %s. Memory for this signet (%s) is now served by the Mandalore 2.0 server at %s.\n\n"+
@@ -68,13 +97,13 @@ func Retire(ctx context.Context, clone, serverURL string, profiles []NativeProfi
 		time.Now().UTC().Format("2006-01-02"), store.Signet.ID, serverURL)
 	if _, err := os.Lstat(out.Note); errors.Is(err, os.ErrNotExist) {
 		if err := os.WriteFile(out.Note, []byte(note), 0444); err != nil {
-			return out, errors.New("cannot write RETIRED.md")
+			return out, stopped(errors.New("cannot write RETIRED.md, and the clone was not changed"))
 		}
 	} else if err != nil {
-		return out, err
+		return out, stopped(err)
 	}
 	if err := readOnly(store.Root); err != nil {
-		return out, errors.New("cannot remove write permission from every file; rerun retire to finish")
+		return out, &PartialError{Err: errors.New("cannot remove write permission from every file; rerun retire to finish"), Written: "RETIRED.md, and some files are already read-only"}
 	}
 	out.ReadOnly = true
 	out.Notice = "Retired. 1.x writes now fail with a permission error. Nothing was deleted."

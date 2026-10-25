@@ -15,6 +15,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/acoz-labs/mandalore/internal/api"
+	"github.com/acoz-labs/mandalore/internal/cutover"
 	"github.com/acoz-labs/mandalore/internal/memory"
 	signetsync "github.com/acoz-labs/mandalore/internal/sync"
 	"github.com/acoz-labs/mandalore/internal/testfixture"
@@ -311,6 +313,45 @@ func TestMigrateInitRejectsForeignOrForgedReceipts(t *testing.T) {
 	}
 	if code, out := migrateCLI(t, "init", "--config", config, "--remote", l.Remote, "--slug", "primary", "--root", root, "--device-lost", "device-z", "--reason", "Never enrolled"); code == 0 || !strings.Contains(out, "device-z") {
 		t.Errorf("init accepted an unenrolled lost device: %d %s", code, out)
+	}
+}
+
+// The reviewer's late-failure repro: an unwritable configuration directory is
+// now refused before anything is pushed, and an honest refusal says so.
+func TestMigrateInitRefusesUnwritableConfigBeforePushing(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("root ignores the read-only directory this test relies on")
+	}
+	l := testfixture.NewLegacySignet(t, "device-a")
+	_, receipt := preflight(t, l.Clones["device-a"])
+	config, _, root := migrateConfig(t)
+	remote := testfixture.Git(t, l.RemoteDir, "rev-parse", "main")
+	if err := os.Chmod(filepath.Dir(config), 0555); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(filepath.Dir(config), 0755) })
+	code, out := migrateCLI(t, "init", "--config", config, "--remote", l.Remote, "--slug", "primary", "--root", root, "--preflight", receipt)
+	var v api.Envelope
+	if err := json.Unmarshal([]byte(out), &v); err != nil || code == 0 || v.Error.WriteMayHaveOccurred || !strings.Contains(v.Error.Message, "refused") {
+		t.Fatalf("init with an unwritable configuration: %d %s", code, out)
+	}
+	if testfixture.Git(t, l.RemoteDir, "rev-parse", "main") != remote {
+		t.Fatal("refused init pushed to the remote")
+	}
+}
+
+func TestMigrateFailureEnvelopeSaysWhetherItWrote(t *testing.T) {
+	var out bytes.Buffer
+	migrateFailure(&out, "Init", &cutover.PartialError{Err: errors.New("cannot write the server configuration"), Written: "the checkout at ROOT"})
+	var v api.Envelope
+	if json.Unmarshal(out.Bytes(), &v) != nil || v.Error.Code != "migrate.incomplete" || !v.Error.WriteMayHaveOccurred || !v.Error.InspectBeforeRetry ||
+		!strings.Contains(v.Error.Message, "stopped after writing") || !strings.Contains(v.Error.Message, "ROOT") {
+		t.Fatalf("partial failure: %s", out.String())
+	}
+	out.Reset()
+	migrateFailure(&out, "Init", errors.New("device device-b is blocked"))
+	if json.Unmarshal(out.Bytes(), &v) != nil || v.Error.Code != "migrate.refused" || v.Error.WriteMayHaveOccurred {
+		t.Fatalf("refusal: %s", out.String())
 	}
 }
 

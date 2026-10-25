@@ -83,7 +83,7 @@ func runMigrate(ctx context.Context, args []string, out io.Writer) int {
 		}
 		m, err := server.Init(ctx, server.MigrateInit{ConfigPath: *config, Remote: *remote, Slug: *slug, Root: *root, Preflights: preflights, Lost: lost})
 		if err != nil {
-			return emit(out, api.Failure("migrate.refused", "Init refused: "+err.Error()+".", false))
+			return migrateFailure(out, "Init", err)
 		}
 		return emit(out, api.Success(m))
 	case "retire":
@@ -92,7 +92,7 @@ func runMigrate(ctx context.Context, args []string, out io.Writer) int {
 		}
 		r, err := cutover.Retire(ctx, *clone, *serverURL, profiles, disableLegacy)
 		if err != nil {
-			return emit(out, api.Failure("migrate.refused", "Retire stopped: "+err.Error()+".", false))
+			return migrateFailure(out, "Retire", err)
 		}
 		return emit(out, api.Success(r))
 	case "verify":
@@ -105,11 +105,21 @@ func runMigrate(ctx context.Context, args []string, out io.Writer) int {
 		}
 		v, err := server.Verify(ctx, c, *slug)
 		if err != nil {
-			return emit(out, api.Failure("migrate.unverified", "Verify failed: "+err.Error()+".", false))
+			return migrateFailure(out, "Verify", err)
 		}
 		return emit(out, api.Success(v))
 	}
 	return bad(out, migrateUsage)
+}
+
+// migrateFailure reports a refusal, which wrote nothing, or a stop after a
+// write, which says what was written and asks for inspection before retrying.
+func migrateFailure(out io.Writer, command string, err error) int {
+	var partial *cutover.PartialError
+	if errors.As(err, &partial) {
+		return emit(out, api.Failure("migrate.incomplete", command+" stopped after writing: "+err.Error()+".", true))
+	}
+	return emit(out, api.Failure("migrate.refused", command+" refused; no signet, remote, configuration or native profile was changed: "+err.Error()+".", false))
 }
 
 // runPreflight exits 0 when the clone is clean, 1 when blocked and 2 when it

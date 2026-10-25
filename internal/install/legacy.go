@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/acoz-labs/mandalore/internal/strictjson"
@@ -34,7 +35,13 @@ func findLegacyConnections(ctx context.Context, harness, home, binary string, co
 		return nil, err
 	}
 	found := []LegacyConnection{}
-	add := func(target string) { found = append(found, LegacyConnection{harness, home, binary, target}) }
+	// One disable per target: two plugins from one Codex marketplace share it.
+	add := func(target string) {
+		c := LegacyConnection{harness, home, binary, target}
+		if !slices.Contains(found, c) {
+			found = append(found, c)
+		}
+	}
 	switch harness {
 	case "claude-code":
 		s, err := inspectClaudeSettings(home)

@@ -70,7 +70,7 @@ func Preflight(ctx context.Context, clone, bindingPath string) (Receipt, error) 
 		block("%d unpushed commit(s): run a 1.x sync", r.Unpushed)
 	}
 	if len(r.PendingIntents) > 0 {
-		block("%d pending write intent(s) in .mandalore: finish them with the 1.x tools, then sync", len(r.PendingIntents))
+		block("%d pending write intent(s) in .mandalore: interrupted razor-crest writes whose entry was never published; retry each from its client with the same request_id, or save the entry it holds elsewhere and move the file out of .mandalore (see docs/migration-2.0.md)", len(r.PendingIntents))
 	}
 	switch r.Remote {
 	case "none":

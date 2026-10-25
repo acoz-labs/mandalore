@@ -49,7 +49,7 @@ func TestFindLegacyConnectionsPerHarness(t *testing.T) {
 		if strings.Join(args, " ") == "plugin marketplace list --json" {
 			return []byte(`{"marketplaces":[]}`), nil
 		}
-		return []byte(`{"installed":[{"pluginId":"mandalore@mandalore-local","name":"mandalore","version":"1.6.1","enabled":true},{"pluginId":"other@x","name":"other","enabled":true}]}`), nil
+		return []byte(`{"installed":[{"pluginId":"mandalore@mandalore-local","name":"mandalore","version":"1.6.1","enabled":true},{"pluginId":"my-friday@mandalore-local","name":"my-friday","version":"1.0.0","enabled":true},{"pluginId":"other@x","name":"other","enabled":true}]}`), nil
 	}
 	for _, test := range []struct{ harness, home, target string }{
 		{"claude-code", "claude", "mandalore@mandalore"},

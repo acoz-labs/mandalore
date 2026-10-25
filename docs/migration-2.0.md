@@ -14,8 +14,9 @@ the remote ref but never fetches, commits or writes state. It checks:
 
 - the signet passes full validation;
 - no uncommitted files and no unpushed commits;
-- no pending write intents in `.mandalore/` (an interrupted 1.x write, or a
-  prepared format upgrade that isn't active);
+- no pending write intents in `.mandalore/`: an `operation-*.json` left by an
+  interrupted razor-crest write, or a prepared format upgrade that isn't active
+  (see [Pending intents](#pending-intents));
 - the clone hasn't diverged from its `origin`, and `origin` is reachable;
 - the signet is format 2 (see [Format 1 signets](#format-1-signets)).
 
@@ -52,7 +53,16 @@ configuration; it may start with `"signets": []`. `init`:
 Repeat `--preflight` and `--device-lost ID --reason TEXT` as needed; each
 `--reason` belongs to the `--device-lost` just before it. A device enrolled by
 `signet create` without a clone of its own is still enrolled: mark it lost with
-a reason that says so. On refusal nothing is configured and no checkout is left.
+a reason that says so. Init checks that each receipt's head is on the remote,
+not how old the receipt is: pass the receipts from runbook step 4, taken after
+1.x sessions stopped, not earlier ones.
+
+A refusal (`migrate.refused`) changes no signet, remote or configuration and
+leaves no checkout. Init first checks that it can write the configuration and
+its state, so an unwritable one is refused before anything is pushed. A failure
+after the enrollment (`migrate.incomplete`, with `write_may_have_occurred`)
+names the checkout at root, the server device and whether it was pushed; see
+[Recovery](#recovery).
 
 ### `retire --clone PATH --server URL [--native HARNESS=HOME,BINARY]...`
 
@@ -69,7 +79,11 @@ inventory code and stops each with the harness's own command:
 | Hermes | `hermes plugins disable mandalore` |
 
 It checks each profile again afterwards. If any disable fails or a connection is
-still enabled, it stops before touching the clone. Then it writes `RETIRED.md`
+still enabled, it stops before touching the clone. If an earlier disable in the
+same run already succeeded, the failure is `migrate.incomplete` and lists it:
+keep that output, since a rerun reports only its own disables
+(`disabled_this_run`) and the profiles it found clear (`profiles_clear`). Two
+Mandalore plugins from one Codex marketplace are removed with one command. Then it writes `RETIRED.md`
 (date, signet ID and server URL) and removes write permission from the clone,
 as `chmod -R a-w` would, leaving `.git` as it was. It deletes nothing. A 1.x
 write to the clone then fails with a permission error, and 1.x validation
@@ -102,6 +116,39 @@ checks recall no longer shows it, and pushes. It passes only when the remote's
 
 A device you can't reach is marked lost at step 6. If it comes back, retire it
 before it syncs; the server refuses to serve a signet whose remote moved.
+
+## Pending intents
+
+A 1.x clone serving razor-crest writes an `operation-*.json` intent in
+`.mandalore/` before it publishes each write. If the publication never
+happened, the intent holds the only copy of that entry, and only the client
+retrying with the same `request_id` completes it; no operator command does.
+Either retry it from that client before stopping 1.x sessions, or keep the
+entry (the `revision`, `source` or `journal` in the file), move the file out of
+`.mandalore/`, and save the entry again through the 2.0 server after the
+cutover. Then sync and preflight again.
+
+## Recovery
+
+A command that stops after writing reports `migrate.incomplete` with
+`write_may_have_occurred` and says what it wrote.
+
+- **Init, before the push.** The checkout is at root with the server device
+  enrolled but not pushed. Remove root and rerun init. If the message says the
+  push failed, check the remote first: if its `main` has moved past the head
+  init cloned, treat it as after the push.
+- **Init, after the push.** The server device is enrolled on the remote, so a
+  plain rerun refuses with that device among those missing a preflight. Remove
+  root and rerun init adding `--device-lost <that server device> --reason
+  "Server enrollment from an init that stopped"`. A new server device is
+  enrolled; the old record stays in provenance, unused.
+- **Verify.** The message gives the canary's record ID and how far it got. If
+  it is committed but not pushed, start the server once: it commits and pushes
+  pending work when it starts. Stop it and rerun verify. If the canary is still
+  visible, withdraw it with `memory_withdraw` from a 2.0 client once the server
+  runs.
+- **Retire.** Keep the failure output's list of disabled connections, fix the
+  cause and rerun retire; it skips what is already disabled.
 
 ## Rollback
 
