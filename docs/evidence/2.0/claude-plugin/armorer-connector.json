@@ -1,0 +1,32 @@
+{
+  "run": "armorer-connector",
+  "mcp_servers": [
+    {
+      "name": "claude.ai My Memory",
+      "status": "connected"
+    }
+  ],
+  "hooks": [
+    {
+      "hook": "UserPromptSubmit",
+      "outcome": "error",
+      "output": "MCP server 'plugin:mandalore:mandalore' not connected"
+    }
+  ],
+  "context": [
+    {
+      "type": "hook_non_blocking_error",
+      "hookName": "UserPromptSubmit",
+      "hookEvent": "UserPromptSubmit",
+      "stderr": "MCP server 'plugin:mandalore:mandalore' not connected",
+      "seconds_after_prompt": 0.006
+    }
+  ],
+  "tools_called": [
+    "Skill"
+  ],
+  "answer": "**Diagnosis:** The claude.ai connector 'claude.ai My Memory' replaces the plugin's server, so memory isn't recalled on each prompt.\n\nThis session has the Mandalore tools only through `claude.ai My Memory`, and there's no `plugin:mandalore:mandalore` server. Claude Code sees that both point at the same server, so it keeps the connector and drops the plugin's. The plugin's recall hook only calls `plugin:mandalore:mandalore`, so it can't run.\n\n**Fix:**\n\n1. Run `/mcp` and check that the URL for `claude.ai My Memory` is `http://localhost:28730/mcp`. If it's a different URL, tell me, because then this diagnosis doesn't apply.\n2. Add this to `~/.claude/settings.json`. If you already have a `deniedMcpServers` list, add the entry to it:\n\n   ```json\n   \"deniedMcpServers\": [{ \"serverName\": \"claude.ai My Memory\" }]\n   ```\n3. Restart Claude Code.\n\nThis hides the connector only in Claude Code. The Claude app keeps using it. After the restart, the plugin's own server should load and recall should run on each prompt again. I haven't changed anything.",
+  "is_error": false,
+  "wall_seconds": 9.75,
+  "api_seconds": 8.94
+}

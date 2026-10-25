@@ -34,11 +34,35 @@ hooks, so recall depends on the model calling the tools. Upload
 `skills/this-is-the-way` as a skill ZIP if plugin skills don't sync to your
 account.
 
+### Plugin and connector together
+
+A custom connector syncs to Claude Code too, where it shows up in `/mcp` as
+`claude.ai <connector name>`. When it has the plugin's URL, Claude Code keeps the
+connector and drops the plugin's `plugin:mandalore:mandalore` server. The tools
+still work through the connector, but the recall hook only calls the plugin's
+server, so it fails open on every prompt with `MCP server
+'plugin:mandalore:mandalore' not connected` and no memory is recalled. A hook
+can't follow the connector instead: Claude Code matches an `mcp_tool` hook's
+server by its exact name, and the connector's name is yours.
+
+To keep both, deny the connector in Claude Code only. Add this to your user
+settings (`~/.claude/settings.json`) with the connector's name as `/mcp` shows
+it, such as `claude.ai My Memory`, then restart Claude Code:
+
+```json
+"deniedMcpServers": [{ "serverName": "claude.ai My Memory" }]
+```
+
+The Claude app keeps using the connector. The Armorer detects this case and
+prints the line with your connector's name.
+
 ## Behaviour
 
-- **Fail open.** If the server is down, slow or unauthorized, the hook gives up
-  within 3 seconds and the prompt goes through without memory. Claude Code shows
-  a non-blocking "UserPromptSubmit hook error" line under the prompt.
+- **Fail open.** If the server is down, slow or unauthorized, or a connector has
+  replaced the plugin's server ([above](#plugin-and-connector-together)), the
+  hook gives up within 3 seconds and the prompt goes through without memory.
+  Claude Code shows a non-blocking "UserPromptSubmit hook error" line under the
+  prompt.
 - **No session-start hook.** Claude Code fails an `mcp_tool` hook on
   `SessionStart` and shows an error on every launch, so the first prompt's hook
   covers launch (and the next prompt's covers `/clear` and `/compact`).

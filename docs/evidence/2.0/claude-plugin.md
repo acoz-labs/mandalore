@@ -71,6 +71,28 @@ prompts match no memory, so the hook succeeds and adds nothing to context.
 Criterion 4 (no 1.x sync, session, binding or `connection.json` guidance in the
 skills) is a grep in `bin/ci`.
 
+## Plugin and connector at one URL (#201)
+
+Recorded 2026-10-25 with Claude Code 2.1.310, by the same script. Account
+connectors stay disabled in the temporary `HOME`, so the run stands one in with
+`--mcp-config`: a server named `claude.ai My Memory` at the plugin's URL. Claude
+Code drops the plugin's server as a duplicate, as it does for a synced
+connector.
+
+| Check | Run | Result |
+| --- | --- | --- |
+| Armorer detects the conflict | [`armorer-connector.json`](claude-plugin/armorer-connector.json) | Only `claude.ai My Memory` is connected, and the hook fails open with `MCP server 'plugin:mandalore:mandalore' not connected`. The Armorer's diagnosis is "The claude.ai connector 'claude.ai My Memory' replaces the plugin's server", and it prints `"deniedMcpServers": [{ "serverName": "claude.ai My Memory" }]`. |
+| The workaround restores recall | [`connector-denied.json`](claude-plugin/connector-denied.json) | With that entry in the user settings, `plugin:mandalore:mandalore` is connected and `hook_additional_context` 0.01 s after the prompt holds the seeded fact. |
+
+The other Armorer and hook runs gave the same results as above on this change.
+
+A hook that follows whichever server is connected isn't possible in 2.1.310.
+Claude Code resolves an `mcp_tool` hook's `server` by exact name against the
+connected servers, with no pattern or fallback list. It substitutes
+`${user_config.*}` in MCP server configuration and command hooks, but not in an
+`mcp_tool` hook's `server`. The connector's name is chosen by each user, so the
+plugin can't name it in advance.
+
 ## Notes for operators
 
 - Claude Code keeps MCP OAuth state in the login keychain, keyed by server name

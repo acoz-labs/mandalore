@@ -109,6 +109,9 @@ connect to it over MCP:
    connector in the Claude app, and give it the server's MCP URL,
    such as `http://127.0.0.1:8730/mcp` locally or `https://memory.example.com/mcp`
    through a tunnel. With OAuth, approve the client with your owner passkey.
+   Using both? A connector with the plugin's URL replaces the plugin's server in
+   Claude Code and stops its recall hook; deny it there as the
+   [plugin guide](plugins/claude/README.md#plugin-and-connector-together) shows.
 
 Independent community project; not affiliated with or endorsed by Lucasfilm or
 Disney. The theme is naming and prose; no official artwork is bundled.

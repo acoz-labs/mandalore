@@ -71,11 +71,12 @@ sign_out
 claude plugin validate --strict "$repo/plugins/claude" | sed "s|$repo|<repo>|g" > "$out/validate-plugin.txt"
 claude plugin validate --strict "$repo" | sed "s|$repo|<repo>|g" > "$out/validate-marketplace.txt"
 
-ask() { # name prompt [tools]
+extra_args=()
+ask() { # name prompt [tools]; extra_args go to claude as well
   local start end
   start=$(python3 -c 'import time; print(time.time())')
   (cd "$work/project" && claude -p "$2" --output-format stream-json --verbose --include-hook-events \
-    --allowedTools "${3:-}" --disallowedTools Bash Edit Write WebFetch WebSearch < /dev/null > "$work/$1.jsonl" 2> "$work/$1.err") || true
+    --allowedTools "${3:-}" ${extra_args[@]+"${extra_args[@]}"} --disallowedTools Bash Edit Write WebFetch WebSearch < /dev/null > "$work/$1.jsonl" 2> "$work/$1.err") || true
   end=$(python3 -c 'import time; print(time.time())')
   python3 "$repo/docs/evidence/2.0/claude-plugin-summarize.py" "$1" "$work/$1.jsonl" "$HOME/.claude/projects" "$start" "$end" "$work" > "$out/$1.json"
 }
@@ -88,6 +89,19 @@ armorer_tools='Skill mcp__plugin_mandalore_mandalore__memory_scopes mcp__plugin_
 serve loopback-trust read-write
 ask seeded "Where does the zebrafinch project keep its build cache? Answer only from context you already have; don't call tools." "$no_tools"
 ask armorer-read-write "$armorer" "$armorer_tools"
+
+# #201: a server named like a claude.ai connector, at the plugin's URL, makes
+# Claude Code drop the plugin's server. The Armorer names the workaround, and
+# the workaround (deny the connector) brings the plugin's hook back.
+printf '{"mcpServers":{"claude.ai My Memory":{"type":"http","url":"%s"}}}\n' "$url" > "$work/connector.json"
+extra_args=(--mcp-config "$work/connector.json")
+ask armorer-connector "$armorer" "Skill mcp__claude_ai_My_Memory__memory_scopes mcp__plugin_mandalore_mandalore__memory_scopes"
+mkdir -p "$HOME/.claude"
+cp "$HOME/.claude/settings.json" "$work/settings.json" 2>/dev/null || echo '{}' > "$work/settings.json"
+python3 -c 'import json,sys; s=json.load(open(sys.argv[1])); s["deniedMcpServers"]=[{"serverName":"claude.ai My Memory"}]; json.dump(s,open(sys.argv[2],"w"))' "$work/settings.json" "$HOME/.claude/settings.json"
+ask connector-denied "Where does the zebrafinch project keep its build cache? Answer only from context you already have; don't call tools." "$no_tools"
+cp "$work/settings.json" "$HOME/.claude/settings.json"
+extra_args=()
 stop_server
 
 # Acceptance 3: server stopped, and server stalled (SIGSTOP) past the 3 s timeout.
