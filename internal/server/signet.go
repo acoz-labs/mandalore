@@ -29,15 +29,17 @@ type Backup struct {
 // signet owns one checkout. Its mutex serializes memory work and checkpoints;
 // pushes run outside it so a slow remote never blocks reads or saves.
 type signet struct {
-	config  SignetConfig
-	owner   string
-	state   string
-	auth    Authenticator
-	log     *log.Logger
-	timing  timing
-	memory  *memory.Service
-	git     *signetsync.Synchronizer
-	blocked bool
+	config SignetConfig
+	owner  string
+	state  string
+	auth   Authenticator
+	// protected serves MCP behind OAuth bearer tokens; nil for local auth.
+	protected http.Handler
+	log       *log.Logger
+	timing    timing
+	memory    *memory.Service
+	git       *signetsync.Synchronizer
+	blocked   bool
 
 	mu       sync.Mutex
 	devices  map[string]string // client ID → enrolled device ID
@@ -70,7 +72,7 @@ func openSignet(c Config, sc SignetConfig, logger *log.Logger, t timing) (*signe
 	}
 	s := &signet{config: sc, owner: c.Owner.Name, state: filepath.Join(c.StateDir, "signets", sc.Slug), log: logger, timing: t, memory: m, git: g,
 		devices: map[string]string{}, handlers: map[string]http.Handler{}, backup: Backup{State: "unknown", Remote: "unknown"}, kick: make(chan struct{}, 1)}
-	switch c.Auth {
+	switch c.auth() {
 	case AuthLoopbackTrust:
 		s.auth = loopbackTrust{scope: c.LocalScope}
 	case AuthInsecureTest:
@@ -119,7 +121,11 @@ func (s *signet) author(c Client) (memory.Authorship, error) {
 	device := s.devices[c.ID]
 	if device == "" {
 		var err error
-		device, err = s.memory.EnrollClientDevice(fmt.Sprintf("%s (%s), approved %s", c.ID, c.Kind, time.Now().UTC().Format("2006-01-02")))
+		name := c.Name
+		if name == "" {
+			name = c.ID
+		}
+		device, err = s.memory.EnrollClientDevice(fmt.Sprintf("%s (%s), approved %s", name, c.Kind, time.Now().UTC().Format("2006-01-02")))
 		if err != nil {
 			return memory.Authorship{}, err
 		}
@@ -129,6 +135,23 @@ func (s *signet) author(c Client) (memory.Authorship, error) {
 		}
 	}
 	return memory.Authorship{DeviceID: device, Actor: s.owner, Harness: c.Kind}, nil
+}
+
+// enroll records an approved client's device at approval, so provenance
+// names it before its first write. While writes are paused it waits for the
+// first write instead.
+func (s *signet) enroll(c Client) error {
+	if s.blocked || s.writesPaused() {
+		return nil
+	}
+	s.mu.Lock()
+	_, known := s.devices[c.ID]
+	_, err := s.author(c)
+	s.mu.Unlock()
+	if err == nil && !known {
+		s.wrote()
+	}
+	return err
 }
 
 // startup refuses to serve a signet whose remote has commits the checkout

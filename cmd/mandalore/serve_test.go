@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/acoz-labs/mandalore/internal/testfixture"
 )
 
 func TestServerCommandsRequireExplicitConfiguration(t *testing.T) {
@@ -57,7 +59,8 @@ func TestServerConfigurationIsStrictAndDoesNotLeak(t *testing.T) {
 			delete(c, "local_scope")
 			c["test_clients"] = []any{map[string]any{"id": "c1", "kind": "test", "scope": "read", "token": "never-emit-fixture-token", "signets": []string{"primary"}}}
 		})},
-		{"missing auth", valid(func(c map[string]any) { delete(c, "auth") })},
+		{"local scope under default oauth", valid(func(c map[string]any) { delete(c, "auth") })},
+		{"oauth on an IP public URL", valid(func(c map[string]any) { delete(c, "auth"); delete(c, "local_scope") })},
 		{"signet root unavailable", valid(func(map[string]any) {})},
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -78,5 +81,44 @@ func TestServerConfigurationIsStrictAndDoesNotLeak(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestServerOAuthAdminCommands(t *testing.T) {
+	s := testfixture.NewServerSignet(t, "admin")
+	raw, _ := json.Marshal(map[string]any{"listen": "127.0.0.1:8730", "public_url": "https://memory.example.com", "state_dir": filepath.Join(t.TempDir(), "state"), "owner": map[string]any{"name": "Example"},
+		"signets": []any{map[string]any{"slug": "primary", "root": s.Root, "signet_id": s.SignetID, "device_id": s.DeviceID, "remote": s.Remote}}})
+	path := filepath.Join(t.TempDir(), "config.json")
+	if err := os.WriteFile(path, raw, 0600); err != nil {
+		t.Fatal(err)
+	}
+	cli := func(args ...string) (int, map[string]any) {
+		var out, errout bytes.Buffer
+		code := run(context.Background(), append(args, "--config", path), strings.NewReader(""), &out, &errout)
+		var v map[string]any
+		if err := json.Unmarshal(out.Bytes(), &v); err != nil {
+			t.Fatalf("%v: not JSON: %s", args, out.String())
+		}
+		return code, v
+	}
+	code, v := cli("server", "owner", "enroll")
+	if link, _ := v["result"].(map[string]any)["link"].(string); code != 0 || !strings.HasPrefix(link, "https://memory.example.com/owner/enroll#") {
+		t.Fatalf("owner enroll: %d %v", code, v)
+	}
+	if code, v := cli("server", "clients", "list"); code != 0 || len(v["result"].([]any)) != 0 {
+		t.Fatalf("clients list: %d %v", code, v)
+	}
+	for _, args := range [][]string{
+		{"server", "clients", "revoke", "--client", "client-unknown"},
+		{"server", "clients", "revoke"},
+		{"server", "clients", "set-scope", "--client", "client-unknown", "--scope", "read"},
+		{"server", "clients", "set-scope", "--client", "client-unknown", "--scope", "admin"},
+		{"server", "clients", "list", "--client", "x"},
+		{"server", "clients", "purge"},
+		{"server", "owner", "reset"},
+	} {
+		if code, v := cli(args...); code == 0 || v["ok"] != false {
+			t.Errorf("%v succeeded: %v", args, v)
+		}
 	}
 }

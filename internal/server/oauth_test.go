@@ -1,0 +1,769 @@
+package server
+
+import (
+	"context"
+	"encoding/json"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"net/netip"
+	"net/url"
+	"os"
+	"path/filepath"
+	"slices"
+	"strings"
+	"sync/atomic"
+	"testing"
+	"time"
+
+	"github.com/acoz-labs/mandalore/internal/memory"
+	"github.com/acoz-labs/mandalore/internal/testfixture"
+	"github.com/modelcontextprotocol/go-sdk/auth"
+	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/modelcontextprotocol/go-sdk/oauthex"
+)
+
+func toolNames(t *testing.T, e *oauthEnv, path, token string) []string {
+	t.Helper()
+	tools, err := e.bearer(t, path, token).ListTools(context.Background(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	for _, tool := range tools.Tools {
+		names = append(names, tool.Name)
+	}
+	return names
+}
+
+// checkTimings asserts acceptance 8: every OAuth endpoint answered in under
+// 200 ms.
+func checkTimings(t *testing.T, e *oauthEnv) {
+	t.Helper()
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	seen := 0
+	for path, ds := range e.timings {
+		if strings.HasSuffix(path, "/mcp") {
+			continue
+		}
+		for _, d := range ds {
+			seen++
+			if d >= 200*time.Millisecond {
+				t.Errorf("%s took %s", path, d)
+			}
+		}
+	}
+	if seen == 0 {
+		t.Fatal("no OAuth requests were timed")
+	}
+}
+
+// Acceptance 1 and 8: the go-sdk authorization code handler registers by
+// DCR, the owner approves, it gets tokens and makes an MCP write.
+func TestOAuthFlowWithDynamicRegistration(t *testing.T) {
+	a := testfixture.NewServerSignet(t, "alpha")
+	e := startOAuth(t, a)
+	e.enrollOwner(t)
+	h, err := auth.NewAuthorizationCodeHandler(&auth.AuthorizationCodeHandlerConfig{
+		DynamicClientRegistrationConfig: &auth.DynamicClientRegistrationConfig{Metadata: &oauthex.ClientRegistrationMetadata{
+			ClientName: "Synthetic Chat", RedirectURIs: []string{"https://claude.ai/api/mcp/auth_callback"}, GrantTypes: []string{"authorization_code", "refresh_token"}}},
+		AuthorizationCodeFetcher: e.fetcher(t, ScopeReadWrite), RequestRefreshToken: true, Client: e.agent,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	session := e.connect(t, "/mcp", h)
+	// Approval enrolled the client's device before its first write.
+	devices := map[string]string{}
+	if err := readState(filepath.Join(e.config.StateDir, "signets", "a", "devices.json"), &devices); err != nil || len(devices) != 1 {
+		t.Fatalf("devices %v %v", devices, err)
+	}
+	client := onlyClient(t, e)
+	device := devices[client]
+	var d memory.Device
+	readJSON(t, filepath.Join(a.Root, "provenance/devices", device+".json"), &d)
+	if !strings.HasPrefix(d.Label, "Synthetic Chat (claude.ai), approved ") {
+		t.Fatalf("device label %q", d.Label)
+	}
+	_, text := call(t, session, "memory_remember", rememberArgs("oauth-dcr-request-0001", "Saved through OAuth"))
+	saved := receipt(t, text)
+	var r memory.Revision
+	readJSON(t, filepath.Join(a.Root, "memory/records", saved.RecordID, saved.ID+".json"), &r)
+	if want := (memory.Authorship{DeviceID: device, Actor: "Synthetic Owner", Harness: "claude.ai"}); r.Authorship != want {
+		t.Fatalf("authorship %+v", r.Authorship)
+	}
+	ts, _ := h.TokenSource(context.Background())
+	tok, err := ts.Token()
+	if err != nil || tok.RefreshToken == "" {
+		t.Fatalf("no refresh token issued: %v", err)
+	}
+	if got := strings.Fields(tok.Extra("scope").(string)); !slices.Equal(got, []string{scopeRead, scopeWrite}) {
+		t.Fatalf("scope %v", got)
+	}
+	// A second authorization by the approved client skips consent.
+	_, challenge := pkce()
+	resp, err := e.browser.Get(authorizeURL(client, "https://claude.ai/api/mcp/auth_callback", challenge, publicURL+"/mcp", ""))
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusSeeOther || !strings.Contains(resp.Header.Get("Location"), "code=") {
+		t.Fatalf("approved client did not skip consent: %d", resp.StatusCode)
+	}
+	checkTimings(t, e)
+}
+
+func onlyClient(t *testing.T, e *oauthEnv) string {
+	t.Helper()
+	clients, err := Clients(e.config)
+	if err != nil || len(clients) != 1 {
+		t.Fatalf("clients %v %v", clients, err)
+	}
+	return clients[0].ID
+}
+
+// Acceptance 1 (CIMD), 2 and 8: a client ID metadata document served over
+// TLS, a loopback redirect whose port differs from the registered one, and
+// no metadata fetch on the token path.
+func TestOAuthFlowWithClientMetadataDocument(t *testing.T) {
+	var hits atomic.Int32
+	var docURL string
+	doc := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"client_id": docURL, "client_name": "Synthetic Code", "redirect_uris": []string{"http://127.0.0.1/callback"},
+			"grant_types": []string{"authorization_code", "refresh_token"}, "token_endpoint_auth_method": "none"})
+	}))
+	t.Cleanup(doc.Close)
+	docURL = doc.URL + "/oauth/client-metadata"
+	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
+	// The test document is on loopback, which production fetches refuse.
+	e.server.oauth.documents.client = doc.Client()
+	e.enrollOwner(t)
+	h, err := auth.NewAuthorizationCodeHandler(&auth.AuthorizationCodeHandlerConfig{
+		ClientIDMetadataDocumentConfig: &auth.ClientIDMetadataDocumentConfig{URL: docURL}, RedirectURL: "http://127.0.0.1:9/callback",
+		AuthorizationCodeFetcher: e.fetcher(t, ScopeRead), RequestRefreshToken: true, Client: e.agent,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	session := e.connect(t, "/mcp", h)
+	if _, text := call(t, session, "memory_scopes", map[string]any{}); !strings.Contains(text, `"ok":true`) {
+		t.Fatalf("read failed: %s", text)
+	}
+	if hits.Load() != 1 {
+		t.Fatalf("metadata document fetched %d times, want 1", hits.Load())
+	}
+	ts, _ := h.TokenSource(context.Background())
+	tok, _ := ts.Token()
+	before := hits.Load()
+	resp, out := e.postForm(t, e.agent, "/token", url.Values{"grant_type": {"refresh_token"}, "client_id": {docURL}, "refresh_token": {tok.RefreshToken}})
+	if resp.StatusCode != http.StatusOK || hits.Load() != before {
+		t.Fatalf("refresh: %d %v, fetches %d → %d", resp.StatusCode, out, before, hits.Load())
+	}
+	if c := onlyClient(t, e); c != docURL {
+		t.Fatalf("stored client %q", c)
+	}
+	checkTimings(t, e)
+}
+
+// Acceptance 2: exact redirect matching, loopback ports ignored.
+func TestRedirectMatching(t *testing.T) {
+	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
+	client := e.registerClient(t, "Synthetic", "https://claude.ai/api/mcp/auth_callback", "http://localhost/callback", "http://127.0.0.1/callback")
+	_, challenge := pkce()
+	for redirect, ok := range map[string]bool{
+		"https://claude.ai/api/mcp/auth_callback":      true,
+		"http://localhost:53122/callback":              true,
+		"http://127.0.0.1:9/callback":                  true,
+		"http://localhost/callback":                    true,
+		"http://evil.test/":                            false,
+		"https://claude.ai.evil/api/mcp/auth_callback": false,
+		"https://claude.ai/api/mcp/auth_callback/":     false,
+		"https://claude.ai:8443/api/mcp/auth_callback": false,
+		"http://claude.ai/api/mcp/auth_callback":       false,
+		"http://localhost:53122/other":                 false,
+		"http://localhost:53122/callback?x=1":          false,
+		"http://127.0.0.1:9/callback#frag":             false,
+		"http://localhost.evil.test/callback":          false,
+		"http://[::1]:9/callback":                      false,
+	} {
+		resp, err := e.browser.Get(authorizeURL(client, redirect, challenge, publicURL+"/mcp", ""))
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		// Without an owner session an accepted request shows the sign-in page;
+		// a refused one shows an error and never redirects.
+		if got := resp.StatusCode == http.StatusOK; got != ok || resp.Header.Get("Location") != "" {
+			t.Errorf("%s: status %d, want accepted=%v", redirect, resp.StatusCode, ok)
+		}
+	}
+	for _, bad := range []string{"http://evil.test/callback", "ftp://claude.ai/x", "https://user@claude.ai/x", "https://claude.ai/x#f", "/relative"} {
+		if resp, _ := e.postJSON(t, e.agent, "/register", map[string]any{"redirect_uris": []string{bad}}); resp.StatusCode != http.StatusBadRequest {
+			t.Errorf("registered %s: %d", bad, resp.StatusCode)
+		}
+	}
+}
+
+// Acceptance 3: S256 PKCE is required and checked.
+func TestPKCEIsRequired(t *testing.T) {
+	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
+	e.enrollOwner(t)
+	redirect := "https://claude.ai/api/mcp/auth_callback"
+	client := e.registerClient(t, "Synthetic", redirect)
+	verifier, challenge := pkce()
+	for name, mutate := range map[string]func(url.Values){
+		"plain":             func(v url.Values) { v.Set("code_challenge_method", "plain"); v.Set("code_challenge", verifier) },
+		"missing challenge": func(v url.Values) { v.Del("code_challenge") },
+		"missing method":    func(v url.Values) { v.Del("code_challenge_method") },
+		"short challenge":   func(v url.Values) { v.Set("code_challenge", "abc") },
+	} {
+		u, _ := url.Parse(authorizeURL(client, redirect, challenge, publicURL+"/mcp", ""))
+		q := u.Query()
+		mutate(q)
+		u.RawQuery = q.Encode()
+		loc := e.visit(t, u.String(), ScopeRead)
+		if loc.Query().Get("error") != "invalid_request" || loc.Query().Get("code") != "" || loc.Query().Get("state") != "synthetic-state" {
+			t.Errorf("%s: redirected to %s", name, loc)
+		}
+	}
+	loc := e.visit(t, authorizeURL(client, redirect, challenge, publicURL+"/mcp", ""), ScopeRead)
+	_, wrong := pkce()
+	resp, out := e.postForm(t, e.agent, "/token", url.Values{"grant_type": {"authorization_code"}, "client_id": {client}, "code": {loc.Query().Get("code")}, "redirect_uri": {redirect}, "code_verifier": {wrong}})
+	if resp.StatusCode != http.StatusBadRequest || out["error"] != "invalid_grant" {
+		t.Fatalf("wrong verifier: %d %v", resp.StatusCode, out)
+	}
+	// The code was spent by the failed attempt.
+	resp, out = e.postForm(t, e.agent, "/token", url.Values{"grant_type": {"authorization_code"}, "client_id": {client}, "code": {loc.Query().Get("code")}, "redirect_uri": {redirect}, "code_verifier": {verifier}})
+	if resp.StatusCode != http.StatusBadRequest || out["error"] != "invalid_grant" {
+		t.Fatalf("reused code: %d %v", resp.StatusCode, out)
+	}
+}
+
+// Acceptance 4: refresh tokens rotate, and replaying a rotated one revokes
+// the whole family, including the access token issued with its successor.
+func TestRefreshRotationAndReplay(t *testing.T) {
+	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
+	e.enrollOwner(t)
+	redirect := "https://claude.ai/api/mcp/auth_callback"
+	client := e.registerClient(t, "Synthetic", redirect)
+	first := e.tokens(t, client, redirect, "/mcp", "", ScopeReadWrite)
+	refresh := func(token string) (int, map[string]any) {
+		resp, out := e.postForm(t, e.agent, "/token", url.Values{"grant_type": {"refresh_token"}, "client_id": {client}, "refresh_token": {token}})
+		return resp.StatusCode, out
+	}
+	code, second := refresh(first["refresh_token"].(string))
+	if code != http.StatusOK || second["refresh_token"] == first["refresh_token"] {
+		t.Fatalf("rotation: %d %v", code, second)
+	}
+	if e.mcpStatus(t, "/mcp", second["access_token"].(string)) != http.StatusOK {
+		t.Fatal("rotated access token refused")
+	}
+	if code, out := refresh(first["refresh_token"].(string)); code != http.StatusBadRequest || out["error"] != "invalid_grant" {
+		t.Fatalf("replay: %d %v", code, out)
+	}
+	if code, out := refresh(second["refresh_token"].(string)); code != http.StatusBadRequest || out["error"] != "invalid_grant" {
+		t.Fatalf("successor after replay: %d %v", code, out)
+	}
+	for _, tok := range []any{first["access_token"], second["access_token"]} {
+		if e.mcpStatus(t, "/mcp", tok.(string)) != http.StatusUnauthorized {
+			t.Fatal("family access token survived the replay")
+		}
+	}
+	// A refresh token expires 30 days after its last use.
+	fresh := e.tokens(t, client, redirect, "/mcp", "", ScopeReadWrite)
+	e.clock.advance(29 * 24 * time.Hour)
+	code, next := refresh(fresh["refresh_token"].(string))
+	if code != http.StatusOK {
+		t.Fatalf("refresh within 30 days: %d %v", code, next)
+	}
+	e.clock.advance(29 * 24 * time.Hour)
+	if code, _ := refresh(next["refresh_token"].(string)); code != http.StatusOK {
+		t.Fatal("sliding refresh expired early")
+	}
+	e.clock.advance(31 * 24 * time.Hour)
+	if code, _ := refresh(fresh["refresh_token"].(string)); code != http.StatusBadRequest {
+		t.Fatal("refresh token outlived 30 days")
+	}
+}
+
+func TestAccessTokensExpireAfterAnHour(t *testing.T) {
+	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
+	e.enrollOwner(t)
+	redirect := "https://claude.ai/api/mcp/auth_callback"
+	tok := e.tokens(t, e.registerClient(t, "Synthetic", redirect), redirect, "/mcp", "", ScopeRead)
+	if tok["expires_in"].(float64) != 3600 {
+		t.Fatalf("expires_in %v", tok["expires_in"])
+	}
+	e.clock.advance(time.Hour)
+	if e.mcpStatus(t, "/mcp", tok["access_token"].(string)) != http.StatusUnauthorized {
+		t.Fatal("access token outlived an hour")
+	}
+}
+
+// Acceptance 5: a token is bound to one signet's resource.
+func TestTokenAudienceIsOneSignet(t *testing.T) {
+	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"), testfixture.NewServerSignet(t, "beta"))
+	e.enrollOwner(t)
+	redirect := "https://claude.ai/api/mcp/auth_callback"
+	client := e.registerClient(t, "Synthetic", redirect)
+	tok := e.tokens(t, client, redirect, "/s/a/mcp", "", ScopeReadWrite)
+	if e.mcpStatus(t, "/s/a/mcp", tok["access_token"].(string)) != http.StatusOK {
+		t.Fatal("token refused on its own signet")
+	}
+	if e.mcpStatus(t, "/s/b/mcp", tok["access_token"].(string)) != http.StatusUnauthorized {
+		t.Fatal("signet A's token accepted on signet B")
+	}
+	// The grant is per signet: B still needs the owner's consent.
+	_, challenge := pkce()
+	resp, err := e.browser.Get(authorizeURL(client, redirect, challenge, publicURL+"/s/b/mcp", ""))
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusOK || !csrfField.Match(body) {
+		t.Fatal("signet B skipped consent")
+	}
+	// A refresh can't move a token to another resource.
+	resp, out := e.postForm(t, e.agent, "/token", url.Values{"grant_type": {"refresh_token"}, "client_id": {client}, "refresh_token": {tok["refresh_token"].(string)}, "resource": {publicURL + "/s/b/mcp"}})
+	if resp.StatusCode != http.StatusBadRequest || out["error"] != "invalid_target" {
+		t.Fatalf("refresh to B: %d %v", resp.StatusCode, out)
+	}
+	for _, resource := range []string{"", publicURL + "/s/c/mcp", "https://other.example.com/s/a/mcp", publicURL + "/mcp"} {
+		loc := e.visit(t, authorizeURL(client, redirect, challenge, resource, ""), ScopeRead)
+		if loc.Query().Get("error") != "invalid_target" {
+			t.Errorf("resource %q: %s", resource, loc)
+		}
+	}
+}
+
+// Acceptance 6: a read grant never yields write tools, whatever is requested,
+// and set-scope narrows live tokens.
+func TestReadGrantCannotWrite(t *testing.T) {
+	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
+	e.enrollOwner(t)
+	redirect := "https://claude.ai/api/mcp/auth_callback"
+	reader := e.registerClient(t, "Reader", redirect)
+	tok := e.tokens(t, reader, redirect, "/mcp", scopeRead+" "+scopeWrite, ScopeRead)
+	if tok["scope"] != scopeRead {
+		t.Fatalf("scope %v", tok["scope"])
+	}
+	if names := toolNames(t, e, "/mcp", tok["access_token"].(string)); slices.Contains(names, "memory_remember") || !slices.Contains(names, "memory_recall") {
+		t.Fatalf("read grant tools %v", names)
+	}
+	if _, err := e.bearer(t, "/mcp", tok["access_token"].(string)).CallTool(context.Background(), &sdk.CallToolParams{Name: "memory_remember", Arguments: rememberArgs("read-grant-request-01", "Never saved")}); err == nil || !strings.Contains(err.Error(), "unknown tool") {
+		t.Fatalf("read grant called memory_remember: %v", err)
+	}
+	// Refresh can't widen a read grant either.
+	resp, out := e.postForm(t, e.agent, "/token", url.Values{"grant_type": {"refresh_token"}, "client_id": {reader}, "refresh_token": {tok["refresh_token"].(string)}, "scope": {scopeWrite}})
+	if resp.StatusCode != http.StatusOK || out["scope"] != scopeRead {
+		t.Fatalf("refresh widened: %v", out)
+	}
+	writer := e.registerClient(t, "Writer", redirect)
+	wtok := e.tokens(t, writer, redirect, "/mcp", "", ScopeReadWrite)
+	if names := toolNames(t, e, "/mcp", wtok["access_token"].(string)); !slices.Contains(names, "memory_remember") {
+		t.Fatalf("read-write tools %v", names)
+	}
+	if err := SetClientScope(e.config, writer, "", ScopeRead); err != nil {
+		t.Fatal(err)
+	}
+	if names := toolNames(t, e, "/mcp", wtok["access_token"].(string)); slices.Contains(names, "memory_remember") {
+		t.Fatalf("set-scope read left write tools %v", names)
+	}
+}
+
+// Acceptance 7: revoking a client from the admin CLI makes its next MCP call
+// fail with 401, and its refresh token dies with it.
+func TestRevokeTakesEffectImmediately(t *testing.T) {
+	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
+	e.enrollOwner(t)
+	redirect := "https://claude.ai/api/mcp/auth_callback"
+	client := e.registerClient(t, "Synthetic", redirect)
+	tok := e.tokens(t, client, redirect, "/mcp", "", ScopeReadWrite)
+	if e.mcpStatus(t, "/mcp", tok["access_token"].(string)) != http.StatusOK {
+		t.Fatal("token refused before revoke")
+	}
+	if err := RevokeClient(e.config, client); err != nil {
+		t.Fatal(err)
+	}
+	if code := e.mcpStatus(t, "/mcp", tok["access_token"].(string)); code != http.StatusUnauthorized {
+		t.Fatalf("after revoke: %d", code)
+	}
+	resp, _ := e.postForm(t, e.agent, "/token", url.Values{"grant_type": {"refresh_token"}, "client_id": {client}, "refresh_token": {tok["refresh_token"].(string)}})
+	if resp.StatusCode == http.StatusOK {
+		t.Fatal("refresh after revoke succeeded")
+	}
+	if err := RevokeClient(e.config, client); err == nil {
+		t.Fatal("revoking an unknown client succeeded")
+	}
+}
+
+// Acceptance 9: metadata document URLs that resolve to loopback, private or
+// link-local addresses are refused before any connection.
+func TestMetadataDocumentSSRF(t *testing.T) {
+	var hits atomic.Int32
+	local := httptest.NewTLSServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { hits.Add(1) }))
+	t.Cleanup(local.Close)
+	_, port, _ := strings.Cut(strings.TrimPrefix(local.URL, "https://127.0.0.1"), ":")
+	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
+	_, challenge := pkce()
+	for _, id := range []string{"https://127.0.0.1:" + port + "/client", "https://localhost:" + port + "/client", "https://[::1]:" + port + "/client",
+		"https://10.0.0.1/client", "https://169.254.169.254/latest/meta-data", "https://[::ffff:127.0.0.1]:" + port + "/client", "https://0.0.0.0:" + port + "/client"} {
+		resp, err := e.browser.Get(authorizeURL(id, "https://claude.ai/api/mcp/auth_callback", challenge, publicURL+"/mcp", ""))
+		if err != nil {
+			t.Fatal(err)
+		}
+		body, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusBadRequest || !strings.Contains(string(body), "unavailable") {
+			t.Errorf("%s: %d %s", id, resp.StatusCode, body)
+		}
+	}
+	if hits.Load() != 0 {
+		t.Fatalf("a refused fetch reached the local server %d times", hits.Load())
+	}
+	for addr, public := range map[string]bool{"127.0.0.1": false, "10.1.2.3": false, "172.16.0.1": false, "192.168.1.1": false, "169.254.169.254": false,
+		"100.64.0.1": false, "0.0.0.0": false, "::1": false, "fe80::1": false, "fd00::1": false, "::ffff:10.0.0.1": false, "64:ff9b::a00:1": false,
+		"224.0.0.1": false, "255.255.255.255": false, "8.8.8.8": true, "2606:4700::1111": true} {
+		if publicAddr(netip.MustParseAddr(addr)) != public {
+			t.Errorf("%s: public=%v", addr, !public)
+		}
+	}
+}
+
+func TestMetadataDocumentLimits(t *testing.T) {
+	var body func(id string) string
+	doc := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/moved" {
+			http.Redirect(w, r, "/client", http.StatusFound)
+			return
+		}
+		_, _ = io.WriteString(w, body("https://"+r.Host+r.URL.Path))
+	}))
+	t.Cleanup(doc.Close)
+	d := &documents{client: doc.Client(), now: time.Now, cache: map[string]document{}}
+	d.client.CheckRedirect = documentClient().CheckRedirect
+	valid := func(id string) string {
+		return `{"client_id":"` + id + `","redirect_uris":["https://claude.ai/api/mcp/auth_callback"]}`
+	}
+	for name, test := range map[string]struct {
+		path string
+		body func(string) string
+	}{
+		"oversize": {"/client", func(id string) string {
+			return valid(id)[:len(valid(id))-1] + `,"x":"` + strings.Repeat("a", maxDocumentBytes) + `"}`
+		}},
+		"wrong id":      {"/client", func(string) string { return valid("https://elsewhere.example.com/client") }},
+		"no redirects":  {"/client", func(id string) string { return `{"client_id":"` + id + `"}` }},
+		"http redirect": {"/client", func(id string) string { return `{"client_id":"` + id + `","redirect_uris":["http://evil.test/cb"]}` }},
+		"secret client": {"/client", func(id string) string {
+			return valid(id)[:len(valid(id))-1] + `,"token_endpoint_auth_method":"client_secret_basic"}`
+		}},
+		"redirected": {"/moved", valid},
+		"not json":   {"/client", func(string) string { return "<html>" }},
+	} {
+		body = test.body
+		if _, err := d.get(context.Background(), doc.URL+test.path); err == nil {
+			t.Errorf("%s: accepted", name)
+		}
+	}
+	body = valid
+	if _, err := d.get(context.Background(), doc.URL+"/client"); err != nil {
+		t.Fatalf("valid document refused: %v", err)
+	}
+	for _, id := range []string{"http://example.com/client", "https://example.com", "https://example.com/", "https://u@example.com/c", "https://example.com/c?q=1", "https://example.com/c#f"} {
+		if isDocumentID(id) {
+			t.Errorf("%s treated as a metadata document", id)
+		}
+	}
+}
+
+// Acceptance 10: a software authenticator registers and signs in; without
+// the owner session or its CSRF token the consent POST is refused.
+func TestOwnerPasskeyAndConsentCSRF(t *testing.T) {
+	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
+	if resp, _ := e.postJSON(t, e.browser, "/owner/login/begin", map[string]string{}); resp.StatusCode != http.StatusForbidden {
+		t.Fatal("login began with no passkey enrolled")
+	}
+	e.enrollOwner(t)
+	cookies := e.browser.Jar.Cookies(&url.URL{Scheme: "https", Host: "memory.example.com"})
+	if len(cookies) != 1 || cookies[0].Name != sessionCookie {
+		t.Fatalf("cookies %v", cookies)
+	}
+	e.login(t)
+	redirect := "https://claude.ai/api/mcp/auth_callback"
+	client := e.registerClient(t, "Synthetic", redirect)
+	_, challenge := pkce()
+	resp, err := e.browser.Get(authorizeURL(client, redirect, challenge, publicURL+"/mcp", ""))
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	for _, want := range []string{"Synthetic", `class="host">claude.ai<`, `value="read"`, `value="read-write"`, `value="approve"`, `value="deny"`} {
+		if !strings.Contains(string(body), want) {
+			t.Errorf("consent page lacks %q", want)
+		}
+	}
+	if strings.Contains(string(body), `class="warn"`) {
+		t.Error("loopback warning on an HTTPS redirect")
+	}
+	if csp := resp.Header.Get("Content-Security-Policy"); !strings.Contains(csp, "frame-ancestors 'none'") {
+		t.Errorf("CSP %q", csp)
+	}
+	request, csrf := string(requestField.FindSubmatch(body)[1]), string(csrfField.FindSubmatch(body)[1])
+	form := url.Values{"request": {request}, "decision": {"approve"}, "scope": {"read-write"}}
+	anonymous := &http.Client{Transport: e.browser.Transport, CheckRedirect: e.browser.CheckRedirect}
+	form.Set("csrf", csrf)
+	if resp, _ := e.postForm(t, anonymous, "/consent", form); resp.StatusCode != http.StatusForbidden {
+		t.Fatalf("consent without the owner cookie: %d", resp.StatusCode)
+	}
+	form.Set("csrf", "forged-"+csrf)
+	if resp, _ := e.postForm(t, e.browser, "/consent", form); resp.StatusCode != http.StatusForbidden {
+		t.Fatalf("consent with a wrong CSRF token: %d", resp.StatusCode)
+	}
+	form.Del("csrf")
+	if resp, _ := e.postForm(t, e.browser, "/consent", form); resp.StatusCode != http.StatusForbidden {
+		t.Fatalf("consent without a CSRF token: %d", resp.StatusCode)
+	}
+	if clients, _ := Clients(e.config); clients[0].Status != "pending" {
+		t.Fatal("a refused consent approved the client")
+	}
+	// A foreign Origin is refused before the form is read.
+	req, _ := http.NewRequest(http.MethodPost, publicURL+"/consent", strings.NewReader(url.Values{"request": {request}, "csrf": {csrf}, "decision": {"approve"}, "scope": {"read"}}.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Origin", "https://evil.test")
+	if resp, err := e.browser.Do(req); err != nil || resp.StatusCode != http.StatusForbidden {
+		t.Fatalf("cross-origin consent: %v %v", resp, err)
+	}
+	// Deny returns access_denied to the client.
+	form.Set("csrf", csrf)
+	form.Set("decision", "deny")
+	resp, _ = e.postForm(t, e.browser, "/consent", form)
+	if loc, _ := url.Parse(resp.Header.Get("Location")); resp.StatusCode != http.StatusSeeOther || loc.Query().Get("error") != "access_denied" || loc.Host != "claude.ai" {
+		t.Fatalf("deny: %d %s", resp.StatusCode, resp.Header.Get("Location"))
+	}
+	// The session lasts 12 hours.
+	e.clock.advance(12 * time.Hour)
+	resp, _ = e.browser.Get(authorizeURL(client, redirect, challenge, publicURL+"/mcp", ""))
+	body, _ = io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if !strings.Contains(string(body), `id="login"`) {
+		t.Fatal("owner session outlived 12 hours")
+	}
+}
+
+func TestOwnerEnrollmentLinkIsOneTimeAndExpires(t *testing.T) {
+	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
+	link, expires, err := EnrollOwner(e.config, false)
+	if err != nil || !strings.HasPrefix(link, publicURL+"/owner/enroll#") || time.Until(expires) > enrollmentTTL {
+		t.Fatalf("link %q expires %s: %v", link, expires, err)
+	}
+	_, token, _ := strings.Cut(link, "#")
+	resp, begin := e.postJSON(t, e.browser, "/owner/register/begin", map[string]string{"token": token})
+	if resp.StatusCode != http.StatusOK {
+		t.Fatal(begin)
+	}
+	p := newPasskey(t)
+	if resp, _ := e.postJSON(t, e.browser, "/owner/register/finish?ceremony="+begin["ceremony"].(string), p.create(t, begin["options"].(map[string]any))); resp.StatusCode != http.StatusOK {
+		t.Fatal("registration failed")
+	}
+	if resp, _ := e.postJSON(t, e.browser, "/owner/register/begin", map[string]string{"token": token}); resp.StatusCode != http.StatusForbidden {
+		t.Fatal("enrollment link reused")
+	}
+	link, _, _ = EnrollOwner(e.config, false)
+	_, token, _ = strings.Cut(link, "#")
+	e.clock.advance(enrollmentTTL + time.Second)
+	if resp, _ := e.postJSON(t, e.browser, "/owner/register/begin", map[string]string{"token": token}); resp.StatusCode != http.StatusForbidden {
+		t.Fatal("expired enrollment link accepted")
+	}
+	if resp, _ := e.postJSON(t, e.browser, "/owner/register/begin", map[string]string{"token": "wrong"}); resp.StatusCode != http.StatusForbidden {
+		t.Fatal("wrong enrollment token accepted")
+	}
+	raw, _ := os.ReadFile(filepath.Join(e.config.StateDir, oauthStateFile))
+	if strings.Contains(string(raw), token) {
+		t.Fatal("enrollment token stored in clear")
+	}
+}
+
+func TestOwnerEnrollmentCanReplaceLostPasskeys(t *testing.T) {
+	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
+	e.enrollOwner(t)
+	lost := e.passkey
+	link, _, err := EnrollOwner(e.config, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, token, _ := strings.Cut(link, "#")
+	_, begin := e.postJSON(t, e.browser, "/owner/register/begin", map[string]string{"token": token})
+	e.passkey = newPasskey(t)
+	if resp, _ := e.postJSON(t, e.browser, "/owner/register/finish?ceremony="+begin["ceremony"].(string), e.passkey.create(t, begin["options"].(map[string]any))); resp.StatusCode != http.StatusOK {
+		t.Fatal("replacement registration failed")
+	}
+	e.login(t)
+	_, begin = e.postJSON(t, e.browser, "/owner/login/begin", map[string]string{})
+	if resp, _ := e.postJSON(t, e.browser, "/owner/login/finish?ceremony="+begin["ceremony"].(string), lost.get(t, begin["options"].(map[string]any))); resp.StatusCode != http.StatusForbidden {
+		t.Fatal("a replaced passkey still signs in")
+	}
+}
+
+// A code redeemed twice revokes the tokens it issued.
+func TestAuthorizationCodeReplayRevokesItsTokens(t *testing.T) {
+	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
+	e.enrollOwner(t)
+	redirect := "https://claude.ai/api/mcp/auth_callback"
+	client := e.registerClient(t, "Synthetic", redirect)
+	verifier, challenge := pkce()
+	loc := e.visit(t, authorizeURL(client, redirect, challenge, publicURL+"/mcp", ""), ScopeRead)
+	form := url.Values{"grant_type": {"authorization_code"}, "client_id": {client}, "code": {loc.Query().Get("code")}, "redirect_uri": {redirect}, "code_verifier": {verifier}}
+	resp, tok := e.postForm(t, e.agent, "/token", form)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatal(tok)
+	}
+	if resp, out := e.postForm(t, e.agent, "/token", form); resp.StatusCode != http.StatusBadRequest || out["error"] != "invalid_grant" {
+		t.Fatalf("replayed code: %d %v", resp.StatusCode, out)
+	}
+	if e.mcpStatus(t, "/mcp", tok["access_token"].(string)) != http.StatusUnauthorized {
+		t.Fatal("tokens from a replayed code survived")
+	}
+}
+
+// DCR: at most 20 pending registrations, 24 h expiry, rate-limited per address.
+func TestRegistrationLimits(t *testing.T) {
+	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
+	register := func() int {
+		resp, _ := e.postJSON(t, e.agent, "/register", map[string]any{"redirect_uris": []string{"https://claude.ai/api/mcp/auth_callback"}})
+		return resp.StatusCode
+	}
+	for i := 0; i < registerLimit; i++ {
+		if code := register(); code != http.StatusCreated {
+			t.Fatalf("registration %d: %d", i, code)
+		}
+	}
+	if code := register(); code != http.StatusTooManyRequests {
+		t.Fatalf("over the rate limit: %d", code)
+	}
+	e.clock.advance(registerWindow)
+	for i := registerLimit; i < maxPending; i++ {
+		if code := register(); code != http.StatusCreated {
+			t.Fatalf("registration %d: %d", i, code)
+		}
+	}
+	e.clock.advance(registerWindow)
+	if code := register(); code != http.StatusServiceUnavailable {
+		t.Fatalf("21st pending registration: %d", code)
+	}
+	e.clock.advance(pendingTTL)
+	if code := register(); code != http.StatusCreated {
+		t.Fatalf("after pending registrations expired: %d", code)
+	}
+	if clients, _ := Clients(e.config); len(clients) != 1 {
+		t.Fatalf("expired registrations kept: %d", len(clients))
+	}
+	if resp, out := e.postJSON(t, e.agent, "/register", "not an object"); resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("malformed registration: %d %v", resp.StatusCode, out)
+	}
+}
+
+// Token endpoint protocol errors use RFC 6749 codes, and nothing but hashes
+// reaches state_dir.
+func TestTokenEndpointErrors(t *testing.T) {
+	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
+	e.enrollOwner(t)
+	redirect := "https://claude.ai/api/mcp/auth_callback"
+	client := e.registerClient(t, "Synthetic", redirect)
+	tok := e.tokens(t, client, redirect, "/mcp", "", ScopeRead)
+	for name, test := range map[string]struct {
+		form   url.Values
+		status int
+		code   string
+	}{
+		"unknown grant":     {url.Values{"grant_type": {"password"}, "client_id": {client}}, 400, "unsupported_grant_type"},
+		"no client":         {url.Values{"grant_type": {"refresh_token"}}, 400, "invalid_request"},
+		"unknown client":    {url.Values{"grant_type": {"refresh_token"}, "client_id": {"client-unknown"}, "refresh_token": {"x"}}, 401, "invalid_client"},
+		"dead refresh":      {url.Values{"grant_type": {"refresh_token"}, "client_id": {client}, "refresh_token": {"not-a-token"}}, 400, "invalid_grant"},
+		"access as refresh": {url.Values{"grant_type": {"refresh_token"}, "client_id": {client}, "refresh_token": {tok["access_token"].(string)}}, 400, "invalid_grant"},
+		"missing code":      {url.Values{"grant_type": {"authorization_code"}, "client_id": {client}}, 400, "invalid_request"},
+		"bad scope":         {url.Values{"grant_type": {"refresh_token"}, "client_id": {client}, "refresh_token": {tok["refresh_token"].(string)}, "scope": {"admin"}}, 400, "invalid_scope"},
+		"repeated":          {url.Values{"grant_type": {"refresh_token", "refresh_token"}, "client_id": {client}}, 400, "invalid_request"},
+	} {
+		resp, out := e.postForm(t, e.agent, "/token", test.form)
+		if resp.StatusCode != test.status || out["error"] != test.code {
+			t.Errorf("%s: %d %v", name, resp.StatusCode, out)
+		}
+	}
+	req, _ := http.NewRequest(http.MethodPost, publicURL+"/token", strings.NewReader(`{"grant_type":"refresh_token"}`))
+	req.Header.Set("Content-Type", "application/json")
+	if resp, err := e.agent.Do(req); err != nil || resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("JSON token request: %v %v", resp, err)
+	}
+	raw, _ := os.ReadFile(filepath.Join(e.config.StateDir, oauthStateFile))
+	for _, secret := range []string{tok["access_token"].(string), tok["refresh_token"].(string)} {
+		if strings.Contains(string(raw), secret) {
+			t.Fatal("a token is stored in clear")
+		}
+	}
+}
+
+// Discovery: an unauthenticated MCP call names the protected resource
+// metadata, which names this server as the only authorization server.
+func TestOAuthDiscovery(t *testing.T) {
+	for _, n := range []int{1, 2} {
+		var signets []testfixture.ServerSignet
+		for i := 0; i < n; i++ {
+			signets = append(signets, testfixture.NewServerSignet(t, "alpha"))
+		}
+		e := startOAuth(t, signets...)
+		path, prm := "/mcp", "/.well-known/oauth-protected-resource"
+		if n > 1 {
+			path, prm = "/s/b/mcp", "/.well-known/oauth-protected-resource/s/b/mcp"
+		}
+		resp, err := e.agent.Post(publicURL+path, "application/json", strings.NewReader(`{}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		if want := `Bearer resource_metadata="` + publicURL + prm + `"`; resp.StatusCode != http.StatusUnauthorized || resp.Header.Get("WWW-Authenticate") != want {
+			t.Fatalf("%d signets: %d %q", n, resp.StatusCode, resp.Header.Get("WWW-Authenticate"))
+		}
+		meta, err := oauthex.GetProtectedResourceMetadata(context.Background(), publicURL+prm, publicURL+path, e.agent)
+		if err != nil || !slices.Equal(meta.AuthorizationServers, []string{publicURL}) || !slices.Equal(meta.ScopesSupported, []string{scopeRead, scopeWrite}) {
+			t.Fatalf("resource metadata %+v: %v", meta, err)
+		}
+		asm, err := auth.GetAuthServerMetadata(context.Background(), publicURL, e.agent)
+		if err != nil || asm.Issuer != publicURL || !asm.ClientIDMetadataDocumentSupported || !slices.Equal(asm.CodeChallengeMethodsSupported, []string{"S256"}) ||
+			!slices.Equal(asm.TokenEndpointAuthMethodsSupported, []string{"none"}) || !slices.Contains(asm.ScopesSupported, scopeOffline) || asm.RegistrationEndpoint != publicURL+"/register" {
+			t.Fatalf("authorization server metadata %+v: %v", asm, err)
+		}
+	}
+}
+
+func TestOAuthConfiguration(t *testing.T) {
+	a := testfixture.NewServerSignet(t, "alpha")
+	c := oauthConfig(t, a)
+	c.Listen = "0.0.0.0:8730"
+	if err := c.Validate(); err != nil {
+		t.Fatalf("oauth on a public listener: %v", err)
+	}
+	c.PublicURL = "http://127.0.0.1:8730"
+	if err := c.Validate(); err == nil {
+		t.Fatal("oauth accepted an IP public_url, which passkeys can't use")
+	}
+	c.Listen, c.PublicURL = listen, "http://localhost:8730"
+	if err := c.Validate(); err != nil {
+		t.Fatalf("oauth on localhost: %v", err)
+	}
+	for _, auth := range []string{AuthLoopbackTrust, AuthInsecureTest} {
+		c := oauthConfig(t, a)
+		c.Auth, c.Listen = auth, "0.0.0.0:8730"
+		if err := c.Validate(); err == nil {
+			t.Fatalf("%s on a public listener", auth)
+		}
+	}
+	if _, _, err := EnrollOwner(testConfig(t, a), false); err == nil {
+		t.Fatal("owner enrollment without oauth")
+	}
+}

@@ -16,13 +16,13 @@ const (
 
 func (s Scope) valid() bool { return s == ScopeRead || s == ScopeReadWrite }
 
-// Client is one approved identity. DeviceID is its enrolled provenance device
-// in the signet; the server fills it in before the client's first write.
+// Client is one approved identity. Name labels its enrolled device and
+// defaults to ID; Kind is recorded as the harness of its writes.
 type Client struct {
-	ID       string
-	Kind     string
-	DeviceID string
-	Scope    Scope
+	ID    string
+	Name  string
+	Kind  string
+	Scope Scope
 }
 
 func (c Client) CanWrite() bool { return c.Scope == ScopeReadWrite }
