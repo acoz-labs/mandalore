@@ -173,8 +173,8 @@ func TestOAuthFlowWithClientMetadataDocument(t *testing.T) {
 	checkTimings(t, e)
 }
 
-// An approved client skips only the consent page, never the owner: client IDs
-// are not secret, so a request without the owner session gets the sign-in
+// An approved client skips at most the consent page, never the owner: client
+// IDs are not secret, so a request without the owner session gets the sign-in
 // page and no code, for DCR and metadata-document clients alike.
 func TestApprovedClientStillNeedsTheOwner(t *testing.T) {
 	var docURL string
@@ -225,7 +225,8 @@ func TestApprovedClientStillNeedsTheOwner(t *testing.T) {
 		if resp, out := e.postForm(t, stranger, "/token", url.Values{"grant_type": {"authorization_code"}, "client_id": {client}, "code": {"guessed"}, "redirect_uri": {redirect}, "code_verifier": {verifier}}); resp.StatusCode != http.StatusBadRequest || out["error"] != "invalid_grant" {
 			t.Fatalf("%s token: %d %v", client, resp.StatusCode, out)
 		}
-		// With the owner's live session the same request skips the consent page.
+		// With the owner's live session the same request gets a code: at once
+		// for the DCR client, after consent for a new document installation.
 		if loc := e.visit(t, authorizeURL(client, redirect, challenge, publicURL+"/mcp", ""), ScopeRead); loc.Query().Get("code") == "" {
 			t.Fatalf("%s with the owner: %s", client, loc)
 		}
@@ -450,7 +451,7 @@ func TestRevokeTakesEffectImmediately(t *testing.T) {
 	if e.mcpStatus(t, "/mcp", tok["access_token"].(string)) != http.StatusOK {
 		t.Fatal("token refused before revoke")
 	}
-	if err := RevokeClient(e.config, client); err != nil {
+	if _, err := RevokeClient(e.config, client); err != nil {
 		t.Fatal(err)
 	}
 	if code, challenge := e.mcpChallenge(t, "/mcp", tok["access_token"].(string)); code != http.StatusUnauthorized || challenge != invalidTokenChallenge {
@@ -460,7 +461,7 @@ func TestRevokeTakesEffectImmediately(t *testing.T) {
 	if resp.StatusCode != http.StatusBadRequest || out["error"] != "invalid_grant" {
 		t.Fatalf("refresh after revoke: %d %v", resp.StatusCode, out)
 	}
-	if err := RevokeClient(e.config, client); err == nil {
+	if _, err := RevokeClient(e.config, client); err == nil {
 		t.Fatal("revoking an unknown client succeeded")
 	}
 }
@@ -479,7 +480,7 @@ func TestRevokedClientReauthorizesThroughTheOwner(t *testing.T) {
 	e.enrollOwner(t)
 	redirect := "http://127.0.0.1:7/callback"
 	tok := e.tokens(t, docURL, redirect, "/mcp", "", ScopeReadWrite)
-	if err := RevokeClient(e.config, docURL); err != nil {
+	if _, err := RevokeClient(e.config, docURL); err != nil {
 		t.Fatal(err)
 	}
 	for _, access := range []string{tok["access_token"].(string), "not-a-token"} {

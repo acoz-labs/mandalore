@@ -28,9 +28,9 @@ const help = `Mandalore — durable memory across tools
                                                  Fetch, validate and fast-forward a remote-ahead signet
   mandalore server owner enroll --config FILE [--replace]
                                                  Print a one-time, 10-minute owner passkey enrollment link
-  mandalore server clients list --config FILE    Approved and pending OAuth clients with their grants
-  mandalore server clients revoke --config FILE --client ID
-  mandalore server clients set-scope --config FILE --client ID --scope read|read-write [--signet SLUG]
+  mandalore server clients list --config FILE    Approved installations and pending OAuth clients with their grants
+  mandalore server clients revoke --config FILE --client ID|--installation ID
+  mandalore server clients set-scope --config FILE --client ID|--installation ID --scope read|read-write [--signet SLUG]
   mandalore server canon refresh --config FILE [--signet SLUG]
                                                  Refresh configured canon references now
   mandalore server migrate preflight --clone PATH [--format json|text]

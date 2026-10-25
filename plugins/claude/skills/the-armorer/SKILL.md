@@ -38,9 +38,10 @@ Work through these in order and stop at the first that applies:
    Prompts keep working without memory in the meantime (fail open).
 3. **Only an `authenticate` tool, or the server shows "needs authentication" in
    `/mcp`.** Diagnosis: "This client isn't authorized yet." Ask the user to run
-   `/mcp`, choose Mandalore and sign in. The owner approves a new client once,
-   on the server's consent page. If the owner denied it, the owner has to
-   approve it on a new attempt.
+   `/mcp`, choose Mandalore and sign in. The owner approves each Claude Code
+   sign-in on the server's consent page, since every installation is approved
+   on its own. If the owner denied it, the owner has to approve it on a new
+   attempt.
 4. **A tool call returns 401 or `invalid_grant`.** Diagnosis: "This client's
    sign-in expired or was revoked." Ask the user to authenticate again in
    `/mcp`.
@@ -48,8 +49,8 @@ Work through these in order and stop at the first that applies:
    report the signet and its scopes.
 6. **Then check the scope.** If there is no `memory_remember` tool, or the
    server says the connection is read-only, the diagnosis is: "This client is
-   read-only." The owner can change it on the server with
-   `mandalore server clients set-scope --client ID --scope read-write`.
+   read-only." Ask the user to sign out and in again in `/mcp`; the owner chooses read
+   and save on the consent page.
    Otherwise report "Mandalore is connected with read-write access."
 
 Server administration (owner enrollment, listing or revoking clients, migration

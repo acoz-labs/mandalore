@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
+	"maps"
 	"os"
 	"path/filepath"
 	"slices"
@@ -27,35 +28,58 @@ const (
 	tokenAccess    = "access"
 	tokenRefresh   = "refresh"
 	oauthStateFile = "oauth.json"
+	// stateVersion 2 keeps grants per installation. Version 1 (2.0.0 and
+	// 2.0.1, which write no version) kept them per client.
+	stateVersion = 2
 )
 
 // oauthState is everything OAuth keeps across restarts. Tokens and the owner
 // enrollment link are stored only as SHA-256 hashes.
 type oauthState struct {
-	Clients map[string]*oauthClient `json:"clients"`
-	Tokens  map[string]*oauthToken  `json:"tokens"`
-	Owner   ownerState              `json:"owner"`
+	Version       int                      `json:"version,omitempty"`
+	Clients       map[string]*oauthClient  `json:"clients"`
+	Installations map[string]*installation `json:"installations"`
+	Tokens        map[string]*oauthToken   `json:"tokens"`
+	Owner         ownerState               `json:"owner"`
 }
 
 // oauthClient is one identity: a DCR registration or a client ID metadata
-// document URL. It is pending until the owner grants it a signet.
+// document URL. It is pending until the owner approves an installation of it.
 type oauthClient struct {
-	ID           string           `json:"id"`
-	Name         string           `json:"name"`
-	Kind         string           `json:"kind"`
-	RedirectURIs []string         `json:"redirect_uris"`
-	Document     bool             `json:"metadata_document,omitempty"`
-	Registered   time.Time        `json:"registered"`
-	Grants       map[string]Scope `json:"grants,omitempty"` // signet slug → scope
+	ID           string    `json:"id"`
+	Name         string    `json:"name"`
+	Kind         string    `json:"kind"`
+	RedirectURIs []string  `json:"redirect_uris"`
+	Document     bool      `json:"metadata_document,omitempty"`
+	Registered   time.Time `json:"registered"`
+	// Legacy is the per-client grant that version 1 reads: signet slug →
+	// the widest scope of the client's installations. It is rewritten on
+	// every save, so rolling back to 2.0.1 keeps the grants, and read only
+	// to migrate a version 1 state.
+	Legacy map[string]Scope `json:"grants,omitempty"`
+}
+
+// installation is one approved copy of a client, holding the owner's grants.
+// Every installation of a metadata-document client shares its client_id, so
+// each approval creates a new installation, and its token family is the
+// installation's. A DCR registration belongs to one installation, so it has
+// one, which later authorizations reuse.
+type installation struct {
+	ID        string           `json:"id"`
+	Client    string           `json:"client"`
+	Grants    map[string]Scope `json:"grants"` // signet slug → scope
+	FirstSeen time.Time        `json:"first_seen"`
+	LastUsed  time.Time        `json:"last_used"` // last token issued
 }
 
 type oauthToken struct {
-	Kind    string    `json:"kind"`
-	Client  string    `json:"client"`
-	Signet  string    `json:"signet"`
-	Family  string    `json:"family"`
-	Scope   Scope     `json:"scope"`
-	Expires time.Time `json:"expires"`
+	Kind         string    `json:"kind"`
+	Client       string    `json:"client"`
+	Installation string    `json:"installation,omitempty"`
+	Signet       string    `json:"signet"`
+	Family       string    `json:"family"`
+	Scope        Scope     `json:"scope"`
+	Expires      time.Time `json:"expires"`
 	// Used marks a rotated refresh token, kept until it expires so a replay
 	// can be recognised and its family revoked.
 	Used bool `json:"used,omitempty"`
@@ -124,8 +148,111 @@ func (st *oauthState) init() {
 	if st.Clients == nil {
 		st.Clients = map[string]*oauthClient{}
 	}
+	if st.Installations == nil {
+		st.Installations = map[string]*installation{}
+	}
 	if st.Tokens == nil {
 		st.Tokens = map[string]*oauthToken{}
+	}
+	if st.Version < stateVersion {
+		st.migrate()
+	}
+}
+
+// migrate turns version 1's per-client grants into installations, so every
+// live token keeps working with no new consent. A DCR client becomes one
+// installation holding all its tokens. A metadata-document client becomes one
+// installation per live token family, each with the client's grant, since
+// version 1 can't tell which installation was approved with which scope. A
+// document client with no live tokens has no installation left to keep.
+// Installation IDs derive from the client and family, so the server and the
+// admin CLI agree on them before the migrated state is first saved.
+func (st *oauthState) migrate() {
+	for _, c := range st.Clients {
+		if len(c.Legacy) == 0 {
+			continue
+		}
+		install := func(key string) *installation {
+			id := "inst-" + hashSecret("migrated\x00" + key)[:16]
+			if st.Installations[id] == nil {
+				st.Installations[id] = &installation{ID: id, Client: c.ID, Grants: maps.Clone(c.Legacy), FirstSeen: c.Registered, LastUsed: c.Registered}
+			}
+			return st.Installations[id]
+		}
+		if !c.Document {
+			install(c.ID)
+		}
+		for _, t := range st.Tokens {
+			if t.Client != c.ID {
+				continue
+			}
+			key := c.ID
+			if c.Document {
+				key += "\x00" + t.Family
+			}
+			in := install(key)
+			if issued := t.issued(); issued.After(in.LastUsed) {
+				in.LastUsed = issued
+			}
+			t.Installation = in.ID
+		}
+	}
+	st.Version = stateVersion
+}
+
+// issued is when a token was issued, from its fixed lifetime.
+func (t *oauthToken) issued() time.Time {
+	if t.Kind == tokenRefresh {
+		return t.Expires.Add(-refreshTTL)
+	}
+	return t.Expires.Add(-accessTTL)
+}
+
+// installationsOf returns a client's installations, oldest first.
+func (st *oauthState) installationsOf(client string) []*installation {
+	var out []*installation
+	for _, in := range st.Installations {
+		if in.Client == client {
+			out = append(out, in)
+		}
+	}
+	slices.SortFunc(out, func(x, y *installation) int {
+		return cmp.Or(x.FirstSeen.Compare(y.FirstSeen), strings.Compare(x.ID, y.ID))
+	})
+	return out
+}
+
+// newInstallation records an installation of a client with no grants yet.
+func (st *oauthState) newInstallation(client string, now time.Time) *installation {
+	in := &installation{ID: "inst-" + hashSecret(secret())[:16], Client: client, Grants: map[string]Scope{}, FirstSeen: now, LastUsed: now}
+	st.Installations[in.ID] = in
+	return in
+}
+
+// grantFor returns a token's current grant on its signet, or "" when the
+// client, the installation or the grant is gone.
+func (st *oauthState) grantFor(t *oauthToken) Scope {
+	in := st.Installations[t.Installation]
+	if in == nil || in.Client != t.Client || st.Clients[t.Client] == nil {
+		return ""
+	}
+	return in.Grants[t.Signet]
+}
+
+// writeLegacy rewrites each client's version 1 grant from its installations.
+func (st *oauthState) writeLegacy() {
+	for _, c := range st.Clients {
+		c.Legacy = nil
+		for _, in := range st.installationsOf(c.ID) {
+			for slug, scope := range in.Grants {
+				if c.Legacy == nil {
+					c.Legacy = map[string]Scope{}
+				}
+				if c.Legacy[slug] != ScopeReadWrite {
+					c.Legacy[slug] = scope
+				}
+			}
+		}
 	}
 }
 
@@ -161,6 +288,7 @@ func (s *oauthStore) update(fn func(*oauthState) error) error {
 		return err
 	}
 	next.prune(s.now())
+	next.writeLegacy()
 	if err := writeState(s.path(), next); err != nil {
 		return errors.New("cannot save OAuth state")
 	}
@@ -171,16 +299,18 @@ func (s *oauthStore) update(fn func(*oauthState) error) error {
 // clone copies the state deeply enough that a failed update leaves the
 // cached state untouched.
 func (st oauthState) clone() oauthState {
-	out := oauthState{Clients: map[string]*oauthClient{}, Tokens: map[string]*oauthToken{}, Owner: st.Owner}
+	out := oauthState{Version: st.Version, Clients: map[string]*oauthClient{}, Installations: map[string]*installation{}, Tokens: map[string]*oauthToken{}, Owner: st.Owner}
 	out.Owner.Credentials = append([]webauthn.Credential(nil), st.Owner.Credentials...)
 	for id, c := range st.Clients {
 		cp := *c
 		cp.RedirectURIs = append([]string(nil), c.RedirectURIs...)
-		cp.Grants = map[string]Scope{}
-		for k, v := range c.Grants {
-			cp.Grants[k] = v
-		}
+		cp.Legacy = maps.Clone(c.Legacy)
 		out.Clients[id] = &cp
+	}
+	for id, in := range st.Installations {
+		cp := *in
+		cp.Grants = maps.Clone(in.Grants)
+		out.Installations[id] = &cp
 	}
 	for h, t := range st.Tokens {
 		cp := *t
@@ -189,14 +319,31 @@ func (st oauthState) clone() oauthState {
 	return out
 }
 
+// prune drops expired tokens and whatever no longer has an owner. An
+// installation of a document client is its token family, so it goes once it
+// has no tokens and no use for pendingTTL; a DCR installation lasts as long
+// as its client, as the client's approval did in version 1.
 func (st *oauthState) prune(now time.Time) {
+	for id, in := range st.Installations {
+		if st.Clients[in.Client] == nil {
+			delete(st.Installations, id)
+		}
+	}
+	live := map[string]bool{}
 	for h, t := range st.Tokens {
-		if !now.Before(t.Expires) || st.Clients[t.Client] == nil {
+		if !now.Before(t.Expires) || st.Clients[t.Client] == nil || st.Installations[t.Installation] == nil {
 			delete(st.Tokens, h)
+			continue
+		}
+		live[t.Installation] = true
+	}
+	for id, in := range st.Installations {
+		if st.Clients[in.Client].Document && !live[id] && !now.Before(in.LastUsed.Add(pendingTTL)) {
+			delete(st.Installations, id)
 		}
 	}
 	for id, c := range st.Clients {
-		if len(c.Grants) == 0 && !now.Before(c.Registered.Add(pendingTTL)) {
+		if !c.approved(st) && !now.Before(c.Registered.Add(pendingTTL)) {
 			delete(st.Clients, id)
 		}
 	}
@@ -213,7 +360,7 @@ func (st *oauthState) prune(now time.Time) {
 func (st *oauthState) evictPending(now time.Time) {
 	var pending []*oauthClient
 	for _, c := range st.Clients {
-		if len(c.Grants) == 0 && now.Before(c.Registered.Add(pendingTTL)) {
+		if !c.approved(st) && now.Before(c.Registered.Add(pendingTTL)) {
 			pending = append(pending, c)
 		}
 	}
@@ -237,12 +384,30 @@ func (st *oauthState) revokeFamily(family string) {
 	}
 }
 
-func (st *oauthState) revokeClient(id string) {
-	for h, t := range st.Tokens {
-		if t.Client == id {
-			delete(st.Tokens, h)
+// approved reports whether the client has any installation.
+func (c *oauthClient) approved(st *oauthState) bool {
+	return len(st.installationsOf(c.ID)) > 0
+}
+
+// revokeClient deletes a client and its installations, and returns how many
+// installations it had.
+func (st *oauthState) revokeClient(id string) int {
+	n := st.revokeInstallations(func(in *installation) bool { return in.Client == id })
+	delete(st.Clients, id)
+	return n
+}
+
+// revokeInstallations deletes the matching installations and returns how
+// many there were. The prune before every save deletes their tokens.
+func (st *oauthState) revokeInstallations(match func(*installation) bool) int {
+	n := 0
+	for id, in := range st.Installations {
+		if match(in) {
+			delete(st.Installations, id)
+			n++
 		}
 	}
+	return n
 }
 
 // secret returns a random URL-safe token of 32 bytes.

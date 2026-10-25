@@ -149,7 +149,14 @@ func oauthConfig(t *testing.T, signets ...testfixture.ServerSignet) Config {
 
 func startOAuth(t *testing.T, signets ...testfixture.ServerSignet) *oauthEnv {
 	t.Helper()
-	e := &oauthEnv{config: oauthConfig(t, signets...), clock: &clock{t: time.Now()}, timings: map[string][]time.Duration{}}
+	return startOAuthConfig(t, oauthConfig(t, signets...))
+}
+
+// startOAuthConfig starts a server for a config whose state_dir may already
+// hold OAuth state.
+func startOAuthConfig(t *testing.T, c Config) *oauthEnv {
+	t.Helper()
+	e := &oauthEnv{config: c, clock: &clock{t: time.Now()}, timings: map[string][]time.Duration{}}
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 	s, err := newServer(e.config, io.Discard, fastTiming)

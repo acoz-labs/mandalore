@@ -129,6 +129,18 @@ address is checked after DNS resolution, so a name that resolves to a loopback,
 private, link-local, shared, documentation or other non-public address is refused
 before connecting. Its `redirect_uris` are enforced.
 
+**Installations.** Grants belong to installations, not to a `client_id`. Every
+copy of a metadata-document client, such as every Claude Code installation,
+shares one `client_id`, so the server can't tell a new installation from one
+it has seen: each approval of a document client creates a new installation,
+and the token family that approval starts is that installation's. A DCR
+registration is made by one installation, so it has one installation, which
+later authorizations reuse. Each installation has an ID (`inst-…`), its own
+grants, a first-seen time (its approval) and a last-used time (its last token
+issue). An installation of a document client ends when its family does, by
+logout, refresh-token replay or revoke; it is pruned a day after its last use
+with no live token. A DCR installation lasts as long as its registration.
+
 **Authorization.** PKCE S256 is required; `plain` or a missing challenge is
 refused. `resource` is required and must be one of the signets' MCP URLs. A
 redirect URI must exactly match one the client registered, except that a
@@ -137,7 +149,8 @@ A bad client or redirect shows an error page and never redirects. Other errors
 return to the client's redirect. Codes last 2 minutes and are single-use; a
 replayed code revokes the tokens it issued.
 
-**Scopes.** The owner grants each client `read` or `read-write` per signet. A
+**Scopes.** The owner grants each installation `read` or `read-write` per
+signet. A
 token carries the requested scope narrowed by the grant: a read grant never
 yields write tools, whatever is requested, and `set-scope` narrows live tokens
 at once. No `scope` requested means the full grant.
@@ -167,18 +180,21 @@ There is one owner, who signs in with a passkey (WebAuthn, through
    out. Consent forms carry the session's CSRF token; a POST without the cookie
    or the token, or from another origin, is refused.
 3. Every authorization needs the owner session; without one the browser gets
-   the sign-in page. A new client's first authorization for a signet then shows
-   the consent page: the client's name, its redirect host in large text, the
-   signet, a read or read-write picker, and approve or deny. A loopback redirect
+   the sign-in page. Every authorization of a metadata-document client, and a
+   DCR client's first authorization for a signet, then shows the consent page.
+   If other installations of the document client are approved, the page says
+   this is a new one that doesn't share their access. The page shows the
+   client's name, its redirect host in large text, the signet, a read or
+   read-write picker, and approve or deny. A loopback redirect
    gets a warning, since any local process can claim a loopback port. Owner pages
    can't be framed and run only their own nonce-tagged script.
 4. On approval the server stores the grant and enrolls the client's device
    record in the signet, labelled `<client name> (<kind>), approved <date>`. The
    kind is the host of its metadata document or of its first non-loopback
-   redirect, such as `claude.ai`. Later authorizations by an approved client for
-   that signet skip the consent page; the owner still signs in, or uses a live
-   session. A client ID is no secret, so no code is ever issued without the
-   owner. For a metadata-document client the page also names the host that
+   redirect, such as `claude.ai`. Later authorizations by an approved DCR
+   client for that signet skip the consent page; the owner still signs in, or
+   uses a live session. A client ID is no secret, so no code is ever issued
+   without the owner. Installations of one client share its device record. For a metadata-document client the page also names the host that
    publishes the document, since the client chooses its own name.
 
 Browsers treat `http://localhost` as a secure context, so passkeys and the
@@ -344,16 +360,46 @@ in throwaway volumes: the health check, `/healthz`, MCP `tools/list` through
 
 - `mandalore server owner enroll --config FILE [--replace]` prints the one-time
   owner passkey enrollment link (see [Owner approval](#owner-approval)).
-- `mandalore server clients list --config FILE` lists approved and pending OAuth
-  clients: ID, name, kind, redirect URIs, grants per signet and live tokens.
-- `mandalore server clients revoke --config FILE --client ID` removes a client,
-  its grants and every token it holds. Its next MCP call gets `401
-  invalid_token` and its refresh `400 invalid_grant`, so the client authorizes
-  again, which needs the owner's passkey and consent. The device
-  record stays in the signet's provenance; a DCR client must register again.
-- `mandalore server clients set-scope --config FILE --client ID --scope
-  read|read-write [--signet SLUG]` changes the client's grant on one signet, or on
-  every signet it holds. Live tokens never exceed the new grant.
+- `mandalore server clients list --config FILE` lists one entry per approved
+  installation, and one per pending client: client ID, installation ID, name,
+  kind, registered, first seen, last used, redirect URIs, grants per signet and
+  live tokens. Installations of a metadata-document client share its client ID.
+- `mandalore server clients revoke --config FILE --installation ID` removes one
+  installation, its grants and its tokens; other installations of the client
+  keep working. `--client ID` instead removes the client and every
+  installation of it, and says how many. Either way the revoked installation's
+  next MCP call gets `401 invalid_token` and its refresh `400 invalid_grant`,
+  so it authorizes again, which needs the owner's passkey and consent. The
+  device record stays in the signet's provenance; a DCR client revoked by
+  `--client` must register again.
+- `mandalore server clients set-scope --config FILE --installation ID --scope
+  read|read-write [--signet SLUG]` changes one installation's grant on one
+  signet, or on every signet it holds; `--client ID` changes every installation
+  of the client. Live tokens never exceed the new grant, and a wider grant
+  applies from the installation's next authorization.
+
+### Upgrading OAuth state from 2.0.1
+
+2.0.0 and 2.0.1 kept one grant per `client_id`. 2.0.2 migrates
+`state_dir/oauth.json` when it first reads it, with no new sign-in or consent:
+
+- A DCR client with a grant becomes one installation holding its grants and all
+  its tokens. It keeps skipping the consent page when it authorizes again.
+- A metadata-document client with a grant becomes one installation per live
+  token family, each with the client's grant, since 2.0.1 didn't record which
+  installation was approved with which scope. Each keeps working and
+  refreshing; narrow or revoke them one at a time afterwards. A document client
+  with no live tokens has nothing to migrate, and its next sign-in needs
+  consent, as every new installation's does.
+- First seen is the client's registration time for migrated installations,
+  and last used is the family's last token issue.
+
+Installation IDs of migrated state derive from the client and family, so
+`server clients list` shows the same IDs before and after the server first
+saves the file. Every save also keeps each client's widest grant in the 2.0.1
+field, so a rollback to 2.0.1 keeps every live token and returns to its
+per-client consent. Upgrading again after 2.0.1 has rewritten the file
+migrates it again.
 
 - `mandalore server status --config FILE` prints, per signet: head, last push,
   pending push, backup state, the remote's state now (`current`, `ahead`,

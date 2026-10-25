@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/acoz-labs/mandalore/internal/testfixture"
 )
@@ -119,6 +120,10 @@ func TestServerOAuthAdminCommands(t *testing.T) {
 	for _, args := range [][]string{
 		{"server", "clients", "revoke", "--client", "client-unknown"},
 		{"server", "clients", "revoke"},
+		{"server", "clients", "revoke", "--installation", "inst-unknown"},
+		{"server", "clients", "revoke", "--client", "client-unknown", "--installation", "inst-unknown"},
+		{"server", "clients", "set-scope", "--installation", "inst-unknown", "--scope", "read"},
+		{"server", "clients", "set-scope", "--client", "client-unknown", "--installation", "inst-unknown", "--scope", "read"},
 		{"server", "clients", "set-scope", "--client", "client-unknown", "--scope", "read"},
 		{"server", "clients", "set-scope", "--client", "client-unknown", "--scope", "admin"},
 		{"server", "clients", "list", "--client", "x"},
@@ -128,5 +133,39 @@ func TestServerOAuthAdminCommands(t *testing.T) {
 		if code, v := cli(args...); code == 0 || v["ok"] != false {
 			t.Errorf("%v succeeded: %v", args, v)
 		}
+	}
+
+	// A 2.0.1 state: one metadata-document client used by two installations.
+	doc := "https://client.example.com/oauth/client-metadata"
+	expires := time.Now().Add(time.Hour)
+	raw, _ = json.Marshal(map[string]any{
+		"clients": map[string]any{doc: map[string]any{"id": doc, "name": "Synthetic Code", "kind": "client.example.com", "redirect_uris": []string{"http://localhost/callback"},
+			"metadata_document": true, "registered": time.Now().Add(-time.Hour), "grants": map[string]string{"primary": "read-write"}}},
+		"tokens": map[string]any{
+			"hash-one": map[string]any{"kind": "access", "client": doc, "signet": "primary", "family": "family-one", "scope": "read-write", "expires": expires},
+			"hash-two": map[string]any{"kind": "access", "client": doc, "signet": "primary", "family": "family-two", "scope": "read-write", "expires": expires},
+		},
+	})
+	var config map[string]any
+	configRaw, _ := os.ReadFile(path)
+	_ = json.Unmarshal(configRaw, &config)
+	if err := os.WriteFile(filepath.Join(config["state_dir"].(string), "oauth.json"), raw, 0600); err != nil {
+		t.Fatal(err)
+	}
+	_, v = cli("server", "clients", "list")
+	listed := v["result"].([]any)
+	if len(listed) != 2 {
+		t.Fatalf("clients list after migration: %v", v)
+	}
+	one := listed[0].(map[string]any)["installation"].(string)
+	if code, v := cli("server", "clients", "revoke", "--installation", one); code != 0 || v["result"].(map[string]any)["client"] != doc {
+		t.Fatalf("revoke installation: %d %v", code, v)
+	}
+	if _, v := cli("server", "clients", "list"); len(v["result"].([]any)) != 1 {
+		t.Fatalf("clients list after revoking one installation: %v", v)
+	}
+	code, v = cli("server", "clients", "revoke", "--client", doc)
+	if result := v["result"].(map[string]any); code != 0 || result["installations"] != 1.0 || !strings.Contains(result["notice"].(string), "every installation") {
+		t.Fatalf("revoke client: %d %v", code, v)
 	}
 }
