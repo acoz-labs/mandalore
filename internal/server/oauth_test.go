@@ -1185,3 +1185,94 @@ func TestRevocationIsPerClient(t *testing.T) {
 		t.Fatal("the owner's tokens were revoked by someone else")
 	}
 }
+
+// A client's own expired access token still ends its family until it is
+// pruned, so a late logout leaves nothing live.
+func TestRevocationByExpiredToken(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
+	e.enrollOwner(t)
+	redirect := "https://claude.ai/api/mcp/auth_callback"
+	client := e.registerClient(t, "Synthetic", redirect)
+	tok := e.tokens(t, client, redirect, "/mcp", "", ScopeReadWrite)
+	e.clock.advance(time.Hour)
+	if resp, body := e.revoke(t, url.Values{"client_id": {client}, "token": {tok["access_token"].(string)}}); resp.StatusCode != http.StatusOK || body != "" {
+		t.Fatalf("revoke expired access token: %d %q", resp.StatusCode, body)
+	}
+	resp, out := e.postForm(t, e.agent, "/token", url.Values{"grant_type": {"refresh_token"}, "client_id": {client}, "refresh_token": {tok["refresh_token"].(string)}})
+	if resp.StatusCode != http.StatusBadRequest || out["error"] != "invalid_grant" || liveTokens(t, e.config, client) != 0 {
+		t.Fatalf("refresh after revoking the expired access token: %d %v", resp.StatusCode, out)
+	}
+}
+
+// When the OAuth state can't be read, /revoke and /token say the server
+// failed rather than that the client is unknown, which would send it to
+// authorize again. Nothing is revoked, and the tokens work once the state
+// reads again.
+func TestOAuthStateReadFailure(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
+	e.enrollOwner(t)
+	redirect := "https://claude.ai/api/mcp/auth_callback"
+	client := e.registerClient(t, "Synthetic", redirect)
+	tok := e.tokens(t, client, redirect, "/mcp", "", ScopeReadWrite)
+	state := filepath.Join(e.config.StateDir, oauthStateFile)
+	good, err := os.ReadFile(state)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(state, []byte(`{"clients": corrupt`), 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	for name, test := range map[string]struct {
+		path   string
+		form   url.Values
+		status int
+		code   string
+	}{
+		"revoke":          {"/revoke", url.Values{"client_id": {client}, "token": {tok["refresh_token"].(string)}}, 503, "temporarily_unavailable"},
+		"revoke unknown":  {"/revoke", url.Values{"client_id": {"client-unknown"}, "token": {"not-a-token"}}, 503, "temporarily_unavailable"},
+		"refresh":         {"/token", url.Values{"grant_type": {"refresh_token"}, "client_id": {client}, "refresh_token": {tok["refresh_token"].(string)}}, 500, "server_error"},
+		"code":            {"/token", url.Values{"grant_type": {"authorization_code"}, "client_id": {client}, "code": {"x"}}, 500, "server_error"},
+		"refresh unknown": {"/token", url.Values{"grant_type": {"refresh_token"}, "client_id": {"client-unknown"}, "refresh_token": {"x"}}, 500, "server_error"},
+	} {
+		resp, out := e.postForm(t, e.agent, test.path, test.form)
+		if resp.StatusCode != test.status || out["error"] != test.code || strings.Contains(fmt.Sprint(out["error_description"]), "unknown client") {
+			t.Errorf("%s: %d %v", name, resp.StatusCode, out)
+		}
+	}
+
+	if err := os.WriteFile(state, good, 0600); err != nil {
+		t.Fatal(err)
+	}
+	if e.mcpStatus(t, "/mcp", tok["access_token"].(string)) != http.StatusOK || liveTokens(t, e.config, client) != 2 {
+		t.Fatal("a read failure revoked tokens")
+	}
+}
+
+// A revocation that can't save the state answers 503 and leaves the family live.
+func TestRevocationWriteFailure(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("root ignores the read-only state directory this test uses to fail the write")
+	}
+	t.Setenv("HOME", t.TempDir())
+	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
+	e.enrollOwner(t)
+	redirect := "https://claude.ai/api/mcp/auth_callback"
+	client := e.registerClient(t, "Synthetic", redirect)
+	tok := e.tokens(t, client, redirect, "/mcp", "", ScopeReadWrite)
+	if err := os.Chmod(e.config.StateDir, 0500); err != nil {
+		t.Fatal(err)
+	}
+	resp, out := e.postForm(t, e.agent, "/revoke", url.Values{"client_id": {client}, "token": {tok["refresh_token"].(string)}})
+	if err := os.Chmod(e.config.StateDir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != http.StatusServiceUnavailable || out["error"] != "temporarily_unavailable" {
+		t.Fatalf("revoke without a writable state: %d %v", resp.StatusCode, out)
+	}
+	if e.mcpStatus(t, "/mcp", tok["access_token"].(string)) != http.StatusOK || liveTokens(t, e.config, client) != 2 {
+		t.Fatal("a failed revocation revoked tokens")
+	}
+}
