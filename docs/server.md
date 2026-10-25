@@ -193,16 +193,16 @@ There is one owner, who signs in with a passkey (WebAuthn, through
    read-write picker, and approve or deny. A loopback redirect
    gets a warning, since any local process can claim a loopback port. Owner pages
    can't be framed and run only their own nonce-tagged script.
-4. On approval the server stores the grant and enrolls the client's device
-   record in the signet, labelled `<client name> (<kind>), approved <date>`. The
-   kind is the host of its metadata document or of its first non-loopback
-   redirect, such as `claude.ai`. Later authorizations by an approved DCR
-   client for that signet skip the consent page; the owner still signs in, or
-   uses a live session. A client ID is no secret, so no code is ever issued
-   without the owner. Each installation of a metadata-document client gets
-   its own device record, labelled `<client name> installation <id> (<kind>),
-   approved <date>`; a DCR client is one installation with one device record
-   (see [Who wrote it](#who-wrote-it)). For a metadata-document client the page also names the host that
+4. On approval the server stores the grant and enrolls the installation's
+   device record in the signet, as in [Who wrote it](#who-wrote-it): each
+   installation of a metadata-document client gets its own, labelled
+   `<client name> installation <id> (<kind>), approved <date>`, and a DCR
+   client, being one installation, gets one labelled `<client name> (<kind>),
+   approved <date>`. The kind is the host of its metadata document or of its
+   first non-loopback redirect, such as `claude.ai`. Later authorizations by an
+   approved DCR client for that signet skip the consent page; the owner still
+   signs in, or uses a live session. A client ID is no secret, so no code is
+   ever issued without the owner. For a metadata-document client the page also names the host that
    publishes the document, since the client chooses its own name.
 
 Browsers treat `http://localhost` as a secure context, so passkeys and the
@@ -359,7 +359,7 @@ so build it from a checkout of the release tag. The build compiles `mandalore`
 from that source; `VERSION` stamps its version.
 
 ```sh
-git clone --branch v2.0.2 https://github.com/acoz-labs/mandalore.git
+git clone --branch v2.0.3 https://github.com/acoz-labs/mandalore.git
 cd mandalore
 docker build -f packaging/server/Dockerfile --build-arg VERSION="$(cat VERSION)" -t mandalore-server .
 docker run -d --name mandalore --restart unless-stopped --read-only --tmpfs /tmp \

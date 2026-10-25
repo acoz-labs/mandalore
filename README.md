@@ -20,7 +20,7 @@ foundling consultation/selective promotion, retrieval evaluation, versioned
 candidate builds with guarded same-byte release tooling, and synthetic
 regression tests.
 
-The latest release is [2.0.2](docs/releases/2.0.2.md).
+The latest release is [2.0.3](docs/releases/2.0.3.md).
 In 1.x each device synchronized its own Git clone around agent sessions,
 through a stdio MCP server, lifecycle hooks and native Claude Code, Codex, Pi
 and Hermes plugins; the [release records](docs/releases/) keep that history.
@@ -79,17 +79,17 @@ independent acceptance. See [SDLC](docs/operations/sdlc.md).
 
 ## Install
 
-The latest release is [2.0.2](docs/releases/2.0.2.md); the
+The latest release is [2.0.3](docs/releases/2.0.3.md); the
 [release records](docs/releases/) describe the 1.x installation. In 2.0 one [server](docs/server.md) owns each signet and agents
 connect to it over MCP:
 
 1. **Get `mandalore`.** Install it with the release's bootstrap
    ([Installing 2.0](docs/releases/2.0.0.md#installing-20); for an existing
-   server, see [Upgrading to 2.0.2](docs/releases/2.0.2.md#upgrading-a-running-launchd-server)):
+   server, see [Upgrading to 2.0.3](docs/releases/2.0.3.md#upgrading-a-running-launchd-server)):
 
    ```sh
-   curl -fsSLO https://github.com/acoz-labs/mandalore/releases/download/v2.0.2/install.sh
-   sh install.sh 2.0.2
+   curl -fsSLO https://github.com/acoz-labs/mandalore/releases/download/v2.0.3/install.sh
+   sh install.sh 2.0.3
    ```
 
    Or build the server image locally from [packaging/server](docs/server.md#docker).
