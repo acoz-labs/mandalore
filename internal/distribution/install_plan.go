@@ -164,7 +164,7 @@ func retainedManifest(prefix, identity, goos, arch string) (ParsedManifest, erro
 	if err != nil {
 		return ParsedManifest{}, err
 	}
-	p, err := ParseManifest(b)
+	p, err := parseRetainedManifest(b)
 	if err != nil || p.SHA256 != identity {
 		return ParsedManifest{}, errors.New("retained manifest no longer matches its receipt identity")
 	}

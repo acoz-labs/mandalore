@@ -45,10 +45,36 @@ type Asset struct {
 }
 
 // ParsedManifest binds the exact received JSON, not a normalized reconstruction.
+// Legacy is set only for a 1.x runtime already retained in an owned prefix.
 type ParsedManifest struct {
-	Manifest Manifest `json:"manifest"`
-	SHA256   string   `json:"sha256"`
+	Manifest Manifest       `json:"manifest"`
+	SHA256   string         `json:"sha256"`
+	Legacy   *LegacyRelease `json:"legacy_1x,omitempty"`
 }
+
+// LegacyRelease holds the 1.x manifest claims that 2.0 retired (#163). They are
+// kept so the exact bytes stay accounted for; nothing installs the plugin.
+type LegacyRelease struct {
+	PluginSHA256 string `json:"plugin_sha256"`
+	CodexPlugin  Asset  `json:"codex_plugin"`
+}
+
+// legacyManifest is the 1.x manifest v1 shape: Manifest plus plugin_sha256.
+type legacyManifest struct {
+	FormatVersion       int     `json:"format_version"`
+	Product             string  `json:"product"`
+	Version             string  `json:"version"`
+	Tag                 string  `json:"tag"`
+	SourceCommit        string  `json:"source_commit"`
+	GoVersion           string  `json:"go_version"`
+	ProtocolVersion     int     `json:"protocol_version"`
+	SignetReadVersions  []int   `json:"signet_read_versions"`
+	SignetWriteVersions []int   `json:"signet_write_versions"`
+	PluginSHA256        string  `json:"plugin_sha256"`
+	Assets              []Asset `json:"assets"`
+}
+
+const maxLegacyPluginBytes = 4 << 20
 
 func (p ParsedManifest) Identity() string {
 	return "mandalore:" + p.Manifest.SourceCommit + ":sha256:" + p.SHA256
@@ -144,6 +170,42 @@ func ParseManifest(data []byte) (ParsedManifest, error) {
 		return ParsedManifest{}, err
 	}
 	return ParsedManifest{Manifest: m, SHA256: Digest(data)}, nil
+}
+
+// parseRetainedManifest reads the manifest of a runtime already retained in an
+// owned prefix, so 2.0 can update or roll back a 1.x install in place. Besides
+// the current shape it accepts only a 1.x release with its plugin_sha256 and one
+// codex-plugin asset; every other rule still applies. New candidates and
+// published releases use ParseManifest alone.
+func parseRetainedManifest(data []byte) (ParsedManifest, error) {
+	if p, err := ParseManifest(data); err == nil {
+		return p, nil
+	}
+	var l legacyManifest
+	if err := strictjson.Decode(data, &l, MaxManifestBytes); err != nil {
+		return ParsedManifest{}, err
+	}
+	m := Manifest{FormatVersion: l.FormatVersion, Product: l.Product, Version: l.Version, Tag: l.Tag, SourceCommit: l.SourceCommit, GoVersion: l.GoVersion,
+		ProtocolVersion: l.ProtocolVersion, SignetReadVersions: l.SignetReadVersions, SignetWriteVersions: l.SignetWriteVersions}
+	var codex []Asset
+	for _, a := range l.Assets {
+		if a.Kind == "codex-plugin" {
+			codex = append(codex, a)
+		} else {
+			m.Assets = append(m.Assets, a)
+		}
+	}
+	if !strings.HasPrefix(m.Version, "1.") || !validHex(l.PluginSHA256, 64) || len(codex) != 1 {
+		return ParsedManifest{}, errors.New("retained manifest is neither a current nor a 1.x release manifest")
+	}
+	c := codex[0]
+	if c.Name != "mandalore_"+m.Version+"_codex.zip" || c.OS != "" || c.Arch != "" || c.Size < 1 || c.Size > maxLegacyPluginBytes || !validHex(c.SHA256, 64) {
+		return ParsedManifest{}, errors.New("retained 1.x Codex package claim is invalid")
+	}
+	if err := m.Validate(); err != nil {
+		return ParsedManifest{}, err
+	}
+	return ParsedManifest{Manifest: m, SHA256: Digest(data), Legacy: &LegacyRelease{PluginSHA256: l.PluginSHA256, CodexPlugin: c}}, nil
 }
 
 func EncodeManifest(m Manifest) ([]byte, error) {

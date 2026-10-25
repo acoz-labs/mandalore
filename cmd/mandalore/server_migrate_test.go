@@ -392,8 +392,12 @@ func TestMigratePreflightOutputAndErrors(t *testing.T) {
 		t.Fatalf("text preflight: %d %s", code, out)
 	}
 	t.Setenv("MANDALORE_BINDING", filepath.Join(t.TempDir(), "missing.json"))
-	if code, out := migrateCLI(t, "preflight", "--clone", a.Root); code != 0 || result(t, out)["device_id"] != nil {
+	// A receipt that names no device is one init refuses, so it is not clean.
+	if code, out := migrateCLI(t, "preflight", "--clone", a.Root); code != 1 || result(t, out)["device_id"] != nil || result(t, out)["clean"] != false || !strings.Contains(out, "MANDALORE_BINDING") {
 		t.Fatalf("preflight without a binding: %d %s", code, out)
+	}
+	if code, out := migrateCLI(t, "preflight", "--clone", a.Root, "--format", "text"); code != 1 || !strings.Contains(out, "device unknown (no binding names this clone): blocked") || !strings.Contains(out, "MANDALORE_BINDING") {
+		t.Fatalf("text preflight without a binding: %d %s", code, out)
 	}
 	if code, out := migrateCLI(t, "preflight", "--clone", t.TempDir()); code != 2 || !json.Valid([]byte(out)) {
 		t.Fatalf("preflight of a non-signet: %d %s", code, out)

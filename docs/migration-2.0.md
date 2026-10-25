@@ -21,7 +21,9 @@ the remote ref but never fetches, commits or writes state. It checks:
 - the signet is format 2 (see [Format 1 signets](#format-1-signets)).
 
 It reports the device ID from the local binding (`MANDALORE_BINDING`, else the
-platform default) when that binding names this clone. A clone that is only
+platform default) when that binding names this clone. If no binding names it,
+preflight blocks, because `init` can't use a receipt without a device: point
+`MANDALORE_BINDING` at the clone's binding, or mark the device lost at init. A clone that is only
 behind `origin` is clean: it has nothing the remote lacks. If `origin` has
 commits the clone has never fetched, preflight can't tell behind from diverged
 without fetching, so it blocks; sync once more and preflight again.
