@@ -81,7 +81,7 @@ The server's paths fall into these groups:
 | --- | --- | --- |
 | `/authorize`, `/consent`, `/owner/*`, `/.well-known/*` | The owner's browser, and clients reading metadata | Owner passkey and session |
 | `/mcp`, `/s/<slug>/mcp`, `/token` | Claude's servers and Claude Code | OAuth bearer tokens and codes |
-| `/register` | Clients using dynamic registration, such as claude.ai | Nothing grants access before the owner approves, but anyone can fill the registration limits: rate-limit it at the edge (below) |
+| `/register` | Clients using dynamic registration, such as claude.ai | Nothing grants access before the owner approves, but anyone can fill the server's registration limits: allow it only from the clients that need it (rule 2) |
 | Anything else, including `/healthz` | Nobody from outside | None needed: block it |
 
 `/healthz` answers loopback peers, and through the tunnel every request comes
@@ -101,28 +101,48 @@ Set up these rules:
    )
    ```
 
-2. **Rate-limit `/register` per client address.** A rate limiting rule
-   (Security, WAF, Rate limiting rules) matching
+2. **Allow `/register` only from Anthropic.** For a Claude-only deployment,
+   which is what 2.0 supports, add a second WAF custom rule with action Block:
 
    ```
    http.host eq "memory.example.com" and http.request.uri.path eq "/register"
+   and not ip.src in {160.79.104.0/21}
    ```
 
-   counted by IP (`ip.src`), with action Block. Allow a few requests per period,
-   such as 5 per 10 minutes, or the longest period your plan offers.
+   Of 2.0's clients, only the Claude app may register dynamically, and it calls
+   `/register` from Anthropic's servers. Claude Code identifies itself with a
+   client ID metadata document and never calls `/register`, so the rule doesn't
+   affect it ([2.0 design](../design/2.0.md), section 4, "Claude Code versus
+   chat"). `160.79.104.0/21` is the outbound IPv4 range Anthropic publishes for
+   requests such as MCP connector calls to external servers
+   ([Anthropic IP addresses](https://platform.claude.com/docs/en/api/ip-addresses);
+   the design's section 7 cites the same range).
+   Anthropic says it won't change without notice, but it can change: check
+   that page when you set this up and when Anthropic announces a change.
+
+   If another client needs dynamic registration, add its published egress
+   range to the rule's `ip.src` set. If it has no fixed range, the only edge
+   protection left is the optional rate limit below, which can't prevent a
+   lockout.
 
    The rule is needed because the server limits registrations per peer address
-   (10 per 10 minutes) and holds at most 20 pending registrations for everyone.
-   Behind the tunnel every request comes from `cloudflared` on loopback, so the
-   server sees a single peer. Ten anonymous registrations then refuse every new
-   registration, including yours, until the window passes. The edge rule
-   restores a per-client limit. A lockout doesn't affect approved clients, or
-   clients such as Claude Code that use a client ID metadata document instead
-   of registering. To clear abandoned pending registrations, list them with
+   (10 per 10 minutes) and holds at most 20 pending registrations, shared by
+   everyone, for 24 hours. Behind the tunnel every request comes from
+   `cloudflared` on loopback, so the server sees one peer. Anyone who can
+   reach `/register` can use up both limits within minutes, and every new
+   registration is then refused, yours included. Approved clients keep
+   working. The rule narrows who can reach `/register` to traffic from
+   Anthropic. Anyone with a Claude account can still add your URL as a
+   connector and register through it, but random internet sources can't. To
+   clear abandoned pending registrations, list them with
    `mandalore server clients list` and remove them with
-   `mandalore server clients revoke`. If only claude.ai registers with your
-   server, you can instead allow `/register` from Anthropic's egress range
-   alone (see below).
+   `mandalore server clients revoke`.
+
+   A Cloudflare rate limiting rule on `/register` counted by `ip.src` can be
+   added as an extra layer. It slows a single source, but it doesn't prevent
+   the lockout. Free counts in 10-second periods and Pro in periods of at most
+   1 minute, so one source can still fill the server's limits within minutes,
+   and many sources aren't limited at all.
 
 3. **Leave the rest open.** Allow everyone on `/authorize`, `/consent`,
    `/owner/*` and `/.well-known/*`; the passkey protects them. Put no IP rule on
@@ -147,12 +167,13 @@ your own devices. Three paths need more than that:
 - **The client metadata fetch.** The server fetches Claude Code's client ID
   metadata document itself, outbound. Edge rules don't affect it.
 
-If you still want an allowlist on these paths, add it as a second WAF custom
-rule with action Block, after rule 1:
+If you still want an allowlist on `/mcp` and `/token`, add it as another WAF
+custom rule with action Block, after rules 1 and 2 (rule 2 already covers
+`/register`):
 
 ```
 http.host eq "memory.example.com"
-and (http.request.uri.path in {"/mcp" "/token" "/register"}
+and (http.request.uri.path in {"/mcp" "/token"}
      or (starts_with(http.request.uri.path, "/s/") and ends_with(http.request.uri.path, "/mcp")))
 and not ip.src in {160.79.104.0/21 192.0.2.10}
 ```
