@@ -18,7 +18,7 @@ import (
 	"unicode"
 )
 
-const PinnedGo = "go1.26.4"
+const PinnedGo = "go1.26.10"
 const maxSourceBytes = 64 << 20
 
 type BuildOptions struct{ Source, Output string }
@@ -227,7 +227,7 @@ func Build(ctx context.Context, o BuildOptions) (ParsedManifest, error) {
 	}
 	goBinary, err := exec.LookPath("go")
 	if err != nil {
-		return ParsedManifest{}, errors.New("Go 1.26.4 is required")
+		return ParsedManifest{}, errors.New("Go 1.26.10 is required")
 	}
 	stage, err := os.MkdirTemp(parent, ".mandalore-build-")
 	if err != nil {
@@ -245,7 +245,7 @@ func Build(ctx context.Context, o BuildOptions) (ParsedManifest, error) {
 		"GOPROXY=https://proxy.golang.org", "GOSUMDB=sum.golang.org"}
 	v, err := runBuildTool(ctx, work, goEnv, 256, goBinary, "env", "GOVERSION")
 	if err != nil || strings.TrimSpace(string(v)) != PinnedGo {
-		return ParsedManifest{}, errors.New("release builder requires exactly Go 1.26.4")
+		return ParsedManifest{}, errors.New("release builder requires exactly Go 1.26.10")
 	}
 	archive, err := gitRun(maxSourceBytes, "archive", "--format=tar", commit)
 	if err != nil {

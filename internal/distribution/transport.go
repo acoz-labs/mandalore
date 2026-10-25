@@ -230,7 +230,7 @@ func VerifyCandidateArchive(ctx context.Context, reader io.ReaderAt, size int64,
 	if err != nil {
 		return ParsedManifest{}, err
 	}
-	if p.Manifest.SourceCommit != t.SourceCommit || p.Manifest.GoVersion != "go1.26.4" {
+	if p.Manifest.SourceCommit != t.SourceCommit || p.Manifest.GoVersion != "go1.26.10" {
 		return ParsedManifest{}, errors.New("candidate manifest differs from selected source or pinned toolchain")
 	}
 	sums, _ := Checksums(b)

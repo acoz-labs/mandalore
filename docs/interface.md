@@ -365,7 +365,7 @@ selecting a different release in the menu.
 Build with the pinned toolchain:
 
 ```sh
-mise exec go@1.26.4 -- go build -o ./mandalore ./cmd/mandalore
+mise exec go@1.26.10 -- go build -o ./mandalore ./cmd/mandalore
 ./mandalore --help
 ./mandalore operations
 ```

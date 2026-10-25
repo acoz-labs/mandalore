@@ -136,7 +136,7 @@ surfaces are not part of this CLI; later native platforms require their own
 acceptance rather than inferred coverage from a cross-build.
 
 ```text
-UI test command: mise exec go@1.26.4 -- go test ./internal/console ./cmd/mandalore
+UI test command: mise exec go@1.26.10 -- go test ./internal/console ./cmd/mandalore
 Visual comparison backend: no approved pixel/recording baseline yet
 Pinned rendering environment: recorded macOS arm64/Herdr terminal; dimensions in manifest
 Baseline approval: separate product judgment, not automatic first-capture approval

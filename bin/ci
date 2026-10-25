@@ -49,8 +49,8 @@ for workflow in .github/workflows/*.yml; do
   fi
 done
 
-[[ "$(go env GOVERSION)" == "go1.26.4" ]] || {
-  echo "Go 1.26.4 is required; use mise exec go@1.26.4 -- bin/ci." >&2
+[[ "$(go env GOVERSION)" == "go1.26.10" ]] || {
+  echo "Go 1.26.10 is required; use mise exec go@1.26.10 -- bin/ci." >&2
   exit 1
 }
 [[ -z "$(gofmt -l internal cmd)" ]] || { echo "Run gofmt on internal/ and cmd/." >&2; exit 1; }

@@ -40,7 +40,7 @@ func (f *inspectFixture) InspectCandidate(_ context.Context, s distribution.Cand
 func promoteFixture(t *testing.T) (string, string, *inspectFixture, string) {
 	t.Helper()
 	dir := t.TempDir()
-	m := distribution.Manifest{FormatVersion: 1, Product: "mandalore", Version: "1.0.0", Tag: "v1.0.0", SourceCommit: strings.Repeat("a", 40), GoVersion: "go1.26.4", ProtocolVersion: 1, SignetReadVersions: []int{1}, SignetWriteVersions: []int{1}}
+	m := distribution.Manifest{FormatVersion: 1, Product: "mandalore", Version: "1.0.0", Tag: "v1.0.0", SourceCommit: strings.Repeat("a", 40), GoVersion: "go1.26.10", ProtocolVersion: 1, SignetReadVersions: []int{1}, SignetWriteVersions: []int{1}}
 	files := map[string][]byte{}
 	for _, osName := range []string{"darwin", "linux"} {
 		for _, arch := range []string{"amd64", "arm64"} {
