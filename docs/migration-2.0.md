@@ -13,7 +13,8 @@ Run it on each device, against that device's clone. It is read-only: it lists
 the remote ref but never fetches, commits or writes state. It checks:
 
 - the signet passes full validation;
-- no uncommitted files and no unpushed commits;
+- no uncommitted files and no unpushed commits (ignored files count when they
+  are memory; `.mandalore/`, including its canon cache, is never listed);
 - no pending write intents in `.mandalore/`: an `operation-*.json` left by an
   interrupted razor-crest write, or a prepared format upgrade that isn't active
   (see [Pending intents](#pending-intents));
@@ -29,7 +30,8 @@ commits the clone has never fetched, preflight can't tell behind from diverged
 without fetching, so it blocks; sync once more and preflight again.
 
 Exit codes: `0` clean (safe to retire), `1` blocked, `2` the clone could not be
-inspected. The JSON output is the receipt `init` takes; save it to a file:
+inspected; the error names its cause, such as a Git command exceeding its
+output limit. The JSON output is the receipt `init` takes; save it to a file:
 
 ```sh
 mandalore server migrate preflight --clone ~/signet > device-a.json

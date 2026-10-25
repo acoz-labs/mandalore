@@ -227,16 +227,24 @@ func (s *Synchronizer) dirty(ctx context.Context) (bool, error) {
 	}
 	// Valid newly written records can be ignored by custom Git rules. They are
 	// still pending memory, even though ordinary git status would omit them.
-	ignored, err := s.git(ctx, "ls-files", "--others", "--ignored", "--exclude-standard", "-z")
+	ignored, err := s.ignoredPortable(ctx)
+	return len(ignored) > 0, err
+}
+
+// ignoredPortable lists ignored files in the portable layout. It leaves out
+// .mandalore, which holds no portable paths and whose canon cache can be large.
+func (s *Synchronizer) ignoredPortable(ctx context.Context) ([]string, error) {
+	ignored, err := s.gitOutput(ctx, commandOutputLimit, "ls-files", "--others", "--ignored", "--exclude-standard", "-z", "--", ".", ":!.mandalore")
 	if err != nil {
-		return false, err
+		return nil, err
 	}
+	var out []string
 	for _, path := range strings.Split(ignored, "\x00") {
 		if allowedPath(path) {
-			return true, nil
+			out = append(out, path)
 		}
 	}
-	return false, nil
+	return out, nil
 }
 
 func failed(out Status, err error) error {

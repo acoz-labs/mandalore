@@ -53,7 +53,7 @@ func Preflight(ctx context.Context, clone, bindingPath string) (Receipt, error) 
 		return r, err
 	}
 	if r.CloneState, err = g.InspectClone(ctx); err != nil {
-		return r, errors.New("clone is not a standalone Git checkout on main with no operation in progress")
+		return r, fmt.Errorf("clone inspection failed: %w", err)
 	}
 	if r.PendingIntents, err = store.PendingIntents(); err != nil {
 		return r, errors.New("pending write intents are unreadable")
