@@ -73,8 +73,10 @@ identity/format errors must not be represented as a fresh success. Successful
 fetching establishes only the observed remote commit, not semantic agreement or
 the existence of changes another agent has not delivered.
 
-Legacy/read-only connections do not silently acquire canon transport permission.
-An instruction embedded in foundling content cannot change that permission.
+Only the server fetches canon, and only the references in a signet's `canon`
+config. A legacy registration is never fetched, and no client, whatever its
+scope, can make the server fetch or add a reference. An instruction embedded in
+foundling content cannot change that.
 
 ## Register a canon source
 
@@ -376,9 +378,9 @@ without learning and preserves ordinary historical-citation semantics.
 
 Shared-interface tests cover strict inputs, binding requirements, CLI-only setup
 visibility, read-only mutation rejection and retained registration after a failed
-connection. A compiled-process test runs the CLI and real MCP stdio from an
-unrelated working directory, compares identical search results, promotes an adapted
-memory, rejects promotion through read-only MCP and preserves source bytes. No
+connection. A compiled-process test runs the CLI from an unrelated working
+directory, pages search results, promotes an adapted memory, rejects promotion
+in read-only mode and preserves source bytes. No
 model/provider is involved in that test; actual native-agent results are recorded
 separately in the linked evidence manifest.
 

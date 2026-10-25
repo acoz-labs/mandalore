@@ -28,7 +28,19 @@ sequence and scope; issue creation is not implementation or acceptance.
 - [#15: Assess memory integration readiness on a new machine](https://github.com/acoz-labs/mandalore/issues/15)
 - [#16: Define signet privacy, export, retention and deletion semantics](https://github.com/acoz-labs/mandalore/issues/16)
 
-## Current handoff
+## 2.0
+
+[#168](https://github.com/acoz-labs/mandalore/issues/168) tracks 2.0, following
+the [design](design/2.0.md): a single-writer [server](server.md) (#167), built-in
+OAuth and owner passkeys (#161), foundlings on the server (#162), one
+[Claude plugin](../plugins/claude/README.md) and its skills (#163), the
+[1.x cutover](migration-2.0.md) (#164) and packaging (#165). Each is a reviewed
+merge with no release; #166 accepts and publishes 2.0.0. Codex, Pi and Hermes
+plugins are paused until they're ported to the server model.
+
+## 1.x handoff (history)
+
+This section records how 1.x was sequenced and delivered.
 
 Repository foundations, engine/schema, shared interface, synchronization, Codex
 integration, managed setup and explicit memory-only migration are implemented.
@@ -37,7 +49,7 @@ included in the owner-accepted [v1.0.0 release](releases/1.0.0.md). Publication
 preserved the exact retained bytes. The release record and linked issues separate
 the owner's verdict, public verification and completed delivery ledger.
 Foundlings belongs before real-memory adoption, not merely an optional post-MVP
-improvement. Codex acceptance precedes Pi; Pi acceptance precedes Claude Code.
+improvement. In 1.x Codex acceptance preceded Pi, and Pi acceptance preceded Claude Code.
 Engineering merges alone are not release acceptance.
 
 The [1.1.0 release](releases/1.1.0.md) delivered Pi and the post-1.0 improvements.

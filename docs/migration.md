@@ -65,8 +65,8 @@ for the rest of the memory-only boundary.
 | [#112](https://github.com/acoz-labs/my-friday/issues/112) container prerequisites | Current reproducible CI is owned by #11; legacy container patch not imported |
 | [#113](https://github.com/acoz-labs/my-friday/issues/113) delivery reconciliation | Historical workflow design; current repository instructions and #11 govern |
 | [#116](https://github.com/acoz-labs/my-friday/issues/116) machine adaptation | Narrowed to memory integration readiness in Mandalore #15; arbitrary capability/package/credential adaptation excluded |
-| [#117](https://github.com/acoz-labs/my-friday/issues/117) Pi integration | Mandalore #13, waiting for Codex MVP acceptance |
-| [#118](https://github.com/acoz-labs/my-friday/issues/118) Claude integration | Mandalore #14, waiting for Pi acceptance |
+| [#117](https://github.com/acoz-labs/my-friday/issues/117) Pi integration | Mandalore #13, released in 1.1.0; paused in 2.0 |
+| [#118](https://github.com/acoz-labs/my-friday/issues/118) Claude integration | Mandalore #14, released in 1.3.0; the 2.0 Claude plugin replaces it |
 | [#119](https://github.com/acoz-labs/my-friday/issues/119) transition notice | Retained public redirect to Mandalore; not an unfinished implementation to port |
 
 | Open predecessor PR | Observed head | Disposition |
@@ -91,7 +91,7 @@ behavior. Detailed contracts and current tests belong to the linked documents.
 | --- | --- | --- |
 | `internal/portable/{store,memory,bank,events}.go` and selected tests | `internal/memory`; [extraction inventory](memory-extraction.md) | Storage, graph, journal and provenance primitives; assistant/capability identity excluded |
 | `internal/memorybank/{binding,service,pages}.go` | `internal/binding`, shared service/CLI contracts in [interface](interface.md) | Explicit local binding, compact bounded memory access; no assistant discovery |
-| `internal/memorymcp/server.go` | `internal/mcp`, `internal/api`, `cmd/mandalore` | Shared local stdio concept; new strict memory-only operation catalog, not assistant CLI copy |
+| `internal/memorymcp/server.go` | `internal/mcp` (removed in 2.0), `internal/api`, `cmd/mandalore` | Shared local stdio concept; new strict memory-only operation catalog, not assistant CLI copy |
 | `internal/portable/sync.go`, `sync_transport.go` | `internal/sync`; [synchronization](synchronization.md) | Append-only Git delivery/endpoint concepts; hosting-account adapters and credential helpers excluded |
 | `internal/memorycodex`, `internal/memoryinstall`, `plugins/codex` | `internal/codex`, `internal/install`, `plugins/codex` (removed in 2.0) | Thin native hooks/MCP and pinned connection concepts; no inherited native home, account rules or assistant launcher |
 | `internal/portable/references.go`, `reference_read.go`, reference menu | `internal/foundlings`; [foundlings](foundlings.md) | Reference/pin lessons adapted into separate historical evidence and explicit promotion; no wholesale historical-memory import |

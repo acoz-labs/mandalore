@@ -72,7 +72,7 @@ source, without its portable/assistant dependency. No-overwrite publication and
 outside-signet path validation are retained; strict JSON/size validation,
 directory durability, read-time location checks and identity pinning are explicit.
 The CLI/router and shared operation catalog are memory-only implementations, not
-copies of the assistant-aware predecessor CLI. The SDK adapter retains only the
+copies of the assistant-aware predecessor CLI. The 1.x SDK adapter (removed in 2.0) retained only the
 local stdio/shared-service concept; low-level raw argument handling uses the same
 strict decoder as the CLI. Native plugin/install and provider code are excluded.
 

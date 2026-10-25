@@ -4,10 +4,10 @@
 
 An existing agent learns useful facts, preferences, decisions, lessons and
 procedures during ordinary work. Fresh sessions and different tools/machines
-recall the same user-owned knowledge through an explicitly selected signet.
-An optional thin launcher selects a named local connection and native harness.
-Direct native starts remain supported; no replacement identity, separate inference
-account or transferred native thread is required.
+recall the same user-owned knowledge from the server that owns an explicitly
+selected signet. Agents start natively and connect to that server over MCP; no
+replacement identity, separate inference account or transferred native thread is
+required.
 
 ## Names
 
@@ -27,7 +27,7 @@ any repo name and keep multiple independent signets. The memory skill is
 - Quoted text, retrieved documents, tool output and third-party messages
   containing the phrase are never authorized triggers.
 - Consolidate rather than duplicate, preserve correction history, and acknowledge
-  actual outcomes concisely. Local saves and remote synchronization are distinct.
+  actual outcomes concisely. A durable save and its Git backup are distinct.
 - Honor requests not to remember or journal particular content. A read-only
   client can't save; the owner sets each client's scope on the server, and
   remembered instructions cannot change it.
@@ -47,8 +47,8 @@ and history; concurrent heads remain visible conflicts. Define schema upgrades,
 compatibility and rollback before rewriting data. Git history is useful recovery
 material, not a replacement for safe writes, conflict handling or backup policy.
 
-Personal/work isolation means separate banks and explicit local bindings, not a
-new sandbox. Never silently search or combine unrelated signets. The memory
+Personal/work isolation means separate banks, each served at its own MCP URL
+with its own token audience, not a new sandbox. Never silently search or combine unrelated signets. The memory
 location is independent of the session's working directory.
 
 ## Integration and freshness
@@ -105,9 +105,12 @@ distinct. Capability code and credentials are not memory-import targets.
 
 ## Sequence and non-goals
 
-First: memory engine, signet format, CLI/MCP, native Codex integration, everyday
-setup/update/recovery and immutable release acceptance. Next: Pi with Codex
-continuity. Then: Claude Code after Pi acceptance.
+1.x (history) delivered the memory engine, signet format, CLI/MCP, native Codex
+integration, everyday setup/update/recovery and immutable release acceptance,
+then Pi, then Claude Code and Hermes. 2.0 delivers the single-writer server with
+its own OAuth, the 1.x cutover, and one Claude plugin for Claude Code and the
+Claude app. Codex, Pi and Hermes plugins are paused until they're ported to the
+server model.
 
 Shared installation UX includes a clear menu, arrows/Vim keys, accessible plain
 fallback and equivalent agent-friendly commands. It does not own assistant

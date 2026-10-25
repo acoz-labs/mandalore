@@ -3,37 +3,29 @@
 Your lore, across time and space. This is the way.
 
 Automatic, durable memory across agents and tools. Bring your own agent;
-Mandalore supplies structured, local-first, Git-backed memory through a shared
-engine, CLI, MCP server and thin native harness plugins.
+Mandalore supplies structured, Git-backed memory through a shared engine, a
+single-writer MCP server, an admin CLI and a thin Claude plugin.
 
 ## Status
 
 This is the memory-only successor to [My Friday](https://github.com/acoz-labs/my-friday).
-The repository contains the memory engine, a CLI/local MCP server,
-Git synchronization, native lifecycle integration and memory/administration skills, guided setup/local-artifact update/inspection/repair, explicit
-memory-only migration, foundling consultation/selective promotion, retrieval
-evaluation and synthetic regression tests. Versioned candidate builds, guided
-CLI installation/update and guarded same-byte release tooling are implemented.
-[Mandalore v1.3.0](https://github.com/acoz-labs/mandalore/releases/tag/v1.3.0)
-is published from the independently accepted retained candidate. See the
-[release record](docs/releases/1.3.0.md) for provenance, verification and limits.
+`main` is 2.0 development. The [Mandalore server](docs/server.md)
+(`mandalore serve`) is each signet's only writer and backs it up to its Git
+remote. Agents read and write through it over MCP: the
+[Claude plugin](plugins/claude/README.md) in Claude Code, or a connector in the
+Claude app. If the server is unreachable, agents carry on without memory (fail
+open). The repository also contains the memory engine, the admin CLI and guided
+menu, the [1.x cutover](docs/migration-2.0.md), explicit memory-only migration,
+foundling consultation/selective promotion, retrieval evaluation, versioned
+candidate builds with guarded same-byte release tooling, and synthetic
+regression tests.
 
-`main` is now 2.0 development: the single-writer [Mandalore server](docs/server.md)
-(`mandalore serve`) replaces the stdio MCP server, lifecycle hooks, session
-synchronization and Razor Crest, and one [Claude plugin](plugins/claude/README.md)
-replaces the 1.x Codex, Pi, Claude Code and Hermes plugins. The rest of this
-section describes the released 1.x line; [Install](#install) covers 2.0.
-
-Claude Code, Codex and Pi integrations are released in 1.x, where each device
-synchronized its own Git clone; the [release records](docs/releases/1.3.0.md)
-keep that history. In 2.0 agents read and write through the server, which is
-the only writer and backs each signet up to its Git remote. If the server is
-unreachable, agents carry on without memory (fail open).
-
-Hermes support was released in [1.6.0](docs/releases/1.6.0.md).
-It adds portable signet memory alongside Hermes's native memory, with native
-CLI and persistent-service acceptance. Install and activate a reviewed connection
-for the selected profile; publication does not automatically upgrade operators.
+2.0 isn't released yet; the latest release is [1.6.1](docs/releases/1.6.1.md).
+In 1.x each device synchronized its own Git clone around agent sessions,
+through a stdio MCP server, lifecycle hooks and native Claude Code, Codex, Pi
+and Hermes plugins; the [release records](docs/releases/) keep that history.
+2.0 removes them, along with Razor Crest. Codex, Pi and Hermes plugins are
+paused until they're ported to the server model.
 
 ## A small vocabulary
 
@@ -67,7 +59,7 @@ portability is not included.
 - [Product contract](docs/product.md)
 - [Architecture and implementation status](docs/architecture.md)
 - [Signet data format](docs/signet-format.md) and [source extraction](docs/memory-extraction.md)
-- [Development CLI, local MCP and machine bindings](docs/interface.md)
+- [Admin CLI, operation catalog and machine bindings](docs/interface.md)
 - [Git synchronization, offline work and freshness](docs/synchronization.md)
 - [Mandalore server (2.0 development)](docs/server.md), its [design](docs/design/2.0.md) and the [cutover from 1.x](docs/migration-2.0.md)
 - Deploying the server: [work laptop on loopback](docs/deploy/local.md) and [Cloudflare Tunnel](docs/deploy/cloudflare-tunnel.md)
