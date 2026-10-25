@@ -28,17 +28,18 @@ the wrapper and 257 bytes for the selected envelope. These are representation
 bytes, not native input tokens or whole-session savings. The example preserves
 input objects and calls no tools, writes or network operations.
 
-Run the Go characterization with:
+Run the Go characterization with the checkout's pinned Go. `internal/mcp` left
+the build in 2.0, so run it from a 1.x checkout such as the `v1.6.1` tag:
 
 ```sh
-mise exec go@1.26.4 -- go test ./internal/mcp -run TestPresentationWireCompatibility -v
+mise exec -- go test ./internal/mcp -run TestPresentationWireCompatibility -v
 ```
 
 For the selector, extract the `javascript` fenced block from the skill reference,
 evaluate it together with `selector-checks.js` in code mode, and call
 `verifyMandaloreOutput(mandaloreOutput)`. Do not substitute a copied selector:
-tests must exercise the maintained example. The Go checks run in normal CI;
-the JavaScript example check is a separately performed diagnostic.
+tests must exercise the maintained example. The Go checks ran in normal CI
+through 1.x; the JavaScript example check is a separately performed diagnostic.
 
 ## Native engineering evidence and remaining acceptance
 

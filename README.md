@@ -24,13 +24,11 @@ synchronization and Razor Crest, and one [Claude plugin](plugins/claude/README.m
 replaces the 1.x Codex, Pi, Claude Code and Hermes plugins. The rest of this
 section describes the released 1.x line; [Install](#install) covers 2.0.
 
-Claude Code, Codex and Pi integrations are released in 1.x with
-[session-authorized automatic synchronization](docs/synchronization.md).
-Enabled sessions attempt refresh before context and delivery after semantic saves.
-Existing 1.2 connections keep their transport behavior until a reviewed update
-adopts the new policy. Read-only connections are never silently upgraded.
-Delivery does not guarantee model agreement; see the release record for native
-evidence and limits.
+Claude Code, Codex and Pi integrations are released in 1.x, where each device
+synchronized its own Git clone; the [release records](docs/releases/1.3.0.md)
+keep that history. In 2.0 agents read and write through the server, which is
+the only writer and backs each signet up to its Git remote. If the server is
+unreachable, agents carry on without memory (fail open).
 
 Hermes support was released in [1.6.0](docs/releases/1.6.0.md).
 It adds portable signet memory alongside Hermes's native memory, with native

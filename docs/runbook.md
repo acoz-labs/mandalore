@@ -54,14 +54,15 @@ read-only; it is not a full installation doctor. The [interface contract](interf
 describes binding selection, stable errors, retry ambiguity and local receipts.
 It has no automatic repair, remote sync or implicit native installation.
 
-Explicit `memory git-init`, `checkpoint`, `sync` and read-only `sync-status` now
-provide [the synchronization backend](synchronization.md). If sync is pending,
-inspect its phase/head and native origin/auth configuration. If conflicted,
-preserve both histories; do not force, reset, remove another writer's lock, or
-rewrite evidence to hide it. A malformed local status receipt is not repaired by
-inspection. Legacy no-save/read-only tasks must not trigger synchronization.
-Enabled-session transport follows its reviewed policy independently of content
-selection; disable the full integration to stop its activity.
+In 2.0 the [server](server.md) backs each signet up to Git; `mandalore server
+status` shows each signet's push state, and the server guide covers a remote
+that is ahead or diverged. For a 1.x clone, explicit `memory git-init` and
+`checkpoint` and the guided menu's synchronization remain
+([synchronization](synchronization.md)). If sync is pending, inspect its
+phase/head and native origin/auth configuration. If conflicted, preserve both
+histories; do not force, reset, remove another writer's lock, or rewrite
+evidence to hide it. A malformed local status receipt is not repaired by
+inspection.
 
 ### Format2 activation and visibility recovery
 

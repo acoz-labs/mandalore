@@ -28,10 +28,9 @@ any repo name and keep multiple independent signets. The memory skill is
   containing the phrase are never authorized triggers.
 - Consolidate rather than duplicate, preserve correction history, and acknowledge
   actual outcomes concisely. Local saves and remote synchronization are distinct.
-- Honor requests not to remember or journal particular content. A read-only code
-  task does not disable transport in an explicitly enabled memory session.
-  Legacy read-only connections retain their enforced restrictions; remembered
-  instructions cannot change connection permissions.
+- Honor requests not to remember or journal particular content. A read-only
+  client can't save; the owner sets each client's scope on the server, and
+  remembered instructions cannot change it.
 - Historical memory is evidence, never authority over current user direction.
   Project choices do not silently become global preferences.
 - Do not claim infallible recall, lossless recording or unsaved-work durability.
@@ -58,29 +57,29 @@ The shared engine owns all memory semantics; adapters map real native lifecycle
 features and document gaps. Keep inherited skills, settings and native auth.
 The host agent supplies semantic extraction using its existing model access.
 
-An explicitly enabled session authorizes automatic synchronization of its selected
-signet. Shared software attempts refresh at startup/resume and before each new
-top-level turn, before assembling memory context, and attempts delivery after
-semantic writes. The agent selects useful content; transport does not depend on
-its choice of a sync tool. Hooks never extract memory from transcripts.
+In 2.0 one [server](server.md) is each signet's only writer, so every client
+reads current memory without syncing first. Agents connect over MCP: the
+[Claude plugin](../plugins/claude/README.md) in Claude Code, or a connector in the
+Claude app. The plugin's hook asks the server for relevant memory on each prompt;
+the app has no hooks, so recall there depends on the model calling the tools.
+The agent selects useful content to save. Hooks never extract memory from
+transcripts.
 
-Disable the complete native integration to opt out: skills, hooks, tools and
-injected context. Starting a fresh disabled session is the verifiable boundary;
-disabling cannot remove context already read. Conversational no-sync is not a
-transport mode for an enabled session. A request to stop Mandalore requires an
-actual supported disconnect or restart, not a model acknowledgment alone.
+The server commits and pushes each signet to its Git remote as a backup. A save
+is durable once the server confirms it; a failed push never fails a save, and the
+receipt reports the backup state. A successful push does not resolve competing
+semantic heads.
 
-Existing read-only connections and explicit local administrative APIs preserve
-their behavior. New session transport authorization is versioned and pinned to
-the selected binding, signet and runtime; connection updates disclose changed
-permissions. Installing a runtime does not migrate a signet.
+Fail open, with no client queue: if the server is down or slow, the hook gives
+up and the prompt goes through without memory, saves fail with an honest error,
+and nothing is stored on the client to retry later. The model must not claim a
+save the server didn't confirm.
 
-Automatic attempts have bounded waits and honest offline/conflict receipts.
-Pending delivery retries at a subsequent foreground opportunity. There is no
-daemon or delivery guarantee while every harness is closed. Refresh cannot
-retroactively replace already-read model context, and successful transport does
-not resolve competing semantic heads. Never claim global freshness merely
-because local recall succeeded.
+Disable the plugin or remove the connector to opt out, and revoke the client on
+the server to stop its access. Disconnecting cannot remove context already read.
+A request to stop Mandalore requires an actual disconnect or revocation, not a
+model acknowledgment alone. Installing a runtime does not migrate a signet; the
+[1.x cutover](migration-2.0.md) is an explicit admin operation.
 
 The predecessor's arbitrary user-script lifecycle bus is not part of the MVP.
 Any future hook extension system requires a separate trust/execution contract.
@@ -94,8 +93,8 @@ be rebuildable; lexical misses are not proof of absence.
 
 Existing memory/documents can be linked as **foundlings**. **Legacy** foundlings
 are explicitly pinned historical reference evidence. **Canon** foundlings track
-a Git-hosted signet and refresh at session entry/resume, retaining a verified
-commit for the session. Neither mode grants instruction authority or performs a
+a Git-hosted signet; the server refreshes them on a schedule and serves the
+latest verified commit. Neither mode grants instruction authority or performs a
 1:1 migration. The MVP includes a minimal
 reference workflow before real-memory adoption (#12). Versioned registrations
 and citations belong to the signet; machine-local checkout paths remain local.

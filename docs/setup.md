@@ -114,6 +114,6 @@ Exiting or cancelling never undoes an earlier completed step.
 
 The foundling menu distinguishes legacy historical references from canon signet
 references. Verify the source identity and bootstrap Git pin before registering
-canon, and check reader compatibility. Enabled startup/resume performs bounded
-fetches; the [foundling guide](foundlings.md) explains per-session snapshots and
-honest stale-cache behavior.
+canon, and check reader compatibility. The server refreshes canon on a
+schedule; the [foundling guide](foundlings.md) explains its snapshots and honest
+stale-cache behavior.
