@@ -193,6 +193,15 @@ func retainedManifest(prefix, identity, goos, arch string) (ParsedManifest, erro
 	return p, nil
 }
 
+// InstalledManifest rereads the owned runtime a plan observed in its prefix, so
+// a preview can show what the installation replaces. It executes nothing.
+func InstalledManifest(p InstallPlan) (ParsedManifest, error) {
+	if p.Observed.Current == "" {
+		return ParsedManifest{}, errors.New("no owned runtime is installed in this prefix")
+	}
+	return retainedManifest(p.Prefix, p.Observed.Current, p.OS, p.Arch)
+}
+
 func observeInstallation(prefix, goos, arch string) (InstallObservation, error) {
 	o := InstallObservation{Directories: []PathObservation{}}
 	state := cliState(prefix)
