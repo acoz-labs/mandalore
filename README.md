@@ -81,7 +81,7 @@ portability is not included.
 - [Development](docs/development.md), [releases](docs/deployment.md), [runbook](docs/runbook.md)
 - [Contributing](CONTRIBUTING.md) and [security/privacy](SECURITY.md)
 
-Run `mise exec go@1.26.4 -- bin/ci`, or `bin/container bin/ci` with Docker.
+Run `mise exec go@1.26.10 -- bin/ci`, or `bin/container bin/ci` with Docker.
 The managed workflow uses issues, design/implementation PRs, recorded engineering
 review, exact-candidate acceptance and GitHub Releases. The current MVP permits
 [engineering self-review](docs/decisions/0001-mvp-self-review.md), not fabricated
@@ -95,7 +95,7 @@ release is [1.6.1](docs/releases/1.6.1.md), whose release records describe the
 connect to it over MCP:
 
 1. **Get `mandalore`.** Until 2.0.0 is published, build it from this repository
-   with `mise exec go@1.26.4 -- go build -o mandalore ./cmd/mandalore`, or build
+   with `mise exec go@1.26.10 -- go build -o mandalore ./cmd/mandalore`, or build
    the server image with `docker build -f packaging/server/Dockerfile .`. From
    2.0.0 each release carries the binaries and the image
    `ghcr.io/acoz-labs/mandalore:<version>`.

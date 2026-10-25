@@ -40,16 +40,16 @@ comparison are required for this correction.
 
 ## Reproduce measurements
 
-Use Go 1.26.4 on a disposable development checkout. These opt-in benchmarks create
+Use Go 1.26.10 on a disposable development checkout. These opt-in benchmarks create
 only synthetic temporary banks/references. They do not use native authentication,
 an installed agent binding, remote repositories or private memory.
 
 ```sh
-mise exec go@1.26.4 -- go test ./internal/testfixture ./internal/memory -run 'TestCorpus|TestNearestRank|TestRetrieval' -count=1
-mise exec go@1.26.4 -- go test -v ./internal/memory -run '^$' -bench '^BenchmarkRetrieval$' -benchtime=20x -count=1 -timeout=20m
-mise exec go@1.26.4 -- go test -v ./internal/codex -run '^$' -bench '^BenchmarkPromptHook$' -benchtime=20x -count=1 -timeout=20m
-mise exec go@1.26.4 -- go test -v ./internal/foundlings -run '^$' -bench '^BenchmarkFoundlingRetrieval$' -benchtime=20x -count=1 -timeout=20m
-mise exec go@1.26.4 -- go test -v ./cmd/mandalore -run '^$' -bench '^BenchmarkCompiledRetrieval$' -benchtime=20x -count=1 -timeout=20m
+mise exec go@1.26.10 -- go test ./internal/testfixture ./internal/memory -run 'TestCorpus|TestNearestRank|TestRetrieval' -count=1
+mise exec go@1.26.10 -- go test -v ./internal/memory -run '^$' -bench '^BenchmarkRetrieval$' -benchtime=20x -count=1 -timeout=20m
+mise exec go@1.26.10 -- go test -v ./internal/codex -run '^$' -bench '^BenchmarkPromptHook$' -benchtime=20x -count=1 -timeout=20m
+mise exec go@1.26.10 -- go test -v ./internal/foundlings -run '^$' -bench '^BenchmarkFoundlingRetrieval$' -benchtime=20x -count=1 -timeout=20m
+mise exec go@1.26.10 -- go test -v ./cmd/mandalore -run '^$' -bench '^BenchmarkCompiledRetrieval$' -benchtime=20x -count=1 -timeout=20m
 ```
 
 Memory cases use 100/1000/10000 records, plus independent 1000-record depth-2,

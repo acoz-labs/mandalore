@@ -2,7 +2,7 @@ module github.com/acoz-labs/mandalore
 
 go 1.26.0
 
-toolchain go1.26.4
+toolchain go1.26.10
 
 require (
 	charm.land/bubbletea/v2 v2.0.9

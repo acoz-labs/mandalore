@@ -13,7 +13,7 @@ import (
 func fixtureManifest() Manifest {
 	m := Manifest{
 		FormatVersion: 1, Product: "mandalore", Version: "1.0.0", Tag: "v1.0.0",
-		SourceCommit: strings.Repeat("a", 40), GoVersion: "go1.26.4",
+		SourceCommit: strings.Repeat("a", 40), GoVersion: "go1.26.10",
 		ProtocolVersion: 1, SignetReadVersions: []int{1}, SignetWriteVersions: []int{1},
 	}
 	for _, target := range [][2]string{{"darwin", "amd64"}, {"darwin", "arm64"}, {"linux", "amd64"}, {"linux", "arm64"}} {
