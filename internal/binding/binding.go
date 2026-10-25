@@ -177,6 +177,29 @@ func Bind(root, path, label, actor string) (Binding, error) {
 	return b, nil
 }
 
+// Read decodes a binding file without opening its signet.
+func Read(path string) (Binding, error) {
+	var b Binding
+	info, err := os.Lstat(path)
+	if err != nil {
+		return b, err
+	}
+	if !info.Mode().IsRegular() || info.Size() > 16384 {
+		return b, errors.New("binding must be a regular JSON file under 16 KiB")
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return b, err
+	}
+	if err := strictjson.Decode(data, &b, 16384); err != nil {
+		return b, err
+	}
+	if b.Version != 1 || !filepath.IsAbs(b.Root) {
+		return b, errors.New("invalid binding version or root")
+	}
+	return b, nil
+}
+
 func Open(path, harness string) (*memory.Service, error) {
 	return OpenGuarded(path, harness, Guard{})
 }

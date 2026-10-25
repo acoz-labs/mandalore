@@ -146,3 +146,50 @@ func (s *Service) AppendJournalIdempotent(key, kind, summary string) (JournalEnt
 	})
 	return entry, err
 }
+
+// PendingIntents names the machine-local write intents whose publication has
+// not completed, and a prepared but inactive format upgrade. It only reads.
+func (s *Store) PendingIntents() ([]string, error) {
+	pending := []string{}
+	if err := s.validateUpgradeState(); errors.Is(err, ErrUpgradePending) {
+		pending = append(pending, "format-upgrade")
+	} else if err != nil {
+		return nil, err
+	}
+	names, err := filepath.Glob(filepath.Join(s.Root, ".mandalore", "operation-*.json"))
+	if err != nil {
+		return nil, err
+	}
+	for _, path := range names {
+		var intent writeIntent
+		if err := readJSON(path, &intent); err != nil {
+			return nil, err
+		}
+		targets := []string{}
+		if intent.Revision != nil {
+			targets = append(targets, filepath.Join("memory/records", intent.Revision.RecordID, intent.Revision.ID+".json"))
+		}
+		if intent.Source != nil {
+			targets = append(targets, filepath.Join("memory/sources", intent.Source.ID+".json"))
+		}
+		if intent.Journal != nil {
+			at, err := time.Parse(time.RFC3339Nano, intent.Journal.RecordedAt)
+			if err != nil {
+				return nil, err
+			}
+			targets = append(targets, filepath.Join("memory/events", at.UTC().Format("2006/01"), intent.Journal.ID+".json"))
+		}
+		if len(targets) == 0 {
+			pending = append(pending, filepath.Base(path))
+		}
+		for _, target := range targets {
+			if _, err := os.Lstat(filepath.Join(s.Root, target)); errors.Is(err, os.ErrNotExist) {
+				pending = append(pending, filepath.Base(path))
+				break
+			} else if err != nil {
+				return nil, err
+			}
+		}
+	}
+	return pending, nil
+}

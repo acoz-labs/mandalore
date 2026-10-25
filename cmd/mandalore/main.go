@@ -32,6 +32,15 @@ const help = `Mandalore — durable memory across tools
   mandalore server clients list --config FILE    Approved and pending OAuth clients with their grants
   mandalore server clients revoke --config FILE --client ID
   mandalore server clients set-scope --config FILE --client ID --scope read|read-write [--signet SLUG]
+  mandalore server migrate preflight --clone PATH [--format json|text]
+                                                 Read-only 1.x clone check: exit 0 clean, 1 blocked, 2 error
+  mandalore server migrate init --config FILE --remote URL --slug S --root DIR
+                                 [--preflight FILE]... [--device-lost ID --reason TEXT]...
+                                                 Fresh server clone; needs every enrolled device preflighted or lost
+  mandalore server migrate retire --clone PATH --server URL [--native HARNESS=HOME,BINARY]...
+                                                 Disable 1.x connections, write RETIRED.md, make the clone read-only
+  mandalore server migrate verify --config FILE --slug S
+                                                 Server stopped: head equals remote, canary write and withdraw push
   mandalore menu [--plain]                       Guided setup, inspection and recovery
   mandalore operations                          JSON schemas and implemented operations
   mandalore launch NAME [--agent NAME] [--preview] [-- native arguments]
