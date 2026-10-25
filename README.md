@@ -83,9 +83,15 @@ The latest release is [2.0.0](docs/releases/2.0.0.md); the
 [release records](docs/releases/) describe the 1.x installation. In 2.0 one [server](docs/server.md) owns each signet and agents
 connect to it over MCP:
 
-1. **Get `mandalore`.** Install it with the release's bootstrap,
-   `sh install.sh 2.0.0` ([Installing 2.0](docs/releases/2.0.0.md#installing-20)),
-   or build the server image locally from [packaging/server](docs/server.md#docker).
+1. **Get `mandalore`.** Install it with the release's bootstrap
+   ([Installing 2.0](docs/releases/2.0.0.md#installing-20)):
+
+   ```sh
+   curl -fsSLO https://github.com/acoz-labs/mandalore/releases/download/v2.0.0/install.sh
+   sh install.sh 2.0.0
+   ```
+
+   Or build the server image locally from [packaging/server](docs/server.md#docker).
    A published image will follow
    ([#188](https://github.com/acoz-labs/mandalore/issues/188)).
 2. **Prepare the signet.** The server needs its own checkout. Coming from 1.x,
