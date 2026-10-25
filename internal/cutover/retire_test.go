@@ -166,7 +166,8 @@ func TestRetireLabelsEachProfileWithItsRealState(t *testing.T) {
 			t.Errorf("message %q lacks %q", partial.Err, want)
 		}
 	}
-	if !strings.Contains(partial.Written, "works") || strings.Contains(partial.Written, "noop") {
+	// Written spells each home as the operator passed it, like the states.
+	if !strings.Contains(partial.Written, "mandalore@mandalore in "+homes["works"]) || strings.Contains(partial.Written, "noop") {
 		t.Errorf("written %q must list only the real disable", partial.Written)
 	}
 
@@ -200,5 +201,42 @@ func TestRetireLabelsEachProfileWithItsRealState(t *testing.T) {
 	_, err = cutover.Retire(context.Background(), clone, "https://memory.example.com", profiles[2:3], func(context.Context, cutover.LegacyConnection) error { return nil })
 	if err == nil || errors.As(err, &partial) || !strings.Contains(err.Error(), homes["fails"]+": unchanged, still enabled") {
 		t.Fatalf("no-op retire: %v", err)
+	}
+}
+
+// A stop inside a profile also names that profile's targets it never reached.
+func TestRetireNamesUnreachedTargetsInAProfile(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	l := testfixture.NewLegacySignet(t, "device-a")
+	clone := l.Clones["device-a"].Root
+	restoreWrite(t, clone)
+	base, err := filepath.EvalSymlinks(t.TempDir()) // Pi reads only real package paths
+	if err != nil {
+		t.Fatal(err)
+	}
+	home := filepath.Join(base, "pi")
+	packages := []string{}
+	for _, name := range []string{"first", "second"} {
+		pkg := filepath.Join(home, "packages", name)
+		if err := os.MkdirAll(pkg, 0700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(pkg, "package.json"), []byte(`{"name":"mandalore"}`), 0600); err != nil {
+			t.Fatal(err)
+		}
+		packages = append(packages, `"`+pkg+`"`)
+	}
+	if err := os.WriteFile(filepath.Join(home, "settings.json"), []byte(`{"packages":[`+strings.Join(packages, ",")+`]}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	profiles := []cutover.NativeProfile{{Harness: "pi", Home: home, Binary: "/fixture/bin/pi"}}
+	_, err = cutover.Retire(context.Background(), clone, "https://memory.example.com", profiles, func(context.Context, cutover.LegacyConnection) error { return nil })
+	if err == nil {
+		t.Fatal("retire trusted a disable that changed nothing")
+	}
+	for _, want := range []string{"first in " + home + ": unchanged, still enabled", "second in " + home + ": not reached"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("message %q lacks %q", err, want)
+		}
 	}
 }

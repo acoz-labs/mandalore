@@ -154,18 +154,27 @@ func readState(path string, v any) error {
 	return json.Unmarshal(raw, v)
 }
 
-// writeState replaces a server state file atomically. State never lives in
-// the signet repository.
+// writeState replaces a server state file atomically. Its temp file has a
+// unique name, so one an interrupted write left behind cannot fail it. State
+// never lives in the signet repository.
 func writeState(path string, v any) error {
 	raw, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
 		return err
 	}
-	tmp := path + ".tmp"
-	if err := os.WriteFile(tmp, append(raw, '\n'), 0600); err != nil {
+	f, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".*.tmp")
+	if err != nil {
 		return err
 	}
-	return os.Rename(tmp, path)
+	defer os.Remove(f.Name())
+	_, err = f.Write(append(raw, '\n'))
+	if cerr := f.Close(); err == nil {
+		err = cerr
+	}
+	if err != nil {
+		return err
+	}
+	return os.Rename(f.Name(), path)
 }
 
 // author resolves the client's device, enrolling one on its first write. The

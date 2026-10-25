@@ -66,7 +66,7 @@ func Retire(ctx context.Context, clone, serverURL string, profiles []NativeProfi
 	out.Clone, out.SignetID, out.Disabled, out.Clear = store.Root, store.Signet.ID, []LegacyConnection{}, []NativeProfile{}
 	// states is each profile's real state, read back from its configuration
 	// after every disable, so a stop names what is still enabled.
-	states := []string{}
+	states, done := []string{}, []string{}
 	// Once a disable has taken effect, a failure has changed native state.
 	stopped := func(next int, err error) error {
 		for _, p := range profiles[next:] {
@@ -76,10 +76,6 @@ func Retire(ctx context.Context, clone, serverURL string, profiles []NativeProfi
 		if len(out.Disabled) == 0 {
 			return err
 		}
-		done := []string{}
-		for _, c := range out.Disabled {
-			done = append(done, fmt.Sprintf("%s %s in %s", c.Harness, c.Target, c.Home))
-		}
 		return &PartialError{Err: err, Written: "disabled " + strings.Join(done, ", ") + "; the clone itself was not changed"}
 	}
 	for i, p := range profiles {
@@ -88,7 +84,7 @@ func Retire(ctx context.Context, clone, serverURL string, profiles []NativeProfi
 			states = append(states, fmt.Sprintf("%s in %s: inventory failed", p.Harness, p.Home))
 			return out, stopped(i+1, fmt.Errorf("%s profile inventory failed, and the clone was not changed: %w", p.Harness, err))
 		}
-		for _, c := range found {
+		for j, c := range found {
 			failed := disable(ctx, c)
 			still, err := FindLegacyConnections(ctx, p.Harness, p.Home, p.Binary)
 			state := "disabled"
@@ -101,11 +97,17 @@ func Retire(ctx context.Context, clone, serverURL string, profiles []NativeProfi
 				state = "unchanged, still enabled: its disable exited 0 but changed nothing"
 			default:
 				out.Disabled = append(out.Disabled, c)
+				done = append(done, fmt.Sprintf("%s %s in %s", p.Harness, c.Target, p.Home))
 				if failed != nil {
 					state = "disabled, though its disable reported an error"
 				}
 			}
 			states = append(states, fmt.Sprintf("%s %s in %s: %s", p.Harness, c.Target, p.Home, state))
+			if failed != nil || state != "disabled" {
+				for _, rest := range found[j+1:] {
+					states = append(states, fmt.Sprintf("%s %s in %s: not reached", p.Harness, rest.Target, p.Home))
+				}
+			}
 			switch {
 			case failed != nil:
 				return out, stopped(i+1, fmt.Errorf("%s disable of %s failed, and the clone was not changed: %w", p.Harness, c.Target, failed))
