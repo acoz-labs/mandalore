@@ -27,6 +27,11 @@ const help = `Mandalore — durable memory across tools
   mandalore server status --config FILE          Per-signet head, last push, pending push and remote
   mandalore server reconcile --config FILE [--signet SLUG]
                                                  Fetch, validate and fast-forward a remote-ahead signet
+  mandalore server owner enroll --config FILE [--replace]
+                                                 Print a one-time, 10-minute owner passkey enrollment link
+  mandalore server clients list --config FILE    Approved and pending OAuth clients with their grants
+  mandalore server clients revoke --config FILE --client ID
+  mandalore server clients set-scope --config FILE --client ID --scope read|read-write [--signet SLUG]
   mandalore menu [--plain]                       Guided setup, inspection and recovery
   mandalore operations                          JSON schemas and implemented operations
   mandalore launch NAME [--agent NAME] [--preview] [-- native arguments]

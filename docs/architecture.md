@@ -195,7 +195,8 @@ measured history-growth costs and the evidence required before adding an index.
 
 Git remotes and harness executables are explicit dependencies. Local persistence
 works offline; cross-machine freshness requires successful sync. In 2.0 MCP is
-served only by the server over Streamable HTTP; OAuth arrives in #161.
+served only by the server over Streamable HTTP, behind its built-in OAuth 2.1
+authorization server with owner passkey approval (see [server](server.md#oauth)).
 
 See [product](product.md), [migration](migration.md), and [delivery](deployment.md).
 

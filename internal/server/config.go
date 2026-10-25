@@ -23,10 +23,9 @@ type Config struct {
 	PublicURL string `json:"public_url"`
 	StateDir  string `json:"state_dir"`
 	Owner     Owner  `json:"owner"`
-	// Auth selects the authenticator. OAuth is the production default once it
-	// exists; until then a loopback-only mode must be named explicitly.
-	// insecure-test is accepted only by test builds.
-	Auth        string         `json:"auth"`
+	// Auth selects the authenticator: oauth (the default), or loopback-trust
+	// on a loopback listener. insecure-test is accepted only by test builds.
+	Auth        string         `json:"auth,omitempty"`
 	LocalScope  Scope          `json:"local_scope,omitempty"`
 	TestClients []TestClient   `json:"test_clients,omitempty"`
 	Signets     []SignetConfig `json:"signets"`
@@ -54,6 +53,7 @@ type TestClient struct {
 }
 
 const (
+	AuthOAuth         = "oauth"
 	AuthLoopbackTrust = "loopback-trust"
 	AuthInsecureTest  = "insecure-test"
 )
@@ -104,13 +104,18 @@ func (c Config) Validate() error {
 	if strings.TrimSpace(c.Owner.Name) == "" || len(c.Owner.Name) > 256 {
 		return errors.New("owner.name requires 1–256 bytes")
 	}
-	switch c.Auth {
+	switch c.auth() {
+	case AuthOAuth:
+		// A passkey binds to a host name, never to an IP address.
+		if net.ParseIP(u.Hostname()) != nil {
+			return errors.New("auth oauth needs a public_url host name, such as http://localhost:8730 on loopback")
+		}
 	case AuthLoopbackTrust, AuthInsecureTest:
 		if !loopbackHost(host) {
 			return fmt.Errorf("auth %q is refused on a non-loopback listener", c.Auth)
 		}
 	default:
-		return errors.New("auth must be loopback-trust or insecure-test")
+		return errors.New("auth must be oauth or loopback-trust")
 	}
 	if c.Auth == AuthInsecureTest && newTestAuthenticator == nil {
 		return errors.New("auth insecure-test exists only in test builds")
@@ -156,6 +161,13 @@ func (c Config) Validate() error {
 		ids[t.ID], tokens[t.Token] = true, true
 	}
 	return nil
+}
+
+func (c Config) auth() string {
+	if c.Auth == "" {
+		return AuthOAuth
+	}
+	return c.Auth
 }
 
 // mcpPath is the signet's route: /mcp alone, /s/<slug>/mcp among several.

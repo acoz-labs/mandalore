@@ -11,6 +11,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/modelcontextprotocol/go-sdk/auth"
 )
 
 type Server struct {
@@ -19,6 +21,7 @@ type Server struct {
 	signets map[string]*signet // by MCP path
 	hosts   map[string]bool
 	origins map[string]bool
+	oauth   *authServer
 }
 
 var defaultTiming = timing{debounce: 2 * time.Second, retry: time.Minute, push: 30 * time.Second}
@@ -41,12 +44,20 @@ func newServer(c Config, logs io.Writer, t timing) (*Server, error) {
 		s.hosts[host+":"+port] = true
 		s.origins["http://"+host+":"+port] = true
 	}
+	bySlug := map[string]*signet{}
 	for _, sc := range c.Signets {
 		g, err := openSignet(c, sc, s.log, t)
 		if err != nil {
 			return nil, err
 		}
-		s.signets[c.mcpPath(sc.Slug)] = g
+		s.signets[c.mcpPath(sc.Slug)], bySlug[sc.Slug] = g, g
+	}
+	if c.auth() == AuthOAuth {
+		a, err := newAuthServer(c, bySlug, s.log, time.Now)
+		if err != nil {
+			return nil, err
+		}
+		s.oauth = a
 	}
 	return s, nil
 }
@@ -82,13 +93,27 @@ func (s *Server) Handler() http.Handler {
 			http.Error(w, "not found", http.StatusNotFound)
 			return
 		}
+		var endpoint http.Handler
+		if s.oauth != nil {
+			endpoint = s.oauth.endpoints[r.URL.Path]
+		}
 		g, ok := s.signets[r.URL.Path]
-		if !ok || !s.hosts[strings.ToLower(r.Host)] {
+		if (!ok && endpoint == nil) || !s.hosts[strings.ToLower(r.Host)] {
 			http.Error(w, "not found", http.StatusNotFound)
 			return
 		}
-		if origins := r.Header.Values("Origin"); len(origins) > 1 || (len(origins) == 1 && !s.origins[origins[0]]) {
+		// Clients call the token, registration and metadata endpoints from
+		// their own origins; every other route takes requests from this one.
+		if origins := r.Header.Values("Origin"); len(origins) > 1 || (len(origins) == 1 && !s.origins[origins[0]] && !crossOrigin(r.URL.Path)) {
 			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+		if endpoint != nil {
+			endpoint.ServeHTTP(w, r)
+			return
+		}
+		if g.protected != nil {
+			g.protected.ServeHTTP(w, r)
 			return
 		}
 		c, err := g.auth.Authenticate(r)
@@ -101,14 +126,36 @@ func (s *Server) Handler() http.Handler {
 			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
-		if g.blocked {
-			http.Error(w, "signet unavailable: remote ahead; the operator must run mandalore server reconcile", http.StatusServiceUnavailable)
+		g.serve(c, w, r)
+	})
+}
+
+func crossOrigin(path string) bool {
+	return path == "/token" || path == "/register" || strings.HasPrefix(path, "/.well-known/")
+}
+
+// serve runs an authenticated client's MCP request.
+func (g *signet) serve(c Client, w http.ResponseWriter, r *http.Request) {
+	if g.blocked {
+		http.Error(w, "signet unavailable: remote ahead; the operator must run mandalore server reconcile", http.StatusServiceUnavailable)
+		return
+	}
+	g.mu.Lock()
+	h := g.handler(c)
+	g.mu.Unlock()
+	h.ServeHTTP(w, r)
+}
+
+// authorized serves MCP for the client a bearer token resolved to.
+func (g *signet) authorized() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		info := auth.TokenInfoFromContext(r.Context())
+		c, ok := info.Extra["client"].(Client)
+		if !ok {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
 			return
 		}
-		g.mu.Lock()
-		h := g.handler(c)
-		g.mu.Unlock()
-		h.ServeHTTP(w, r)
+		g.serve(c, w, r)
 	})
 }
 
