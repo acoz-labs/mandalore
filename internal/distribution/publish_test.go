@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -418,9 +420,9 @@ func TestPublisherRefusesRedirectsInvalidMetadataAndFailedPolicyRead(t *testing.
 					case "list duplicate tag":
 						setBody(`[{"tag_name":"` + f.m.Tag + `"},{"tag_name":"` + f.m.Tag + `"}]`)
 					case "list pagination bound":
-						setBody(`[` + strings.Repeat(`{},`, 99) + `{}]`)
+						setBody(`[` + strings.Repeat(`{},`, releaseListPage-1) + `{}]`)
 					case "list oversized":
-						setBody(strings.Repeat(" ", maxReleaseMetadata+1))
+						setBody(strings.Repeat(" ", maxReleaseListPage+1))
 					case "metadata redirect":
 						redirect()
 					}
@@ -460,6 +462,9 @@ func TestPublicationTransportRestrictsCredentialAndMutationScope(t *testing.T) {
 		{"GET", "https://api.github.com/repos/other/repository/releases/42", false},
 		{"GET", "https://api.github.com:443/repos/acoz-labs/mandalore/releases/42", false},
 		{"GET", releaseAPI + "/releases?per_page=100&page=1&page=2", false},
+		{"GET", releaseAPI + "/releases?per_page=100&page=1", false},
+		{"GET", releaseAPI + "/releases?per_page=20&page=0", false},
+		{"GET", releaseAPI + "/releases?per_page=20&page=11", false},
 		{"POST", "https://uploads.github.com/repos/acoz-labs/mandalore/releases/42/assets?name=../secret", false},
 		{"POST", "https://release-assets.githubusercontent.com/100", false},
 	} {
@@ -493,5 +498,112 @@ func TestPublisherDoesNotTreatBrokenAnnotatedTagAsAbsent(t *testing.T) {
 	}
 	if _, err := f.p.Publish(context.Background(), f.dir, f.identity); err == nil || f.writes != 0 {
 		t.Fatal("broken existing tag was treated as missing", err)
+	}
+}
+
+// syntheticReleases is a release-list page of n releases, each about as large
+// as GitHub's full metadata for a release with eight assets (about 15 KiB).
+func syntheticReleases(t *testing.T, first, n int, tag string) []byte {
+	t.Helper()
+	var page []map[string]any
+	for i := first; i < first+n; i++ {
+		var assets []map[string]any
+		for a := range 8 {
+			assets = append(assets, map[string]any{"id": i*100 + a, "name": fmt.Sprintf("asset-%d", a), "label": strings.Repeat("x", 1700)})
+		}
+		name := fmt.Sprintf("v0.%d.0", i)
+		if name == tag {
+			name = "selected-" + name
+		}
+		page = append(page, map[string]any{"id": i, "tag_name": fmt.Sprintf("v0.%d.0", i), "name": name, "draft": false, "assets": assets})
+	}
+	b, err := json.Marshal(page)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return b
+}
+
+// Issue #214: discovery reads a release history whose list metadata is well
+// over 128 KiB, per page and in total, and only the pages it needs.
+func TestPublisherFindsReleaseInLargePagedHistory(t *testing.T) {
+	f := newPublisherFixture(t)
+	const releases = 3*releaseListPage + 5
+	tag := fmt.Sprintf("v0.%d.0", 2*releaseListPage+3)
+	var pages []int
+	total := 0
+	f.after = func(r *http.Request, response *http.Response) (*http.Response, error) {
+		if r.Method != "GET" || r.URL.Path != "/repos/acoz-labs/mandalore/releases" {
+			return response, nil
+		}
+		page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+		pages = append(pages, page)
+		first := (page - 1) * releaseListPage
+		b := syntheticReleases(t, first, min(releaseListPage, max(0, releases-first)), tag)
+		if page < 4 && len(b) <= maxReleaseMetadata {
+			t.Fatalf("page %d is only %d bytes; the test needs pages over 128 KiB", page, len(b))
+		}
+		total += len(b)
+		response.Body.Close()
+		response.Body, response.ContentLength = io.NopCloser(bytes.NewReader(b)), int64(len(b))
+		return response, nil
+	}
+	got, err := f.p.find(context.Background(), tag)
+	if err != nil || got.Tag != tag || got.Name != "selected-"+tag {
+		t.Fatalf("find: %+v %v", got, err)
+	}
+	if !slices.Equal(pages, []int{1, 2, 3, 4}) || total <= 3*maxReleaseMetadata {
+		t.Fatalf("pages %v, %d bytes", pages, total)
+	}
+	if _, err := f.p.find(context.Background(), "v9.9.9"); err != nil {
+		t.Fatalf("absent tag: %v", err)
+	}
+}
+
+// A single list response over its bound is refused, as is a history whose
+// pages together exceed maxReleaseHistory, and nothing is written.
+func TestPublisherRefusesOversizedReleaseLists(t *testing.T) {
+	for name, test := range map[string]struct {
+		body          func(page int) []byte
+		want, chunked string
+	}{
+		// With no Content-Length the read limit refuses it instead.
+		"one response over its bound": {func(int) []byte { return bytes.Repeat([]byte(" "), maxReleaseListPage+1) }, "release response exceeds its size limit", "exceeded its limit"},
+		"history over its bound": {func(page int) []byte {
+			// A full page of releases padded just under the page bound.
+			b := syntheticReleases(t, (page-1)*releaseListPage, releaseListPage, "")
+			return append(b, bytes.Repeat([]byte(" "), maxReleaseListPage-len(b))...)
+		}, "release discovery exceeded its bounded history", "release discovery exceeded its bounded history"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			for _, chunked := range []bool{false, true} {
+				f := newPublisherFixture(t)
+				pages := 0
+				f.after = func(r *http.Request, response *http.Response) (*http.Response, error) {
+					if r.Method == "GET" && r.URL.Path == "/repos/acoz-labs/mandalore/releases" {
+						pages++
+						page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+						b := test.body(page)
+						response.Body.Close()
+						response.Body, response.ContentLength = io.NopCloser(bytes.NewReader(b)), int64(len(b))
+						if chunked {
+							response.ContentLength = -1
+						}
+					}
+					return response, nil
+				}
+				r, err := f.p.Publish(context.Background(), f.dir, f.identity)
+				want := test.want
+				if chunked {
+					want = test.chunked
+				}
+				if err == nil || !strings.Contains(err.Error(), want) || r.Phase == "publication-verified" || f.writes != 0 {
+					t.Fatalf("chunked %v: %v after %d pages, %d writes", chunked, err, pages, f.writes)
+				}
+				if name == "history over its bound" && pages != maxReleaseHistory/maxReleaseListPage+1 {
+					t.Fatalf("read %d pages", pages)
+				}
+			}
+		})
 	}
 }
