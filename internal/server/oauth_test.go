@@ -989,7 +989,8 @@ func TestOAuthDiscovery(t *testing.T) {
 		}
 		asm, err := auth.GetAuthServerMetadata(context.Background(), publicURL, e.agent)
 		if err != nil || asm.Issuer != publicURL || !asm.ClientIDMetadataDocumentSupported || !slices.Equal(asm.CodeChallengeMethodsSupported, []string{"S256"}) ||
-			!slices.Equal(asm.TokenEndpointAuthMethodsSupported, []string{"none"}) || !slices.Contains(asm.ScopesSupported, scopeOffline) || asm.RegistrationEndpoint != publicURL+"/register" {
+			!slices.Equal(asm.TokenEndpointAuthMethodsSupported, []string{"none"}) || !slices.Contains(asm.ScopesSupported, scopeOffline) || asm.RegistrationEndpoint != publicURL+"/register" ||
+			asm.RevocationEndpoint != publicURL+"/revoke" || !slices.Equal(asm.RevocationEndpointAuthMethodsSupported, []string{"none"}) {
 			t.Fatalf("authorization server metadata %+v: %v", asm, err)
 		}
 	}
@@ -1019,5 +1020,168 @@ func TestOAuthConfiguration(t *testing.T) {
 	}
 	if _, _, err := EnrollOwner(testConfig(t, a), false); err == nil {
 		t.Fatal("owner enrollment without oauth")
+	}
+}
+
+// liveTokens counts a client's live tokens as `server clients list` shows them.
+func liveTokens(t *testing.T, c Config, id string) int {
+	t.Helper()
+	clients, err := Clients(c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, cl := range clients {
+		if cl.ID == id {
+			return cl.Tokens
+		}
+	}
+	t.Fatalf("client %s is not listed", id)
+	return 0
+}
+
+func (e *oauthEnv) revoke(t *testing.T, form url.Values) (*http.Response, string) {
+	t.Helper()
+	resp, err := e.agent.PostForm(publicURL+"/revoke", form)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	return resp, string(body)
+}
+
+// RFC 7009: revoking either token of a pair ends its family, whatever the
+// hint says, and the family stays dead. Other families of the same client
+// keep working until they are revoked too.
+func TestRevocationEndsTheFamily(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
+	e.enrollOwner(t)
+	redirect := "https://claude.ai/api/mcp/auth_callback"
+	client := e.registerClient(t, "Synthetic", redirect)
+	refresh := func(token string) (int, map[string]any) {
+		resp, out := e.postForm(t, e.agent, "/token", url.Values{"grant_type": {"refresh_token"}, "client_id": {client}, "refresh_token": {token}})
+		return resp.StatusCode, out
+	}
+	dead := func(name string, tok map[string]any) {
+		t.Helper()
+		if e.mcpStatus(t, "/mcp", tok["access_token"].(string)) != http.StatusUnauthorized {
+			t.Fatalf("%s: access token survived revocation", name)
+		}
+		if code, out := refresh(tok["refresh_token"].(string)); code != http.StatusBadRequest || out["error"] != "invalid_grant" {
+			t.Fatalf("%s: refresh after revocation: %d %v", name, code, out)
+		}
+	}
+	first, other := e.tokens(t, client, redirect, "/mcp", "", ScopeReadWrite), e.tokens(t, client, redirect, "/mcp", "", ScopeReadWrite)
+	_, rotated := refresh(first["refresh_token"].(string))
+	if liveTokens(t, e.config, client) != 5 {
+		t.Fatalf("live tokens before revocation: %d", liveTokens(t, e.config, client))
+	}
+
+	// The refresh token's family dies: the rotated pair and the first access token.
+	resp, body := e.revoke(t, url.Values{"client_id": {client}, "token": {rotated["refresh_token"].(string)}, "token_type_hint": {"refresh_token"}})
+	if resp.StatusCode != http.StatusOK || body != "" || resp.Header.Get("Cache-Control") != "no-store" {
+		t.Fatalf("revoke refresh: %d %q", resp.StatusCode, body)
+	}
+	dead("rotated", rotated)
+	if e.mcpStatus(t, "/mcp", first["access_token"].(string)) != http.StatusUnauthorized {
+		t.Fatal("the family's first access token survived")
+	}
+	// Replaying the spent refresh token can't revive the family.
+	if code, out := refresh(first["refresh_token"].(string)); code != http.StatusBadRequest || out["error"] != "invalid_grant" {
+		t.Fatalf("replay after revocation: %d %v", code, out)
+	}
+	if e.mcpStatus(t, "/mcp", other["access_token"].(string)) != http.StatusOK || liveTokens(t, e.config, client) != 2 {
+		t.Fatal("revocation reached another family")
+	}
+
+	// An access token with the wrong hint ends its family too.
+	if resp, body := e.revoke(t, url.Values{"client_id": {client}, "token": {other["access_token"].(string)}, "token_type_hint": {"refresh_token"}}); resp.StatusCode != http.StatusOK || body != "" {
+		t.Fatalf("revoke access: %d %q", resp.StatusCode, body)
+	}
+	dead("other", other)
+	if n := liveTokens(t, e.config, client); n != 0 {
+		t.Fatalf("live tokens after revocation: %d", n)
+	}
+	// Revoking a dead token again, and an unsupported hint, still answer 200.
+	if resp, body := e.revoke(t, url.Values{"client_id": {client}, "token": {other["refresh_token"].(string)}, "token_type_hint": {"id_token"}}); resp.StatusCode != http.StatusOK || body != "" {
+		t.Fatalf("revoke again: %d %q", resp.StatusCode, body)
+	}
+	// The client itself stays approved and can connect again.
+	again := e.tokens(t, client, redirect, "/mcp", "", ScopeReadWrite)
+	if resp, _ := e.revoke(t, url.Values{"client_id": {client}, "token": {again["refresh_token"].(string)}, "token_type_hint": {"unknown-hint"}}); resp.StatusCode != http.StatusOK {
+		t.Fatalf("unknown hint: %d", resp.StatusCode)
+	}
+	dead("again", again)
+}
+
+// A client can revoke only its own tokens. Another client's token gets the
+// same answer as an unknown one and leaves the state file untouched; a
+// request without a known client_id revokes nothing.
+func TestRevocationIsPerClient(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	e := startOAuth(t, testfixture.NewServerSignet(t, "alpha"))
+	e.enrollOwner(t)
+	redirect := "https://claude.ai/api/mcp/auth_callback"
+	owner, other := e.registerClient(t, "Synthetic", redirect), e.registerClient(t, "Synthetic Other", redirect)
+	tok := e.tokens(t, owner, redirect, "/mcp", "", ScopeReadWrite)
+	e.tokens(t, other, redirect, "/mcp", "", ScopeRead)
+	state := filepath.Join(e.config.StateDir, oauthStateFile)
+	before, _ := os.ReadFile(state)
+
+	unknown, unknownBody := e.revoke(t, url.Values{"client_id": {other}, "token": {"not-a-token"}})
+	// Like /token, revocation takes requests from a client's own origin.
+	req, _ := http.NewRequest(http.MethodPost, publicURL+"/revoke", strings.NewReader(url.Values{"client_id": {other}, "token": {"not-a-token"}}.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Origin", "https://client.example.com")
+	if resp, err := e.agent.Do(req); err != nil || resp.StatusCode != http.StatusOK || resp.Header.Get("Access-Control-Allow-Origin") != "*" {
+		t.Fatalf("cross-origin revocation: %v %v", resp, err)
+	}
+	for _, token := range []string{tok["access_token"].(string), tok["refresh_token"].(string)} {
+		resp, body := e.revoke(t, url.Values{"client_id": {other}, "token": {token}})
+		if resp.StatusCode != unknown.StatusCode || body != unknownBody || resp.Header.Get("Content-Type") != unknown.Header.Get("Content-Type") || resp.StatusCode != http.StatusOK {
+			t.Fatalf("another client's token: %d %q, unknown token: %d %q", resp.StatusCode, body, unknown.StatusCode, unknownBody)
+		}
+	}
+	if after, _ := os.ReadFile(state); string(after) != string(before) {
+		t.Fatal("revoking another client's token changed the state")
+	}
+
+	access, refresh := tok["access_token"].(string), tok["refresh_token"].(string)
+	for name, test := range map[string]struct {
+		form   url.Values
+		status int
+		code   string
+	}{
+		"no client":      {url.Values{"token": {refresh}}, 400, "invalid_request"},
+		"unknown client": {url.Values{"client_id": {"client-unknown"}, "token": {refresh}}, 401, "invalid_client"},
+		"no token":       {url.Values{"client_id": {owner}}, 400, "invalid_request"},
+		"repeated":       {url.Values{"client_id": {owner}, "token": {refresh, access}}, 400, "invalid_request"},
+	} {
+		resp, out := e.postForm(t, e.agent, "/revoke", test.form)
+		if resp.StatusCode != test.status || out["error"] != test.code {
+			t.Errorf("%s: %d %v", name, resp.StatusCode, out)
+		}
+	}
+	// A bearer token in place of client_id authenticates nothing.
+	req, _ = http.NewRequest(http.MethodPost, publicURL+"/revoke", strings.NewReader(url.Values{"token": {refresh}}.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Authorization", "Bearer "+access)
+	if resp, err := e.agent.Do(req); err != nil || resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("bearer without client_id: %v %v", resp, err)
+	}
+	req, _ = http.NewRequest(http.MethodPost, publicURL+"/revoke", strings.NewReader(`{"client_id":"`+owner+`","token":"`+refresh+`"}`))
+	req.Header.Set("Content-Type", "application/json")
+	if resp, err := e.agent.Do(req); err != nil || resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("JSON revocation: %v %v", resp, err)
+	}
+	if resp, err := e.agent.Get(publicURL + "/revoke?client_id=" + owner + "&token=" + refresh); err != nil || resp.StatusCode != http.StatusMethodNotAllowed {
+		t.Fatalf("GET revocation: %v %v", resp, err)
+	}
+	if after, _ := os.ReadFile(state); string(after) != string(before) {
+		t.Fatal("a refused revocation changed the state")
+	}
+	if e.mcpStatus(t, "/mcp", access) != http.StatusOK || liveTokens(t, e.config, owner) != 2 {
+		t.Fatal("the owner's tokens were revoked by someone else")
 	}
 }

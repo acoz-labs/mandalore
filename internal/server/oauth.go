@@ -94,6 +94,7 @@ func newAuthServer(c Config, signets map[string]*signet, logger *log.Logger, now
 		"/authorize":             http.HandlerFunc(a.authorize),
 		"/consent":               http.HandlerFunc(a.consent),
 		"/token":                 http.HandlerFunc(a.token),
+		"/revoke":                http.HandlerFunc(a.revoke),
 		"/owner/enroll":          http.HandlerFunc(a.enrollPage),
 		"/owner/register/begin":  http.HandlerFunc(a.registerBegin),
 		"/owner/register/finish": http.HandlerFunc(a.registerFinish),
@@ -133,16 +134,18 @@ func (a *authServer) metadata(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	writeJSON(w, http.StatusOK, map[string]any{
-		"issuer":                                a.issuer,
-		"authorization_endpoint":                a.issuer + "/authorize",
-		"token_endpoint":                        a.issuer + "/token",
-		"registration_endpoint":                 a.issuer + "/register",
-		"scopes_supported":                      []string{scopeRead, scopeWrite, scopeOffline},
-		"response_types_supported":              []string{"code"},
-		"grant_types_supported":                 []string{"authorization_code", "refresh_token"},
-		"code_challenge_methods_supported":      []string{"S256"},
-		"token_endpoint_auth_methods_supported": []string{"none"},
-		"client_id_metadata_document_supported": true,
+		"issuer":                                     a.issuer,
+		"authorization_endpoint":                     a.issuer + "/authorize",
+		"token_endpoint":                             a.issuer + "/token",
+		"registration_endpoint":                      a.issuer + "/register",
+		"scopes_supported":                           []string{scopeRead, scopeWrite, scopeOffline},
+		"response_types_supported":                   []string{"code"},
+		"grant_types_supported":                      []string{"authorization_code", "refresh_token"},
+		"code_challenge_methods_supported":           []string{"S256"},
+		"token_endpoint_auth_methods_supported":      []string{"none"},
+		"revocation_endpoint":                        a.issuer + "/revoke",
+		"revocation_endpoint_auth_methods_supported": []string{"none"},
+		"client_id_metadata_document_supported":      true,
 	})
 }
 
@@ -510,31 +513,12 @@ func (a *authServer) token(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	if mt, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type")); mt != "application/x-www-form-urlencoded" {
-		oauthError(w, http.StatusBadRequest, "invalid_request", "the token request must be application/x-www-form-urlencoded")
+	f, ok := clientForm(w, r, "token")
+	if !ok {
 		return
-	}
-	r.Body = http.MaxBytesReader(w, r.Body, maxFormBytes)
-	if r.ParseForm() != nil {
-		oauthError(w, http.StatusBadRequest, "invalid_request", "malformed token request")
-		return
-	}
-	f := r.PostForm
-	for k, v := range f {
-		if len(v) > 1 {
-			oauthError(w, http.StatusBadRequest, "invalid_request", "the token request repeats "+k)
-			return
-		}
 	}
 	clientID := f.Get("client_id")
-	if clientID == "" {
-		oauthError(w, http.StatusBadRequest, "invalid_request", "client_id is required")
-		return
-	}
-	var known bool
-	_ = a.store.view(func(st *oauthState) error { known = st.Clients[clientID] != nil; return nil })
-	if !known {
+	if !a.knownClient(clientID) {
 		// A revoked client's refresh token died with it. invalid_grant tells
 		// the client to authorize again, which still needs the owner.
 		if f.Get("grant_type") == "refresh_token" {
@@ -566,6 +550,80 @@ func (a *authServer) token(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, out)
+}
+
+// clientForm reads a form-encoded request from a public client, which names
+// itself with client_id. It answers the error itself when it returns false.
+func clientForm(w http.ResponseWriter, r *http.Request, kind string) (url.Values, bool) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	if mt, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type")); mt != "application/x-www-form-urlencoded" {
+		oauthError(w, http.StatusBadRequest, "invalid_request", "the "+kind+" request must be application/x-www-form-urlencoded")
+		return nil, false
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, maxFormBytes)
+	if r.ParseForm() != nil {
+		oauthError(w, http.StatusBadRequest, "invalid_request", "malformed "+kind+" request")
+		return nil, false
+	}
+	f := r.PostForm
+	for k, v := range f {
+		if len(v) > 1 {
+			oauthError(w, http.StatusBadRequest, "invalid_request", "the "+kind+" request repeats "+k)
+			return nil, false
+		}
+	}
+	if f.Get("client_id") == "" {
+		oauthError(w, http.StatusBadRequest, "invalid_request", "client_id is required")
+		return nil, false
+	}
+	return f, true
+}
+
+func (a *authServer) knownClient(id string) bool {
+	var known bool
+	_ = a.store.view(func(st *oauthState) error { known = st.Clients[id] != nil; return nil })
+	return known
+}
+
+// revoke is RFC 7009 token revocation for public clients, which
+// authenticate by client_id alone, as at /token. Revoking either token of a
+// pair ends its whole family, so a logout leaves nothing live. A token that
+// is unknown, expired or another client's gets the same empty 200 and
+// changes nothing. token_type_hint is ignored: one lookup finds either kind.
+func (a *authServer) revoke(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	f, ok := clientForm(w, r, "revocation")
+	if !ok {
+		return
+	}
+	clientID, presented := f.Get("client_id"), f.Get("token")
+	if presented == "" {
+		oauthError(w, http.StatusBadRequest, "invalid_request", "token is required")
+		return
+	}
+	if !a.knownClient(clientID) {
+		oauthError(w, http.StatusUnauthorized, "invalid_client", "unknown client")
+		return
+	}
+	key := hashSecret(presented)
+	var owned bool
+	_ = a.store.view(func(st *oauthState) error { t := st.Tokens[key]; owned = t != nil && t.Client == clientID; return nil })
+	if owned {
+		err := a.store.update(func(st *oauthState) error {
+			if t := st.Tokens[key]; t != nil && t.Client == clientID {
+				st.revokeFamily(t.Family)
+			}
+			return nil
+		})
+		if err != nil {
+			oauthError(w, http.StatusServiceUnavailable, "temporarily_unavailable", err.Error())
+			return
+		}
+	}
+	w.WriteHeader(http.StatusOK)
 }
 
 type tokenError struct{ code, description string }

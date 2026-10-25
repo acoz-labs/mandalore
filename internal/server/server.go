@@ -113,8 +113,9 @@ func (s *Server) Handler() http.Handler {
 			http.Error(w, "not found", http.StatusNotFound)
 			return
 		}
-		// Clients call the token, registration and metadata endpoints from
-		// their own origins; every other route takes requests from this one.
+		// Clients call the token, revocation, registration and metadata
+		// endpoints from their own origins; every other route takes requests
+		// from this one.
 		if origins := r.Header.Values("Origin"); len(origins) > 1 || (len(origins) == 1 && !s.origins[origins[0]] && !crossOrigin(r.URL.Path)) {
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
@@ -142,7 +143,7 @@ func (s *Server) Handler() http.Handler {
 }
 
 func crossOrigin(path string) bool {
-	return path == "/token" || path == "/register" || strings.HasPrefix(path, "/.well-known/")
+	return path == "/token" || path == "/revoke" || path == "/register" || strings.HasPrefix(path, "/.well-known/")
 }
 
 // serve runs an authenticated client's MCP request.
