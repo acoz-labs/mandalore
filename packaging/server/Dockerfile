@@ -1,9 +1,10 @@
 # Mandalore server image: mandalore serve --config /config/server.json.
 #
-# Development: docker build -f packaging/server/Dockerfile .
-# Release: bin/publish-server-image replaces the build stage with the accepted
-# candidate's own Linux binaries (--build-context build=DIR), so the image
-# carries the released bytes rather than a fresh build.
+# Build: docker build -f packaging/server/Dockerfile --build-arg VERSION=X.Y.Z .
+# Releases publish no image yet (#188). bin/publish-server-image, which #188
+# will wire up, would replace the build stage with the accepted candidate's own
+# Linux binaries (--build-context build=DIR), so the image carries the released
+# bytes rather than a fresh build.
 FROM golang:1.26.10-bookworm AS build
 ARG TARGETARCH
 ARG VERSION=0.0.0-dev

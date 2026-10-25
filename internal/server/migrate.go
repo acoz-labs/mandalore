@@ -140,7 +140,7 @@ func Init(ctx context.Context, in MigrateInit) (Migration, error) {
 		return out, fmt.Errorf("the remote signet fails validation: %w", err)
 	}
 	if store.Signet.Version < 2 {
-		return out, errors.New("the remote signet is format 1; upgrade it to format 2 with 1.x first")
+		return out, errors.New("the remote signet is format 1; upgrade it to format 2 first (docs/migration-2.0.md runbook step 1, or A new signet in docs/server.md)")
 	}
 	out.SignetID = store.Signet.ID
 	g, err := signetsync.Open(checkout, store.Signet.ID)

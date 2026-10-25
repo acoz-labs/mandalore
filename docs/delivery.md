@@ -84,7 +84,7 @@ Publishing a server image is deferred to
 image. It ships `packaging/server/Dockerfile`, which operators build locally
 from the release tag (see [server](server.md#docker)), and the release record
 says "container image: build from packaging/server; published image to follow."
-No release workflow runs, and no release step pushes to `ghcr.io`.
+No workflow publishes an image, and no release step pushes to `ghcr.io`.
 
 `bin/publish-server-image` is the manual tool that #188 will wire up:
 
