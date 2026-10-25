@@ -88,12 +88,13 @@ echo '{"binding_path": "/example/setup/binding.json"}' | mandalore call signet_u
 
 Keep the plan outside the clone: preview needs a clean checkout. Review it, then pass its `result` back as `{"plan": RESULT, "stopped_writers": true}`
 to `mandalore call signet_upgrade_apply`. Commit and push the upgrade
-(`signet.json` and `provenance/upgrades/`). Then, from the same setup clone:
+(`signet.json` and `provenance/upgrades/`). Then, keeping the receipt outside
+the clone too:
 
 ```sh
-MANDALORE_BINDING=/example/setup/binding.json mandalore server migrate preflight --clone /example/setup/signet > setup.json
+MANDALORE_BINDING=/example/setup/binding.json mandalore server migrate preflight --clone /example/setup/signet > /example/setup/setup.json
 mandalore server migrate init --config FILE --remote git@github.com:example-org/signet.git --slug primary \
-  --root /example/mandalore/signets/primary --preflight setup.json \
+  --root /example/mandalore/signets/primary --preflight /example/setup/setup.json \
   --device-lost DEVICE_FROM_CREATE --reason "Enrolled by signet create; no clone of its own"
 mandalore server migrate verify --config FILE --slug primary
 ```
