@@ -20,7 +20,8 @@ is published from the independently accepted retained candidate. See the
 
 `main` is now 2.0 development: the single-writer [Mandalore server](docs/server.md)
 (`mandalore serve`) replaces the stdio MCP server, lifecycle hooks, session
-synchronization and Razor Crest. The text below describes the released 1.x line.
+synchronization and Razor Crest. The rest of this section describes the released
+1.x line; [Install](#install) covers 2.0.
 
 Claude Code, Codex and Pi integrations are released in 1.x with
 [session-authorized automatic synchronization](docs/synchronization.md).
@@ -70,6 +71,7 @@ portability is not included.
 - [Development CLI, local MCP and machine bindings](docs/interface.md)
 - [Git synchronization, offline work and freshness](docs/synchronization.md)
 - [Mandalore server (2.0 development)](docs/server.md), its [design](docs/design/2.0.md) and the [cutover from 1.x](docs/migration-2.0.md)
+- Deploying the server: [work laptop on loopback](docs/deploy/local.md) and [Cloudflare Tunnel](docs/deploy/cloudflare-tunnel.md)
 - [Privacy, retention and the limits of forgetting](docs/privacy.md)
 - [Guided setup and CLI installation](docs/setup.md) and [historical foundlings](docs/foundlings.md)
 - [Codex plugin](plugins/codex/README.md) and [native engineering evidence](docs/codex-native-evidence.md)
@@ -88,35 +90,27 @@ independent acceptance. See [SDLC](docs/operations/sdlc.md).
 
 ## Install
 
-Download the bootstrap from the versioned release, inspect it, then run it:
+Mandalore 2.0 is in development on `main` and not released yet; the latest
+release is [1.6.1](docs/releases/1.6.1.md), whose release records describe the
+1.x installation. In 2.0 one [server](docs/server.md) owns each signet and agents
+connect to it over MCP:
 
-```sh
-curl -fL -o mandalore-install.sh https://github.com/acoz-labs/mandalore/releases/download/v1.1.0/install.sh
-less mandalore-install.sh
-sh mandalore-install.sh 1.1.0
-```
-
-The bootstrap requires curl 8.4+ and `shasum` or `sha256sum`. It checks the platform
-binary against the official release checksums, then opens a default-No installation
-preview. This trusts the official release, not an independent signing authority.
-Choose a user-owned prefix; the installer prints the full launcher path and does
-not edit PATH. Run that launcher with `menu` for signet setup and Codex or Pi connection.
-CLI installation and a native connection are separately confirmed. No credential,
-shell change, old-memory import or migration is implicit.
-
-Public release discovery uses GitHub's anonymous API quota. If it is exhausted,
-wait before explicitly retrying; the CLI does not borrow your GitHub credentials.
-Version 1.1.0 offers [bounded quota guidance](docs/interface.md#read-only-release-inspection)
-when GitHub supplies usable timing; the historical v1.0.0 retains its generic error.
-See the [release record](docs/releases/1.1.0.md) for the manual-download
-alternative and the distinction between published and local-candidate installation.
-
-For prerelease evaluation, use a reviewed local candidate from the
-[pinned builder](docs/development.md#local-distribution-candidates), then run its
-platform executable with `release install --candidate /absolute/candidate-dir`.
-The installer previews its destination and defaults to No. CLI installation and
-connecting a chosen signet to Codex or Pi require separate confirmation; no shell,
-credential or memory migration is implicit.
+1. **Get `mandalore`.** Until 2.0.0 is published, build it from this repository
+   with `mise exec go@1.26.4 -- go build -o mandalore ./cmd/mandalore`, or build
+   the server image with `docker build -f packaging/server/Dockerfile .`. From
+   2.0.0 each release carries the binaries and the image
+   `ghcr.io/acoz-labs/mandalore:<version>`.
+2. **Prepare the signet.** The server needs its own checkout. Coming from 1.x,
+   follow [the cutover](docs/migration-2.0.md).
+3. **Configure and run the server.** Write its [configuration](docs/server.md#configuration),
+   then run it as a service: `mandalore server install-launchd --config FILE`
+   on macOS, or the [Docker image](docs/server.md#docker).
+4. **Choose where it listens.** A [work laptop](docs/deploy/local.md) keeps it
+   on loopback; a [home server](docs/deploy/cloudflare-tunnel.md) puts it behind
+   Cloudflare Tunnel for Claude on every device.
+5. **Connect Claude.** Give the Claude plugin or connector the server's MCP URL,
+   such as `http://127.0.0.1:8730/mcp` locally or `https://memory.example.com/mcp`
+   through a tunnel. With OAuth, approve the client with your owner passkey.
 
 Independent community project; not affiliated with or endorsed by Lucasfilm or
 Disney. The theme is naming and prose; no official artwork is bundled.

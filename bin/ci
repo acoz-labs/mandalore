@@ -28,6 +28,13 @@ else
   [[ "$scan_status" == "1" ]] || { echo "Public-content scan failed." >&2; exit "$scan_status"; }
 fi
 
+# Deployment guides and server packaging name only placeholder or public
+# service hosts, never a real deployment's.
+deploy_hosts=$(git grep -I -h -o -E '([A-Za-z0-9-]+\.)+(com|net|org|io|dev|app|cloud|ai|me|xyz|lan|internal)' \
+  -- docs/deploy packaging/server bin/publish-server-image | sort -u |
+  grep -v -x -E '(memory\.)?example\.com|github\.com|ghcr\.io' || true)
+[[ -z "$deploy_hosts" ]] || { echo "Unexpected host names in deployment docs or packaging: $deploy_hosts" >&2; exit 1; }
+
 for workflow in .github/workflows/*.yml; do
   if grep 'runs-on:' "$workflow" | grep -v -F '[self-hosted, trusted-linux-x64]'; then
     echo "Optional workflows must use trusted self-hosted runners: $workflow" >&2

@@ -6,9 +6,11 @@ write a signet's Git repository; the server does, and pushes each signet to its
 remote as a backup. The [2.0 design](design/2.0.md) explains why.
 
 The server includes its own OAuth 2.1 authorization server with owner passkey
-approval (#161). Foundlings on the server come with #162, the Claude plugin with
-#163 and packaging with #165. The cutover from 1.x clones is in
-[migration-2.0.md](migration-2.0.md).
+approval (#161). Foundlings on the server come with #162 and the Claude plugin
+with #163. The cutover from 1.x clones is in [migration-2.0.md](migration-2.0.md).
+[Running it](#running-it) covers launchd and Docker; the deployment guides cover
+a [work laptop on loopback](deploy/local.md) and a
+[home server behind Cloudflare Tunnel](deploy/cloudflare-tunnel.md).
 
 ## Configuration
 
@@ -204,6 +206,57 @@ Under a single writer this means a second writer broke the model. To recover:
 4. Start the server. Its first checkpoint validates the whole signet before it
    pushes the merge; an invalid signet is not pushed.
 
+## Running it
+
+### launchd
+
+On macOS, `mandalore server install-launchd --config FILE [--label LABEL]`
+prints a launchd agent plist, asks, then writes it to
+`~/Library/LaunchAgents/LABEL.plist` and loads it with `launchctl bootstrap
+gui/UID`. The default label is `dev.acoz.mandalore.server`. The agent runs this
+executable with `serve --config` and the configuration's absolute path, with
+`RunAtLoad` and `KeepAlive`, logging to `~/Library/Logs/mandalore/LABEL.log`.
+It checks the configuration first and refuses an existing plist. If loading
+fails it removes the plist. `mandalore server uninstall-launchd [--label LABEL]`
+asks, then runs `launchctl bootout` and removes the plist; if the agent stays
+loaded it keeps the plist. Both answer No unless you type `y`, and print a JSON
+result. [local.md](deploy/local.md#3-run-it-as-a-service) walks through it.
+
+### Docker
+
+`packaging/server/Dockerfile` builds a two-stage image: a static
+(`CGO_ENABLED=0`) `mandalore` on Debian slim with `git`, `openssh-client` and
+`curl`. It runs as UID and GID 10001, reads `/config/server.json` and keeps
+state in `/state`. Its `HEALTHCHECK` fetches `/healthz` from inside the
+container. Releases publish `ghcr.io/acoz-labs/mandalore:<version>` from the
+accepted binaries (see [delivery](delivery.md#server-image)).
+
+```sh
+docker build -f packaging/server/Dockerfile -t mandalore-server .
+docker run -d --name mandalore --restart unless-stopped --read-only --tmpfs /tmp \
+  -v /example/mandalore/config:/config:ro -v mandalore-state:/state \
+  -p 127.0.0.1:8730:8730 mandalore-server
+```
+
+- Paths in the configuration are container paths: `state_dir` and every signet
+  `root` live under `/state` (for example `/state/server` and
+  `/state/signets/primary`).
+- To reach it from the host, listen on `0.0.0.0:8730` inside the container and
+  publish the port on the host's loopback only. `loopback-trust` then reaches
+  only processes inside the container, so a published server uses OAuth.
+- `/state` must be writable by UID 10001. A named volume is, from the image; a
+  bind mount needs `chown 10001:10001`. The hard-link, fsync and atomic-rename
+  caveats for signets apply to whatever backs `/state`: use a local filesystem.
+- Git pushes the backup over SSH with strict host key checking. Mount a deploy
+  key and `known_hosts` read-only at `/var/lib/mandalore/.ssh`, owned by UID 10001
+  with the key at mode 0600.
+- Run admin commands in the container:
+  `docker exec mandalore mandalore server status --config /config/server.json`.
+
+`packaging/server/smoke-test.sh IMAGE` checks an image with a synthetic signet
+in throwaway volumes: the health check, `/healthz`, MCP `tools/list` through
+`loopback-trust` via `docker exec`, a non-root UID and a read-only `/config`.
+
 ## Admin commands
 
 - `mandalore server owner enroll --config FILE [--replace]` prints the one-time
@@ -229,6 +282,8 @@ Under a single writer this means a second writer broke the model. To recover:
   afterwards.
 - `mandalore server migrate preflight|init|retire|verify` moves 1.x clones to
   the server; see [migration-2.0.md](migration-2.0.md).
+- `mandalore server install-launchd|uninstall-launchd` adds or removes the
+  macOS launchd agent; see [launchd](#launchd).
 
 ## Read cache
 

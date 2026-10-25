@@ -59,15 +59,17 @@ func runServe(ctx context.Context, args []string, out, errout io.Writer) int {
 	return 0
 }
 
-const serverUsage = "Use server status|reconcile|clients list|clients revoke|clients set-scope|owner enroll --config FILE, or server migrate."
+const serverUsage = "Use server status|reconcile|clients list|clients revoke|clients set-scope|owner enroll|install-launchd --config FILE, server uninstall-launchd, or server migrate."
 
-func runServer(ctx context.Context, args []string, out io.Writer) int {
+func runServer(ctx context.Context, args []string, input io.Reader, out, errout io.Writer) int {
 	if len(args) == 0 {
 		return bad(out, serverUsage)
 	}
 	switch args[0] {
 	case "migrate":
 		return runMigrate(ctx, args[1:], out)
+	case "install-launchd", "uninstall-launchd":
+		return runLaunchd(ctx, args[0] == "install-launchd", args[1:], input, out, errout)
 	case "status":
 		c, _, code, ok := serverConfig("server status", args[1:], out)
 		if !ok {

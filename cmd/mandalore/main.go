@@ -41,6 +41,10 @@ const help = `Mandalore — durable memory across tools
                                                  Disable 1.x connections, write RETIRED.md, make the clone read-only
   mandalore server migrate verify --config FILE --slug S
                                                  Server stopped: head equals remote, canary write and withdraw push
+  mandalore server install-launchd --config FILE [--label LABEL]
+                                                 macOS: print the KeepAlive agent plist, ask, then write and load it
+  mandalore server uninstall-launchd [--label LABEL]
+                                                 macOS: ask, then unload the agent and remove its plist
   mandalore menu [--plain]                       Guided setup, inspection and recovery
   mandalore operations                          JSON schemas and implemented operations
   mandalore launch NAME [--agent NAME] [--preview] [-- native arguments]
@@ -139,7 +143,7 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 		return runServe(ctx, args[1:], out, errout)
 	}
 	if len(args) > 0 && args[0] == "server" {
-		return runServer(ctx, args[1:], out)
+		return runServer(ctx, args[1:], input, out, errout)
 	}
 	if len(args) > 0 && args[0] == "launch" {
 		return runLaunch(ctx, args[1:], input, out, errout)

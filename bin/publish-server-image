@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# Publish ghcr.io/acoz-labs/mandalore:VERSION from an accepted local candidate.
+# The image carries the candidate's own linux/amd64 and linux/arm64 binaries,
+# verified first; nothing is rebuilt from source. Prints the pushed digest for
+# the release record.
+#
+# Usage: GHCR_USER=... GHCR_TOKEN=... bin/publish-server-image --directory DIR --identity PRODUCT_IDENTITY
+# GHCR_TOKEN needs write:packages on acoz-labs. The login lives in a temporary
+# Docker config, removed on exit.
+set -euo pipefail
+usage='Usage: bin/publish-server-image --directory DIR --identity PRODUCT_IDENTITY'
+[[ "$#" == 4 && "$1" == --directory && "$3" == --identity ]] || { echo "$usage" >&2; exit 2; }
+directory=$2 identity=$3
+: "${GHCR_USER:?GHCR_USER is required}" "${GHCR_TOKEN:?GHCR_TOKEN is required}"
+
+bin/promote-local-candidate --verify-only --directory "$directory" --identity "$identity"
+read -r version commit < <(python3 -c 'import json,sys; m=json.load(open(sys.argv[1])); print(m["version"], m["source_commit"])' "$directory/manifest.json")
+[[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.+-]+)?$ && "$commit" =~ ^[0-9a-f]{40}$ ]] || { echo "Unexpected manifest version or source commit." >&2; exit 1; }
+
+stage=$(mktemp -d "${TMPDIR:-/tmp}/mandalore-image.XXXXXXXX")
+builder=mandalore-publish-$$
+export DOCKER_CONFIG="$stage/docker"
+cleanup() { docker buildx rm "$builder" >/dev/null 2>&1 || true; rm -rf "$stage"; }
+trap cleanup EXIT
+
+mkdir -p "$stage/build/out" "$DOCKER_CONFIG"
+for arch in amd64 arm64; do
+  install -m 0755 "$directory/mandalore_${version}_linux_${arch}" "$stage/build/out/mandalore-linux-$arch"
+done
+printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GHCR_USER" --password-stdin >/dev/null
+if docker buildx imagetools inspect "ghcr.io/acoz-labs/mandalore:$version" >/dev/null 2>&1; then
+  echo "ghcr.io/acoz-labs/mandalore:$version already exists; a published tag is never moved." >&2
+  exit 1
+fi
+docker buildx create --name "$builder" --driver docker-container >/dev/null
+docker buildx build --builder "$builder" --platform linux/amd64,linux/arm64 \
+  --build-context build="$stage/build" -f packaging/server/Dockerfile \
+  --label org.opencontainers.image.source=https://github.com/acoz-labs/mandalore \
+  --label org.opencontainers.image.version="$version" \
+  --label org.opencontainers.image.revision="$commit" \
+  --tag "ghcr.io/acoz-labs/mandalore:$version" --metadata-file "$stage/metadata.json" --push .
+digest=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["containerimage.digest"])' "$stage/metadata.json")
+echo "ghcr.io/acoz-labs/mandalore:$version@$digest"

@@ -76,3 +76,33 @@ authorize new self-acceptance. Do not rotate unrelated service credentials.
 
 If the publisher needs a narrowly scoped policy-read credential, resolve that
 access explicitly; do not silently skip the provider policy check.
+
+## Server image
+
+From 2.0, publication also pushes the server image
+`ghcr.io/acoz-labs/mandalore:<version>` from the same accepted candidate. Run it
+after the promoter has published the release, from the release's source
+checkout:
+
+```sh
+GHCR_USER=... GHCR_TOKEN=... bin/publish-server-image --directory DIR --identity PRODUCT_IDENTITY
+```
+
+It re-verifies the candidate with `bin/promote-local-candidate --verify-only`,
+copies the candidate's `linux/amd64` and `linux/arm64` binaries into the
+`packaging/server/Dockerfile` build in place of its source-build stage (so the
+image holds the accepted bytes, not a new build), pushes a multi-platform image
+with a temporary `docker buildx` builder, and prints
+`ghcr.io/acoz-labs/mandalore:<version>@sha256:...`. Record that digest in the
+release record. It needs Docker with `buildx` and QEMU emulation for the other
+platform; it uses `DOCKER_HOST` or the default engine socket.
+
+| Variable | Purpose |
+| --- | --- |
+| `GHCR_USER` | The GitHub account that pushes the package. |
+| `GHCR_TOKEN` | A token for that account with `write:packages` on `acoz-labs`. The login lives in a temporary Docker config that is removed on exit. |
+
+Verify the published image with `docker pull` of that digest and
+`packaging/server/smoke-test.sh`. The script refuses a version tag that already
+exists, so a tag is never moved; if a push fails partway,
+inspect the package before retrying.
