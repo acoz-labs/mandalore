@@ -113,11 +113,12 @@ provider. All endpoints are on `public_url`:
 | Endpoint | Purpose |
 | --- | --- |
 | `/.well-known/oauth-protected-resource[/s/<slug>/mcp]` | RFC 9728 metadata per signet: `resource` is the signet's MCP URL, the only authorization server is this one, scopes `memory:read` and `memory:write`. One signet answers at the bare path (and at `/.well-known/oauth-protected-resource/mcp`). |
-| `/.well-known/oauth-authorization-server` | RFC 8414 metadata: S256 PKCE only, public clients (`none`), client ID metadata documents, `/register`, and `offline_access`. |
+| `/.well-known/oauth-authorization-server` | RFC 8414 metadata: S256 PKCE only, public clients (`none`), client ID metadata documents, `/register`, `/revoke`, and `offline_access`. |
 | `POST /register` | RFC 7591 dynamic registration (JSON). The client is pending, with no access, until the owner approves it. 10 registrations per 10 minutes from all peers together; over that it answers 429 with `Retry-After`. No forwarded address header is trusted. At most 20 pending: a new registration evicts the oldest pending one, never an approved client, and a pending client expires after 24 hours. |
 | `GET /authorize` | Authorization code request. |
 | `POST /consent` | The owner's approve or deny decision. |
 | `POST /token` | Form-encoded `authorization_code` and `refresh_token` grants. RFC 6749 error codes; a refresh from an unknown or revoked client gets `400 invalid_grant`. |
+| `POST /revoke` | RFC 7009 revocation, form-encoded, so a client's logout ends its server tokens. The client names itself with `client_id`, as at `/token`. Revoking either token of a pair ends the authorization's whole token family, and it stays dead. A token that is unknown, expired or another client's gets the same empty 200 and changes nothing. `token_type_hint` is ignored. With no `client_id`, it answers `400 invalid_request`; with an unknown one, `401 invalid_client`. |
 | `/owner/*` | Passkey enrollment and sign-in. |
 
 **Clients.** A `client_id` is either a DCR registration or an HTTPS URL naming a

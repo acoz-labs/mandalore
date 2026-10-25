@@ -80,7 +80,7 @@ The server's paths fall into these groups:
 | Paths | Who calls them | Protection |
 | --- | --- | --- |
 | `/authorize`, `/consent`, `/owner/*`, `/.well-known/*` | The owner's browser, and clients reading metadata | Owner passkey and session |
-| `/mcp`, `/s/<slug>/mcp`, `/token` | Claude's servers and Claude Code | OAuth bearer tokens and codes |
+| `/mcp`, `/s/<slug>/mcp`, `/token`, `/revoke` | Claude's servers and Claude Code | OAuth bearer tokens and codes |
 | `/register` | Clients using dynamic registration, such as claude.ai | Nothing grants access before the owner approves, but anyone can use up the server's shared registration budget: allow it only from the clients that need it (rule 2) |
 | Anything else, including `/healthz` | Nobody from outside | None needed: block it |
 
@@ -94,7 +94,7 @@ Set up these rules:
 
    ```
    http.host eq "memory.example.com" and not (
-     http.request.uri.path in {"/authorize" "/consent" "/token" "/register" "/mcp"}
+     http.request.uri.path in {"/authorize" "/consent" "/token" "/revoke" "/register" "/mcp"}
      or starts_with(http.request.uri.path, "/owner/")
      or starts_with(http.request.uri.path, "/.well-known/")
      or (starts_with(http.request.uri.path, "/s/") and ends_with(http.request.uri.path, "/mcp"))
@@ -155,10 +155,10 @@ Set up these rules:
 
 3. **Leave the rest open.** Allow everyone on `/authorize`, `/consent`,
    `/owner/*` and `/.well-known/*`; the passkey protects them. Put no IP rule on
-   `/mcp` and `/token`; OAuth protects them.
+   `/mcp`, `/token` and `/revoke`; OAuth protects them.
 
 Don't put a managed challenge, JavaScript challenge or Bot Fight Mode in front
-of `/mcp`, `/token` or `/register`: those callers are programs and can't solve
+of `/mcp`, `/token`, `/revoke` or `/register`: those callers are programs and can't solve
 one. Caching doesn't apply, since every response is `Cache-Control: no-store`.
 
 ### Restricting by IP, and roaming devices
@@ -169,20 +169,20 @@ your own devices. Three paths need more than that:
 - **The consent page.** You approve clients from your browser, often a phone on
   cellular, which has no fixed IP. Keep `/authorize`, `/consent`, `/owner/*` and
   `/.well-known/*` open to everyone.
-- **Claude Code on a Mac that moves.** It calls `/mcp` and `/token` from the
+- **Claude Code on a Mac that moves.** It calls `/mcp`, `/token` and `/revoke` from the
   Mac's own address, which changes with the network. Leave
   those paths without an IP rule, or run Cloudflare WARP on the Macs and allow
   your WARP egress.
 - **The client metadata fetch.** The server fetches Claude Code's client ID
   metadata document itself, outbound. Edge rules don't affect it.
 
-If you still want an allowlist on `/mcp` and `/token`, add it as another WAF
+If you still want an allowlist on `/mcp`, `/token` and `/revoke`, add it as another WAF
 custom rule with action Block, after rules 1 and 2 (rule 2 already covers
 `/register`):
 
 ```
 http.host eq "memory.example.com"
-and (http.request.uri.path in {"/mcp" "/token"}
+and (http.request.uri.path in {"/mcp" "/token" "/revoke"}
      or (starts_with(http.request.uri.path, "/s/") and ends_with(http.request.uri.path, "/mcp")))
 and not ip.src in {160.79.104.0/21 192.0.2.10}
 ```
