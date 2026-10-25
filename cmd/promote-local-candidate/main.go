@@ -65,7 +65,7 @@ func run(ctx context.Context, args []string, s services) (distribution.Publicati
 		return result, err
 	}
 	wantURL := "https://github.com/acoz-labs/mandalore/releases/tag/" + url.PathEscape(parsed.Manifest.Tag)
-	if result.Phase != "publication-verified" || result.Identity != parsed.Identity() || result.SourceCommit != parsed.Manifest.SourceCommit || result.URL != wantURL || result.ReleaseID <= 0 || result.PendingOperation != "" || len(result.Assets) != 8 {
+	if result.Phase != "publication-verified" || result.Identity != parsed.Identity() || result.SourceCommit != parsed.Manifest.SourceCommit || result.URL != wantURL || result.ReleaseID <= 0 || result.PendingOperation != "" || !parsed.PublishesExactly(result.Assets) {
 		return result, errors.New("publisher did not verify the complete accepted product")
 	}
 	return result, nil
