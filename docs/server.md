@@ -270,11 +270,14 @@ result. [local.md](deploy/local.md#3-run-it-as-a-service) walks through it.
 (`CGO_ENABLED=0`) `mandalore` on Debian slim with `git`, `openssh-client` and
 `curl`. It runs as UID and GID 10001, reads `/config/server.json` and keeps
 state in `/state`. Its `HEALTHCHECK` fetches `/healthz` from inside the
-container. Releases publish `ghcr.io/acoz-labs/mandalore:<version>` from the
-accepted binaries (see [delivery](delivery.md#server-image)).
+container. Releases don't publish an image yet ([#188](https://github.com/acoz-labs/mandalore/issues/188)),
+so build it from a checkout of the release tag. The build compiles `mandalore`
+from that source; `VERSION` stamps its version.
 
 ```sh
-docker build -f packaging/server/Dockerfile -t mandalore-server .
+git clone --branch v2.0.0 https://github.com/acoz-labs/mandalore.git
+cd mandalore
+docker build -f packaging/server/Dockerfile --build-arg VERSION="$(cat VERSION)" -t mandalore-server .
 docker run -d --name mandalore --restart unless-stopped --read-only --tmpfs /tmp \
   -v /example/mandalore/config:/config:ro -v mandalore-state:/state \
   -p 127.0.0.1:8730:8730 mandalore-server

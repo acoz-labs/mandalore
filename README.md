@@ -86,9 +86,9 @@ connect to it over MCP:
 
 1. **Get `mandalore`.** Until 2.0.0 is published, build it from this repository
    with `mise exec go@1.26.10 -- go build -o mandalore ./cmd/mandalore`, or build
-   the server image with `docker build -f packaging/server/Dockerfile .`. From
-   2.0.0 each release carries the binaries and the image
-   `ghcr.io/acoz-labs/mandalore:<version>`.
+   the server image locally from [packaging/server](docs/server.md#docker). From
+   2.0.0 each release carries the binaries. A published image will follow
+   ([#188](https://github.com/acoz-labs/mandalore/issues/188)).
 2. **Prepare the signet.** The server needs its own checkout. Coming from 1.x,
    follow [the cutover](docs/migration-2.0.md).
 3. **Configure and run the server.** Write its [configuration](docs/server.md#configuration),
