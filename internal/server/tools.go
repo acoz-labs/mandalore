@@ -112,10 +112,10 @@ func catalog() map[string]api.Operation {
 	return ops
 }
 
-// handler returns the client's MCP handler, built once per client and scope.
-// The caller holds s.mu.
+// handler returns the client's MCP handler, built once per installation and
+// scope. The caller holds s.mu.
 func (s *signet) handler(c Client) http.Handler {
-	key := c.ID + "\x00" + c.Kind + "\x00" + string(c.Scope)
+	key := c.ID + "\x00" + c.Installation + "\x00" + c.Kind + "\x00" + string(c.Scope)
 	if h, ok := s.handlers[key]; ok {
 		return h
 	}

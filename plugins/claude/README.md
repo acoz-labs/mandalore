@@ -56,6 +56,12 @@ it, such as `claude.ai My Memory`, then restart Claude Code:
 The Claude app keeps using the connector. The Armorer detects this case and
 prints the line with your connector's name.
 
+Without that entry, writes through the connector are also recorded as the
+claude.ai client, including those by Claude Code agents, so they can't be told
+apart from your own writes in the Claude app. With it, Claude Code writes
+through the plugin's server as its own installation
+([Who wrote it](../../docs/server.md#who-wrote-it)).
+
 ## Behaviour
 
 - **Fail open.** If the server is down, slow or unauthorized, or a connector has

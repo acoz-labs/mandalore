@@ -1,6 +1,7 @@
 package server
 
 import (
+	"cmp"
 	"errors"
 	"net"
 	"net/http"
@@ -19,11 +20,19 @@ func (s Scope) valid() bool { return s == ScopeRead || s == ScopeReadWrite }
 // Client is one approved identity. Name labels its enrolled device and
 // defaults to ID; Kind is recorded as the harness of its writes.
 type Client struct {
-	ID    string
-	Name  string
-	Kind  string
-	Scope Scope
+	ID   string
+	Name string
+	Kind string
+	// Installation names the approved copy when several share ID, as every
+	// installation of a metadata-document client does. It is empty when ID
+	// names one installation.
+	Installation string
+	Scope        Scope
 }
+
+// device is the key of the client's enrolled device: its installation when
+// it shares its ID, so each installation's writes carry their own authorship.
+func (c Client) device() string { return cmp.Or(c.Installation, c.ID) }
 
 func (c Client) CanWrite() bool { return c.Scope == ScopeReadWrite }
 

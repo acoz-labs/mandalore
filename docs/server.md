@@ -199,7 +199,10 @@ There is one owner, who signs in with a passkey (WebAuthn, through
    redirect, such as `claude.ai`. Later authorizations by an approved DCR
    client for that signet skip the consent page; the owner still signs in, or
    uses a live session. A client ID is no secret, so no code is ever issued
-   without the owner. Installations of one client share its device record. For a metadata-document client the page also names the host that
+   without the owner. Each installation of a metadata-document client gets
+   its own device record, labelled `<client name> installation <id> (<kind>),
+   approved <date>`; a DCR client is one installation with one device record
+   (see [Who wrote it](#who-wrote-it)). For a metadata-document client the page also names the host that
    publishes the document, since the client chooses its own name.
 
 Browsers treat `http://localhost` as a secure context, so passkeys and the
@@ -263,9 +266,31 @@ they are configured and refreshed.
 
 When the owner approves an OAuth client, or on a local client's first write to
 a signet, the server enrolls a device record for it in `provenance/devices/`
-(label `<client name> (<kind>), approved <date>`) and keeps the mapping in
-`state_dir`. If writes are paused, enrollment waits for the client's first write. Every write by that client records
+and keeps the mapping in `state_dir`. If writes are paused, enrollment waits
+for the client's first write. Every write by that client records
 `{device_id: <client device>, actor: owner.name, harness: <client kind>}`.
+
+The device is per installation, so two installations that share one
+`client_id` are still told apart:
+
+- **A metadata-document client** (Claude Code): every installation shares the
+  `client_id`, so each gets its own device, labelled `<client name>
+  installation <id> (<kind>), approved <date>`. The `<id>` is the installation
+  ID that `server clients list` shows.
+- **A DCR client** (a hosted app such as claude.ai) is one installation, with
+  one device labelled `<client name> (<kind>), approved <date>`.
+
+Before 2.0.3 every installation of a metadata-document client wrote as the
+client's one device. Those records keep that authorship; nothing is rewritten.
+From 2.0.3 each installation enrolls its own device on its approval or first
+write, and a DCR client keeps the device it already had.
+
+The server knows only the client that holds the token. A claude.ai connector
+is the claude.ai client, so every write through it is recorded as claude.ai,
+including writes by Claude Code agents: Claude Code syncs the account's
+connectors into its own MCP servers and its agents can call them. To keep
+Claude Code's writes on its own installation, deny the connector in Claude Code
+([plugin and connector together](../plugins/claude/README.md#plugin-and-connector-together)).
 
 ## Git backup
 
