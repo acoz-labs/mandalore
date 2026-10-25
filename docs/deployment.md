@@ -10,9 +10,9 @@
 
 Delivery profile: **artifact**. There is no staging service or hosted production
 application. A GitHub Release publishes the candidate's seven files: four CLI
-binaries, the bootstrap, the manifest and its checksums. From 2.0 each release
-also publishes the [server image](delivery.md#server-image)
-`ghcr.io/acoz-labs/mandalore:<version>` from the same candidate. The
+binaries, the bootstrap, the manifest and its checksums. 2.0.0 publishes no
+container image: operators build it from `packaging/server`, and a published
+[server image](delivery.md#server-image) will follow in #188. The
 [Claude plugin](../plugins/claude/README.md) isn't a release asset; it installs
 from the repository's marketplace. 2.0 isn't released yet. The latest release
 is [1.6.1](releases/1.6.1.md), and the [release records](releases/) keep the

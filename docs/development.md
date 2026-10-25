@@ -115,7 +115,7 @@ not establish cross-host reproducibility or native Linux support by itself.
 
 The manually dispatched **Build retained candidate** workflow checks out its exact
 default-branch event commit, runs CI and builds one complete payload. The SHA-pinned
-upload action retains all eight files as one archive for up to 90 days, subject to
+upload action retains all seven files as one archive for up to 90 days, subject to
 repository policy. Each run attempt has its own name; overwrite is disabled. The
 summary records source, run/artifact IDs and archive digest. Building/retaining is
 not nomination, independent acceptance or publication.
@@ -153,7 +153,7 @@ source, attempt, archive ID/name/size/digest and expiry. JSON sizes, ZIP size an
 central-directory parsing are bounded. Every archive member must belong to the
 fixed regular-file inventory; source/toolchain, checksums, payload hashes and plugin
 content identity must agree. ZIP64/multi-disk, nested paths, links, duplicates,
-corruption and changed receipts are rejected. This format's eight bounded payloads
+corruption and changed receipts are rejected. This format's seven bounded payloads
 do not require ZIP64. Expired/deleted/replaced artifacts require new inspection and,
 where identity changes, fresh nomination—not pretending a rebuild is accepted.
 
