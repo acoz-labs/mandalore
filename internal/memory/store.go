@@ -370,6 +370,25 @@ func (s *Store) readSource(id string, out *Source) error {
 	}
 	return s.validateSource(*out)
 }
+
+// DeviceIDs lists the enrolled devices in provenance/devices.
+func (s *Store) DeviceIDs() ([]string, error) {
+	entries, err := os.ReadDir(filepath.Join(s.Root, "provenance/devices"))
+	if err != nil {
+		return nil, err
+	}
+	ids := []string{}
+	for _, entry := range entries {
+		if id, ok := strings.CutSuffix(entry.Name(), ".json"); ok {
+			if err := s.deviceExists(id); err != nil {
+				return nil, err
+			}
+			ids = append(ids, id)
+		}
+	}
+	return ids, nil
+}
+
 func (s *Store) deviceExists(id string) error {
 	if err := ValidateDeviceID(id); err != nil {
 		return err

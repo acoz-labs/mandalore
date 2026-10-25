@@ -7,7 +7,8 @@ remote as a backup. The [2.0 design](design/2.0.md) explains why.
 
 The server includes its own OAuth 2.1 authorization server with owner passkey
 approval (#161). Foundlings on the server come with #162, the Claude plugin with
-#163, migration from 1.x with #164 and packaging with #165.
+#163 and packaging with #165. The cutover from 1.x clones is in
+[migration-2.0.md](migration-2.0.md).
 
 ## Configuration
 
@@ -36,7 +37,7 @@ The file is strict JSON: unknown, duplicate or mistyped fields are refused.
 | `auth` | `oauth` (the default when omitted), or `loopback-trust`. `loopback-trust` is refused unless `listen` and `public_url` are loopback. Test builds also accept `insecure-test`. |
 | `local_scope` | `read` or `read-write`, the scope of the `local` client under `loopback-trust`. |
 | `test_clients` | `insecure-test` only: `id`, `kind`, `scope`, bearer `token` (16+ bytes) and the `signets` slugs it may use. |
-| `signets[]` | Up to 16. `slug`, absolute `root` (an existing Git checkout on `main`), its `signet_id`, the server's enrolled `device_id` in it, and the backup `remote`. |
+| `signets[]` | 1–16 to serve; `server migrate init` also accepts an empty list and adds the entry. `slug`, absolute `root` (an existing Git checkout on `main`), its `signet_id`, the server's enrolled `device_id` in it, and the backup `remote`. |
 
 One signet serves at `/mcp`. Several serve at `/s/<slug>/mcp`. Each signet has its
 own lock, memory service, Git backup and client authenticator; a request to one
@@ -226,6 +227,8 @@ Under a single writer this means a second writer broke the model. To recover:
   It refuses uncommitted or diverged local history and never merges or
   discards (see [Diverged history](#diverged-history)). Restart the server
   afterwards.
+- `mandalore server migrate preflight|init|retire|verify` moves 1.x clones to
+  the server; see [migration-2.0.md](migration-2.0.md).
 
 ## Read cache
 
