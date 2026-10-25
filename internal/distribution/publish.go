@@ -104,7 +104,7 @@ func (t publicationTransport) RoundTrip(r *http.Request) (*http.Response, error)
 				if r.Method == "GET" && u.Path == "/repos/acoz-labs/mandalore/releases" {
 					q := u.Query()
 					page, err := strconv.Atoi(q.Get("page"))
-					allowed = err == nil && page >= 1 && page <= 10 && len(q) == 2 && len(q["page"]) == 1 && q.Get("per_page") == "100" && len(q["per_page"]) == 1
+					allowed = err == nil && page >= 1 && page <= releaseListPages && len(q) == 2 && len(q["page"]) == 1 && q.Get("per_page") == strconv.Itoa(releaseListPage) && len(q["per_page"]) == 1
 				}
 			case "uploads.github.com":
 				q := u.Query()
@@ -144,14 +144,32 @@ func publicationBody(m ParsedManifest) string {
 	return "Mandalore " + m.Manifest.Version + "\n\n- Commit: `" + m.Manifest.SourceCommit + "`\n- Artifact: `" + m.Identity() + "`\n"
 }
 
+// Release discovery reads at most releaseListPages pages of releaseListPage
+// releases. Full release metadata is about 15 KiB a release with its assets,
+// so a page has a bound of its own, well above what a page holds, and all
+// pages together have a smaller one.
+const (
+	releaseListPage    = 20
+	releaseListPages   = 10
+	maxReleaseListPage = 1 << 20
+	maxReleaseHistory  = 4 << 20
+)
+
 func (p *Publisher) find(ctx context.Context, tag string) (publicationMetadata, error) {
-	var selected publicationMetadata
+	var (
+		selected publicationMetadata
+		read     int64
+	)
 	// Drafts are not reliably discoverable by the published-release tag endpoint.
 	// Inspect a bounded authenticated list; reject ambiguity rather than choose one.
-	for page := 1; page <= 10; page++ {
+	for page := 1; page <= releaseListPages; page++ {
 		var raw bytes.Buffer
-		if _, err := p.api.get(ctx, releaseAPI+"/releases?per_page=100&page="+strconv.Itoa(page), "application/vnd.github+json", maxReleaseMetadata, &raw); err != nil {
+		n, err := p.api.get(ctx, releaseAPI+"/releases?per_page="+strconv.Itoa(releaseListPage)+"&page="+strconv.Itoa(page), "application/vnd.github+json", maxReleaseListPage, &raw)
+		if err != nil {
 			return selected, err
+		}
+		if read += n; read > maxReleaseHistory {
+			return selected, errors.New("release discovery exceeded its bounded history; no release was selected")
 		}
 		// strictjson's public contract is object-shaped. A single named array
 		// preserves its duplicate-key, nesting, UTF-8 and trailing-data checks.
@@ -160,11 +178,11 @@ func (p *Publisher) find(ctx context.Context, tag string) (publicationMetadata, 
 		}
 		wrapped := append([]byte(`{"releases":`), raw.Bytes()...)
 		wrapped = append(wrapped, '}')
-		if err := strictjson.Decode(wrapped, &envelope, maxReleaseMetadata+13); err != nil || envelope.Releases == nil {
+		if err := strictjson.Decode(wrapped, &envelope, maxReleaseListPage+13); err != nil || envelope.Releases == nil {
 			return selected, errors.New("invalid publication list")
 		}
 		var releases []publicationMetadata
-		if err := json.Unmarshal(raw.Bytes(), &releases); err != nil || len(releases) > 100 {
+		if err := json.Unmarshal(raw.Bytes(), &releases); err != nil || len(releases) > releaseListPage {
 			return selected, errors.New("invalid publication list fields")
 		}
 		for _, r := range releases {
@@ -175,7 +193,7 @@ func (p *Publisher) find(ctx context.Context, tag string) (publicationMetadata, 
 				selected = r
 			}
 		}
-		if len(releases) < 100 {
+		if len(releases) < releaseListPage {
 			return selected, nil
 		}
 	}

@@ -191,8 +191,9 @@ retain possible remote effects. Retry re-inspects the same identity rather than
 replacing assets or publishing twice. Unexpected assets, `starter` uploads, foreign
 release bodies, broken/existing wrong-source tags and changed state are preserved
 for inspection. There are no DELETE, asset-overwrite or policy-write endpoints.
-Discovery is bounded to ten pages of 100 releases; metadata responses are limited
-to 128 KiB and requests share a ten-minute context deadline. A limit refusal does not permit
+Discovery is bounded to ten pages of 20 releases, 1 MiB per page and 4 MiB in
+all; other metadata responses are limited to 128 KiB, and requests share a
+ten-minute context deadline. A limit refusal does not permit
 creating another release without resolving the incomplete discovery.
 
 The release credential is scoped to fixed repository release/tag operations and
