@@ -14,7 +14,8 @@ type SignetStatus struct {
 	SignetID string `json:"signet_id"`
 	Head     string `json:"head"`
 	Backup   Backup `json:"backup"`
-	// Remote is checked now: current, ahead, diverged or unreachable.
+	// Remote is checked now: current, ahead, diverged, ahead-or-diverged or
+	// unreachable.
 	Remote string `json:"remote"`
 }
 
@@ -38,7 +39,7 @@ func Status(ctx context.Context, c Config) ([]SignetStatus, error) {
 			return nil, fmt.Errorf("signet %s: backup state unreadable", sc.Slug)
 		}
 		check, cancel := context.WithTimeout(ctx, 10*time.Second)
-		st.Remote, err = g.RemoteState(check, sc.Remote, st.Backup.Head)
+		st.Remote, err = g.RemoteState(check, sc.Remote, st.Backup.Head, false)
 		cancel()
 		if err != nil {
 			st.Remote = "unreachable"

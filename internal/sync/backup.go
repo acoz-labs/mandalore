@@ -32,12 +32,17 @@ const (
 	RemoteCurrent  = "current"  // remote main is empty or in local history
 	RemoteAheadOf  = "ahead"    // remote has commits; local main can fast-forward
 	RemoteDiverged = "diverged" // both sides have commits the other lacks
+	// RemoteMoved: the remote has commits, but with its commit unfetched and no
+	// recorded pushed head, ahead and diverged look the same.
+	RemoteMoved = "ahead-or-diverged"
 )
 
-// RemoteState compares remote main with local main without fetching. When
-// the remote commit is not local, pushed (the last head this checkout pushed,
-// if known) tells ahead from diverged: local commits after it are unpushed.
-func (s *Synchronizer) RemoteState(ctx context.Context, remote, pushed string) (string, error) {
+// RemoteState compares remote main with local main. It never changes main
+// or the worktree. When the remote commit is not local and fetch is set, it
+// fetches remote main into refs/remotes/origin/main so ancestry decides.
+// Otherwise pushed (the last head this checkout pushed, if known) tells ahead
+// from diverged, and without it the answer is RemoteMoved.
+func (s *Synchronizer) RemoteState(ctx context.Context, remote, pushed string, fetch bool) (string, error) {
 	observed, err := s.remoteHead(ctx, remote)
 	if err != nil {
 		return "", err
@@ -56,10 +61,22 @@ func (s *Synchronizer) RemoteState(ctx context.Context, remote, pushed string) (
 		if ctx.Err() != nil {
 			return "", ctx.Err()
 		}
-		if pushed != "" && pushed != local {
+		if fetch {
+			if _, err := s.git(ctx, "fetch", "--no-tags", "--no-recurse-submodules", remote, "refs/heads/main:refs/remotes/origin/main"); err != nil {
+				return "", err
+			}
+			if observed, err = s.git(ctx, "rev-parse", "--verify", "refs/remotes/origin/main^{commit}"); err != nil {
+				return "", err
+			}
+		} else {
+			switch pushed {
+			case "":
+				return RemoteMoved, nil
+			case local:
+				return RemoteAheadOf, nil
+			}
 			return RemoteDiverged, nil
 		}
-		return RemoteAheadOf, nil
 	}
 	for _, check := range [][2]string{{observed, local}, {local, observed}} {
 		_, err = s.git(ctx, "merge-base", "--is-ancestor", check[0], check[1])
@@ -79,7 +96,7 @@ func (s *Synchronizer) RemoteState(ctx context.Context, remote, pushed string) (
 // RemoteAhead reports whether remote main has a commit outside local history.
 // It reads only the remote ref and local objects: it never fetches.
 func (s *Synchronizer) RemoteAhead(ctx context.Context, remote string) (bool, error) {
-	state, err := s.RemoteState(ctx, remote, "")
+	state, err := s.RemoteState(ctx, remote, "", false)
 	return state != RemoteCurrent, err
 }
 

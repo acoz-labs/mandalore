@@ -489,7 +489,7 @@ func TestLoopbackTrustAndHTTPBoundary(t *testing.T) {
 		})
 	}
 	// A same-host proxy that rewrites Host is still a relay, not the local user.
-	for _, header := range forwardingHeaders {
+	for _, header := range append([]string{"X-Some-Proxy-Forwarded-Thing", "x-forwarded-scheme"}, forwardingHeaders...) {
 		r := httptest.NewRequest("POST", "http://"+listen+"/mcp", strings.NewReader(`{}`))
 		r.RemoteAddr = "127.0.0.1:50000"
 		r.Header.Set(header, "203.0.113.9")
@@ -649,6 +649,15 @@ func TestDivergedSignetStaysRefused(t *testing.T) {
 	if code := post(t, h2, "/mcp", writeToken); code != http.StatusServiceUnavailable || !strings.Contains(logs2.String(), "diverged") {
 		t.Fatalf("restarted diverged signet served: %d %s", code, logs2.String())
 	}
+	// With no recorded pushed head (a fresh state_dir), startup still names the
+	// divergence rather than suggesting reconcile.
+	fresh := c
+	fresh.StateDir = t.TempDir()
+	_, h4, logs4 := startServer(t, fresh)
+	if code := post(t, h4, "/mcp", writeToken); code != http.StatusServiceUnavailable || !strings.Contains(logs4.String(), "signet a: diverged: local and remote both have commits") {
+		t.Fatalf("fresh state misreported divergence: %d %s", code, logs4.String())
+	}
+	h4.Close()
 	// The manual recovery in docs/server.md: merge, restart, and the merge pushes.
 	testfixture.Git(t, a.Root, "fetch", a.Remote, "main")
 	testfixture.Git(t, a.Root, "merge", "--no-ff", "-m", "Recover diverged history", "FETCH_HEAD")

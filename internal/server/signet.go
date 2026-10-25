@@ -139,7 +139,7 @@ func (s *signet) startup(ctx context.Context) {
 	s.backupMu.Unlock()
 	check, cancel := context.WithTimeout(ctx, s.timing.push)
 	defer cancel()
-	state, err := s.git.RemoteState(check, s.config.Remote, pushed)
+	state, err := s.git.RemoteState(check, s.config.Remote, pushed, true)
 	s.backupMu.Lock()
 	defer s.backupMu.Unlock()
 	// A previous run's failure is rechecked here; the first push settles it.
@@ -166,21 +166,28 @@ func (s *signet) startup(ctx context.Context) {
 // change. The caller holds backupMu.
 func (s *signet) remoteMoved(state string) {
 	if s.backup.Remote != state {
-		if state == signetsync.RemoteDiverged {
+		switch state {
+		case signetsync.RemoteDiverged:
 			s.log.Printf("signet %s: diverged: local and remote both have commits; manual recovery needed (see docs/server.md)", s.config.Slug)
-		} else {
+		case signetsync.RemoteMoved:
+			s.log.Printf("signet %s: remote ahead or diverged (no pushed head recorded): run mandalore server reconcile, which refuses diverged history (see docs/server.md)", s.config.Slug)
+		default:
 			s.log.Printf("signet %s: remote ahead: run mandalore server reconcile", s.config.Slug)
 		}
 	}
 	s.backup.State, s.backup.Remote = "failed", state
 }
 
-// writesPaused reports whether the remote is ahead or diverged. Reads continue;
+// writesPaused reports whether the remote is ahead or diverged, or may be. Reads continue;
 // writes would only widen what reconcile has to repair.
 func (s *signet) writesPaused() bool {
 	s.backupMu.Lock()
 	defer s.backupMu.Unlock()
-	return s.backup.Remote == signetsync.RemoteAheadOf || s.backup.Remote == signetsync.RemoteDiverged
+	switch s.backup.Remote {
+	case signetsync.RemoteAheadOf, signetsync.RemoteDiverged, signetsync.RemoteMoved:
+		return true
+	}
+	return false
 }
 
 // wrote records a published write and schedules a debounced push. It returns
@@ -255,7 +262,7 @@ func (s *signet) push(ctx context.Context) {
 		pushCtx, cancel := context.WithTimeout(ctx, s.timing.push)
 		head, err = s.git.Push(pushCtx, s.config.Remote)
 		if errors.Is(err, signetsync.ErrRemoteAhead) {
-			if state, err = s.git.RemoteState(pushCtx, s.config.Remote, pushed); err == nil {
+			if state, err = s.git.RemoteState(pushCtx, s.config.Remote, pushed, true); err == nil {
 				err = signetsync.ErrRemoteAhead
 			}
 		}

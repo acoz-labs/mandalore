@@ -98,8 +98,10 @@ pending it retries every minute. The memory is already durable in the checkout,
 so a failed push never fails a save. The save receipt says `durable: true` and
 `backup: pending|pushed|failed`.
 
-At startup the server checks each remote without fetching. If the remote has
-commits the checkout lacks, another writer is still alive: the server refuses to
+At startup the server reads each remote's `main`. Only if the remote has commits
+the checkout lacks does it fetch them, into `refs/remotes/origin/main` (never
+`main` or the worktree), to tell ahead from diverged. A remote ahead means
+another writer is still alive: the server refuses to
 serve that signet (`503`) and logs `remote ahead: run mandalore server reconcile`.
 An unreachable remote doesn't block serving: saves stay durable locally, and the
 server keeps checking the remote every minute while it's unreachable or a push is
@@ -128,7 +130,9 @@ Under a single writer this means a second writer broke the model. To recover:
 
 - `mandalore server status --config FILE` prints, per signet: head, last push,
   pending push, backup state, and the remote's state now (`current`, `ahead`,
-  `diverged` or `unreachable`).
+  `diverged` or `unreachable`). Status never fetches, so with an unfetched remote
+  commit and no recorded push it reports `ahead-or-diverged`; `reconcile` (which
+  fetches) or a server start tells them apart.
 - `mandalore server reconcile --config FILE [--signet SLUG]` fetches the remote,
   validates it as the same signet with append-only history, and fast-forwards.
   It refuses uncommitted or diverged local history and never merges or
@@ -141,7 +145,8 @@ The server is each signet's only writer, so it keeps the validated revision grap
 and per-revision term index in memory between its own writes; every write drops
 them. On a synthetic 1,000-record signet, `memory_context` measures about 7 ms
 p95 between writes and about 165 ms p95 on the first call after a write, on a
-development laptop, against a 300 ms target. `bin/ci` asserts both on a plain
-build; the race detector slows the post-write path about fivefold. A change made to the checkout by another process isn't
+development laptop, against a 300 ms target. On a plain build `bin/ci` asserts
+the 300 ms bound between writes and a 1 s regression tripwire after a write; the
+race detector slows the post-write path about fivefold. A change made to the checkout by another process isn't
 seen until the server's next write or restart, which is why the server must be
 the only writer.
