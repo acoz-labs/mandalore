@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/acoz-labs/mandalore/internal/foundlings"
 	"github.com/acoz-labs/mandalore/internal/memory"
 	signetsync "github.com/acoz-labs/mandalore/internal/sync"
 )
@@ -40,6 +41,10 @@ type signet struct {
 	memory    *memory.Service
 	git       *signetsync.Synchronizer
 	blocked   bool
+	// foundlings serves the configured canon and legacy references; canon
+	// refreshes them through its own read-only view, outside mu.
+	foundlings foundlings.Config
+	canon      *foundlings.Manager
 
 	mu       sync.Mutex
 	devices  map[string]string // client ID → enrolled device ID
@@ -52,8 +57,12 @@ type signet struct {
 }
 
 type timing struct {
-	debounce, retry, push time.Duration
+	debounce, retry, push, canon time.Duration
 }
+
+// canonTransport rewrites canon source locators to local test remotes. Only
+// tests set it; production fetches the registered locator.
+var canonTransport func(string) string
 
 func openSignet(c Config, sc SignetConfig, logger *log.Logger, t timing) (*signet, error) {
 	m, err := memory.OpenService(sc.Root, memory.Authorship{DeviceID: sc.DeviceID, Actor: c.Owner.Name, Harness: "mandalore-server"})
@@ -87,7 +96,51 @@ func openSignet(c Config, sc SignetConfig, logger *log.Logger, t timing) (*signe
 	if err := readState(filepath.Join(s.state, "backup.json"), &s.backup); err != nil {
 		return nil, fmt.Errorf("signet %s: backup state unreadable", sc.Slug)
 	}
+	s.foundlings = foundlingConfig(sc)
+	if len(sc.Canon) > 0 {
+		view, err := memory.OpenReadOnlyService(sc.Root)
+		if err != nil {
+			return nil, fmt.Errorf("signet %s: cannot open a canon refresh view", sc.Slug)
+		}
+		s.canon = foundlings.NewConfigured(view, s.foundlings)
+	}
+	for id, root := range sc.Legacy {
+		if _, err := os.ReadDir(root); err != nil {
+			logger.Printf("signet %s: legacy %s root unreadable; its reads report unavailable", sc.Slug, id)
+		}
+	}
 	return s, nil
+}
+
+func foundlingConfig(sc SignetConfig) foundlings.Config {
+	return foundlings.Config{Canon: sc.Canon, Legacy: sc.Legacy, Transport: canonTransport}
+}
+
+// refreshCanon refreshes the configured canon references now and then on
+// every interval. A failed refresh keeps the last verified snapshot, which
+// reads report stale; it never blocks serving.
+func (s *signet) refreshCanon(ctx context.Context) {
+	if s.canon == nil {
+		return
+	}
+	tick := time.NewTicker(s.timing.canon)
+	defer tick.Stop()
+	for {
+		receipts, err := s.canon.Refresh(ctx)
+		if err != nil && ctx.Err() == nil {
+			s.log.Printf("signet %s: canon refresh failed", s.config.Slug)
+		}
+		for _, r := range receipts {
+			if r.State != "available" {
+				s.log.Printf("signet %s: canon %s %s (%s)", s.config.Slug, r.FoundlingID, r.State, r.Reason)
+			}
+		}
+		select {
+		case <-ctx.Done():
+			return
+		case <-tick.C:
+		}
+	}
 }
 
 func readState(path string, v any) error {

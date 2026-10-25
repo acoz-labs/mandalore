@@ -59,30 +59,33 @@ func gitTest(t *testing.T, root string, args ...string) string {
 	}
 	return string(b)
 }
-func refreshTest(t *testing.T, m *Manager, session string) CanonReceipt {
+func refreshTest(t *testing.T, m *Manager) CanonReceipt {
 	t.Helper()
-	r, e := m.SessionRefresh(context.Background(), session)
+	r, e := m.Refresh(context.Background())
 	if e != nil || len(r) != 1 || r[0].State != "available" {
 		t.Fatalf("refresh %v %v", r, e)
 	}
 	return r[0]
 }
-func recallTest(t *testing.T, m *Manager, id, session string) CanonRecallResult {
+func recallTest(t *testing.T, m *Manager, id string) CanonRecallResult {
 	t.Helper()
-	r, e := m.CanonRecall(context.Background(), CanonRecallInput{SessionID: session, FoundlingID: id, Limit: 10, BudgetBytes: 8192})
+	r, e := m.CanonRecall(context.Background(), CanonRecallInput{FoundlingID: id, Limit: 10, BudgetBytes: 8192})
 	if e != nil {
 		t.Fatal(e)
 	}
 	return r
 }
-func TestCanonRefreshSessionIsolationAndReadOnly(t *testing.T) {
+func TestCanonRefreshAdvancesTheServedSnapshotAndIsReadOnly(t *testing.T) {
 	m, source, reg, rev, root := canonFixture(t)
 	before := fileTree(t, root)
-	first := refreshTest(t, m, "session-one")
+	first := refreshTest(t, m)
 	if !reflect.DeepEqual(before, fileTree(t, root)) {
 		t.Fatal("fetch changed source")
 	}
-	if got := recallTest(t, m, reg.FoundlingID, "session-one"); len(got.Memory.Current) != 1 || got.Memory.Current[0].ID != rev.ID {
+	if first.Commit != first.Pin.Value || first.ObservedAt == "" || first.AgeSeconds == nil {
+		t.Fatal(first)
+	}
+	if got := recallTest(t, m, reg.FoundlingID); len(got.Memory.Current) != 1 || got.Memory.Current[0].ID != rev.ID || got.Reference.Commit != first.Commit {
 		t.Fatal(got)
 	}
 	newer, e := source.Remember(memory.Write{Kind: "fact", Summary: "Current color", Body: "Synthetic color green", Basis: "observation", Reason: "Change", RecordID: rev.RecordID, Supersedes: []string{rev.ID}})
@@ -91,14 +94,15 @@ func TestCanonRefreshSessionIsolationAndReadOnly(t *testing.T) {
 	}
 	gitTest(t, root, "add", ".")
 	gitTest(t, root, "commit", "-m", "Change")
-	second := refreshTest(t, m, "session-two")
+	// Reads never fetch: the new commit is served only after a refresh.
+	if got := recallTest(t, m, reg.FoundlingID); got.Memory.Current[0].ID != rev.ID {
+		t.Fatal("read fetched", got)
+	}
+	second := refreshTest(t, m)
 	if first.Pin == second.Pin {
 		t.Fatal("branch advance not reflected")
 	}
-	if got := recallTest(t, m, reg.FoundlingID, "session-one"); got.Memory.Current[0].ID != rev.ID {
-		t.Fatal("session drift", got)
-	}
-	if got := recallTest(t, m, reg.FoundlingID, "session-two"); len(got.Memory.Current) != 1 || got.Memory.Current[0].ID != newer.ID {
+	if got := recallTest(t, m, reg.FoundlingID); len(got.Memory.Current) != 1 || got.Memory.Current[0].ID != newer.ID || got.Reference.Commit != second.Commit {
 		t.Fatal(got)
 	}
 	registrations, e := m.memory.FoundlingHistoryPage(reg.FoundlingID, 0, 50)
@@ -106,10 +110,10 @@ func TestCanonRefreshSessionIsolationAndReadOnly(t *testing.T) {
 		t.Fatal("fetch mutated registration", registrations, e)
 	}
 	localBefore := fileTree(t, m.memory.Root())
-	if _, e = m.SessionStatus(context.Background(), "session-one"); e != nil {
+	if _, e = m.CanonStatus(context.Background()); e != nil {
 		t.Fatal(e)
 	}
-	_ = recallTest(t, m, reg.FoundlingID, "session-one")
+	_ = recallTest(t, m, reg.FoundlingID)
 	if !reflect.DeepEqual(localBefore, fileTree(t, m.memory.Root())) {
 		t.Fatal("read wrote cache")
 	}
@@ -117,11 +121,36 @@ func TestCanonRefreshSessionIsolationAndReadOnly(t *testing.T) {
 		t.Fatal("canon accepted raw history search")
 	}
 }
+
+func TestCanonStaleSnapshotReportsItsAge(t *testing.T) {
+	m, _, reg, _, _ := canonFixture(t)
+	now := time.Date(2026, 10, 24, 12, 0, 0, 0, time.UTC)
+	m.clock = func() time.Time { return now }
+	first := refreshTest(t, m)
+	if *first.AgeSeconds != 0 || first.CheckedAt != first.ObservedAt {
+		t.Fatal(first)
+	}
+	now = now.Add(25 * time.Minute)
+	m.canonTransport = func(string) string { return filepath.Join(t.TempDir(), "absent") }
+	r, e := m.Refresh(context.Background())
+	if e != nil || len(r) != 1 || r[0].State != "stale" || r[0].Commit != first.Commit || r[0].ObservedAt != first.ObservedAt || *r[0].AgeSeconds != 1500 || r[0].CheckedAt != now.Format(time.RFC3339Nano) {
+		t.Fatal(r, e)
+	}
+	now = now.Add(time.Minute)
+	status, e := m.CanonStatus(context.Background())
+	if e != nil || len(status) != 1 || status[0].State != "stale" || status[0].Reason != "transport_unavailable" || *status[0].AgeSeconds != 1560 {
+		t.Fatal(status, e)
+	}
+	if got := recallTest(t, m, reg.FoundlingID); got.Reference.State != "stale" || *got.Reference.AgeSeconds != 1560 || len(got.Memory.Current) != 1 {
+		t.Fatal(got)
+	}
+}
+
 func TestCanonOfflineAbsentBranchAndCancellation(t *testing.T) {
 	m, _, reg, _, root := canonFixture(t)
-	first := refreshTest(t, m, "online")
+	first := refreshTest(t, m)
 	m.canonTransport = func(string) string { return filepath.Join(t.TempDir(), "absent") }
-	r, e := m.SessionRefresh(context.Background(), "offline")
+	r, e := m.Refresh(context.Background())
 	if e != nil || r[0].State != "stale" || r[0].Pin != first.Pin || r[0].Reason != "transport_unavailable" {
 		t.Fatal(r, e)
 	}
@@ -129,21 +158,24 @@ func TestCanonOfflineAbsentBranchAndCancellation(t *testing.T) {
 	if e = os.Remove(filepath.Join(cache, latestFile(reg.FoundlingID))); e != nil {
 		t.Fatal(e)
 	}
-	r, e = m.SessionRefresh(context.Background(), "uncached")
+	r, e = m.Refresh(context.Background())
 	if e != nil || r[0].State != "unavailable" {
 		t.Fatal(r, e)
 	}
+	if _, e = m.CanonRecall(context.Background(), CanonRecallInput{FoundlingID: reg.FoundlingID, Limit: 1, BudgetBytes: 8192}); e == nil {
+		t.Fatal("unavailable reference readable")
+	}
 	m.canonTransport = func(string) string { return root }
-	refreshTest(t, m, "online")
+	refreshTest(t, m)
 	gitTest(t, root, "branch", "-m", "different")
-	r, e = m.SessionRefresh(context.Background(), "absent-branch")
+	r, e = m.Refresh(context.Background())
 	if e != nil || r[0].State != "stale" || r[0].Reason != "absent_branch" {
 		t.Fatal(r, e)
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 	start := time.Now()
-	r, e = m.SessionRefresh(ctx, "cancelled")
+	r, e = m.Refresh(ctx)
 	if !errors.Is(e, context.Canceled) || time.Since(start) > time.Second {
 		t.Fatal(r, e)
 	}
@@ -151,7 +183,7 @@ func TestCanonOfflineAbsentBranchAndCancellation(t *testing.T) {
 
 func TestCanonWithdrawalConflictsPromotionAndDisconnection(t *testing.T) {
 	m, source, reg, rev, root := canonFixture(t)
-	refreshTest(t, m, "initial")
+	refreshTest(t, m)
 	// Separate replicas create valid concurrent heads.
 	replica := filepath.Join(t.TempDir(), "replica")
 	if e := os.CopyFS(replica, os.DirFS(root)); e != nil {
@@ -197,36 +229,36 @@ func TestCanonWithdrawalConflictsPromotionAndDisconnection(t *testing.T) {
 	}
 	gitTest(t, root, "add", ".")
 	gitTest(t, root, "commit", "-m", "Conflict")
-	refreshTest(t, m, "conflict")
-	got := recallTest(t, m, reg.FoundlingID, "conflict")
+	refreshTest(t, m)
+	got := recallTest(t, m, reg.FoundlingID)
 	if len(got.Memory.Current) != 0 || len(got.Memory.Conflicts) != 1 || len(got.Memory.Conflicts[0].HeadIDs) != 2 {
 		t.Fatal(got)
 	}
-	in := CanonRecallInput{SessionID: "conflict", FoundlingID: reg.FoundlingID, RegistrationID: reg.ID}
+	in := CanonRecallInput{FoundlingID: reg.FoundlingID, RegistrationID: reg.ID}
 	heads, receipt, e := m.CanonHeads(context.Background(), in, rev.RecordID)
 	if e != nil || len(heads) != 2 {
 		t.Fatal(heads, e)
 	}
-	promoted, e := m.CanonPromote(context.Background(), CanonPromotionInput{SessionID: "conflict", FoundlingID: reg.FoundlingID, RegistrationID: reg.ID, RecordID: rev.RecordID, RevisionID: heads[0].ID, ContentSHA256: CanonRevisionDigest(heads[0]), Write: memory.Write{Kind: "fact", Summary: "Reviewed external claim", Body: "A deliberately selected conflicting claim", Basis: "import", Reason: "Explicit synthetic promotion"}})
+	promoted, e := m.CanonPromote(context.Background(), CanonPromotionInput{FoundlingID: reg.FoundlingID, RegistrationID: reg.ID, RecordID: rev.RecordID, RevisionID: heads[0].ID, ContentSHA256: CanonRevisionDigest(heads[0]), Write: memory.Write{Kind: "fact", Summary: "Reviewed external claim", Body: "A deliberately selected conflicting claim", Basis: "import", Reason: "Explicit synthetic promotion"}})
 	if e != nil {
 		t.Fatal(e)
 	}
 	if promoted.Evidence.Basis != "import" {
 		t.Fatal(promoted)
 	}
-	// Withdrawal is observed only after explicit refresh; previous session remains pinned.
+	// Withdrawal is observed only after a refresh.
 	_, e = source.ChangeVisibility(context.Background(), "withdraw", memory.VisibilityWrite{RecordID: rev.RecordID, ContentHeads: got.Memory.Conflicts[0].HeadIDs, VisibilityHeads: []string{}, Reason: "Synthetic withdrawal"})
 	if e != nil {
 		t.Fatal(e)
 	}
 	gitTest(t, root, "add", ".")
 	gitTest(t, root, "commit", "-m", "Withdraw")
-	refreshTest(t, m, "withdrawn")
-	hidden := recallTest(t, m, reg.FoundlingID, "withdrawn")
+	refreshTest(t, m)
+	hidden := recallTest(t, m, reg.FoundlingID)
 	if len(hidden.Memory.Current) != 0 || len(hidden.Memory.Conflicts) != 0 {
 		t.Fatal(hidden)
 	}
-	heads, _, e = m.CanonHeads(context.Background(), CanonRecallInput{SessionID: "withdrawn", FoundlingID: reg.FoundlingID}, rev.RecordID)
+	heads, _, e = m.CanonHeads(context.Background(), CanonRecallInput{FoundlingID: reg.FoundlingID}, rev.RecordID)
 	if e != nil || len(heads) != 0 {
 		t.Fatal(heads, e)
 	}
@@ -247,44 +279,40 @@ func TestCanonWithdrawalConflictsPromotionAndDisconnection(t *testing.T) {
 }
 func TestCanonInvalidSourceWithholdsAndCacheTampering(t *testing.T) {
 	m, _, reg, _, root := canonFixture(t)
-	refreshTest(t, m, "before")
+	old := refreshTest(t, m)
 	path := filepath.Join(root, "signet.json")
 	b, e := os.ReadFile(path)
 	if e != nil {
 		t.Fatal(e)
 	}
 	b = []byte(strings.Replace(string(b), reg.SourceSignetID, memory.NewID("signet"), 1))
+	cache, _ := m.canonRoot(false)
+	snapshot := filepath.Join(cache, "commit-"+old.Pin.Value+"-"+old.Digest)
+	if e = os.WriteFile(filepath.Join(snapshot, "signet.json"), b, 0600); e != nil {
+		t.Fatal(e)
+	}
+	status, e := m.CanonStatus(context.Background())
+	if e != nil || status[0].State != "unavailable" || status[0].Reason != "invalid_snapshot" {
+		t.Fatal(status, e)
+	}
 	if e = os.WriteFile(path, b, 0600); e != nil {
 		t.Fatal(e)
 	}
 	gitTest(t, root, "add", ".")
 	gitTest(t, root, "commit", "-m", "Wrong identity")
-	r, e := m.SessionRefresh(context.Background(), "wrong")
+	r, e := m.Refresh(context.Background())
 	if e != nil || r[0].State != "unavailable" || r[0].Reason != "wrong_source_identity" {
 		t.Fatal(r, e)
 	}
-	cache, _ := m.canonRoot(false)
-	var old CanonReceipt
-	if e = canonRead(cache, sessionFile("before", reg.FoundlingID), &old); e != nil {
-		t.Fatal(e)
-	}
-	snapshot := filepath.Join(cache, "commit-"+old.Pin.Value+"-"+old.Digest)
-	if e = os.WriteFile(filepath.Join(snapshot, "signet.json"), b, 0600); e != nil {
-		t.Fatal(e)
-	}
-	status, e := m.SessionStatus(context.Background(), "before")
-	if e != nil || status[0].State != "unavailable" || status[0].Reason != "invalid_snapshot" {
-		t.Fatal(status, e)
-	}
 }
-func TestLegacyOnlySessionDoesNotCreateCanonState(t *testing.T) {
+func TestLegacyOnlyDoesNotCreateCanonState(t *testing.T) {
 	m, _, _ := connectedFixture(t)
 	before := fileTree(t, m.memory.Root())
-	r, e := m.SessionRefresh(context.Background(), "")
+	r, e := m.Refresh(context.Background())
 	if e != nil || len(r) != 0 {
 		t.Fatal(r, e)
 	}
-	r, e = m.SessionStatus(context.Background(), "")
+	r, e = m.CanonStatus(context.Background())
 	if e != nil || len(r) != 0 {
 		t.Fatal(r, e)
 	}
@@ -327,32 +355,35 @@ func upgradeCanonFixture(t *testing.T, s *memory.Service) {
 
 func TestCanonRewriteRestoreAndUnsupportedFormat(t *testing.T) {
 	m, source, reg, rev, root := canonFixture(t)
-	first := refreshTest(t, m, "one")
+	first := refreshTest(t, m)
 	withdrawal, e := source.ChangeVisibility(context.Background(), "withdraw", memory.VisibilityWrite{RecordID: rev.RecordID, ContentHeads: []string{rev.ID}, VisibilityHeads: []string{}, Reason: "withdraw"})
 	if e != nil {
 		t.Fatal(e)
 	}
 	gitTest(t, root, "add", ".")
 	gitTest(t, root, "commit", "-m", "withdraw")
-	refreshTest(t, m, "two")
+	refreshTest(t, m)
+	if p := recallTest(t, m, reg.FoundlingID); len(p.Memory.Current) != 0 {
+		t.Fatal("withdrawal not served", p)
+	}
 	_, e = source.ChangeVisibility(context.Background(), "restore", memory.VisibilityWrite{RecordID: rev.RecordID, ContentHeads: []string{rev.ID}, VisibilityHeads: []string{withdrawal.EventID}, Reason: "restore"})
 	if e != nil {
 		t.Fatal(e)
 	}
 	gitTest(t, root, "add", ".")
 	gitTest(t, root, "commit", "-m", "restore")
-	refreshTest(t, m, "three")
-	if p := recallTest(t, m, reg.FoundlingID, "three"); len(p.Memory.Current) != 1 {
+	refreshTest(t, m)
+	if p := recallTest(t, m, reg.FoundlingID); len(p.Memory.Current) != 1 {
 		t.Fatal(p)
 	}
 	// A non-fast-forward upstream rewrite is observed as another immutable pin.
 	gitTest(t, root, "reset", "--hard", first.Pin.Value)
-	rewritten := refreshTest(t, m, "four")
+	rewritten := refreshTest(t, m)
 	if rewritten.Pin != first.Pin {
 		t.Fatal(rewritten)
 	}
-	if p := recallTest(t, m, reg.FoundlingID, "two"); len(p.Memory.Current) != 0 {
-		t.Fatal("rewrite changed previous session")
+	if p := recallTest(t, m, reg.FoundlingID); len(p.Memory.Current) != 1 || p.Reference.Commit != first.Commit {
+		t.Fatal("rewrite not served", p)
 	}
 	path := filepath.Join(root, "signet.json")
 	b, e := os.ReadFile(path)
@@ -370,7 +401,7 @@ func TestCanonRewriteRestoreAndUnsupportedFormat(t *testing.T) {
 	}
 	gitTest(t, root, "add", ".")
 	gitTest(t, root, "commit", "-m", "unsupported")
-	r, e := m.SessionRefresh(context.Background(), "unsupported")
+	r, e := m.Refresh(context.Background())
 	if e != nil || r[0].State != "unavailable" || r[0].Reason != "invalid_source_format" {
 		t.Fatal(r, e)
 	}
@@ -414,7 +445,7 @@ func TestCanonFindsRegistrationBeyondFirstPageAndNoSourceExecution(t *testing.T)
 	}
 	gitTest(t, root, "add", "script.sh")
 	gitTest(t, root, "commit", "-m", "Tracked inert code")
-	receipt := refreshTest(t, m, "page")
+	receipt := refreshTest(t, m)
 	if receipt.FoundlingID != reg.FoundlingID {
 		t.Fatal(receipt)
 	}
@@ -423,15 +454,15 @@ func TestCanonFindsRegistrationBeyondFirstPageAndNoSourceExecution(t *testing.T)
 	}
 }
 
-func TestCanonConcurrentSessionRefreshAndBoundedSummary(t *testing.T) {
+func TestCanonConcurrentRefresh(t *testing.T) {
 	m, _, reg, _, _ := canonFixture(t)
 	type result struct {
 		receipts []CanonReceipt
 		err      error
 	}
 	done := make(chan result, 2)
-	for _, session := range []string{"parallel-a", "parallel-b"} {
-		go func(session string) { r, e := m.SessionRefresh(context.Background(), session); done <- result{r, e} }(session)
+	for range 2 {
+		go func() { r, e := m.Refresh(context.Background()); done <- result{r, e} }()
 	}
 	for i := 0; i < 2; i++ {
 		r := <-done
@@ -439,19 +470,8 @@ func TestCanonConcurrentSessionRefreshAndBoundedSummary(t *testing.T) {
 			t.Fatal(r)
 		}
 	}
-	a := recallTest(t, m, reg.FoundlingID, "parallel-a")
-	b := recallTest(t, m, reg.FoundlingID, "parallel-b")
-	if a.Reference.Pin != b.Reference.Pin || a.Reference.SessionID == b.Reference.SessionID {
-		t.Fatal(a, b)
-	}
-	receipts := make([]CanonReceipt, 100)
-	for i := range receipts {
-		receipts[i] = a.Reference
-		receipts[i].Name = strings.Repeat("界", 80)
-	}
-	summary := CanonSummary(receipts)
-	if len(summary) > 1200 || !json.Valid([]byte(summary)) || !strings.Contains(summary, `"truncated":true`) {
-		t.Fatal(summary)
+	if got := recallTest(t, m, reg.FoundlingID); got.Reference.State != "available" || len(got.Memory.Current) != 1 {
+		t.Fatal(got)
 	}
 }
 func TestCanonTransportCancellationTerminatesProcessGroup(t *testing.T) {
@@ -472,7 +492,7 @@ func TestCanonTransportCancellationTerminatesProcessGroup(t *testing.T) {
 
 func TestCanonFetchDeadlineReservesVerifiedStaleFallback(t *testing.T) {
 	m, _, reg, _, _ := canonFixture(t)
-	first := refreshTest(t, m, "seed")
+	first := refreshTest(t, m)
 	realGit, e := exec.LookPath("git")
 	if e != nil {
 		t.Fatal(e)
@@ -486,15 +506,15 @@ func TestCanonFetchDeadlineReservesVerifiedStaleFallback(t *testing.T) {
 	}
 	t.Setenv("PATH", bin+string(os.PathListSeparator)+os.Getenv("PATH"))
 	start := time.Now()
-	receipts, e := m.SessionRefresh(context.Background(), "timed-out")
+	receipts, e := m.Refresh(context.Background())
 	elapsed := time.Since(start)
-	if e != nil || len(receipts) != 1 || receipts[0].State != "stale" || receipts[0].Reason != "timeout" || receipts[0].Pin != first.Pin || receipts[0].RefreshedAt != first.RefreshedAt {
+	if e != nil || len(receipts) != 1 || receipts[0].State != "stale" || receipts[0].Reason != "timeout" || receipts[0].Pin != first.Pin || receipts[0].ObservedAt != first.ObservedAt {
 		t.Fatal(receipts, e)
 	}
 	if elapsed < 1800*time.Millisecond || elapsed >= 3*time.Second {
 		t.Fatalf("fetch and stale validation outside shared budget: %s", elapsed)
 	}
-	if got := recallTest(t, m, reg.FoundlingID, "timed-out"); got.Reference.State != "stale" || len(got.Memory.Current) != 1 {
+	if got := recallTest(t, m, reg.FoundlingID); got.Reference.State != "stale" || len(got.Memory.Current) != 1 {
 		t.Fatal(got)
 	}
 	// Parent cancellation is not the reserved internal fetch deadline: it must
@@ -503,7 +523,7 @@ func TestCanonFetchDeadlineReservesVerifiedStaleFallback(t *testing.T) {
 	defer cancel()
 	timer := time.AfterFunc(150*time.Millisecond, cancel)
 	defer timer.Stop()
-	receipts, e = m.SessionRefresh(ctx, "cancelled-during-fetch")
+	receipts, e = m.Refresh(ctx)
 	if e != nil || len(receipts) != 1 || receipts[0].State != "unavailable" || receipts[0].Reason != "cancelled" {
 		t.Fatal(receipts, e)
 	}
@@ -511,7 +531,7 @@ func TestCanonFetchDeadlineReservesVerifiedStaleFallback(t *testing.T) {
 
 func TestCanonAuthenticationFailureIsSanitizedAndCanUseVerifiedCache(t *testing.T) {
 	m, _, _, _, _ := canonFixture(t)
-	first := refreshTest(t, m, "auth-seed")
+	first := refreshTest(t, m)
 	realGit, err := exec.LookPath("git")
 	if err != nil {
 		t.Fatal(err)
@@ -522,7 +542,7 @@ func TestCanonAuthenticationFailureIsSanitizedAndCanUseVerifiedCache(t *testing.
 		t.Fatal(err)
 	}
 	t.Setenv("PATH", bin+string(os.PathListSeparator)+os.Getenv("PATH"))
-	receipts, err := m.SessionRefresh(context.Background(), "auth-failed")
+	receipts, err := m.Refresh(context.Background())
 	if err != nil || len(receipts) != 1 || receipts[0].State != "stale" || receipts[0].Reason != "authentication_failed" || receipts[0].Pin != first.Pin {
 		t.Fatal(receipts, err)
 	}

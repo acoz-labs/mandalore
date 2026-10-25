@@ -12,6 +12,7 @@ import (
 	"github.com/acoz-labs/mandalore/internal/distribution"
 	"github.com/acoz-labs/mandalore/internal/exportreport"
 	"github.com/acoz-labs/mandalore/internal/formatupgrade"
+	"github.com/acoz-labs/mandalore/internal/foundlings"
 	"github.com/acoz-labs/mandalore/internal/install"
 	"github.com/acoz-labs/mandalore/internal/memory"
 	"github.com/acoz-labs/mandalore/internal/migration"
@@ -129,10 +130,14 @@ type Operation struct {
 	Idempotent      bool               `json:"idempotent"`
 	InputSchema     *jsonschema.Schema `json:"input_schema"`
 	OutputSchema    *jsonschema.Schema `json:"output_schema"`
-	invoke          func(context.Context, *memory.Service, []byte) (any, error)
+	invoke          func(context.Context, *API, []byte) (any, error)
 }
 
 func operation[I, O any](name, description string, readOnly bool, fn func(context.Context, *memory.Service, I) (O, error)) Operation {
+	return apiOperation(name, description, readOnly, func(ctx context.Context, a *API, in I) (O, error) { return fn(ctx, a.service, in) })
+}
+
+func apiOperation[I, O any](name, description string, readOnly bool, fn func(context.Context, *API, I) (O, error)) Operation {
 	in, err := strictjson.Schema(new(I))
 	if err != nil {
 		panic("invalid built-in input schema")
@@ -142,7 +147,7 @@ func operation[I, O any](name, description string, readOnly bool, fn func(contex
 		panic("invalid built-in output schema")
 	}
 	return Operation{Name: name, Description: description, ReadOnly: readOnly, Idempotent: readOnly, RequiresBinding: true, InputSchema: in, OutputSchema: out,
-		invoke: func(ctx context.Context, s *memory.Service, data []byte) (any, error) {
+		invoke: func(ctx context.Context, a *API, data []byte) (any, error) {
 			var input I
 			if err := strictjson.Decode(data, &input, MaxInputBytes); err != nil {
 				return nil, err
@@ -150,7 +155,7 @@ func operation[I, O any](name, description string, readOnly bool, fn func(contex
 			if err := ctx.Err(); err != nil {
 				return nil, err
 			}
-			return fn(ctx, s, input)
+			return fn(ctx, a, input)
 		}}
 }
 func number(n *int, fallback int) int {
@@ -190,12 +195,27 @@ func Catalog() []Operation {
 }
 
 type API struct {
-	service  *memory.Service
-	ReadOnly bool
+	service    *memory.Service
+	foundlings *foundlings.Manager
+	ReadOnly   bool
 }
 
 func New(service *memory.Service, readOnly bool) *API {
 	return &API{service: service, ReadOnly: readOnly}
+}
+
+// WithFoundlings serves foundling operations through m, such as a server's
+// configured Manager, instead of the service's local connections.
+func (a *API) WithFoundlings(m *foundlings.Manager) *API {
+	a.foundlings = m
+	return a
+}
+
+func (a *API) foundlingManager() *foundlings.Manager {
+	if a.foundlings != nil {
+		return a.foundlings
+	}
+	return foundlings.New(a.service)
 }
 
 func (a *API) Call(ctx context.Context, name string, data []byte) Envelope {
@@ -212,7 +232,7 @@ func (a *API) Call(ctx context.Context, name string, data []byte) Envelope {
 		if op.RequiresBinding && a.service == nil {
 			return Failure("binding.invalid", "An explicit valid signet binding is required.", false)
 		}
-		v, err := op.invoke(ctx, a.service, data)
+		v, err := op.invoke(ctx, a, data)
 		if err != nil {
 			return a.failure(op, err)
 		}

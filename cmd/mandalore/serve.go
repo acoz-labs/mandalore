@@ -59,7 +59,7 @@ func runServe(ctx context.Context, args []string, out, errout io.Writer) int {
 	return 0
 }
 
-const serverUsage = "Use server status|reconcile|clients list|clients revoke|clients set-scope|owner enroll|install-launchd --config FILE, server uninstall-launchd, or server migrate."
+const serverUsage = "Use server status|reconcile|canon refresh|clients list|clients revoke|clients set-scope|owner enroll|install-launchd --config FILE, server uninstall-launchd, or server migrate."
 
 func runServer(ctx context.Context, args []string, input io.Reader, out, errout io.Writer) int {
 	if len(args) == 0 {
@@ -98,6 +98,18 @@ func runServer(ctx context.Context, args []string, input io.Reader, out, errout 
 		}
 		status.Notice += " Restart the server to serve this signet."
 		return emit(out, api.Success(map[string]any{"signet": slug, "status": status}))
+	case "canon":
+		if len(args) > 1 && args[1] == "refresh" {
+			c, f, code, ok := serverConfig("server canon refresh", args[2:], out, "signet")
+			if !ok {
+				return code
+			}
+			refreshed, err := server.RefreshCanon(ctx, c, f.signet)
+			if err != nil {
+				return emit(out, api.Failure("canon.refresh_failed", err.Error(), false))
+			}
+			return emit(out, api.Success(refreshed))
+		}
 	case "clients":
 		if len(args) > 1 {
 			return runClients(args[1], args[2:], out)

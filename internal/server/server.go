@@ -36,6 +36,9 @@ func newServer(c Config, logs io.Writer, t timing) (*Server, error) {
 	if err := c.Validate(); err != nil {
 		return nil, err
 	}
+	if t.canon == 0 {
+		t.canon = c.canonInterval()
+	}
 	s := &Server{config: c, log: log.New(logs, "mandalore: ", log.LstdFlags), signets: map[string]*signet{}, hosts: map[string]bool{}, origins: map[string]bool{c.origin(): true}}
 	public, _ := url.Parse(c.PublicURL)
 	_, port, _ := net.SplitHostPort(c.Listen)
@@ -63,7 +66,8 @@ func newServer(c Config, logs io.Writer, t timing) (*Server, error) {
 }
 
 // Start checks each remote, blocks any signet whose remote is ahead, and
-// starts backup delivery for the rest. It returns when the checks finish.
+// starts backup delivery and canon refresh for the rest. It returns when the
+// remote checks finish; the first canon refresh runs in the background.
 func (s *Server) Start(ctx context.Context) {
 	var wg sync.WaitGroup
 	for _, g := range s.signets {
@@ -77,6 +81,7 @@ func (s *Server) Start(ctx context.Context) {
 	for _, g := range s.signets {
 		if !g.blocked {
 			go g.deliver(ctx)
+			go g.refreshCanon(ctx)
 		}
 	}
 }

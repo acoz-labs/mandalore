@@ -3,6 +3,7 @@ package server
 import (
 	"strings"
 	"testing"
+	"time"
 )
 
 func validConfig() Config {
@@ -34,6 +35,15 @@ func TestConfigValidation(t *testing.T) {
 		"listen without host":         func(c *Config) { c.Listen = ":8730" },
 		"non-loopback test listener":  func(c *Config) { c.Listen = "192.0.2.1:8730" },
 		"public URL with credentials": func(c *Config) { c.PublicURL = "https://user@memory.example.com" },
+		"invalid canon ID":            func(c *Config) { c.Signets[0].Canon = []string{"Not An ID"} },
+		"duplicate canon ID":          func(c *Config) { c.Signets[0].Canon = []string{"foundling-a", "foundling-a"} },
+		"canon and legacy share an ID": func(c *Config) {
+			c.Signets[0].Canon, c.Signets[0].Legacy = []string{"foundling-a"}, map[string]string{"foundling-a": "/history"}
+		},
+		"relative legacy root":      func(c *Config) { c.Signets[0].Legacy = map[string]string{"foundling-a": "history"} },
+		"unclean legacy root":       func(c *Config) { c.Signets[0].Legacy = map[string]string{"foundling-a": "/history/../etc"} },
+		"canon refresh below 1 min": func(c *Config) { c.CanonRefreshMinutes = -1 },
+		"canon refresh above a day": func(c *Config) { c.CanonRefreshMinutes = 1441 },
 		"loopback trust behind a public URL": func(c *Config) {
 			c.Auth, c.TestClients, c.LocalScope, c.PublicURL = AuthLoopbackTrust, nil, ScopeReadWrite, "https://memory.example.com"
 		},
@@ -44,6 +54,19 @@ func TestConfigValidation(t *testing.T) {
 		if err := c.Validate(); err == nil {
 			t.Errorf("%s accepted", name)
 		}
+	}
+}
+
+func TestCanonRefreshInterval(t *testing.T) {
+	c := validConfig()
+	c.Signets[0].Canon = []string{"foundling-a"}
+	c.Signets[0].Legacy = map[string]string{"foundling-b": "/history"}
+	if err := c.Validate(); err != nil || c.canonInterval() != 10*time.Minute {
+		t.Fatal(c.canonInterval(), err)
+	}
+	c.CanonRefreshMinutes = 1
+	if err := c.Validate(); err != nil || c.canonInterval() != time.Minute {
+		t.Fatal(c.canonInterval(), err)
 	}
 }
 

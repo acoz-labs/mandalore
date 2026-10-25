@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/acoz-labs/mandalore/internal/foundlings"
+	"github.com/acoz-labs/mandalore/internal/memory"
 	signetsync "github.com/acoz-labs/mandalore/internal/sync"
 )
 
@@ -17,6 +19,9 @@ type SignetStatus struct {
 	// Remote is checked now: current, ahead, diverged, ahead-or-diverged or
 	// unreachable.
 	Remote string `json:"remote"`
+	// Canon is each configured canon reference's served snapshot: state,
+	// commit, age and last refresh error.
+	Canon []foundlings.CanonReceipt `json:"canon,omitempty"`
 }
 
 // Status reports each signet's head, last push and pending push from the
@@ -44,9 +49,61 @@ func Status(ctx context.Context, c Config) ([]SignetStatus, error) {
 		if err != nil {
 			st.Remote = "unreachable"
 		}
+		if len(sc.Canon) > 0 {
+			m, err := canonManager(sc)
+			if err == nil {
+				st.Canon, err = m.CanonStatus(ctx)
+			}
+			if err != nil {
+				return nil, fmt.Errorf("signet %s: canon status unreadable", sc.Slug)
+			}
+		}
 		out = append(out, st)
 	}
 	return out, nil
+}
+
+type CanonRefresh struct {
+	Slug  string                    `json:"slug"`
+	Canon []foundlings.CanonReceipt `json:"canon"`
+}
+
+// RefreshCanon refreshes the configured canon references now, for one signet
+// or every signet when slug is empty. A running server serves the new
+// snapshots from its next canon read.
+func RefreshCanon(ctx context.Context, c Config, slug string) ([]CanonRefresh, error) {
+	if err := c.Validate(); err != nil {
+		return nil, err
+	}
+	out := []CanonRefresh{}
+	for _, sc := range c.Signets {
+		if slug != "" && sc.Slug != slug {
+			continue
+		}
+		m, err := canonManager(sc)
+		var receipts []foundlings.CanonReceipt
+		if err == nil {
+			receipts, err = m.Refresh(ctx)
+		}
+		if err != nil {
+			return nil, fmt.Errorf("signet %s: canon refresh failed", sc.Slug)
+		}
+		out = append(out, CanonRefresh{Slug: sc.Slug, Canon: receipts})
+	}
+	if slug != "" && len(out) == 0 {
+		return nil, fmt.Errorf("unknown signet %q", slug)
+	}
+	return out, nil
+}
+
+// canonManager reads a signet's canon from a read-only view, as the server's
+// refresh does.
+func canonManager(sc SignetConfig) (*foundlings.Manager, error) {
+	view, err := memory.OpenReadOnlyService(sc.Root)
+	if err != nil {
+		return nil, err
+	}
+	return foundlings.NewConfigured(view, foundlingConfig(sc)), nil
 }
 
 // Reconcile fast-forwards one signet's checkout to its remote after

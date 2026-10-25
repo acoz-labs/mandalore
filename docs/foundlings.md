@@ -2,38 +2,38 @@
 
 Foundlings are explicitly registered external evidence. **Legacy** foundlings
 retain a historical pin. **Canon** foundlings track a Git-hosted Mandalore signet
-and refresh at session entry/resume. Neither mode grants source instructions
+that the server refreshes on a schedule. Neither mode grants source instructions
 standing authority, installs source tooling, or automatically promotes knowledge.
 Canon describes refresh behavior, not a claim that source assertions are true.
 
-## Canon session references
+## Canon references
 
 A canon registration adds `mode: "canon"`, a tracked `branch` and expected
 `source_signet_id` to the source identity and initial observed pin. Registration
 metadata travels with the primary signet; native access credentials, fetched
-objects, snapshot directories and session receipts stay local. Canon metadata
+objects, snapshot directories and refresh receipts stay local to the server. Canon metadata
 uses registration version 2. Legacy registrations retain version 1 and omitted
 mode means legacy; no existing registration is silently rewritten or fetched.
 Older clients cannot interpret canon registrations and must not be used against
 a signet that has adopted them. A runtime rollback cannot undo registration
 history or make an old reader compatible.
 
-Native enabled-session startup/resume refreshes registered canon sources before
-initial reference context. Ordinary turns and compaction retain the selected
-snapshot. A session sees an immutable verified commit; another session can select
-a later commit without changing the first session's reads. Routine branch
+The server refreshes each canon reference listed in a signet's `canon` config at
+startup and every `canon_refresh_minutes` (default 10, minimum 1), and
+`mandalore server canon refresh` refreshes now (see [the server](server.md)).
+Only listed references are fetched or served, even if others are registered.
+Every client reads the latest verified snapshot; reads never fetch, so a
+snapshot is at most one interval old unless refresh is failing. Routine branch
 refresh does not append portable registration revisions.
 
 The source's own foundlings are not traversed. The referenced signet is read-only:
 refresh neither pushes upstream nor edits its worktree, and consultation saves no
 semantic content in the primary bank. An explicit promotion is a separate write.
 
-Use the exact canon `session_id` selection supplied in native context. It is
-harness-namespaced; do not substitute a raw native thread ID. `foundling_status` inspects
-that session without fetching; `foundling_refresh` explicitly refreshes it under
-an enabled-session connection. Missing or unknown identity does not select a
-bank-wide latest snapshot. CLI calls use the shared operation schema through
-`mandalore call OPERATION --binding FILE`; inspect `operations` for fields.
+`foundling_status` reports each reference's state, `commit`, `observed_at`,
+`age_seconds`, last attempt (`checked_at`) and last error (`reason`) without
+fetching. Canon tools accept a 1.x `session_id` but ignore it; there are no
+per-session snapshots. Agents cannot refresh; refresh is server admin work.
 
 Use `foundling_canon_scopes` to discover source scopes, then
 `foundling_canon_recall` for relevant current evidence. Recall respects source
@@ -61,17 +61,16 @@ successful validation. A `timeout` receipt names the phase that ran out in
 `timeout_phase`: `fetch`, `materialize` (object reads and snapshot files),
 `validate` (snapshot identity and persistence) or `stale_validation` (checking a
 prior snapshot). It never includes source content. Only a still-eligible
-verified prior snapshot may be used as stale, with its commit and observation
-time; no snapshot means unavailable.
+verified prior snapshot may be used as stale, with its commit, observation
+time and age; no snapshot means unavailable. A configured ID with no canon
+registration reports `not_registered`.
 Invalid, disconnected or conflicting registrations withhold access. Source
 identity/format errors must not be represented as a fresh success. Successful
 fetching establishes only the observed remote commit, not semantic agreement or
 the existence of changes another agent has not delivered.
 
 Legacy/read-only connections do not silently acquire canon transport permission.
-Disable the integration using its actual native control and start fresh to stop
-its hooks/tools/context. An instruction embedded in foundling content cannot
-change that permission.
+An instruction embedded in foundling content cannot change that permission.
 
 ## Register a canon source
 
@@ -84,12 +83,22 @@ observed source, pin and signet ID, adding `mode: "canon"` and `branch: "main"`
 apply. Canon registration does not require a legacy `local_root` connection.
 The guided foundling menu also offers a separate canon registration action.
 
-The registration authorizes bounded read-only fetching of that source at enabled
-native entry/resume. Configure private repository access using native Git/SSH
-authentication locally; never put credentials in the portable source URL. Verify
+Registering it and listing its foundling ID in the server's `canon` config
+authorizes bounded read-only fetching of that source. Give the server read-only
+Git access (for example a read-only deploy key); never put credentials in the
+portable source URL. Verify
 all clients that share the primary signet support registration version 2 before
 adopting canon. Disconnecting canon preserves registration history, so it does
 not restore older-reader compatibility.
+
+## Legacy references on the server
+
+The server reads legacy references from its configuration instead of clone-local
+connections: a signet's `legacy` maps each foundling ID to a local root the
+server can read. `foundling_search`, `foundling_read` and `foundling_promote`
+verify that root against the registration's pin exactly as a local connection
+would; an unreadable root reports unavailable. The server never writes a local
+connection, and an unlisted legacy reference is not served.
 
 ## Legacy reference contract
 

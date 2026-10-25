@@ -316,10 +316,11 @@ prove historical provenance: configure only dedicated profiles whose existing
 native history belongs to the intended signet. Authenticate with the native
 harness; never copy a whole personal profile as a shortcut.
 
-For canon, inspect `foundling_status` with the exact selection ID from context.
+For canon, inspect `foundling_status` or `mandalore server status`.
 Keep network/authentication failure, stale verified snapshots, missing cache,
 source identity/format failure and registration conflicts distinct. Fix actual
-local access or explicit registration problems, then request refresh; do not
+server access or explicit registration problems, then run
+`mandalore server canon refresh`; do not
 repeat semantic saves to retry transport or manually edit receipts/cache pins.
 An unavailable reference is not proof that source knowledge is absent. Do not
 fall back to source journals/history to recreate withdrawn records.

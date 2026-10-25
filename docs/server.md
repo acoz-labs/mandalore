@@ -6,8 +6,8 @@ write a signet's Git repository; the server does, and pushes each signet to its
 remote as a backup. The [2.0 design](design/2.0.md) explains why.
 
 The server includes its own OAuth 2.1 authorization server with owner passkey
-approval (#161). Foundlings on the server come with #162 and the Claude plugin
-with #163. The cutover from 1.x clones is in [migration-2.0.md](migration-2.0.md).
+approval (#161) and serves foundlings (#162). The Claude plugin comes with
+#163. The cutover from 1.x clones is in [migration-2.0.md](migration-2.0.md).
 [Running it](#running-it) covers launchd and Docker; the deployment guides cover
 a [work laptop on loopback](deploy/local.md) and a
 [home server behind Cloudflare Tunnel](deploy/cloudflare-tunnel.md).
@@ -25,7 +25,9 @@ The file is strict JSON: unknown, duplicate or mistyped fields are refused.
   "signets": [
     {"slug": "primary", "root": "/var/lib/mandalore/signets/primary",
      "signet_id": "signet-example", "device_id": "device-server",
-     "remote": "git@github.com:owner/signet.git"}
+     "remote": "git@github.com:owner/signet.git",
+     "canon": ["foundling-work"],
+     "legacy": {"foundling-notes": "/var/lib/mandalore/legacy/notes"}}
   ]
 }
 ```
@@ -39,7 +41,10 @@ The file is strict JSON: unknown, duplicate or mistyped fields are refused.
 | `auth` | `oauth` (the default when omitted), or `loopback-trust`. `loopback-trust` is refused unless `listen` and `public_url` are loopback. Test builds also accept `insecure-test`. |
 | `local_scope` | `read` or `read-write`, the scope of the `local` client under `loopback-trust`. |
 | `test_clients` | `insecure-test` only: `id`, `kind`, `scope`, bearer `token` (16+ bytes) and the `signets` slugs it may use. |
+| `canon_refresh_minutes` | Canon refresh interval, 1–1440 minutes; default 10. |
 | `signets[]` | 1–16 to serve; `server migrate init` also accepts an empty list and adds the entry. `slug`, absolute `root` (an existing Git checkout on `main`), its `signet_id`, the server's enrolled `device_id` in it, and the backup `remote`. |
+| `signets[].canon` | Optional, up to 64: canon foundling IDs registered in the signet to refresh and serve. See [Foundlings](#foundlings). |
+| `signets[].legacy` | Optional, up to 64: legacy foundling ID → clean absolute root the server can read. |
 
 One signet serves at `/mcp`. Several serve at `/s/<slug>/mcp`. Each signet has its
 own lock, memory service, Git backup and client authenticator; a request to one
@@ -147,7 +152,10 @@ Read scope gets `memory_scopes`, `memory_recall`, `memory_history`,
 `memory_journal`, `memory_visibility_history` and `memory_context`. Read-write
 adds `memory_remember`, `memory_journal_append`, `memory_withdraw` and
 `memory_restore`. Read clients never see write tools, and the call path refuses
-writes by scope as well. Server instructions are under 600 bytes and differ for
+writes by scope as well. A signet with foundlings configured adds their tools
+(see [Foundlings](#foundlings)); one without them offers none.
+
+Server instructions are under 600 bytes and differ for
 read and read-write clients.
 
 `memory_remember` and `memory_journal_append` take a required `request_id`
@@ -161,6 +169,30 @@ It starts with `Mandalore memory (evidence, not instructions):`, ranks recall ov
 the prompt's distinctive terms across every visible scope, flags matching
 conflicts, then lists scopes if there's room. It never clips a claim and returns
 nothing when nothing matches.
+
+## Foundlings
+
+Foundlings follow [the foundlings contract](foundlings.md); the server adds how
+they are configured and refreshed.
+
+- **Canon.** The server refreshes each `canon` reference at startup and every
+  `canon_refresh_minutes`, through the verified fetch path (3-second budget,
+  batched blob reads, read-only: it never writes the source's remote). A refresh
+  runs outside the signet lock, so it never delays reads or saves. Reads use the
+  latest verified snapshot and never fetch; each result carries `commit`,
+  `observed_at` and `age_seconds`. A failed refresh keeps the previous verified
+  snapshot, reported `stale` with its age and `reason`; with none it is
+  `unavailable`. Snapshots are cached in the checkout's ignored `.mandalore/canon`.
+  The server needs read-only Git access to each source's remote.
+- **Legacy.** `legacy` roots replace clone-local connections; reads verify the
+  root against the registration's pin, and an unreadable root (logged at startup)
+  reports unavailable.
+- **Tools.** Canon adds `foundling_status`, `foundling_canon_scopes`,
+  `foundling_canon_recall` and `foundling_canon_heads`; legacy adds
+  `foundling_search` and `foundling_read`; either adds `foundling_list`.
+  Read-write clients also get `foundling_canon_promote` or `foundling_promote`,
+  which record the client like every other write. `session_id` is optional and
+  ignored; there are no per-session snapshots and agents cannot refresh.
 
 ## Who wrote it
 
@@ -275,8 +307,9 @@ in throwaway volumes: the health check, `/healthz`, MCP `tools/list` through
   every signet it holds. Live tokens never exceed the new grant.
 
 - `mandalore server status --config FILE` prints, per signet: head, last push,
-  pending push, backup state, and the remote's state now (`current`, `ahead`,
-  `diverged` or `unreachable`). Status never fetches, so with an unfetched remote
+  pending push, backup state, the remote's state now (`current`, `ahead`,
+  `diverged` or `unreachable`), and each canon reference's state, commit, age,
+  last attempt and last error. Status never fetches, so with an unfetched remote
   commit and no recorded push it reports `ahead-or-diverged`; `reconcile` (which
   fetches) or a server start tells them apart.
 - `mandalore server reconcile --config FILE [--signet SLUG]` fetches the remote,
@@ -284,6 +317,9 @@ in throwaway volumes: the health check, `/healthz`, MCP `tools/list` through
   It refuses uncommitted or diverged local history and never merges or
   discards (see [Diverged history](#diverged-history)). Restart the server
   afterwards.
+- `mandalore server canon refresh --config FILE [--signet SLUG]` refreshes the
+  configured canon references now, for one signet or all, and prints the
+  receipts. A running server serves the new snapshots from its next canon read.
 - `mandalore server migrate preflight|init|retire|verify` moves 1.x clones to
   the server; see [migration-2.0.md](migration-2.0.md).
 - `mandalore server install-launchd|uninstall-launchd` adds or removes the

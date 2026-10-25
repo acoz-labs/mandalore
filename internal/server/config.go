@@ -12,7 +12,9 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
+	"github.com/acoz-labs/mandalore/internal/foundlings"
 	"github.com/acoz-labs/mandalore/internal/strictjson"
 )
 
@@ -25,10 +27,12 @@ type Config struct {
 	Owner     Owner  `json:"owner"`
 	// Auth selects the authenticator: oauth (the default), or loopback-trust
 	// on a loopback listener. insecure-test is accepted only by test builds.
-	Auth        string         `json:"auth,omitempty"`
-	LocalScope  Scope          `json:"local_scope,omitempty"`
-	TestClients []TestClient   `json:"test_clients,omitempty"`
-	Signets     []SignetConfig `json:"signets"`
+	Auth        string       `json:"auth,omitempty"`
+	LocalScope  Scope        `json:"local_scope,omitempty"`
+	TestClients []TestClient `json:"test_clients,omitempty"`
+	// CanonRefreshMinutes is the canon refresh interval: default 10, minimum 1.
+	CanonRefreshMinutes int            `json:"canon_refresh_minutes,omitempty"`
+	Signets             []SignetConfig `json:"signets"`
 }
 
 type Owner struct {
@@ -41,6 +45,11 @@ type SignetConfig struct {
 	SignetID string `json:"signet_id"`
 	DeviceID string `json:"device_id"`
 	Remote   string `json:"remote"`
+	// Canon lists the canon foundlings to refresh and serve; each must be
+	// registered in the signet. Legacy maps legacy foundlings to local roots
+	// the server can read.
+	Canon  []string          `json:"canon,omitempty"`
+	Legacy map[string]string `json:"legacy,omitempty"`
 }
 
 // TestClient is a static bearer token for the insecure-test authenticator.
@@ -143,7 +152,13 @@ func (c Config) Validate() error {
 		if s.SignetID == "" || s.DeviceID == "" || s.Remote == "" {
 			return fmt.Errorf("signet %s requires signet_id, device_id and remote", s.Slug)
 		}
+		if err := s.validateFoundlings(); err != nil {
+			return err
+		}
 		slugs[s.Slug], roots[root] = true, true
+	}
+	if c.CanonRefreshMinutes != 0 && (c.CanonRefreshMinutes < 1 || c.CanonRefreshMinutes > 1440) {
+		return errors.New("canon_refresh_minutes requires 1–1440")
 	}
 	if (c.Auth == AuthInsecureTest) != (len(c.TestClients) > 0) {
 		return errors.New("test_clients are required with insecure-test and only there")
@@ -168,6 +183,35 @@ func (c Config) auth() string {
 		return AuthOAuth
 	}
 	return c.Auth
+}
+
+func (s SignetConfig) validateFoundlings() error {
+	if len(s.Canon) > 64 || len(s.Legacy) > 64 {
+		return fmt.Errorf("signet %s allows at most 64 canon and 64 legacy foundlings", s.Slug)
+	}
+	seen := map[string]bool{}
+	for _, id := range s.Canon {
+		if !foundlings.ValidID(id) || seen[id] {
+			return fmt.Errorf("signet %s: canon needs unique foundling IDs", s.Slug)
+		}
+		seen[id] = true
+	}
+	for id, root := range s.Legacy {
+		if !foundlings.ValidID(id) || seen[id] {
+			return fmt.Errorf("signet %s: legacy needs foundling IDs not listed as canon", s.Slug)
+		}
+		if !filepath.IsAbs(root) || filepath.Clean(root) != root {
+			return fmt.Errorf("signet %s: legacy %s needs a clean absolute root", s.Slug, id)
+		}
+	}
+	return nil
+}
+
+func (c Config) canonInterval() time.Duration {
+	if c.CanonRefreshMinutes == 0 {
+		return 10 * time.Minute
+	}
+	return time.Duration(c.CanonRefreshMinutes) * time.Minute
 }
 
 // mcpPath is the signet's route: /mcp alone, /s/<slug>/mcp among several.

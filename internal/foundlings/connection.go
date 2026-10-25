@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 	"unicode"
 	"unicode/utf8"
 
@@ -18,9 +19,38 @@ import (
 type Manager struct {
 	memory         *memory.Service
 	canonTransport func(string) string
+	clock          func() time.Time
+	// A configured Manager serves only the listed canon references and reads
+	// legacy references from configured roots instead of local connections.
+	configured bool
+	canon      []string
+	legacy     map[string]string
 }
 
 func New(service *memory.Service) *Manager { return &Manager{memory: service} }
+
+// Config is a server's foundling configuration for one signet.
+type Config struct {
+	Canon  []string          // canon foundling IDs to refresh and read
+	Legacy map[string]string // legacy foundling ID → readable local root
+	// Transport rewrites a source locator before fetching and permits file://
+	// Git. Tests only; production leaves it nil.
+	Transport func(string) string
+}
+
+func NewConfigured(service *memory.Service, c Config) *Manager {
+	return &Manager{memory: service, canonTransport: c.Transport, configured: true, canon: c.Canon, legacy: c.Legacy}
+}
+
+// Memory is the signet service the Manager reads and promotes into.
+func (m *Manager) Memory() *memory.Service { return m.memory }
+
+func (m *Manager) now() time.Time {
+	if m.clock != nil {
+		return m.clock()
+	}
+	return time.Now()
+}
 
 // Preview checks an explicitly selected source without writing a registration
 // or local connection and without allowing overlap through path aliases.
@@ -67,6 +97,10 @@ type ConnectResult struct {
 
 var connectionID = regexp.MustCompile(`^connection-[a-f0-9]{64}$`)
 var registrationID = regexp.MustCompile(`^[a-z][a-z0-9-]{2,127}$`)
+
+// ValidID reports whether id has the form of a foundling ID.
+func ValidID(id string) bool { return registrationID.MatchString(id) }
+
 var ErrConnection = errors.New("invalid or changed local reference connection; inspect and preserve existing configuration")
 
 func connectionPath(id string) string { return ".mandalore/foundlings/" + id + ".json" }
@@ -116,6 +150,9 @@ func (m *Manager) localRoot(create bool) (*os.Root, error) {
 }
 
 func (m *Manager) load(id string) (*Connection, error) {
+	if m.configured {
+		return m.configuredConnection(id)
+	}
 	root, err := m.localRoot(false)
 	if err != nil {
 		return nil, err
@@ -134,6 +171,28 @@ func (m *Manager) load(id string) (*Connection, error) {
 		return nil, ErrConnection
 	}
 	return decodeConnection(data, id, m.memory.ID())
+}
+
+// configuredConnection stands in for a local connection with the configured
+// root and the current registration; reads still verify the source's pin.
+func (m *Manager) configuredConnection(id string) (*Connection, error) {
+	path, ok := m.legacy[id]
+	if !ok {
+		return nil, os.ErrNotExist
+	}
+	r, err := m.memory.Foundling(id)
+	if err != nil {
+		return nil, err
+	}
+	if r.Mode == "canon" || r.State != "active" || len(r.HeadIDs) != 1 || r.Source == nil || r.Pin == nil {
+		return nil, ErrChanged
+	}
+	if root, err := canonicalDirectory(path); err == nil {
+		path = root
+	}
+	c := Connection{Version: 1, SignetID: m.memory.ID(), FoundlingID: id, RegistrationID: r.HeadIDs[0], Source: *r.Source, Pin: *r.Pin, Root: path}
+	c.ID = connectionFingerprint(c)
+	return &c, nil
 }
 
 func decodeConnection(data []byte, id, signetID string) (*Connection, error) {
@@ -198,8 +257,8 @@ func (m *Manager) Inspect(ctx context.Context, id string) (Inspection, error) {
 		return v, nil
 	}
 	if r.Mode == "canon" {
-		v.State = "session_snapshot_required"
-		v.Notice = "Canon tracks the registered branch. Inspect the named session status for immutable snapshot pin and freshness; registration metadata is untrusted evidence."
+		v.State = "server_refreshed"
+		v.Notice = "Canon tracks the registered branch; the server refreshes it. Inspect foundling_status for its commit and freshness; registration metadata is untrusted evidence."
 		return v, nil
 	}
 	c, err := m.load(id)
@@ -272,6 +331,9 @@ func (m *Manager) connect(ctx context.Context, id, revision, sourceRoot, expecte
 	}
 	if r.Mode == "canon" || r.State != "active" || len(r.HeadIDs) != 1 || r.HeadIDs[0] != revision {
 		return result, ErrChanged
+	}
+	if m.configured {
+		return result, errors.New("legacy roots come from the server configuration")
 	}
 	root, err := canonicalDirectory(sourceRoot)
 	if err != nil {

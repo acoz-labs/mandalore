@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"syscall"
@@ -22,7 +23,6 @@ type CanonReceipt struct {
 	Name           string                  `json:"name,omitempty"`
 	Description    string                  `json:"description,omitempty"`
 	SourceIdentity *memory.FoundlingSource `json:"source_identity,omitempty"`
-	SessionID      string                  `json:"session_id"`
 	FoundlingID    string                  `json:"foundling_id"`
 	RegistrationID string                  `json:"registration_revision_id,omitempty"`
 	SourceSignetID string                  `json:"source_signet_id,omitempty"`
@@ -30,12 +30,16 @@ type CanonReceipt struct {
 	Reason         string                  `json:"reason,omitempty"`
 	TimeoutPhase   string                  `json:"timeout_phase,omitempty"`
 	Pin            memory.SourcePin        `json:"snapshot_pin"`
-	RefreshedAt    string                  `json:"refreshed_at,omitempty"`
-	Digest         string                  `json:"snapshot_sha256,omitempty"`
-	Notice         string                  `json:"notice"`
+	Commit         string                  `json:"commit,omitempty"`
+	ObservedAt     string                  `json:"observed_at,omitempty"`
+	// AgeSeconds is the snapshot's age when this receipt was returned.
+	AgeSeconds *int64 `json:"age_seconds,omitempty"`
+	// CheckedAt is the last refresh attempt, successful or not.
+	CheckedAt string `json:"checked_at,omitempty"`
+	Digest    string `json:"snapshot_sha256,omitempty"`
+	Notice    string `json:"notice"`
 }
 type CanonRecallInput struct {
-	SessionID      string        `json:"session_id"`
 	FoundlingID    string        `json:"foundling_id"`
 	RegistrationID string        `json:"registration_revision_id,omitempty"`
 	Query          string        `json:"query"`
@@ -48,7 +52,6 @@ type CanonRecallResult struct {
 	Memory    memory.RecallPacket `json:"memory"`
 }
 
-func canonKey(s string) string { return hash([]byte(s)) }
 func (m *Manager) canonRoot(create bool) (string, error) {
 	root, err := m.localRoot(create)
 	if err != nil {
@@ -117,28 +120,13 @@ func canonRead(root, name string, v any) error {
 	}
 	return strictjson.Decode(b, v, 1<<20)
 }
-func sessionFile(session, id string) string {
-	return "session-" + canonKey(session) + "-" + id + ".json"
-}
-func latestFile(id string) string { return "verified-" + id + ".json" }
+func referenceFile(id string) string { return "reference-" + id + ".json" }
+func latestFile(id string) string    { return "verified-" + id + ".json" }
 
-// SessionRefresh is a bounded foreground boundary. No selected snapshot changes
-// on ordinary reads. A resumed native session deliberately calls this again.
-func (m *Manager) SessionRefresh(parent context.Context, sessionID string) ([]CanonReceipt, error) {
-	return m.sessionRefresh(parent, sessionID, nil)
-}
-
-// SessionRefreshAllowed refreshes only explicitly authorized direct references.
-// An empty list authorizes none; local SessionRefresh retains its existing scope.
-func (m *Manager) SessionRefreshAllowed(parent context.Context, sessionID string, allowed []string) ([]CanonReceipt, error) {
-	selection := make(map[string]bool, len(allowed))
-	for _, id := range allowed {
-		selection[id] = true
-	}
-	return m.sessionRefresh(parent, sessionID, selection)
-}
-
-func (m *Manager) sessionRefresh(parent context.Context, sessionID string, allowed map[string]bool) ([]CanonReceipt, error) {
+// Refresh fetches and verifies every canon reference within one bounded budget
+// and publishes each receipt for reads, which never fetch. A failed fetch keeps
+// the last verified snapshot, reported stale with its age.
+func (m *Manager) Refresh(parent context.Context) ([]CanonReceipt, error) {
 	started := time.Now()
 	ctx, cancel := context.WithDeadline(parent, started.Add(3*time.Second))
 	defer cancel()
@@ -146,15 +134,12 @@ func (m *Manager) sessionRefresh(parent context.Context, sessionID string, allow
 	// eligible stale snapshots instead of passing an expired fetch context to reads.
 	fetchCtx, stopFetch := context.WithDeadline(ctx, started.Add(2*time.Second))
 	defer stopFetch()
-	regs, err := m.canonRegistrations(ctx)
+	regs, err := m.canonReferences(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if len(regs) == 0 {
 		return []CanonReceipt{}, nil
-	}
-	if sessionID == "" || len(sessionID) > 1024 {
-		return nil, errors.New("bounded explicit native session ID required")
 	}
 	root, err := m.canonRoot(true)
 	if err != nil {
@@ -162,13 +147,8 @@ func (m *Manager) sessionRefresh(parent context.Context, sessionID string, allow
 	}
 	out := []CanonReceipt{}
 	for _, reg := range regs {
-		if allowed != nil && !allowed[reg.FoundlingID] {
-			continue
-		}
-		receipt := CanonReceipt{Name: reg.Name, Description: reg.Description, SourceIdentity: reg.Source, SessionID: sessionID, FoundlingID: reg.FoundlingID, SourceSignetID: reg.SourceSignetID, State: "unavailable", Notice: canonNotice}
-		if len(reg.HeadIDs) == 1 {
-			receipt.RegistrationID = reg.HeadIDs[0]
-		}
+		checked := m.now().UTC().Format(time.RFC3339Nano)
+		receipt := canonBase(reg, "")
 		if reg.State != "active" {
 			receipt.Reason = reg.State
 		} else {
@@ -178,7 +158,6 @@ func (m *Manager) sessionRefresh(parent context.Context, sessionID string, allow
 			}
 			if e == nil {
 				receipt = fresh
-				receipt.SessionID = sessionID
 				if e = canonWrite(root, latestFile(reg.FoundlingID), receipt); e != nil {
 					return nil, e
 				}
@@ -191,7 +170,6 @@ func (m *Manager) sessionRefresh(parent context.Context, sessionID string, allow
 				var prior CanonReceipt
 				if ctx.Err() == nil && (receipt.Reason == "timeout" || receipt.Reason == "transport_unavailable" || receipt.Reason == "authentication_failed" || receipt.Reason == "absent_branch") && canonRead(root, latestFile(reg.FoundlingID), &prior) == nil && prior.FoundlingID == reg.FoundlingID && prior.RegistrationID == receipt.RegistrationID && prior.SourceSignetID == receipt.SourceSignetID {
 					if _, e = m.openCanon(ctx, root, prior); e == nil {
-						prior.SessionID = sessionID
 						prior.State = "stale"
 						prior.Reason = receipt.Reason
 						prior.TimeoutPhase = receipt.TimeoutPhase
@@ -202,6 +180,7 @@ func (m *Manager) sessionRefresh(parent context.Context, sessionID string, allow
 				}
 			}
 		}
+		receipt.CheckedAt = checked
 
 		if interrupted := ctx.Err(); interrupted != nil {
 			receipt.State = "unavailable"
@@ -211,7 +190,7 @@ func (m *Manager) sessionRefresh(parent context.Context, sessionID string, allow
 			} else if receipt.TimeoutPhase == "" {
 				receipt.TimeoutPhase = "validate"
 			}
-		} else {
+		} else if receipt.State != "unavailable" {
 			current, ce := m.memory.Foundling(reg.FoundlingID)
 			if ce != nil || current.State != "active" || len(current.HeadIDs) != 1 || current.HeadIDs[0] != receipt.RegistrationID {
 				receipt.State = "unavailable"
@@ -221,13 +200,33 @@ func (m *Manager) sessionRefresh(parent context.Context, sessionID string, allow
 				}
 			}
 		}
-		if err = canonWrite(root, sessionFile(sessionID, reg.FoundlingID), receipt); err != nil {
+		if err = canonWrite(root, referenceFile(reg.FoundlingID), receipt); err != nil {
 			return nil, err
 		}
-		out = append(out, receipt)
+		out = append(out, m.aged(receipt))
 	}
 	return out, nil
 }
+
+// canonBase is a reference's receipt before any verified snapshot.
+func canonBase(reg memory.FoundlingSummary, reason string) CanonReceipt {
+	r := CanonReceipt{Name: reg.Name, Description: reg.Description, SourceIdentity: reg.Source, FoundlingID: reg.FoundlingID, SourceSignetID: reg.SourceSignetID, State: "unavailable", Reason: reason, Notice: canonNotice}
+	if len(reg.HeadIDs) == 1 {
+		r.RegistrationID = reg.HeadIDs[0]
+	}
+	return r
+}
+
+// aged sets a usable snapshot's age from the Manager's clock.
+func (m *Manager) aged(r CanonReceipt) CanonReceipt {
+	r.AgeSeconds = nil
+	if observed, err := time.Parse(time.RFC3339Nano, r.ObservedAt); err == nil && (r.State == "available" || r.State == "stale") {
+		age := int64(max(m.now().Sub(observed), 0) / time.Second)
+		r.AgeSeconds = &age
+	}
+	return r
+}
+
 func canonFailure(err error) string {
 	if errors.Is(err, context.DeadlineExceeded) {
 		return "timeout"
@@ -254,18 +253,17 @@ type canonPhaseError struct {
 func (e *canonPhaseError) Error() string { return e.phase + ": " + e.err.Error() }
 func (e *canonPhaseError) Unwrap() error { return e.err }
 
-func (m *Manager) SessionStatus(parent context.Context, sessionID string) ([]CanonReceipt, error) {
+// CanonStatus reports each canon reference's published receipt without
+// fetching or creating state.
+func (m *Manager) CanonStatus(parent context.Context) ([]CanonReceipt, error) {
 	ctx, cancel := context.WithTimeout(parent, 3*time.Second)
 	defer cancel()
-	regs, err := m.canonRegistrations(ctx)
+	regs, err := m.canonReferences(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if len(regs) == 0 {
 		return []CanonReceipt{}, nil
-	}
-	if sessionID == "" || len(sessionID) > 1024 {
-		return nil, errors.New("bounded explicit native session ID required")
 	}
 	root, rootErr := m.canonRoot(false)
 	if rootErr != nil && !os.IsNotExist(rootErr) {
@@ -276,13 +274,10 @@ func (m *Manager) SessionStatus(parent context.Context, sessionID string) ([]Can
 		if err = ctx.Err(); err != nil {
 			return nil, err
 		}
-		r := CanonReceipt{Name: reg.Name, Description: reg.Description, SourceIdentity: reg.Source, SourceSignetID: reg.SourceSignetID, SessionID: sessionID, FoundlingID: reg.FoundlingID, State: "unavailable", Reason: "no_session_snapshot", Notice: canonNotice}
-		if len(reg.HeadIDs) == 1 {
-			r.RegistrationID = reg.HeadIDs[0]
-		}
+		r := canonBase(reg, "not_refreshed")
 		if rootErr == nil {
 			var saved CanonReceipt
-			if canonRead(root, sessionFile(sessionID, reg.FoundlingID), &saved) == nil {
+			if canonRead(root, referenceFile(reg.FoundlingID), &saved) == nil {
 				r = saved
 			}
 		}
@@ -295,12 +290,12 @@ func (m *Manager) SessionStatus(parent context.Context, sessionID string) ([]Can
 		}
 
 		if r.State == "available" || r.State == "stale" {
-			if _, _, e := m.selectedCanon(ctx, CanonRecallInput{SessionID: sessionID, FoundlingID: reg.FoundlingID}); e != nil {
+			if _, _, e := m.selectedCanon(ctx, CanonRecallInput{FoundlingID: reg.FoundlingID}); e != nil {
 				r.State = "unavailable"
 				r.Reason = "invalid_snapshot"
 			}
 		}
-		out = append(out, r)
+		out = append(out, m.aged(r))
 	}
 	return out, nil
 }
@@ -309,8 +304,11 @@ func (m *Manager) selectedCanon(ctx context.Context, in CanonRecallInput) (*memo
 	if err := ctx.Err(); err != nil {
 		return nil, CanonReceipt{}, err
 	}
-	if !registrationID.MatchString(in.FoundlingID) || in.SessionID == "" || len(in.SessionID) > 1024 {
+	if !registrationID.MatchString(in.FoundlingID) {
 		return nil, CanonReceipt{}, ErrConnection
+	}
+	if !m.servesCanon(in.FoundlingID) {
+		return nil, CanonReceipt{}, ErrUnavailable
 	}
 	reg, err := m.memory.Foundling(in.FoundlingID)
 	if err != nil {
@@ -320,14 +318,18 @@ func (m *Manager) selectedCanon(ctx context.Context, in CanonRecallInput) (*memo
 		return nil, CanonReceipt{}, ErrChanged
 	}
 	root, err := m.canonRoot(false)
+	if os.IsNotExist(err) {
+		return nil, CanonReceipt{}, ErrUnavailable
+	}
 	if err != nil {
 		return nil, CanonReceipt{}, err
 	}
 	var r CanonReceipt
-	if err = canonRead(root, sessionFile(in.SessionID, in.FoundlingID), &r); err != nil {
+	if err = canonRead(root, referenceFile(in.FoundlingID), &r); err != nil {
 		return nil, r, ErrUnavailable
 	}
-	if r.SourceIdentity == nil || reg.Source == nil || *r.SourceIdentity != *reg.Source || r.SessionID != in.SessionID || r.FoundlingID != reg.FoundlingID || r.RegistrationID != reg.HeadIDs[0] || r.SourceSignetID != reg.SourceSignetID || (in.RegistrationID != "" && in.RegistrationID != r.RegistrationID) || (r.State != "available" && r.State != "stale") {
+	r = m.aged(r)
+	if r.SourceIdentity == nil || reg.Source == nil || *r.SourceIdentity != *reg.Source || r.FoundlingID != reg.FoundlingID || r.RegistrationID != reg.HeadIDs[0] || r.SourceSignetID != reg.SourceSignetID || (in.RegistrationID != "" && in.RegistrationID != r.RegistrationID) || (r.State != "available" && r.State != "stale") {
 		return nil, r, ErrChanged
 	}
 	svc, err := m.openCanon(ctx, root, r)
@@ -451,7 +453,8 @@ func (m *Manager) fetchCanon(ctx context.Context, root string, reg memory.Foundl
 		return r, &canonFetchError{"wrong_source_identity"}
 	}
 	r.Digest = documentDigest(docs)
-	r.RefreshedAt = time.Now().UTC().Format(time.RFC3339Nano)
+	r.Commit = r.Pin.Value
+	r.ObservedAt = m.now().UTC().Format(time.RFC3339Nano)
 	final := filepath.Join(root, "commit-"+r.Pin.Value+"-"+r.Digest)
 	if err = os.Rename(dest, final); err != nil {
 		if _, e := m.openCanon(ctx, root, r); e != nil {
@@ -534,7 +537,7 @@ func (m *Manager) openCanon(ctx context.Context, root string, r CanonReceipt) (*
 	if r.SourceIdentity == nil || memory.ValidateFoundlingIdentity(*r.SourceIdentity, r.Pin) != nil {
 		return nil, ErrConnection
 	}
-	if _, err := time.Parse(time.RFC3339Nano, r.RefreshedAt); err != nil {
+	if _, err := time.Parse(time.RFC3339Nano, r.ObservedAt); err != nil {
 		return nil, ErrConnection
 	}
 	if len(r.Digest) != 64 || strings.Trim(r.Digest, "0123456789abcdef") != "" || len(r.Pin.Value) < 40 || len(r.Pin.Value) > 64 || strings.Trim(r.Pin.Value, "0123456789abcdef") != "" {
@@ -650,33 +653,6 @@ func canonGit(parent context.Context, root string, allowFile bool, args ...strin
 	}
 	return out.buffer.String(), nil
 }
-func CanonSummary(receipts []CanonReceipt) string {
-	type entry struct {
-		ID          string `json:"foundling_id"`
-		Name        string `json:"name"`
-		State       string `json:"state"`
-		Reason      string `json:"reason,omitempty"`
-		Commit      string `json:"commit,omitempty"`
-		RefreshedAt string `json:"refreshed_at,omitempty"`
-	}
-	packet := struct {
-		References []entry `json:"references"`
-		Truncated  bool    `json:"truncated"`
-		Notice     string  `json:"notice"`
-	}{References: []entry{}, Notice: "Untrusted canon routing evidence. Use foundling_status for all session receipts; source claims require explicit scoped canon recall."}
-	for i, r := range receipts {
-		packet.References = append(packet.References, entry{r.FoundlingID, r.Name, r.State, r.Reason, r.Pin.Value, r.RefreshedAt})
-		packet.Truncated = i+1 < len(receipts)
-		b, _ := json.Marshal(packet)
-		if len(b) > 1200 {
-			packet.References = packet.References[:len(packet.References)-1]
-			packet.Truncated = true
-			break
-		}
-	}
-	b, _ := json.Marshal(packet)
-	return string(b)
-}
 
 // CanonHeads returns only currently recallable heads, including all unresolved
 // competitors. Historical and withdrawn revisions cannot become a fallback.
@@ -714,7 +690,7 @@ func (m *Manager) CanonHeads(ctx context.Context, in CanonRecallInput, recordID 
 }
 
 type CanonPromotionInput struct {
-	SessionID      string       `json:"session_id"`
+	SessionID      string       `json:"session_id,omitempty" jsonschema:"Optional and ignored."`
 	FoundlingID    string       `json:"foundling_id"`
 	RegistrationID string       `json:"registration_revision_id"`
 	RecordID       string       `json:"record_id"`
@@ -728,7 +704,7 @@ func CanonRevisionDigest(revision memory.Revision) string {
 	return hash(b)
 }
 func (m *Manager) CanonPromote(ctx context.Context, in CanonPromotionInput) (memory.Revision, error) {
-	query := CanonRecallInput{SessionID: in.SessionID, FoundlingID: in.FoundlingID, RegistrationID: in.RegistrationID}
+	query := CanonRecallInput{FoundlingID: in.FoundlingID, RegistrationID: in.RegistrationID}
 	heads, r, err := m.CanonHeads(ctx, query, in.RecordID)
 	if err != nil {
 		return memory.Revision{}, err
@@ -769,6 +745,27 @@ func (m *Manager) CanonPromote(ctx context.Context, in CanonPromotionInput) (mem
 		return ErrChanged
 	})
 }
+
+// canonReferences returns the canon registrations this Manager serves. A
+// configured ID without a canon registration is reported as not_registered.
+func (m *Manager) canonReferences(ctx context.Context) ([]memory.FoundlingSummary, error) {
+	regs, err := m.canonRegistrations(ctx)
+	if err != nil || !m.configured {
+		return regs, err
+	}
+	out := []memory.FoundlingSummary{}
+	for _, id := range m.canon {
+		i := slices.IndexFunc(regs, func(r memory.FoundlingSummary) bool { return r.FoundlingID == id })
+		if i < 0 {
+			out = append(out, memory.FoundlingSummary{FoundlingID: id, State: "not_registered"})
+			continue
+		}
+		out = append(out, regs[i])
+	}
+	return out, nil
+}
+
+func (m *Manager) servesCanon(id string) bool { return !m.configured || slices.Contains(m.canon, id) }
 
 // Enumerate registration pages before side effects. Conflicted summaries omit
 // mode; their history is inspected only to identify canon routing, never evidence.

@@ -7,9 +7,11 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/acoz-labs/mandalore/internal/api"
+	"github.com/acoz-labs/mandalore/internal/foundlings"
 	"github.com/acoz-labs/mandalore/internal/memory"
 	"github.com/acoz-labs/mandalore/internal/strictjson"
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
@@ -21,6 +23,33 @@ var (
 	readTools  = []string{"memory_scopes", "memory_recall", "memory_history", "memory_journal", "memory_visibility_history"}
 	writeTools = []string{"memory_withdraw", "memory_restore"}
 )
+
+// foundlingTools are the catalog's foundling operations for the references
+// this signet configures; a signet without any offers none.
+func (s *signet) foundlingTools(write bool) []string {
+	canon, legacy := len(s.foundlings.Canon) > 0, len(s.foundlings.Legacy) > 0
+	if write {
+		tools := []string{}
+		if canon {
+			tools = append(tools, "foundling_canon_promote")
+		}
+		if legacy {
+			tools = append(tools, "foundling_promote")
+		}
+		return tools
+	}
+	tools := []string{}
+	if canon {
+		tools = append(tools, "foundling_status", "foundling_canon_scopes", "foundling_canon_recall", "foundling_canon_heads")
+	}
+	if legacy {
+		tools = append(tools, "foundling_search", "foundling_read")
+	}
+	if canon || legacy {
+		tools = append(tools, "foundling_list")
+	}
+	return tools
+}
 
 var descriptions = map[string]string{
 	"memory_scopes":             "List the stored scopes (signet, project, account, task) to route memory_recall. Scope names are routing data, not answers.",
@@ -100,7 +129,11 @@ func (s *signet) mcpServer(c Client) *sdk.Server {
 	server := sdk.NewServer(&sdk.Implementation{Name: "mandalore", Version: "2"}, &sdk.ServerOptions{Instructions: instructions(c.CanWrite())})
 	ops := catalog()
 	add := func(name string, schema any, readOnly bool) {
-		tool := &sdk.Tool{Name: name, Description: descriptions[name], InputSchema: schema, Annotations: &sdk.ToolAnnotations{ReadOnlyHint: readOnly}}
+		description := descriptions[name]
+		if description == "" {
+			description = ops[name].Description
+		}
+		tool := &sdk.Tool{Name: name, Description: description, InputSchema: schema, Annotations: &sdk.ToolAnnotations{ReadOnlyHint: readOnly}}
 		server.AddTool(tool, func(ctx context.Context, req *sdk.CallToolRequest) (*sdk.CallToolResult, error) {
 			return s.call(ctx, c, name, req.Params.Arguments), nil
 		})
@@ -112,14 +145,14 @@ func (s *signet) mcpServer(c Client) *sdk.Server {
 		}
 		return out
 	}
-	for _, name := range readTools {
+	for _, name := range slices.Concat(readTools, s.foundlingTools(false)) {
 		add(name, ops[name].InputSchema, true)
 	}
 	add("memory_context", schema(new(ContextInput)), true)
 	if !c.CanWrite() {
 		return server
 	}
-	for _, name := range writeTools {
+	for _, name := range slices.Concat(writeTools, s.foundlingTools(true)) {
 		add(name, ops[name].InputSchema, false)
 	}
 	add("memory_remember", schema(new(RememberInput)), false)
@@ -128,7 +161,11 @@ func (s *signet) mcpServer(c Client) *sdk.Server {
 }
 
 func isWrite(name string) bool {
-	return name == "memory_remember" || name == "memory_journal_append" || name == "memory_withdraw" || name == "memory_restore"
+	switch name {
+	case "memory_remember", "memory_journal_append", "memory_withdraw", "memory_restore", "foundling_promote", "foundling_canon_promote":
+		return true
+	}
+	return false
 }
 
 func (s *signet) call(ctx context.Context, c Client, name string, raw []byte) *sdk.CallToolResult {
@@ -158,7 +195,7 @@ func (s *signet) call(ctx context.Context, c Client, name string, raw []byte) *s
 		return &sdk.CallToolResult{Content: []sdk.Content{&sdk.TextContent{Text: text}}}
 	}
 	if !isWrite(name) {
-		return result(api.New(s.memory, true).Call(ctx, name, raw))
+		return result(api.New(s.memory, true).WithFoundlings(foundlings.NewConfigured(s.memory, s.foundlings)).Call(ctx, name, raw))
 	}
 	author, err := s.author(c)
 	if err != nil {
@@ -175,7 +212,8 @@ func (s *signet) call(ctx context.Context, c Client, name string, raw []byte) *s
 	case "memory_journal_append":
 		v = s.journal(c, m, raw)
 	default:
-		v = api.New(m, false).Call(ctx, name, raw)
+		// Promotions record the client like every other write.
+		v = api.New(m, false).WithFoundlings(foundlings.NewConfigured(m, s.foundlings)).Call(ctx, name, raw)
 		if v.OK {
 			s.wrote()
 		}
