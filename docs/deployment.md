@@ -9,13 +9,15 @@
 ## Current state
 
 Delivery profile: **artifact**. There is no staging service or hosted production
-application. GitHub Releases distribute the CLI and native plugin package.
-[v1.1.0](releases/1.1.0.md) is published from the owner-accepted retained bytes.
-
-Its [candidate guide](releases/1.1.0-candidate.md) preserves the original acceptance
-contract; the release record links actual owner verdicts, publication and public
-verification. [v1.0.0](releases/1.0.0.md) remains immutable historical evidence.
-Publication does not automatically update an existing installation.
+application. A GitHub Release publishes the candidate's seven files: four CLI
+binaries, the bootstrap, the manifest and its checksums. From 2.0 each release
+also publishes the [server image](delivery.md#server-image)
+`ghcr.io/acoz-labs/mandalore:<version>` from the same candidate. The
+[Claude plugin](../plugins/claude/README.md) isn't a release asset; it installs
+from the repository's marketplace. 2.0 isn't released yet. The latest release
+is [1.6.1](releases/1.6.1.md), and the [release records](releases/) keep the
+1.x history, when releases also shipped native plugin packages. Publication does
+not automatically update an existing installation.
 
 The product now has a pinned [local candidate builder](development.md#local-distribution-candidates),
 checksummed platform assets, a compatibility manifest and read-only release
@@ -97,8 +99,8 @@ Provisioning remains a deliberate release prerequisite, not permission to copy
 a maintainer's personal credential into Actions. The scoped workflow token remains
 the release/ledger credential; the separate policy credential needs no write access.
 
-Retain old immutable binaries and connection sources. Preview update/repair
-paths, reject unknown ownership, and preserve memory, auth, sessions and native
-settings. A binary rollback is not a safe data-schema downgrade by itself.
+Retain old immutable binaries and the CLI installer's retained runtimes. Preview
+update/repair paths, reject unknown ownership, and preserve memory, server state,
+auth and native settings. A binary rollback is not a safe data-schema downgrade by itself.
 Retries reuse matching artifacts/tags and reject mismatches. Partial publication
 is visibly incomplete. See [runbook](runbook.md).
