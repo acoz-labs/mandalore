@@ -1,0 +1,22 @@
+{
+  "name": "mandalore",
+  "displayName": "Mandalore",
+  "version": "1.6.1",
+  "description": "Durable memory from a Mandalore server: recall on every prompt, and tools to save and correct.",
+  "author": {
+    "name": "Acoz Labs",
+    "url": "https://github.com/acoz-labs"
+  },
+  "homepage": "https://github.com/acoz-labs/mandalore",
+  "repository": "https://github.com/acoz-labs/mandalore",
+  "license": "MIT",
+  "privacyPolicyUrl": "https://github.com/acoz-labs/mandalore/blob/main/docs/privacy.md",
+  "userConfig": {
+    "server_url": {
+      "type": "string",
+      "title": "Server URL",
+      "description": "Your Mandalore server's MCP URL: https://memory.example.com/mcp, or http://127.0.0.1:8730/mcp for a local server.",
+      "required": true
+    }
+  }
+}

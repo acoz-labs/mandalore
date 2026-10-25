@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -118,4 +119,19 @@ func memoryContext(m *memory.Service, in ContextInput) (string, error) {
 		return "", nil
 	}
 	return out, nil
+}
+
+// hookEvents names the Claude Code hook each event answers.
+var hookEvents = map[string]string{"prompt": "UserPromptSubmit", "start": "SessionStart"}
+
+// hookOutput wraps context text in Claude Code's hook output envelope. An
+// mcp_tool hook's plain-text result is not added to the model's context, but
+// hookSpecificOutput.additionalContext is. No text stays an empty result.
+func hookOutput(event, text string) string {
+	if text == "" {
+		return ""
+	}
+	// Marshaling a map of strings cannot fail.
+	out, _ := json.Marshal(map[string]map[string]string{"hookSpecificOutput": {"hookEventName": hookEvents[event], "additionalContext": text}})
+	return string(out)
 }

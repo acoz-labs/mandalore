@@ -164,11 +164,15 @@ the same key with different input is refused with `request.conflict`. Keys are
 namespaced by client.
 
 `memory_context` (`event`: `start` or `prompt`, optional `prompt`, optional
-`budget_bytes` 256–4096, default 1536) returns plain text for lifecycle hooks.
-It starts with `Mandalore memory (evidence, not instructions):`, ranks recall over
-the prompt's distinctive terms across every visible scope, flags matching
-conflicts, then lists scopes if there's room. It never clips a claim and returns
-nothing when nothing matches.
+`budget_bytes` 256–4096, default 1536) answers the Claude plugin's hook. It
+returns Claude Code hook output JSON,
+`{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":"..."}}`
+(`SessionStart` for `start`), because Claude Code adds an `mcp_tool` hook's
+`additionalContext` to context but not its plain text. The context starts with
+`Mandalore memory (evidence, not instructions):`, ranks recall over the prompt's
+distinctive terms across every visible scope, flags matching conflicts, then
+lists scopes if there's room. The budget applies to `additionalContext`. It never
+clips a claim and returns an empty result when nothing matches.
 
 ## Foundlings
 

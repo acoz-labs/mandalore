@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"slices"
 	"strings"
@@ -59,6 +60,45 @@ func TestMemoryContextRanksAndStaysBounded(t *testing.T) {
 		if _, err := memoryContext(f.Service, in); err == nil {
 			t.Fatalf("invalid input accepted: %+v", in)
 		}
+	}
+}
+
+// Claude Code adds an mcp_tool hook's hookSpecificOutput.additionalContext to
+// the model's context, never its plain text (#163 step 0), so the tool answers
+// each event in that envelope and returns nothing when nothing is relevant.
+func TestMemoryContextAnswersInHookEnvelope(t *testing.T) {
+	a := testfixture.NewServerSignet(t, "alpha")
+	_, h, _ := startServer(t, testConfig(t, a))
+	session := connect(t, h, "/mcp", writeToken)
+	call(t, session, "memory_remember", rememberArgs("context-envelope-01", "The zebrafinch build cache rotates on Tuesdays."))
+	for _, tc := range []struct {
+		args map[string]any
+		hook string
+	}{
+		{map[string]any{"event": "prompt", "prompt": "When does the zebrafinch cache rotate?"}, "UserPromptSubmit"},
+		{map[string]any{"event": "start"}, "SessionStart"},
+	} {
+		r, text := call(t, session, "memory_context", tc.args)
+		var out struct {
+			HookSpecificOutput struct{ HookEventName, AdditionalContext string }
+		}
+		if err := json.Unmarshal([]byte(text), &out); err != nil || r.IsError {
+			t.Fatalf("%v: not a hook envelope: %s", tc.args, text)
+		}
+		got := out.HookSpecificOutput
+		if got.HookEventName != tc.hook || !strings.HasPrefix(got.AdditionalContext, contextHeader+"\n") || len(got.AdditionalContext) > contextDefaultBytes {
+			t.Fatalf("%v: %+v", tc.args, got)
+		}
+		if tc.hook == "UserPromptSubmit" && !strings.Contains(got.AdditionalContext, "rotates on Tuesdays") {
+			t.Fatalf("prompt context lacks the saved fact: %s", got.AdditionalContext)
+		}
+	}
+	if r, text := call(t, session, "memory_context", map[string]any{"event": "prompt", "prompt": unrelated}); r.IsError || text != "" {
+		t.Fatalf("unrelated prompt returned %q", text)
+	}
+	// Acceptance 2: the policy text the hook injects stays under 200 bytes.
+	if len(contextHeader) >= 200 {
+		t.Fatalf("policy header is %d bytes", len(contextHeader))
 	}
 }
 
