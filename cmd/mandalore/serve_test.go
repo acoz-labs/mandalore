@@ -14,7 +14,8 @@ import (
 
 func TestServerCommandsRequireExplicitConfiguration(t *testing.T) {
 	for _, args := range [][]string{{"serve"}, {"serve", "--config"}, {"serve", "--unknown"}, {"serve", "--config", "missing", "extra"}, {"serve", "--config", "/fixture/private/missing-config"},
-		{"server"}, {"server", "start"}, {"server", "status"}, {"server", "status", "--signet", "a", "--config", "x"}, {"server", "reconcile", "--config", "/fixture/private/missing-config"}} {
+		{"server"}, {"server", "start"}, {"server", "status"}, {"server", "status", "--signet", "a", "--config", "x"}, {"server", "reconcile", "--config", "/fixture/private/missing-config"},
+		{"server", "canon"}, {"server", "canon", "status", "--config", "x"}, {"server", "canon", "refresh"}, {"server", "canon", "refresh", "--config", "/fixture/private/missing-config"}} {
 		t.Run(strings.Join(args, "_"), func(t *testing.T) {
 			var out, errout bytes.Buffer
 			if code := run(context.Background(), args, strings.NewReader(""), &out, &errout); code == 0 {
@@ -39,8 +40,15 @@ func TestServerConfigurationIsStrictAndDoesNotLeak(t *testing.T) {
 		{"malformed", `{"auth":`},
 		{"unknown field", valid(func(c map[string]any) { c["private_token"] = "never-emit-fixture-token" })},
 		{"unknown signet field", valid(func(c map[string]any) {
-			c["signets"].([]any)[0].(map[string]any)["canon"] = []string{"never-emit-fixture-token"}
+			c["signets"].([]any)[0].(map[string]any)["notes"] = []string{"never-emit-fixture-token"}
 		})},
+		{"invalid canon foundling ID", valid(func(c map[string]any) {
+			c["signets"].([]any)[0].(map[string]any)["canon"] = []string{"never-emit-fixture-token!"}
+		})},
+		{"relative legacy root", valid(func(c map[string]any) {
+			c["signets"].([]any)[0].(map[string]any)["legacy"] = map[string]string{"foundling-history": "fixture/private/history"}
+		})},
+		{"canon refresh below a minute", valid(func(c map[string]any) { c["canon_refresh_minutes"] = 0.5 })},
 		{"duplicate field", `{"listen":"127.0.0.1:0","listen":"0.0.0.0:0"}`},
 		{"trailing value", `{} {}`},
 		{"oversized", strings.Repeat(" ", 65537)},

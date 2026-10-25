@@ -24,7 +24,7 @@ var sourceCommit = "" // Stamped only by the pinned exact-source release builder
 const help = `Mandalore — durable memory across tools
 
   mandalore serve --config FILE                  Single-writer MCP server for configured signets
-  mandalore server status --config FILE          Per-signet head, last push, pending push and remote
+  mandalore server status --config FILE          Per-signet head, backup, remote and canon references
   mandalore server reconcile --config FILE [--signet SLUG]
                                                  Fetch, validate and fast-forward a remote-ahead signet
   mandalore server owner enroll --config FILE [--replace]
@@ -32,6 +32,8 @@ const help = `Mandalore — durable memory across tools
   mandalore server clients list --config FILE    Approved and pending OAuth clients with their grants
   mandalore server clients revoke --config FILE --client ID
   mandalore server clients set-scope --config FILE --client ID --scope read|read-write [--signet SLUG]
+  mandalore server canon refresh --config FILE [--signet SLUG]
+                                                 Refresh configured canon references now
   mandalore server migrate preflight --clone PATH [--format json|text]
                                                  Read-only 1.x clone check: exit 0 clean, 1 blocked, 2 error
   mandalore server migrate init --config FILE --remote URL --slug S --root DIR
@@ -99,9 +101,9 @@ Foundling options: --foundling-id ID, --query TEXT (search), --limit N (list/his
 --offset N (list/history/search/read), --registration-id ID (search/read),
 --excerpt-bytes N --budget-bytes N (search), --locator PATH --limit-bytes N (read).
 Search offsets select document ranks; read offsets select UTF-8 bytes.
-Foundling setup is CLI-only. Legacy uses pinned historical text; canon uses session-pinned signet evidence.
-Canon operations take structured JSON with an exact session_id. Canon refresh is
-unavailable until the server serves canon references; ordinary canon reads never fetch.
+Foundling setup is CLI-only. Legacy uses pinned historical text; canon uses server-refreshed signet evidence.
+Canon operations take structured JSON; session_id is optional and ignored. The server
+refreshes canon (mandalore server canon refresh refreshes now); canon reads never fetch.
 Common options: --binding FILE, --harness NAME, --read-only, --help.
 Optional connection guards: --binding-sha256 SHA256 --signet-id ID (both required).
 Binding selection: explicit file, then MANDALORE_BINDING, then platform config.

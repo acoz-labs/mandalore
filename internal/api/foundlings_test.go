@@ -132,7 +132,7 @@ func TestFoundlingCatalogVisibilityBindingAndStrictInputs(t *testing.T) {
 			t.Fatal(out)
 		}
 	}
-	if count != 16 {
+	if count != 15 {
 		t.Fatal(count)
 	}
 	for _, raw := range []string{`{"query":"one","query":"two"}`, `{"unknown":"PRIVATE-CANARY"}`, `{"foundling_id":"example","limit":0}`} {

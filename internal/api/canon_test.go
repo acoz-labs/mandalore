@@ -7,6 +7,7 @@ import (
 	"github.com/acoz-labs/mandalore/internal/foundlings"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -27,27 +28,21 @@ func TestCanonRegistrationContractAndReadOnlyBoundary(t *testing.T) {
 	if err != nil || view.Mode != "canon" {
 		t.Fatal(view, err)
 	}
-	// Refresh denial cannot upgrade transport or create cache.
-	if out := local.Call(context.Background(), "foundling_refresh", []byte(`{"session_id":"native-one"}`)); out.OK {
-		t.Fatal("local-only refresh enabled")
-	}
-	if _, err := os.Stat(filepath.Join(s.Root(), ".mandalore/canon")); !os.IsNotExist(err) {
-		t.Fatal("local-only path wrote cache", err)
-	}
-	ro := New(s, true)
-	if out := ro.Call(context.Background(), "foundling_refresh", []byte(`{"session_id":"native-one"}`)); out.OK || out.Error.Code != "operation.read_only" {
+	// Agents never refresh: the per-session refresh operation is gone, and
+	// reads neither fetch nor create cache.
+	if out := local.Call(context.Background(), "foundling_refresh", []byte(`{"session_id":"native-one"}`)); out.OK || out.Error.Code != "operation.unknown" {
 		t.Fatal(out)
 	}
-	if out := local.Call(context.Background(), "foundling_canon_recall", []byte(`{"session_id":"native-one","foundling_id":"`+reg.FoundlingID+`","query":""}`)); out.OK {
-		t.Fatal("unknown snapshot selected")
+	for _, input := range []string{`{"foundling_id":"` + reg.FoundlingID + `","query":""}`, `{"session_id":"ignored","foundling_id":"` + reg.FoundlingID + `","query":""}`} {
+		if out := local.Call(context.Background(), "foundling_canon_recall", []byte(input)); out.OK || out.Error.Code != "foundling.unavailable" {
+			t.Fatal("unrefreshed snapshot selected", out)
+		}
 	}
-	// Missing native identity is refused before any remote/cache attempt.
-	out = local.Call(context.Background(), "foundling_refresh", []byte(`{"session_id":""}`))
-	if out.OK {
-		t.Fatal("missing ID accepted")
+	if out := local.Call(context.Background(), "foundling_status", []byte(`{}`)); !out.OK || out.Result.(CanonStatusResult).Items[0].Reason != "not_refreshed" {
+		t.Fatal(out)
 	}
 	if _, err := os.Stat(filepath.Join(s.Root(), ".mandalore/canon")); !os.IsNotExist(err) {
-		t.Fatal("invalid session wrote cache", err)
+		t.Fatal("canon read wrote cache", err)
 	}
 	raw, _ = json.Marshal(FoundlingDisconnectInput{FoundlingID: reg.FoundlingID, RegistrationID: reg.ID, Reason: "Explicit disconnect"})
 	if out := local.Call(context.Background(), "foundling_disconnect", raw); !out.OK {
@@ -59,7 +54,7 @@ func TestCanonRegistrationContractAndReadOnlyBoundary(t *testing.T) {
 	}
 }
 
-func TestCanonOperationSchemasExposeSessionAndEffects(t *testing.T) {
+func TestCanonOperationSchemasMakeSessionOptional(t *testing.T) {
 	ops := map[string]Operation{}
 	for _, op := range Catalog() {
 		ops[op.Name] = op
@@ -69,20 +64,22 @@ func TestCanonOperationSchemasExposeSessionAndEffects(t *testing.T) {
 		if !ok || !op.ReadOnly || op.Network || op.CLIOnly {
 			t.Fatal(name, op)
 		}
-		raw, err := json.Marshal(op.InputSchema)
-		if err != nil || !strings.Contains(string(raw), "session_id") {
-			t.Fatal(name, string(raw), err)
+		if _, ok := op.InputSchema.Properties["session_id"]; !ok || slices.Contains(op.InputSchema.Required, "session_id") {
+			t.Fatal(name, op.InputSchema.Required)
 		}
 	}
-	if op := ops["foundling_refresh"]; op.ReadOnly || op.Network {
-		t.Fatal("local catalog permits network", op)
+	if op := ops["foundling_canon_promote"]; slices.Contains(op.InputSchema.Required, "session_id") {
+		t.Fatal("promotion requires session_id")
+	}
+	if _, ok := ops["foundling_refresh"]; ok {
+		t.Fatal("agent-facing refresh still in the catalog")
 	}
 }
 
 func TestCanonReceiptPaginationDoesNotRequireAnotherRefresh(t *testing.T) {
 	receipts := make([]foundlings.CanonReceipt, 12)
 	for i := range receipts {
-		receipts[i] = foundlings.CanonReceipt{FoundlingID: fmt.Sprintf("foundling-%02d", i), SessionID: "codex:synthetic", State: "unavailable", Description: strings.Repeat("x", 4096)}
+		receipts[i] = foundlings.CanonReceipt{FoundlingID: fmt.Sprintf("foundling-%02d", i), State: "unavailable", Description: strings.Repeat("x", 4096)}
 	}
 	first, err := canonReceiptPage(receipts, 0, 5)
 	if err != nil || len(first.Items) != 5 || first.NextOffset == nil || *first.NextOffset != 5 || !first.Truncated {

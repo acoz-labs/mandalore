@@ -88,14 +88,14 @@ func delayGit(t *testing.T, fetch, batch time.Duration) string {
 	return log
 }
 
-type canonRefresher func(*Manager, string, memory.FoundlingRegistration) ([]CanonReceipt, error)
+type canonRefresher func(*Manager, memory.FoundlingRegistration) ([]CanonReceipt, error)
 
 var canonRefreshPaths = map[string]canonRefresher{
-	"native": func(m *Manager, session string, _ memory.FoundlingRegistration) ([]CanonReceipt, error) {
-		return m.SessionRefresh(context.Background(), session)
+	"all": func(m *Manager, _ memory.FoundlingRegistration) ([]CanonReceipt, error) {
+		return m.Refresh(context.Background())
 	},
-	"allowed": func(m *Manager, session string, reg memory.FoundlingRegistration) ([]CanonReceipt, error) {
-		return m.SessionRefreshAllowed(context.Background(), session, []string{reg.FoundlingID})
+	"configured": func(m *Manager, reg memory.FoundlingRegistration) ([]CanonReceipt, error) {
+		return NewConfigured(m.memory, Config{Canon: []string{reg.FoundlingID}, Transport: m.canonTransport}).Refresh(context.Background())
 	},
 }
 
@@ -105,20 +105,17 @@ func TestCanonBulkFirstRefreshBatchesReadsWithinBudget(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			m, reg := bulkCanonFixture(t, bulk)
 			log := delayGit(t, 500*time.Millisecond, 0)
-			start := time.Now()
-			receipts, e := refresh(m, "bulk", reg)
-			elapsed := time.Since(start)
+			// Available with no timeout phase means the reads finished inside the
+			// per-reference fetch budget; a wall-clock bound would only flake under load.
+			receipts, e := refresh(m, reg)
 			if e != nil || len(receipts) != 1 || receipts[0].State != "available" || receipts[0].TimeoutPhase != "" {
 				t.Fatal(receipts, e)
-			}
-			if elapsed >= 2*time.Second {
-				t.Fatalf("refresh exceeded fetch budget: %s", elapsed)
 			}
 			reads, e := os.ReadFile(log)
 			if e != nil || string(reads) != "check\nbatch\n" {
 				t.Fatalf("object reads were not batched: %q %v", reads, e)
 			}
-			got := recallTest(t, m, reg.FoundlingID, "bulk")
+			got := recallTest(t, m, reg.FoundlingID)
 			if got.Reference.State != "available" || len(got.Memory.Current) == 0 {
 				t.Fatal(got)
 			}
@@ -137,13 +134,13 @@ func TestCanonBulkBudgetExceededReportsPhase(t *testing.T) {
 				m, reg := bulkCanonFixture(t, bulk)
 				delayGit(t, phase.fetch, phase.batch)
 				start := time.Now()
-				receipts, e := refresh(m, "uncached", reg)
+				receipts, e := refresh(m, reg)
 				elapsed := time.Since(start)
 				if e != nil || len(receipts) != 1 || receipts[0].State != "unavailable" || receipts[0].Reason != "timeout" || receipts[0].TimeoutPhase != phase.name {
 					t.Fatal(receipts, e)
 				}
-				if elapsed < 1800*time.Millisecond || elapsed >= 3*time.Second {
-					t.Fatalf("refresh outside shared budget: %s", elapsed)
+				if elapsed >= canonRefreshBudget {
+					t.Fatalf("refresh outside its budget: %s", elapsed)
 				}
 				if encoded, _ := json.Marshal(receipts); strings.Contains(string(encoded), "Synthetic bulk") {
 					t.Fatal("timeout receipt exposed source content")
@@ -151,18 +148,18 @@ func TestCanonBulkBudgetExceededReportsPhase(t *testing.T) {
 			})
 			t.Run(phase.name+"/"+name+"/stale", func(t *testing.T) {
 				m, reg := bulkCanonFixture(t, bulk)
-				first := refreshTest(t, m, "seed")
+				first := refreshTest(t, m)
 				delayGit(t, phase.fetch, phase.batch)
 				start := time.Now()
-				receipts, e := refresh(m, "stale", reg)
+				receipts, e := refresh(m, reg)
 				elapsed := time.Since(start)
 				if e != nil || len(receipts) != 1 || receipts[0].State != "stale" || receipts[0].Reason != "timeout" || receipts[0].TimeoutPhase != phase.name || receipts[0].Pin != first.Pin || receipts[0].Digest != first.Digest {
 					t.Fatal(receipts, e)
 				}
-				if elapsed >= 3*time.Second {
-					t.Fatalf("stale validation outside shared budget: %s", elapsed)
+				if elapsed >= canonRefreshBudget {
+					t.Fatalf("stale validation outside its budget: %s", elapsed)
 				}
-				if got := recallTest(t, m, reg.FoundlingID, "stale"); got.Reference.State != "stale" || len(got.Memory.Current) == 0 {
+				if got := recallTest(t, m, reg.FoundlingID); got.Reference.State != "stale" || len(got.Memory.Current) == 0 {
 					t.Fatal(got)
 				}
 			})

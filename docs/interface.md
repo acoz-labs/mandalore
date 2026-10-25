@@ -838,21 +838,18 @@ write occurred and requires inspection, never an automatic retry.
 ## Canon reference operations and local launching
 
 `foundling_register` accepts `mode`, `branch` and `source_signet_id` for canon;
-mode omission preserves legacy registration. `foundling_status` pages the
-selected session's refresh receipts without network effects.
-`foundling_canon_scopes`, `foundling_canon_recall` and `foundling_canon_heads`
-consult semantic source state at that session's immutable commit.
-`foundling_canon_promote` verifies a selected visible head and records explicit
-adapted knowledge with generated provenance. Enabled sessions deliver that
-semantic save through the existing bounded transport path.
+mode omission preserves legacy registration. `foundling_status` pages each
+reference's refresh receipt (state, commit, observation time, age and last
+error) without network effects. `foundling_canon_scopes`,
+`foundling_canon_recall` and `foundling_canon_heads` consult semantic source
+state at the latest verified snapshot. `foundling_canon_promote` verifies a
+selected visible head and records explicit adapted knowledge with generated
+provenance. `session_id` is optional and ignored on every canon operation.
 
-`foundling_refresh` is an explicit enabled-session operation with network/local
-cache effects. Ordinary canon reads never select another session or refresh
-implicitly. Use the exact harness-namespaced `session_id` supplied by native
-context; unknown selection fails rather than falling back to a global snapshot.
-Status, scopes and visible-head results are bounded and paged; use their
-`next_offset` values rather than repeating refresh or treating truncation as
-absence. Read the active operation catalog for bounds and continuation fields.
+Canon reads never refresh; the server refreshes on a schedule and through
+`mandalore server canon refresh`. Status, scopes and visible-head results are
+bounded and paged; use their `next_offset` values rather than treating
+truncation as absence. Read the active operation catalog for bounds and continuation fields.
 See [foundlings](foundlings.md) for content and compatibility semantics.
 
 The separate `mandalore launch` CLI owns machine-local environment selection.
