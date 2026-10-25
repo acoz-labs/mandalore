@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/acoz-labs/mandalore/internal/distribution"
+	"github.com/acoz-labs/mandalore/internal/testfixture"
 )
 
 type fixtureState struct {
@@ -133,7 +134,8 @@ func TestArtifactFinalizerVerifiesBeforeLedgerWritesAndSupportsRetry(t *testing.
 		t.Fatal(err, out)
 	}
 	log := fixtureLog(t, dir)
-	verified, closed := strings.Index(log, "publication-verified"), strings.Index(log, "gh issue close")
+	// The real 2.0 inventory is seven assets; finalize must accept it.
+	verified, closed := strings.Index(log, "publication-verified 7 assets"), strings.Index(log, "gh issue close")
 	if verified < 0 || closed < verified || strings.Contains(log, "gh release create") || strings.Contains(out, "artifact-20") {
 		t.Fatal("ledger closed before exact product verification", log, out)
 	}
@@ -308,7 +310,15 @@ func TestFinalizerHelperProcess(t *testing.T) {
 		if s.Scenario == "verification failure" {
 			os.Exit(1)
 		}
-		r := map[string]any{"identity": s.Identity, "source_commit": s.SHA, "release_id": 42, "release_url": "https://github.com/acoz-labs/mandalore/releases/tag/v1.0.0", "phase": "publication-verified", "assets": make([]int, 8)}
+		manifest, assets := testfixture.Release20(t)
+		if s.Scenario == "missing asset" {
+			assets = assets[1:]
+		}
+		// Like the real wrapper, refuse any inventory other than the manifest's.
+		if !manifest.PublishesExactly(assets) {
+			os.Exit(1)
+		}
+		r := map[string]any{"identity": s.Identity, "source_commit": s.SHA, "release_id": 42, "release_url": "https://github.com/acoz-labs/mandalore/releases/tag/v1.0.0", "phase": "publication-verified", "assets": assets}
 		switch s.Scenario {
 		case "partial verification":
 			r["phase"] = "published"
@@ -318,10 +328,8 @@ func TestFinalizerHelperProcess(t *testing.T) {
 			r["source_commit"] = strings.Repeat("f", 40)
 		case "wrong verified URL":
 			r["release_url"] = "https://example.invalid"
-		case "missing asset":
-			r["assets"] = []int{1}
 		}
-		log("publication-verified")
+		log(fmt.Sprintf("publication-verified %d assets", len(assets)))
 		emit(r)
 		os.Exit(0)
 	}

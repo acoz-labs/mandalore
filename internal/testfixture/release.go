@@ -25,13 +25,23 @@ func Release20(t testing.TB) (distribution.ParsedManifest, []distribution.Releas
 	if err != nil {
 		t.Fatal(err)
 	}
-	sums, err := distribution.Checksums(raw)
+	return parsed, PublishedAssets(t, raw)
+}
+
+// PublishedAssets is the release inventory the exact manifest bytes imply.
+func PublishedAssets(t testing.TB, manifest []byte) []distribution.ReleaseAsset {
+	t.Helper()
+	parsed, err := distribution.ParseManifest(manifest)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assets := []distribution.ReleaseAsset{{Name: "manifest.json", Size: int64(len(raw)), SHA256: parsed.SHA256}, {Name: "SHA256SUMS", Size: int64(len(sums)), SHA256: distribution.Digest(sums)}}
-	for _, a := range m.Assets {
+	sums, err := distribution.Checksums(manifest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assets := []distribution.ReleaseAsset{{Name: "manifest.json", Size: int64(len(manifest)), SHA256: parsed.SHA256}, {Name: "SHA256SUMS", Size: int64(len(sums)), SHA256: distribution.Digest(sums)}}
+	for _, a := range parsed.Manifest.Assets {
 		assets = append(assets, distribution.ReleaseAsset{Name: a.Name, Size: a.Size, SHA256: a.SHA256})
 	}
-	return parsed, assets
+	return assets
 }

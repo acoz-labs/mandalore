@@ -129,7 +129,7 @@ func run(ctx context.Context, args []string, s services) (result promotion, err 
 	if err != nil {
 		return result, err
 	}
-	if published.Phase != "publication-verified" || published.Identity != *identity || published.SourceCommit != transport.SourceCommit || published.URL != "https://github.com/acoz-labs/mandalore/releases/tag/"+url.PathEscape(m.Manifest.Tag) || published.PendingOperation != "" || published.ReleaseID <= 0 || len(published.Assets) != 8 {
+	if published.Phase != "publication-verified" || published.Identity != *identity || published.SourceCommit != transport.SourceCommit || published.URL != "https://github.com/acoz-labs/mandalore/releases/tag/"+url.PathEscape(m.Manifest.Tag) || published.PendingOperation != "" || published.ReleaseID <= 0 || !m.PublishesExactly(published.Assets) {
 		return result, errors.New("publisher did not verify the selected complete release")
 	}
 	result.Phase = "publication-verified"

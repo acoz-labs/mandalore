@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/acoz-labs/mandalore/internal/distribution"
+	"github.com/acoz-labs/mandalore/internal/testfixture"
 )
 
 type inspectFixture struct {
@@ -94,9 +95,11 @@ func promoteFixture(t *testing.T) (string, string, *inspectFixture, string) {
 }
 
 type publishFixture struct {
+	t         *testing.T
 	calls     int
 	fail      bool
 	badResult bool
+	inventory string
 	identity  string
 	order     *[]string
 }
@@ -111,7 +114,18 @@ func (f *publishFixture) Publish(_ context.Context, path, identity string) (dist
 	if identity != f.identity || p.Identity() != identity {
 		return distribution.PublicationReceipt{}, errors.New("publisher received wrong bytes")
 	}
-	r := distribution.PublicationReceipt{Identity: identity, SourceCommit: p.Manifest.SourceCommit, Phase: "publication-verified", ReleaseID: 42, URL: "https://github.com/acoz-labs/mandalore/releases/tag/" + p.Manifest.Tag, Assets: make([]distribution.ReleaseAsset, 8)}
+	raw, err := os.ReadFile(filepath.Join(path, "manifest.json"))
+	if err != nil {
+		return distribution.PublicationReceipt{}, err
+	}
+	assets := testfixture.PublishedAssets(f.t, raw)
+	switch f.inventory {
+	case "missing asset":
+		assets = assets[1:]
+	case "extra asset":
+		assets = append(assets, distribution.ReleaseAsset{Name: "mandalore_" + p.Manifest.Version + "_codex.zip", Size: 30, SHA256: strings.Repeat("f", 64)})
+	}
+	r := distribution.PublicationReceipt{Identity: identity, SourceCommit: p.Manifest.SourceCommit, Phase: "publication-verified", ReleaseID: 42, URL: "https://github.com/acoz-labs/mandalore/releases/tag/" + p.Manifest.Tag, Assets: assets}
 	if f.fail {
 		r.Phase = "assets-verified"
 		r.PendingOperation = "publish-draft"
@@ -127,7 +141,7 @@ func TestPromotionRevalidatesBeforeStagingAfterStagingAndAfterAuthorization(t *t
 	receipt, archive, i, identity := promoteFixture(t)
 	order := []string{}
 	i.order = &order
-	p := &publishFixture{identity: identity, order: &order}
+	p := &publishFixture{t: t, identity: identity, order: &order}
 	authorize := func(_ context.Context, m distribution.ParsedManifest) error {
 		order = append(order, "authorize")
 		if m.Identity() != identity {
@@ -150,7 +164,7 @@ func TestPromotionNeverPublishesUnverifiedOrUnauthorizedCandidate(t *testing.T) 
 			receipt, archive, i, identity := promoteFixture(t)
 			order := []string{}
 			i.order = &order
-			p := &publishFixture{identity: identity, order: &order}
+			p := &publishFixture{t: t, identity: identity, order: &order}
 			parent := t.TempDir()
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
@@ -202,11 +216,11 @@ func TestPromotionNeverPublishesUnverifiedOrUnauthorizedCandidate(t *testing.T) 
 }
 
 func TestPromotionRetainsUncertainPublicationAndRefusesIncompleteSuccess(t *testing.T) {
-	for _, kind := range []string{"uncertain", "incomplete"} {
+	for _, kind := range []string{"uncertain", "incomplete", "missing asset", "extra asset"} {
 		t.Run(kind, func(t *testing.T) {
 			receipt, archive, i, identity := promoteFixture(t)
 			order := []string{}
-			p := &publishFixture{identity: identity, order: &order, fail: kind == "uncertain", badResult: kind == "incomplete"}
+			p := &publishFixture{t: t, identity: identity, order: &order, fail: kind == "uncertain", badResult: kind == "incomplete", inventory: kind}
 			r, err := run(context.Background(), []string{"--receipt", receipt, "--archive", archive, "--identity", identity, "--staging-parent", t.TempDir()}, services{i, p, func(context.Context, distribution.ParsedManifest) error { return nil }})
 			if err == nil || r.Phase == "publication-verified" || r.Publication == nil || r.StagingDirectory == "" || p.calls != 1 {
 				t.Fatal("partial publication lost or claimed complete", r, err)
