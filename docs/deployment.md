@@ -18,13 +18,12 @@ verification. [v1.0.0](releases/1.0.0.md) remains immutable historical evidence.
 Publication does not automatically update an existing installation.
 
 The product now has a pinned [local candidate builder](development.md#local-distribution-candidates),
-checksummed platform/plugin assets, a compatibility manifest and read-only release
+checksummed platform assets, a compatibility manifest and read-only release
 inspection and [CLI installation planning](interface.md#read-only-cli-installation-planning).
 [Engineering evidence](evidence/distribution/README.md) records the
 actual scope tested. Explicit plan/apply now supports owned CLI activation,
 identity-checked recovery and retained rollback. The interactive installer/update
-journey uses those same operations, with a separately confirmed native handoff
-prepared and applied by the verified newly installed runtime. A separate candidate
+journey uses those same operations. A separate candidate
 build/retention workflow and provenance/payload-verified nomination path are now
 implemented; [their contracts and current verification limits](development.md#retained-actions-candidates)
 are explicit. The [same-byte publisher component](development.md#same-byte-publisher-implementation)

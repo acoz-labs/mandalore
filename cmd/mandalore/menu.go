@@ -405,9 +405,9 @@ func (m *menu) setup(create bool) error {
 	if create {
 		title = "[PASS] Local signet ready"
 	}
-	body = "Selected for this menu. Connect Codex, Pi, Claude Code or Hermes when ready. No synchronization was performed; inspect its existing Git configuration before synchronizing."
+	body = "Selected for this menu. To give agents this memory, serve it with mandalore serve and install the Claude plugin. No synchronization was performed; inspect its existing Git configuration before synchronizing."
 	if create {
-		body = "Remote synchronization is not configured. Keep this private bank backed up; configure its native Git origin separately. Next: connect Codex, Pi, Claude Code or Hermes. No agent was launched."
+		body = "Remote synchronization is not configured. Keep this private bank backed up; configure its native Git origin separately. Next: serve it with mandalore serve and install the Claude plugin. No agent was launched."
 	}
 	m.block(console.Block{Title: title, Body: body, Tone: console.Success, Fields: []console.Field{{Label: "Signet", Value: root}, {Label: "Binding", Value: path}}})
 	return nil

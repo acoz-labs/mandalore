@@ -117,7 +117,7 @@ An apply failure may retain a new staging directory or a published bundle. Inspe
 staging directory is not proof of publication. Source data and existing output
 are never deleted. Before activation, continue with the original writer/source
 for rollback; after new writes, preserve and reconcile both histories. Binding,
-Git configuration, native handoff and synchronization remain separate operations.
+Git configuration and synchronization remain separate operations.
 
 ## Export failure and partial output
 
