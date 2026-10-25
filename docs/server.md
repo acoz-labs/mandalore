@@ -198,7 +198,7 @@ they are configured and refreshed.
   `foundling_search` and `foundling_read`; either adds `foundling_list`.
   Read-write clients also get `foundling_canon_promote` or `foundling_promote`,
   which record the client like every other write. `session_id` is optional and
-  ignored; there are no per-session snapshots and agents cannot refresh.
+  ignored; every client reads the same snapshot and agents cannot refresh.
 
 ## Who wrote it
 

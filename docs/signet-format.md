@@ -220,7 +220,7 @@ This is an explicit registration operation, never an automatic launch/recall
 migration. Disconnecting preserves history and therefore does not restore old
 reader compatibility. Runtime rollback does not rewrite registration history.
 
-Local session snapshot/cache metadata is ignored local state. Routine branch
+Local canon snapshot/cache metadata is ignored local state. Routine branch
 refresh never creates a portable registration revision. Source identity/branch
 changes remain explicit versioned registration changes. Provenance for an
 explicitly promoted canon record retains its observed commit and selected

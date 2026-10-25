@@ -1,13 +1,14 @@
 # Local-first Git synchronization
 
-Mandalore saves memory locally before network work. Explicit Git operations now
-share the same signet binding, exclusive writer lock and CLI dispatcher as
-recall/remember. They do not create hosting accounts or store credentials.
+Mandalore saves memory locally before network work. In 2.0 the
+[server](server.md) is each signet's only writer and owns its Git backup (see
+[Server backup](#server-backup)). The Git toolkit below is shared by that backup,
+the explicit CLI operations and the guided menu. It does not create hosting
+accounts or store credentials.
 
-The 1.x session-authorized transport (pinned session policies, lifecycle
-refresh and save-triggered delivery) left the build with 2.0, where the
-[server](server.md) owns Git. The explicit CLI operations below remain for 1.x
-clones until migration.
+The 1.x transport, where each device synchronized its own clone around agent
+sessions, left the build with 2.0. The CLI operations and the menu's
+synchronization below remain for 1.x clones until [the cutover](migration-2.0.md).
 
 ## Setup and commands
 
@@ -16,15 +17,14 @@ After creating and binding a new signet, initialize Git explicitly:
 ```sh
 mandalore memory git-init --binding /example/local/binding.json
 mandalore memory checkpoint --binding /example/local/binding.json
-mandalore memory sync-status --binding /example/local/binding.json
 ```
 
 With no origin, synchronization is local-only. Configure the desired private
-remote with native Git or the forthcoming installer, then synchronize:
+remote with native Git, then synchronize it from the guided menu (`mandalore
+menu`, "Synchronize with its configured remote"):
 
 ```sh
 git -C /example/signet remote add origin git@example.invalid:owner/signet.git
-mandalore memory sync --binding /example/local/binding.json --timeout-seconds 10
 ```
 
 These are placeholder paths/hosts. Use an existing private repository and native
@@ -44,9 +44,9 @@ commands.
 In 2.0 the [server](server.md) is each signet's only writer. It never fetches on
 reads; after writes it checkpoints and pushes `main` without forcing, and refuses
 a remote that is ahead until `mandalore server reconcile` fast-forwards it. The
-1.x `memory_sync`, `memory_sync_status` and save-and-sync tools are removed. The
-guided menu still synchronizes a selected 1.x clone directly until its 1.x
-journeys are removed.
+1.x `memory_sync`, `memory_sync_status` and save-and-sync tools are removed, so
+agents have no synchronization tools. The guided menu still synchronizes a
+selected 1.x clone directly until its 1.x journeys are removed.
 
 ## What happens
 
@@ -145,8 +145,8 @@ Ordinary Git command output is limited to 1 MiB and stderr to 64 KiB. Candidate
 archives have a 64 MiB bound, with regular files limited to 4 MiB. Unsupported large
 candidates fail without integration; this is an MVP resource bound, not a corpus
 scalability claim. Process groups are cancelled and pipe cleanup is bounded.
-Initialization/checkpoint/status have a ten-second budget; explicit sync accepts
-1–30 seconds, default ten. Synchronous filesystem validation/publication is
+Initialization/checkpoint/status have a ten-second budget, and the menu's
+synchronization has ten seconds. Synchronous filesystem validation/publication is
 cooperatively bounded, not instantaneously interruptible or transactional.
 
 The signet lock coordinates Mandalore writers. Ordinary concurrent Git edits are
@@ -172,17 +172,14 @@ candidate and tested versions; cross-builds alone do not establish either.
 
 ## Canon reference freshness
 
-Canon reference fetching is distinct from primary-signet synchronization.
-The primary bank still uses its existing enabled-session transport policy.
-Registered canon sources are read-only inputs: their session-entry/resume
-refresh never pushes upstream or saves copied semantic knowledge. Each session
-retains the verified commit until resume or explicit refresh; ordinary turns and
-compaction keep that snapshot. Native context provides the exact selection ID
-for subsequent tools across processes.
+Canon reference fetching is distinct from the primary signet's backup.
+Registered canon sources are read-only inputs: the server refreshes them at
+startup and on a schedule, never pushes upstream and saves no copied semantic
+knowledge. Every client reads the latest verified snapshot; reads never fetch.
 
-Inspect individual reference receipts separately from the primary bank's
-`session_sync`. Successful primary delivery does not prove reference freshness,
-and successful reference fetch does not deliver primary writes. Stale-cache
-fallback identifies its observed commit and time; absent or ineligible snapshots
-remain unavailable. Refresh is bounded foreground work, not a daemon. See the
+Inspect each reference's state with `foundling_status` or `mandalore server
+status`, separately from the signet's backup state. A successful push does not
+prove reference freshness, and a successful reference fetch does not back up
+primary writes. Stale-cache fallback identifies its observed commit and time;
+absent or ineligible snapshots remain unavailable. See the
 [foundling contract](foundlings.md) for eligibility and provenance.

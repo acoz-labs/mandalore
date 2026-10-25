@@ -32,8 +32,8 @@ semantic content in the primary bank. An explicit promotion is a separate write.
 
 `foundling_status` reports each reference's state, `commit`, `observed_at`,
 `age_seconds`, last attempt (`checked_at`) and last error (`reason`) without
-fetching. Canon tools accept a 1.x `session_id` but ignore it; there are no
-per-session snapshots. Agents cannot refresh; refresh is server admin work.
+fetching. Canon tools accept a 1.x `session_id` but ignore it; every client
+reads the same snapshot. Agents cannot refresh; refresh is server admin work.
 
 Use `foundling_canon_scopes` to discover source scopes, then
 `foundling_canon_recall` for relevant current evidence. Recall respects source

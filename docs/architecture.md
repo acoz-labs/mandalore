@@ -6,10 +6,10 @@
 [server](server.md): it owns each configured signet, serves MCP over Streamable
 HTTP with per-client authorship, and backs each signet up by push-only Git. The
 1.x stdio MCP server (`internal/mcp`), native hook adapters (`internal/codex`,
-`internal/claudecode`), session transport (`internal/sessionsync`), their context
-assembler (`internal/memorycontext`) and Razor Crest (`internal/razorcrest`) left
-the build in #167. The paragraph below describes the remaining 1.x packages;
-installers and plugins leave in #163.
+`internal/claudecode`), 1.x session transport, their context assembler
+(`internal/memorycontext`) and Razor Crest (`internal/razorcrest`) left the build
+in #167; the 1.x plugins and installer left in #163. The paragraph below
+describes the packages that remain.
 
 `internal/memory` implements the signet engine as a library: immutable records,
 sources/devices, journals, supersession, scoped lexical recall, bounded service
@@ -129,31 +129,21 @@ within that validation, never across later service operations. Full source and
 graph checks still run. See [retrieval](retrieval.md) for quality/freshness tests,
 measured history-growth costs and the evidence required before adding an index.
 
-Git remotes and harness executables are explicit dependencies. Local persistence
-works offline; cross-machine freshness requires successful sync. In 2.0 MCP is
-served only by the server over Streamable HTTP, behind its built-in OAuth 2.1
-authorization server with owner passkey approval (see [server](server.md#oauth)).
+Git remotes are explicit dependencies. In 2.0 MCP is served only by the server
+over Streamable HTTP, behind its built-in OAuth 2.1 authorization server with
+owner passkey approval (see [server](server.md#oauth)). Every client reads the
+server's checkout, so reads are current without syncing; the remote is a backup.
+Clients fail open: an unreachable server means no memory for that turn, and
+nothing is queued on the client.
 
 See [product](product.md), [migration](migration.md), and [delivery](deployment.md).
 
-## Foreground synchronization
+## Server backup
 
-A session policy pins exact binding bytes, signet identity and retained runtime.
-The session-aware API is separate from the default administrative dispatcher;
-local-only commands and legacy read-only connections do not inherit permission
-from an enabled session elsewhere. Generated native connections also pin policy
-bytes so remembered content cannot retarget or change transport authority.
-
-Coordination is local to a physical checkout. Separate clones of the same signet
-must each refresh; concurrent harnesses on one checkout serialize attempts. A
-coalesced result is reusable only when its completed head still covers local
-state. Native session/event identity, bounded startup adjacency and a consumed
-one-shot marker avoid duplicate startup/first-prompt work without treating
-identical prompt text as an event ID. Pi adds a per-start nonce to its turn counter.
-
-The semantic operation saves first. Its original receipt/error is preserved and
-optional `session_sync` metadata records the subsequent bounded transport outcome.
-Combined tools route through the same local primitive and coordinator once.
-Pending data retries at the next foreground boundary, not a daemon or assumed
-exit callback. No transport operation extracts facts from transcripts or resolves
-semantic conflicts automatically.
+The server serializes each signet's memory work and checkpoints under one
+lock. A write saves first and its receipt reports `durable: true`; the server
+then checkpoints and pushes `main` in the background, debounced and retried
+while pending. The receipt's `backup` field reports the push state. A failed
+push never fails a save. The server refuses writes when the remote is ahead or diverged, so a second
+writer can't widen the gap. No backup operation extracts facts from transcripts
+or resolves semantic conflicts automatically. See [server](server.md#git-backup).

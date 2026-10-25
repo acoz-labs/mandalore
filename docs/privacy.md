@@ -50,26 +50,25 @@ for recall. Compact recall results do not include the sensitivity field. Journal
 have neither a sensitivity label nor an entity-scope field. Do not save a secret
 and rely on `restricted` to hide it from the model.
 
-In an explicitly enabled session, requests not to remember or journal particular
-material control content selection. Software still attempts synchronization of
-previously saved records. A read-only code task does not switch off memory
-transport. Conversational no-sync is not an enabled-session transport mode.
+Requests not to remember or journal particular material control what the agent
+saves. They don't stop the [server](server.md) backing up records already saved:
+it pushes each signet to its Git remote after writes.
 
-To stop Mandalore activity, disable the complete native integration and start a
-fresh session without its skills, hooks, tools or context. Disabling only skills
-is insufficient; already-injected context cannot be recalled from the model.
+To stop Mandalore activity, disable the Claude plugin or remove the connector and
+start a fresh session without its skills, hook, tools or context. Disabling only
+skills is insufficient; already-injected context cannot be recalled from the
+model. To cut a client off, revoke it on the server, which ends its tokens.
 Native agent memory, logs and caches remain independently controlled by that
-harness. See [synchronization](synchronization.md).
+harness.
 
-Existing enforced read-only connections are not silently upgraded. They reject
-mutating API operations before input decoding and do not authorize automatic
-transport. Legacy connections without a session policy retain their prior
-no-save/read-only/no-sync guidance until explicitly updated. Ordinary local-only
-administrative commands also retain their declared effects.
+The owner gives each client read or read-write scope when approving it. A
+read-only client gets no write tools, and remembered text can't change its scope.
+Ordinary local-only administrative commands retain their declared effects.
 
 A conversational instruction is interpreted by the agent; it is not a universal
-sandbox against independent filesystem tools or another writable connection.
-Session transport policy controls the Mandalore runtime, not all machine activity.
+sandbox against independent filesystem tools or another writable client.
+Client scope controls what that client can do through the server, not all
+machine activity.
 
 ## Correction, disconnection and retention
 

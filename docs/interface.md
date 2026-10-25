@@ -2,16 +2,14 @@
 
 Mandalore 2.0 serves agents only through the [server](server.md)
 (`mandalore serve`), which takes its tools from this catalog by scope. The 1.x
-stdio MCP server, native lifecycle hooks, enabled-session transport and the
-save-and-sync tools are gone from the build; Git history keeps them. The 1.x
-connection installers described below still generate those removed entry points
-and leave with the plugins in #163.
+stdio MCP server, native lifecycle hooks, 1.x session transport, the
+save-and-sync tools and the 1.x connection installers are gone from the build;
+Git history keeps them.
 
 The development CLI uses one typed operation dispatcher. It does
 not supply a model, replace native agent identity, discover memory from cwd,
-or discover transport permission from conversation text. Default administrative
-CLI calls retain their declared local/network effects. CLI-only connection operations install the native
-plugin after explicit approval; they are not memory MCP tools. The
+or discover permission from conversation text. Default administrative
+CLI calls retain their declared local/network effects. The
 [guided menu](setup.md) delegates to these same operations. Explicit Git work is
 described in [synchronization](synchronization.md). Exact-candidate/release
 acceptance and publication are recorded for [v1.0.0](releases/1.0.0.md).
@@ -49,10 +47,10 @@ Mutation input contains `record_id`, explicit `expected_content_heads` and
 the supplied heads must still match under the writer lock. Each head list is
 bounded to 256 IDs and the reason to 4096 bytes. An empty visibility list must be
 supplied explicitly. Stale decisions fail with `memory.stale_heads`, not an
-automatic retry or timestamp winner. These are non-idempotent saves. Default
-administrative calls save locally; enabled sessions also attempt bounded delivery. Read-only rejects them before
-decoding. The receipt distinguishes event identity, resulting visibility,
-confirmed local durability and whether publication may have occurred. Partial or
+automatic retry or timestamp winner. These are non-idempotent saves. CLI calls
+save locally; through the server, the server backs them up. Read-only rejects
+them before decoding. The receipt distinguishes event identity, resulting
+visibility, confirmed local durability and whether publication may have occurred. Partial or
 cancelled writes retain `error.visibility_result`; inspect the exact event before
 retrying. Only these two MCP tools advertise the additional error receipt schema.
 
