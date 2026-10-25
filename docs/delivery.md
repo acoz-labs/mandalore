@@ -79,30 +79,30 @@ access explicitly; do not silently skip the provider policy check.
 
 ## Server image
 
-From 2.0, publication also pushes the server image
-`ghcr.io/acoz-labs/mandalore:<version>` from the same accepted candidate. Run it
-after the promoter has published the release, from the release's source
-checkout:
+From 2.0, each release also publishes the server image
+`ghcr.io/acoz-labs/mandalore:<version>` from the same accepted candidate. The
+release workflow added in #166 runs it, after the release is published, with
+the workflow's built-in `GITHUB_TOKEN` (`packages: write`). No personal token or
+repository secret is involved. The workflow calls:
 
 ```sh
-GHCR_USER=... GHCR_TOKEN=... bin/publish-server-image --directory DIR --identity PRODUCT_IDENTITY
+mise exec -- bin/publish-server-image --directory DIR --identity PRODUCT_IDENTITY
 ```
 
-It re-verifies the candidate with `bin/promote-local-candidate --verify-only`,
-copies the candidate's `linux/amd64` and `linux/arm64` binaries into the
-`packaging/server/Dockerfile` build in place of its source-build stage (so the
-image holds the accepted bytes, not a new build), pushes a multi-platform image
-with a temporary `docker buildx` builder, and prints
-`ghcr.io/acoz-labs/mandalore:<version>@sha256:...`. Record that digest in the
-release record. It needs Docker with `buildx` and QEMU emulation for the other
-platform; it uses `DOCKER_HOST` or the default engine socket.
+`bin/publish-server-image` first re-verifies the candidate with
+`bin/promote-local-candidate --verify-only`. It then copies the candidate's
+`linux/amd64` and `linux/arm64` binaries into the `packaging/server/Dockerfile`
+build in place of its source-build stage, so the image holds the accepted bytes,
+not a new build. It pushes a multi-platform image with a temporary `docker
+buildx` builder and prints `ghcr.io/acoz-labs/mandalore:<version>@sha256:...`.
+Record that digest in the release record.
 
-| Variable | Purpose |
-| --- | --- |
-| `GHCR_USER` | The GitHub account that pushes the package. |
-| `GHCR_TOKEN` | A token for that account with `write:packages` on `acoz-labs`. The login lives in a temporary Docker config that is removed on exit. |
+In Actions it logs in to `ghcr.io` as `GITHUB_ACTOR` with `GITHUB_TOKEN`, using
+a temporary Docker config removed on exit. Run anywhere else, it uses the
+caller's existing Docker login. It needs Docker with `buildx` and QEMU emulation
+for the other platform.
 
-Verify the published image with `docker pull` of that digest and
-`packaging/server/smoke-test.sh`. The script refuses a version tag that already
-exists, so a tag is never moved; if a push fails partway,
-inspect the package before retrying.
+`bin/publish-server-image` refuses a version tag that already exists, so a
+published tag is never moved. If a push fails partway, inspect the package
+before retrying. Verify the published image by pulling that digest and running
+`packaging/server/smoke-test.sh` on it.

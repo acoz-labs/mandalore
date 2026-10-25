@@ -15,6 +15,7 @@ import (
 	"runtime"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/acoz-labs/mandalore/internal/api"
 	"github.com/acoz-labs/mandalore/internal/server"
@@ -24,16 +25,24 @@ const defaultLaunchdLabel = "dev.acoz.mandalore.server"
 
 var launchdLabel = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9.-]{0,127}$`)
 
-// launchdSupported and launchctl are replaced by tests; only macOS has launchd.
+// launchdSupported, launchctl and launchdSettle are replaced by tests; only
+// macOS has launchd.
 var launchdSupported = runtime.GOOS == "darwin"
 
-var launchctl = func(ctx context.Context, args ...string) error {
+var launchctl = func(ctx context.Context, args ...string) (string, error) {
 	output, err := exec.CommandContext(ctx, "launchctl", args...).CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("launchctl %s: %v: %s", args[0], err, strings.TrimSpace(string(output)))
+		return "", fmt.Errorf("launchctl %s: %v: %s", args[0], err, strings.TrimSpace(string(output)))
 	}
-	return nil
+	return string(output), nil
 }
+
+// launchdSettle is how long install waits before checking that serve is still
+// running on its first run, so a crash on startup isn't reported as running.
+var launchdSettle = 2 * time.Second
+
+var launchdRunning = regexp.MustCompile(`(?m)^\tstate = running$`)
+var launchdFirstRun = regexp.MustCompile(`(?m)^\truns = 1$`)
 
 // runLaunchd installs or removes the per-user launchd agent that runs
 // `mandalore serve`. Both print what they will change and ask first; the plan
@@ -71,8 +80,10 @@ func runLaunchd(ctx context.Context, install bool, args []string, input io.Reade
 	if !confirmed(input, errout, "Unload and remove it?") {
 		return emit(out, api.Failure("launchd.declined", "Nothing was unloaded or removed.", false))
 	}
-	if err := launchctl(ctx, "bootout", target+"/"+*label); err != nil && launchctl(ctx, "print", target+"/"+*label) == nil {
-		return emit(out, api.Failure("launchd.failed", "The agent is still loaded and was kept: "+err.Error(), false))
+	if _, err := launchctl(ctx, "bootout", target+"/"+*label); err != nil {
+		if _, loaded := launchctl(ctx, "print", target+"/"+*label); loaded == nil {
+			return emit(out, api.Failure("launchd.failed", "The agent is still loaded and was kept: "+err.Error(), false))
+		}
 	}
 	if err := os.Remove(plist); err != nil {
 		return emit(out, api.Failure("launchd.failed", "The agent is unloaded but its plist could not be removed.", true))
@@ -97,7 +108,8 @@ func installLaunchd(ctx context.Context, config, label, home, plist, target stri
 		return emit(out, api.Failure("launchd.exists", "A launchd agent "+label+" is already installed; run server uninstall-launchd first.", false))
 	}
 	logs := filepath.Join(home, "Library", "Logs", "mandalore")
-	body := launchdPlist(label, []string{executable, "serve", "--config", config}, filepath.Join(logs, label+".log"))
+	log := filepath.Join(logs, label+".log")
+	body := launchdPlist(label, []string{executable, "serve", "--config", config}, log)
 	fmt.Fprintf(errout, "%s\nWrite this to %s and load it with launchctl bootstrap %s.\n", body, plist, target)
 	if !confirmed(input, errout, "Write and load it?") {
 		return emit(out, api.Failure("launchd.declined", "Nothing was written or loaded.", false))
@@ -108,12 +120,21 @@ func installLaunchd(ctx context.Context, config, label, home, plist, target stri
 	if err := os.WriteFile(plist, []byte(body), 0644); err != nil {
 		return emit(out, api.Failure("launchd.failed", "Cannot write the plist.", false))
 	}
-	if err := launchctl(ctx, "bootstrap", target, plist); err != nil {
+	if _, err := launchctl(ctx, "bootstrap", target, plist); err != nil {
 		_ = os.Remove(plist)
 		return emit(out, api.Failure("launchd.failed", "The agent did not load and its plist was removed: "+err.Error(), false))
 	}
-	return emit(out, api.Success(map[string]any{"label": label, "plist": plist, "log": filepath.Join(logs, label+".log"), "loaded": true,
-		"notice": "Loaded. launchd restarts it if it exits; launchctl print " + target + "/" + label + " shows its state."}))
+	select {
+	case <-ctx.Done():
+	case <-time.After(launchdSettle):
+	}
+	state, err := launchctl(ctx, "print", target+"/"+label)
+	if err != nil || !launchdRunning.MatchString(state) || !launchdFirstRun.MatchString(state) {
+		return emit(out, api.Failure("launchd.not_running", "The agent is loaded, but serve is not running on its first start; see "+log+
+			". Fix the cause and run launchctl kickstart -k "+target+"/"+label+", or server uninstall-launchd.", true))
+	}
+	return emit(out, api.Success(map[string]any{"label": label, "plist": plist, "log": log, "loaded": true, "running": true,
+		"notice": "Loaded and running. launchd restarts it if it exits; launchctl print " + target + "/" + label + " shows its state."}))
 }
 
 // launchdPlist renders a KeepAlive agent that runs args and logs to log.

@@ -217,7 +217,11 @@ gui/UID`. The default label is `dev.acoz.mandalore.server`. The agent runs this
 executable with `serve --config` and the configuration's absolute path, with
 `RunAtLoad` and `KeepAlive`, logging to `~/Library/Logs/mandalore/LABEL.log`.
 It checks the configuration first and refuses an existing plist. If loading
-fails it removes the plist. `mandalore server uninstall-launchd [--label LABEL]`
+fails it removes the plist. After loading it waits 2 seconds and reports
+`running: true` only if `launchctl print` shows the first start still running.
+Otherwise it fails with `launchd.not_running` and keeps the loaded agent, so
+read its log (a taken port is the usual cause), fix it and `launchctl kickstart
+-k`, or uninstall. `mandalore server uninstall-launchd [--label LABEL]`
 asks, then runs `launchctl bootout` and removes the plist; if the agent stays
 loaded it keeps the plist. Both answer No unless you type `y`, and print a JSON
 result. [local.md](deploy/local.md#3-run-it-as-a-service) walks through it.

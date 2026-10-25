@@ -57,7 +57,9 @@ It prints the plist, then asks before writing it to
 executable you ran, with `RunAtLoad` and `KeepAlive`, so launchd starts it at
 login and restarts it if it exits. Logs go to
 `~/Library/Logs/mandalore/dev.acoz.mandalore.server.log`. `--label LABEL` picks
-another label, for a second server or a test.
+another label, for a second server or a test. If `serve` exits on its first
+start, for example because another process holds the port, install reports
+`launchd.not_running` instead of success; the log says why.
 
 ```sh
 launchctl print gui/$(id -u)/dev.acoz.mandalore.server   # state, pid, last exit

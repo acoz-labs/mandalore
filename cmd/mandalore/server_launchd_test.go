@@ -16,22 +16,30 @@ import (
 	"github.com/acoz-labs/mandalore/internal/testfixture"
 )
 
+// launchdRunningState is what launchctl print shows for an agent on its first,
+// still-running start.
+const launchdRunningState = "gui/501/dev.example = {\n\tstate = running\n\truns = 1\n\tpid = 4242\n\tendpoints = {\n\t\tstate = active\n\t}\n}\n"
+
 // stubLaunchd pretends to be macOS with HOME in a temp dir, records launchctl
-// calls and fails the subcommands named in fail.
+// calls, answers print with launchdRunningState and fails the subcommands
+// named in fail.
 func stubLaunchd(t *testing.T, fail ...string) (home string, calls *[][]string) {
 	t.Helper()
 	home = t.TempDir()
 	t.Setenv("HOME", home)
-	supported, run := launchdSupported, launchctl
-	t.Cleanup(func() { launchdSupported, launchctl = supported, run })
-	launchdSupported = true
+	supported, run, settle := launchdSupported, launchctl, launchdSettle
+	t.Cleanup(func() { launchdSupported, launchctl, launchdSettle = supported, run, settle })
+	launchdSupported, launchdSettle = true, 0
 	calls = &[][]string{}
-	launchctl = func(_ context.Context, args ...string) error {
+	launchctl = func(_ context.Context, args ...string) (string, error) {
 		*calls = append(*calls, args)
 		if slices.Contains(fail, args[0]) {
-			return errors.New("launchctl " + args[0] + ": exit status 5")
+			return "", errors.New("launchctl " + args[0] + ": exit status 5")
 		}
-		return nil
+		if args[0] == "print" {
+			return launchdRunningState, nil
+		}
+		return "", nil
 	}
 	return home, calls
 }
@@ -80,7 +88,7 @@ func TestLaunchdInstallPrintsAsksThenLoads(t *testing.T) {
 	}
 
 	code, v, shown := launchdCLI(t, "y\n", "install-launchd", "--config", config, "--label", "dev.example.mandalore-test")
-	if code != 0 || v["result"].(map[string]any)["loaded"] != true {
+	if code != 0 || v["result"].(map[string]any)["running"] != true {
 		t.Fatalf("install: %d %v", code, v)
 	}
 	written, err := os.ReadFile(plist)
@@ -90,7 +98,7 @@ func TestLaunchdInstallPrintsAsksThenLoads(t *testing.T) {
 	if info, _ := os.Stat(plist); info.Mode().Perm() != 0644 {
 		t.Fatal("plist mode", info.Mode())
 	}
-	if !slices.EqualFunc(*calls, [][]string{{"bootstrap", target, plist}}, slices.Equal) {
+	if !slices.EqualFunc(*calls, [][]string{{"bootstrap", target, plist}, {"print", target + "/dev.example.mandalore-test"}}, slices.Equal) {
 		t.Fatal("launchctl calls", *calls)
 	}
 	// The plist is well-formed XML and runs this executable against the
@@ -156,6 +164,39 @@ func TestLaunchdFailuresLeaveNoHalfInstall(t *testing.T) {
 	}
 	if code, v, _ := launchdCLI(t, "y\n", "uninstall-launchd"); code != 0 {
 		t.Fatal("uninstall of an unloaded agent", v)
+	}
+}
+
+// A serve that exits on startup is loaded but not running: install says so,
+// and keeps the plist so the log and uninstall-launchd still apply.
+func TestLaunchdInstallReportsAServeThatIsNotRunning(t *testing.T) {
+	for name, state := range map[string]string{
+		"spawn scheduled":   "gui/501/dev.example = {\n\tstate = spawn scheduled\n\truns = 2\n\tlast exit code = 1\n}\n",
+		"restarted":         "gui/501/dev.example = {\n\tstate = running\n\truns = 3\n}\n",
+		"only nested state": "gui/501/dev.example = {\n\tstate = not running\n\truns = 1\n\tendpoints = {\n\t\tstate = running\n\t}\n}\n",
+		"print fails":       "",
+	} {
+		t.Run(name, func(t *testing.T) {
+			home, _ := stubLaunchd(t)
+			stub := launchctl
+			launchctl = func(ctx context.Context, args ...string) (string, error) {
+				if args[0] == "print" {
+					if state == "" {
+						return "", errors.New("launchctl print: exit status 113")
+					}
+					return state, nil
+				}
+				return stub(ctx, args...)
+			}
+			code, v, _ := launchdCLI(t, "y\n", "install-launchd", "--config", launchdConfig(t))
+			failure, _ := v["error"].(map[string]any)
+			if code == 0 || failure["code"] != "launchd.not_running" || failure["write_may_have_occurred"] != true {
+				t.Fatalf("not-running serve reported as installed: %d %v", code, v)
+			}
+			if _, err := os.Lstat(filepath.Join(home, "Library", "LaunchAgents", defaultLaunchdLabel+".plist")); err != nil {
+				t.Fatal("loaded agent's plist removed", err)
+			}
+		})
 	}
 }
 

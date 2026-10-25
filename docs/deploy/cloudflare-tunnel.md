@@ -75,20 +75,22 @@ signets each is at `/s/<slug>/mcp`.
 
 ## 4. Edge rules
 
-The server's paths fall into three groups:
+The server's paths fall into these groups:
 
 | Paths | Who calls them | Protection |
 | --- | --- | --- |
 | `/authorize`, `/consent`, `/owner/*`, `/.well-known/*` | The owner's browser, and clients reading metadata | Owner passkey and session |
-| `/mcp`, `/s/<slug>/mcp`, `/token`, `/register` | Claude's servers and Claude Code | OAuth bearer tokens; a registration has no access until the owner approves it |
+| `/mcp`, `/s/<slug>/mcp`, `/token` | Claude's servers and Claude Code | OAuth bearer tokens and codes |
+| `/register` | Clients using dynamic registration, such as claude.ai | Nothing grants access before the owner approves, but anyone can fill the registration limits: rate-limit it at the edge (below) |
 | Anything else, including `/healthz` | Nobody from outside | None needed: block it |
 
 `/healthz` answers loopback peers, and through the tunnel every request comes
 from loopback, so block it at the edge.
 
-Recommended WAF custom rules (Security, WAF, Custom rules), in this order:
+Set up these rules:
 
-1. **Block unknown paths.** Action: Block.
+1. **Block unknown paths.** A WAF custom rule (Security, WAF, Custom rules)
+   with action Block:
 
    ```
    http.host eq "memory.example.com" and not (
@@ -99,9 +101,32 @@ Recommended WAF custom rules (Security, WAF, Custom rules), in this order:
    )
    ```
 
-2. **Leave the rest open.** Allow everyone on `/authorize`, `/consent`,
+2. **Rate-limit `/register` per client address.** A rate limiting rule
+   (Security, WAF, Rate limiting rules) matching
+
+   ```
+   http.host eq "memory.example.com" and http.request.uri.path eq "/register"
+   ```
+
+   counted by IP (`ip.src`), with action Block. Allow a few requests per period,
+   such as 5 per 10 minutes, or the longest period your plan offers.
+
+   The rule is needed because the server limits registrations per peer address
+   (10 per 10 minutes) and holds at most 20 pending registrations for everyone.
+   Behind the tunnel every request comes from `cloudflared` on loopback, so the
+   server sees a single peer. Ten anonymous registrations then refuse every new
+   registration, including yours, until the window passes. The edge rule
+   restores a per-client limit. A lockout doesn't affect approved clients, or
+   clients such as Claude Code that use a client ID metadata document instead
+   of registering. To clear abandoned pending registrations, list them with
+   `mandalore server clients list` and remove them with
+   `mandalore server clients revoke`. If only claude.ai registers with your
+   server, you can instead allow `/register` from Anthropic's egress range
+   alone (see below).
+
+3. **Leave the rest open.** Allow everyone on `/authorize`, `/consent`,
    `/owner/*` and `/.well-known/*`; the passkey protects them. Put no IP rule on
-   `/mcp`, `/token` and `/register`; OAuth protects them.
+   `/mcp` and `/token`; OAuth protects them.
 
 Don't put a managed challenge, JavaScript challenge or Bot Fight Mode in front
 of `/mcp`, `/token` or `/register`: those callers are programs and can't solve
@@ -115,15 +140,15 @@ your own devices. Three paths need more than that:
 - **The consent page.** You approve clients from your browser, often a phone on
   cellular, which has no fixed IP. Keep `/authorize`, `/consent`, `/owner/*` and
   `/.well-known/*` open to everyone.
-- **Claude Code on a Mac that moves.** It calls `/mcp`, `/token` and
-  `/register` from the Mac's own address, which changes with the network. Leave
+- **Claude Code on a Mac that moves.** It calls `/mcp` and `/token` from the
+  Mac's own address, which changes with the network. Leave
   those paths without an IP rule, or run Cloudflare WARP on the Macs and allow
   your WARP egress.
 - **The client metadata fetch.** The server fetches Claude Code's client ID
   metadata document itself, outbound. Edge rules don't affect it.
 
-If you still want an allowlist on the OAuth-protected paths, add it as a second
-Block rule after rule 1:
+If you still want an allowlist on these paths, add it as a second WAF custom
+rule with action Block, after rule 1:
 
 ```
 http.host eq "memory.example.com"
