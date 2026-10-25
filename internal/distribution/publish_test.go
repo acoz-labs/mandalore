@@ -34,7 +34,7 @@ type publisherFixture struct {
 func newPublisherFixture(t *testing.T) *publisherFixture {
 	t.Helper()
 	dir, m, raw := candidateFixture(t)
-	f := &publisherFixture{dir: dir, m: m, identity: (ParsedManifest{m, Digest(raw)}).Identity(), data: map[string][]byte{}, policy: `{"enabled":true}`}
+	f := &publisherFixture{dir: dir, m: m, identity: (ParsedManifest{Manifest: m, SHA256: Digest(raw)}).Identity(), data: map[string][]byte{}, policy: `{"enabled":true}`}
 	f.p = newPublisher("release-token", "policy-token", roundTripFunc(func(r *http.Request) (*http.Response, error) {
 		if f.before != nil {
 			f.before(r)

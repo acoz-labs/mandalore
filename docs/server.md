@@ -68,6 +68,41 @@ Each signet's client comes from one authenticator. A `Client` has an ID, a name
 - `insecure-test`: static bearer tokens from `test_clients`. It exists only in
   the server package's test builds; a release binary refuses it at config load.
 
+### A new signet
+
+`signet create` still writes signet format 1, and the server needs format 2:
+`init` refuses format 1, and withdrawing a memory needs format 2. Format 2 records
+the upgrade from a Git commit of format 1, so a new signet goes through the same
+upgrade a 1.x one does, using the 2.0 binary. Paths under `/example/` stand for
+absolute paths of your choice, and the remote is an empty private repository.
+
+```sh
+mandalore signet create --repository /example/setup/signet --name Example --device-label setup
+cd /example/setup/signet
+git init -b main && git add -A && git commit -m "Create signet"
+git remote add origin git@github.com:example-org/signet.git && git push -u origin main
+mandalore signet bind --repository . --binding /example/setup/binding.json --device-label setup-binding --actor Owner
+git add -A && git commit -m "Enroll setup binding" && git push
+echo '{"binding_path": "/example/setup/binding.json"}' | mandalore call signet_upgrade_preview > /example/setup/plan.json
+```
+
+Keep the plan outside the clone: preview needs a clean checkout. Review it, then pass its `result` back as `{"plan": RESULT, "stopped_writers": true}`
+to `mandalore call signet_upgrade_apply`. Commit and push the upgrade
+(`signet.json` and `provenance/upgrades/`). Then, keeping the receipt outside
+the clone too:
+
+```sh
+MANDALORE_BINDING=/example/setup/binding.json mandalore server migrate preflight --clone /example/setup/signet > /example/setup/setup.json
+mandalore server migrate init --config FILE --remote git@github.com:example-org/signet.git --slug primary \
+  --root /example/mandalore/signets/primary --preflight /example/setup/setup.json \
+  --device-lost DEVICE_FROM_CREATE --reason "Enrolled by signet create; no clone of its own"
+mandalore server migrate verify --config FILE --slug primary
+```
+
+`DEVICE_FROM_CREATE` is the `device_id` that `signet create` printed. After
+`verify`, start the server and stop using the setup clone: the server is the
+only writer.
+
 ## OAuth
 
 The server is its own authorization server; it depends on no outside identity

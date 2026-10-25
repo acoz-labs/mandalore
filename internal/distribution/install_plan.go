@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -164,8 +165,11 @@ func retainedManifest(prefix, identity, goos, arch string) (ParsedManifest, erro
 	if err != nil {
 		return ParsedManifest{}, err
 	}
-	p, err := ParseManifest(b)
-	if err != nil || p.SHA256 != identity {
+	p, err := parseRetainedManifest(b)
+	if err != nil {
+		return ParsedManifest{}, fmt.Errorf("retained manifest is not a readable release manifest: %w", err)
+	}
+	if p.SHA256 != identity {
 		return ParsedManifest{}, errors.New("retained manifest no longer matches its receipt identity")
 	}
 	a, err := p.Manifest.Binary(goos, arch)

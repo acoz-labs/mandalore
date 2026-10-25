@@ -171,7 +171,11 @@ func verifyInstallPair(root string, p InstallPlan) error {
 	if err != nil {
 		return err
 	}
-	m, err := ParseManifest(b)
+	parse := ParseManifest
+	if p.Source.Kind == "retained" {
+		parse = parseRetainedManifest
+	}
+	m, err := parse(b)
 	if err != nil || !reflect.DeepEqual(m, p.Source.Manifest) {
 		return errors.New("staged manifest differs from the reviewed plan")
 	}
@@ -253,11 +257,23 @@ func verifyRuntimeVersion(raw []byte, p InstallPlan) error {
 			Protocol int    `json:"protocol_version"`
 			Read     []int  `json:"signet_read_versions"`
 			Write    []int  `json:"signet_write_versions"`
+			// Only a retained 1.x runtime reports these, and then exactly.
+			Hook          *int    `json:"codex_hook_protocol,omitempty"`
+			PluginVersion *string `json:"plugin_version,omitempty"`
+			PluginSHA     *string `json:"plugin_sha256,omitempty"`
 		} `json:"result"`
 	}
 	m := p.Source.Manifest.Manifest
 	if err := strictjson.Decode(raw, &v, 16<<10); err != nil || !v.OK || v.Protocol != 1 || v.Result.Name != "mandalore" || v.Result.Version != m.Version || v.Result.Source != m.SourceCommit || v.Result.OS != p.OS || v.Result.Arch != p.Arch || v.Result.Go != m.GoVersion || v.Result.Protocol != m.ProtocolVersion || !reflect.DeepEqual(v.Result.Read, m.SignetReadVersions) || !reflect.DeepEqual(v.Result.Write, m.SignetWriteVersions) {
 		return errors.New("runtime version, source, target, protocol or schema differs from its manifest")
+	}
+	r := v.Result
+	if l := p.Source.Manifest.Legacy; l == nil {
+		if r.Hook != nil || r.PluginVersion != nil || r.PluginSHA != nil {
+			return errors.New("runtime reports retired 1.x plugin claims")
+		}
+	} else if r.Hook == nil || *r.Hook != 1 || r.PluginVersion == nil || *r.PluginVersion != m.Version || r.PluginSHA == nil || *r.PluginSHA != l.PluginSHA256 {
+		return errors.New("retained 1.x runtime plugin claims differ from its manifest")
 	}
 	return nil
 }

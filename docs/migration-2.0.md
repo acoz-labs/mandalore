@@ -21,7 +21,9 @@ the remote ref but never fetches, commits or writes state. It checks:
 - the signet is format 2 (see [Format 1 signets](#format-1-signets)).
 
 It reports the device ID from the local binding (`MANDALORE_BINDING`, else the
-platform default) when that binding names this clone. A clone that is only
+platform default) when that binding names this clone. If no binding names it,
+preflight blocks, because `init` can't use a receipt without a device: point
+`MANDALORE_BINDING` at the clone's binding, or mark the device lost at init. A clone that is only
 behind `origin` is clean: it has nothing the remote lacks. If `origin` has
 commits the clone has never fetched, preflight can't tell behind from diverged
 without fetching, so it blocks; sync once more and preflight again.
@@ -177,6 +179,35 @@ same way.
 
 After the first 2.0 write, never write from 1.x again. A retired clone may still
 be read as an older copy.
+
+## The CLI install
+
+Upgrading the CLI is separate from the signet cutover. A 1.x binary can't
+install 2.0, so bootstrap with the 2.0 release's own script. It verifies the
+platform binary against `SHA256SUMS` and runs that binary's installer:
+
+```sh
+curl -fsSLO https://github.com/acoz-labs/mandalore/releases/download/v2.0.0/install.sh
+sh install.sh 2.0.0
+```
+
+In a prefix that holds a 1.x install (both default to `~/.local`), 2.0 updates
+it in place and keeps the 1.x runtime as the previous one. To go back to 1.6.1,
+use the 2.0 launcher's retained rollback:
+
+```sh
+mandalore release install --retained 6b9f5107b0d7dfd8bf8d0323b38e52276b9d0ec702ffee2b1b983af0e5824f1d --prefix PREFIX
+```
+
+1.6.1 can't read a 2.0 install, so it can't return to 2.0 by itself. Run
+`sh install.sh 2.0.0` again, or the retained 2.0 runtime under
+`PREFIX/lib/mandalore/releases/` with `release install --retained` and its
+identity. 1.6.1's own `sh install.sh 1.6.1` refuses a prefix that holds 2.0.
+Where no 1.6.1 runtime is retained, as after a fresh 2.0 install, move both
+`PREFIX/lib/mandalore` and `PREFIX/bin/mandalore` aside first, then install
+1.6.1. Moving only one of them is refused. Put both back to undo.
+
+Rolling the CLI back doesn't roll the signet back; see [Rollback](#rollback).
 
 ## Format 1 signets
 

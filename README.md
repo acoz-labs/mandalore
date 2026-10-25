@@ -90,7 +90,8 @@ connect to it over MCP:
    2.0.0 each release carries the binaries. A published image will follow
    ([#188](https://github.com/acoz-labs/mandalore/issues/188)).
 2. **Prepare the signet.** The server needs its own checkout. Coming from 1.x,
-   follow [the cutover](docs/migration-2.0.md).
+   follow [the cutover](docs/migration-2.0.md); for a new signet, see
+   [A new signet](docs/server.md#a-new-signet).
 3. **Configure and run the server.** Write its [configuration](docs/server.md#configuration),
    then run it as a service: `mandalore server install-launchd --config FILE`
    on macOS, or the [Docker image](docs/server.md#docker).

@@ -36,7 +36,8 @@ type Receipt struct {
 
 // Preflight inspects a clone without writing to it. An error means it could
 // not be inspected; a receipt with blockers means it is not safe to retire.
-// bindingPath may be empty or missing; then the device is not reported.
+// bindingPath may be empty or missing; then no device is named and the clone
+// is blocked, since init refuses a receipt without a device.
 func Preflight(ctx context.Context, clone, bindingPath string) (Receipt, error) {
 	r := Receipt{Version: 1, Kind: ReceiptKind, PendingIntents: []string{}, Blockers: []string{}, CheckedAt: time.Now().UTC().Format(time.RFC3339)}
 	store, err := memory.Open(clone)
@@ -82,8 +83,11 @@ func Preflight(ctx context.Context, clone, bindingPath string) (Receipt, error) 
 	case signetsync.RemoteMoved:
 		block("origin has commits this clone has not fetched: run a 1.x sync, then preflight again")
 	}
+	if r.DeviceID == "" {
+		block("no binding names this clone, so the receipt names no device and init can't use it: set MANDALORE_BINDING to this clone's binding and preflight again, or mark the device lost at init")
+	}
 	if r.Format < 2 {
-		block("format 1: upgrade to format 2 first with runbook step 1 in docs/migration-2.0.md (stop every 1.x writer, signet_upgrade_preview, signet_upgrade_apply with stopped_writers: true using the 1.x binary, then sync); verify withdraws its canary, which needs format 2")
+		block("format 1: upgrade to format 2 first with runbook step 1 in docs/migration-2.0.md (stop every 1.x writer, signet_upgrade_preview, signet_upgrade_apply with stopped_writers: true using the 1.x binary, then sync; a new signet: see A new signet in docs/server.md); verify withdraws its canary, which needs format 2")
 	}
 	r.Clean = len(r.Blockers) == 0
 	return r, nil

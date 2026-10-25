@@ -9,8 +9,9 @@ canon reference; it never writes it ([2.0 design](../design/2.0.md), section 3).
 ## 1. Prepare the signet checkout
 
 The server needs its own checkout of the signet on `main`, with its own device
-enrolled. Coming from 1.x, create it with `mandalore server migrate init`; see
-[the cutover](../migration-2.0.md). Paths under `/example/` stand for absolute paths of your choice.
+enrolled. Create it with `mandalore server migrate init`: coming from 1.x, see
+[the cutover](../migration-2.0.md); for a new signet, see
+[A new signet](../server.md#a-new-signet). Paths under `/example/` stand for absolute paths of your choice.
 
 ## 2. Configure the server
 
