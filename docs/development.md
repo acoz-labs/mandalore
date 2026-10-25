@@ -288,8 +288,8 @@ checks the other six assets, and retains ledger/final release/tag checks.
 
 Synthetic simple-tag/no-redirect request counts are now: inspect/plan 4;
 fresh or different-retained-digest update plan+apply 13 (formerly 22); exact
-completed-plan replay 0; full verifier 13 (formerly 15), covering all eight
-assets once. The menu directly plans/applies without extra inspection. Bootstrap
+completed-plan replay 0; full verifier 12, covering all seven 2.0 assets once
+(13 for the eight 1.x assets, formerly 15). The menu directly plans/applies without extra inspection. Bootstrap
 adds two asset downloads; fetching its script, redirects and annotated tags are
 outside these counts. These are HTTP fixture counts, not live quota debits.
 See `release_efficiency_test.go` and `release_retry_test.go` for count, identity,

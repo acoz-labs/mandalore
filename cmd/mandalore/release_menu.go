@@ -187,12 +187,27 @@ func (m *menu) releasePreview(p distribution.InstallPlan) {
 		source = "Retained manifest " + p.Retained
 		trust = "Rollback verifies the retained compatible runtime; it does not rewrite memory or switch a native connection."
 	}
-	previous := p.Observed.LauncherTarget
+	previous, installed := p.Observed.LauncherTarget, "Not installed in this prefix"
 	if previous == "" {
-		previous = "Not installed in this prefix"
+		previous = installed
+	} else if i, err := distribution.InstalledManifest(p); err != nil {
+		installed = "Unavailable: " + err.Error()
+	} else {
+		installed = compatibility(i.Manifest)
 	}
 	m.block(console.Block{Title: "Review CLI installation", Body: trust, Fields: []console.Field{{Label: "Version", Value: mf.Version}, {Label: "Source", Value: source}, {Label: "Platform", Value: p.OS + "/" + p.Arch}, {Label: "Prefix", Value: p.Prefix}, {Label: "Launcher", Value: p.Launcher}, {Label: "Previous runtime", Value: previous}, {Label: "Selected runtime", Value: p.Runtime}}})
-	m.block(console.Block{Title: "Artifact identity and effects", Body: "Only this CLI installation changes. Native connections, memory, credentials and shell settings remain unchanged; previous runtimes remain retained.", Fields: []console.Field{{Label: "Source commit", Value: mf.SourceCommit}, {Label: "Manifest SHA256", Value: p.Source.Manifest.SHA256}, {Label: "Binary SHA256", Value: p.Binary.SHA256}, {Label: "Retained target reusable", Value: strconv.FormatBool(p.RuntimeRetained)}, {Label: "Protocol / signet schema", Value: "1 / read 1, write 1"}}})
+	m.block(console.Block{Title: "Artifact identity and effects", Body: "Only this CLI installation changes. Native connections, memory, credentials and shell settings remain unchanged; previous runtimes remain retained.", Fields: []console.Field{{Label: "Source commit", Value: mf.SourceCommit}, {Label: "Manifest SHA256", Value: p.Source.Manifest.SHA256}, {Label: "Binary SHA256", Value: p.Binary.SHA256}, {Label: "Retained target reusable", Value: strconv.FormatBool(p.RuntimeRetained)}, {Label: "Protocol / signet schema", Value: compatibility(mf)}, {Label: "Previous protocol / signet schema", Value: installed}}})
+}
+
+func compatibility(m distribution.Manifest) string {
+	versions := func(v []int) string {
+		s := make([]string, len(v))
+		for i, n := range v {
+			s[i] = strconv.Itoa(n)
+		}
+		return strings.Join(s, ", ")
+	}
+	return strconv.Itoa(m.ProtocolVersion) + " / read " + versions(m.SignetReadVersions) + "; write " + versions(m.SignetWriteVersions)
 }
 
 func (m *menu) releaseResult(r distribution.InstallResult) {

@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -188,5 +189,60 @@ func TestReleaseMenuUnavailableAndOfflineAreNotUpdates(t *testing.T) {
 		if code == "release.unavailable" && !strings.Contains(out.String(), "No published release available") {
 			t.Fatal("empty release state omitted")
 		}
+	}
+}
+
+func TestReleasePreviewShowsCandidateAndInstalledCompatibility(t *testing.T) {
+	m, out, _, o := releaseMenuFixture(t, "")
+	p := m.releaseCall("release_plan", o).Result.(distribution.InstallPlan)
+	p.Source.Manifest.Manifest.ProtocolVersion, p.Source.Manifest.Manifest.SignetReadVersions, p.Source.Manifest.Manifest.SignetWriteVersions = 1, []int{1, 2}, []int{1, 2}
+	m.releasePreview(p)
+	if !strings.Contains(out.String(), "1 / read 1, 2; write 1, 2") || !strings.Contains(out.String(), "Not installed in this prefix") || strings.Contains(out.String(), "read 1, write 1") {
+		t.Fatal("preview does not show the candidate manifest's compatibility", out.String())
+	}
+
+	// A synthetic owned 1.x-compatible runtime in the prefix: its retained
+	// manifest, not the candidate's or a constant, supplies the previous values.
+	p.OS, p.Arch = runtime.GOOS, runtime.GOARCH
+	binary := []byte("synthetic installed runtime")
+	installed := distribution.Manifest{FormatVersion: 1, Product: "mandalore", Version: "1.9.0", Tag: "v1.9.0", SourceCommit: strings.Repeat("c", 40), GoVersion: "go1.26.10", ProtocolVersion: 1, SignetReadVersions: []int{1}, SignetWriteVersions: []int{1}}
+	for _, target := range [][2]string{{"darwin", "amd64"}, {"darwin", "arm64"}, {"linux", "amd64"}, {"linux", "arm64"}} {
+		a := distribution.Asset{Kind: "cli", OS: target[0], Arch: target[1], Name: "mandalore_1.9.0_" + target[0] + "_" + target[1], Size: 1, SHA256: strings.Repeat("e", 64)}
+		if a.OS == p.OS && a.Arch == p.Arch {
+			a.Size, a.SHA256 = int64(len(binary)), distribution.Digest(binary)
+		}
+		installed.Assets = append(installed.Assets, a)
+	}
+	installed.Assets = append(installed.Assets, distribution.Asset{Kind: "bootstrap", Name: "install.sh", Size: 1, SHA256: strings.Repeat("f", 64)})
+	raw, err := distribution.EncodeManifest(installed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p.Observed.Current = distribution.Digest(raw)
+	root := filepath.Join(p.Prefix, "lib", "mandalore", "releases", "sha256-"+p.Observed.Current, p.OS+"_"+p.Arch)
+	if err := os.MkdirAll(root, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "manifest.json"), raw, 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "mandalore"), binary, 0700); err != nil {
+		t.Fatal(err)
+	}
+	p.Observed.LauncherTarget = filepath.Join(root, "mandalore")
+	out.Reset()
+	m.releasePreview(p)
+	if !strings.Contains(out.String(), "1 / read 1, 2; write 1, 2") || !strings.Contains(out.String(), "1 / read 1; write 1") {
+		t.Fatal("preview does not show the installed runtime's compatibility", out.String())
+	}
+
+	// A replaced runtime is reported, never shown with assumed values.
+	if err := os.WriteFile(filepath.Join(root, "mandalore"), []byte("tampered installed runtime!"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	out.Reset()
+	m.releasePreview(p)
+	if !strings.Contains(out.String(), "Unavailable: retained runtime does not match its manifest") || strings.Contains(out.String(), "read 1; write 1") {
+		t.Fatal("preview hid an unverifiable installed runtime", out.String())
 	}
 }
