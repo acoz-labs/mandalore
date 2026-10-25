@@ -71,7 +71,8 @@ Open the enrollment link on the device that will hold the owner passkey (it
 works once, for 10 minutes). The metadata request should return JSON whose
 `issuer` is `https://memory.example.com`. Then add `https://memory.example.com/mcp`
 as a connector in Claude, or as the Claude plugin's server URL; with several
-signets each is at `/s/<slug>/mcp`.
+signets each is at `/s/<slug>/mcp`. With both, deny the connector in Claude Code
+([plugin and connector together](../../plugins/claude/README.md#plugin-and-connector-together)).
 
 ## 4. Edge rules
 
