@@ -54,7 +54,7 @@ Repeat `--preflight` and `--device-lost ID --reason TEXT` as needed; each
 `--reason` belongs to the `--device-lost` just before it. A device enrolled by
 `signet create` without a clone of its own is still enrolled: mark it lost with
 a reason that says so. Init checks that each receipt's head is on the remote,
-not how old the receipt is: pass the receipts from runbook step 4, taken after
+not how old the receipt is: pass the receipts from runbook step 5, taken after
 1.x sessions stopped, not earlier ones.
 
 A refusal (`migrate.refused`) changes no signet, remote or configuration and
@@ -103,18 +103,33 @@ checks recall no longer shows it, and pushes. It passes only when the remote's
 
 ## Runbook
 
-1. Preflight every device. Fix what each one reports.
-2. Stop all 1.x sessions on every device, including any razor-crest replica.
-3. Sync each device a final time.
-4. Preflight every device again and keep each receipt. A device that reports
-   unfetched remote commits needs one more sync.
-5. Retire each device, naming each of its native profiles.
-6. On the server, `init`, then `verify`.
-7. Start the server (`mandalore serve --config FILE`) and check
-   `mandalore server status`.
-8. Install the 2.0 plugin.
+1. Upgrade a format 1 signet to format 2. Skip this step when the signet is
+   already format 2; otherwise preflight blocks it. Use the 1.x binary
+   (`mandalore call ... < input.json`):
+   1. Stop every 1.x writer on every device, including any razor-crest
+      replica.
+   2. On one device, run `signet_upgrade_preview` against that clone's binding
+      and review the plan.
+   3. Run `signet_upgrade_apply` with that exact plan and
+      `stopped_writers: true`.
+   4. Sync that clone, so the remote has the format 2 signet.
 
-A device you can't reach is marked lost at step 6. If it comes back, retire it
+   Each clone opts in separately: another device's format 1 clone doesn't adopt
+   the upgrade from the remote, so run 1.2–1.4 on each clone before it syncs
+   again. Clients too old to read format 2 refuse the upgraded signet; update
+   them before they use it.
+2. Preflight every device. Fix what each one reports.
+3. Stop all 1.x sessions on every device, including any razor-crest replica.
+4. Sync each device a final time.
+5. Preflight every device again and keep each receipt. A device that reports
+   unfetched remote commits needs one more sync.
+6. Retire each device, naming each of its native profiles.
+7. On the server, `init`, then `verify`.
+8. Start the server (`mandalore serve --config FILE`) and check
+   `mandalore server status`.
+9. Install the 2.0 plugin.
+
+A device you can't reach is marked lost at step 7. If it comes back, retire it
 before it syncs; the server refuses to serve a signet whose remote moved.
 
 ## Pending intents
@@ -147,8 +162,10 @@ A command that stops after writing reports `migrate.incomplete` with
   pending work when it starts. Stop it and rerun verify. If the canary is still
   visible, withdraw it with `memory_withdraw` from a 2.0 client once the server
   runs.
-- **Retire.** Keep the failure output's list of disabled connections, fix the
-  cause and rerun retire; it skips what is already disabled.
+- **Retire.** The failure output names each profile with the state its
+  configuration shows after the disable: disabled, unchanged and still enabled,
+  failed, or not reached. Keep it, fix the cause and rerun retire; it skips what
+  is already disabled.
 
 ## Rollback
 
@@ -164,6 +181,5 @@ be read as an older copy.
 ## Format 1 signets
 
 Verify withdraws its canary, and withdrawal needs format 2, so preflight blocks
-format 1 and `init` refuses it. Upgrade first with the 1.x
-`signet_upgrade_preview` and `signet_upgrade_apply` operations, sync, then
-start the cutover.
+format 1 and `init` refuses it. Upgrade first, as step 1 of the
+[runbook](#runbook) describes.

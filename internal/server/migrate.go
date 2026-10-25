@@ -82,13 +82,15 @@ func Init(ctx context.Context, in MigrateInit) (Migration, error) {
 	if err := os.MkdirAll(state, 0700); err != nil {
 		return out, errors.New("cannot create the signet's state directory")
 	}
-	for _, path := range []string{in.ConfigPath + ".tmp", filepath.Join(state, "migration.json.tmp")} {
-		f, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
+	// Each probe has its own name, so a temp file an interrupted write left
+	// behind cannot fail it.
+	for _, path := range []string{in.ConfigPath, filepath.Join(state, "migration.json")} {
+		f, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".probe-*")
 		if err != nil {
-			return out, fmt.Errorf("cannot write beside %s", filepath.Base(strings.TrimSuffix(path, ".tmp")))
+			return out, fmt.Errorf("cannot write beside %s", filepath.Base(path))
 		}
 		f.Close()
-		os.Remove(path)
+		os.Remove(f.Name())
 	}
 	receipts := map[string]cutover.Receipt{}
 	for _, path := range in.Preflights {

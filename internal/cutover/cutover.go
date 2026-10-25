@@ -83,7 +83,7 @@ func Preflight(ctx context.Context, clone, bindingPath string) (Receipt, error) 
 		block("origin has commits this clone has not fetched: run a 1.x sync, then preflight again")
 	}
 	if r.Format < 2 {
-		block("format 1: upgrade to format 2 with the 1.x signet upgrade first; verify withdraws its canary, which needs format 2")
+		block("format 1: upgrade to format 2 first with runbook step 1 in docs/migration-2.0.md (stop every 1.x writer, signet_upgrade_preview, signet_upgrade_apply with stopped_writers: true using the 1.x binary, then sync); verify withdraws its canary, which needs format 2")
 	}
 	r.Clean = len(r.Blockers) == 0
 	return r, nil
