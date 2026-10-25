@@ -518,7 +518,12 @@ func (a *authServer) token(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	clientID := f.Get("client_id")
-	if !a.knownClient(clientID) {
+	known, err := a.knownClient(clientID)
+	if err != nil {
+		oauthError(w, http.StatusInternalServerError, "server_error", err.Error())
+		return
+	}
+	if !known {
 		// A revoked client's refresh token died with it. invalid_grant tells
 		// the client to authorize again, which still needs the owner.
 		if f.Get("grant_type") == "refresh_token" {
@@ -531,7 +536,6 @@ func (a *authServer) token(w http.ResponseWriter, r *http.Request) {
 	var (
 		out  tokenResponse
 		code = "invalid_grant"
-		err  error
 	)
 	switch f.Get("grant_type") {
 	case "authorization_code":
@@ -579,17 +583,19 @@ func clientForm(w http.ResponseWriter, r *http.Request, kind string) (url.Values
 	return f, true
 }
 
-func (a *authServer) knownClient(id string) bool {
+func (a *authServer) knownClient(id string) (bool, error) {
 	var known bool
-	_ = a.store.view(func(st *oauthState) error { known = st.Clients[id] != nil; return nil })
-	return known
+	err := a.store.view(func(st *oauthState) error { known = st.Clients[id] != nil; return nil })
+	return known, err
 }
 
 // revoke is RFC 7009 token revocation for public clients, which
 // authenticate by client_id alone, as at /token. Revoking either token of a
-// pair ends its whole family, so a logout leaves nothing live. A token that
-// is unknown, expired or another client's gets the same empty 200 and
-// changes nothing. token_type_hint is ignored: one lookup finds either kind.
+// pair ends its whole family, so a logout leaves nothing live. That holds
+// for the client's own expired token too until it is pruned. A token that is
+// unknown or another client's gets the same empty 200 and changes nothing.
+// token_type_hint is ignored: one lookup finds either kind. If the state
+// can't be read or saved, the answer is 503 and nothing is revoked.
 func (a *authServer) revoke(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -604,13 +610,22 @@ func (a *authServer) revoke(w http.ResponseWriter, r *http.Request) {
 		oauthError(w, http.StatusBadRequest, "invalid_request", "token is required")
 		return
 	}
-	if !a.knownClient(clientID) {
+	key := hashSecret(presented)
+	var known, owned bool
+	err := a.store.view(func(st *oauthState) error {
+		known = st.Clients[clientID] != nil
+		t := st.Tokens[key]
+		owned = t != nil && t.Client == clientID
+		return nil
+	})
+	if err != nil {
+		oauthError(w, http.StatusServiceUnavailable, "temporarily_unavailable", err.Error())
+		return
+	}
+	if !known {
 		oauthError(w, http.StatusUnauthorized, "invalid_client", "unknown client")
 		return
 	}
-	key := hashSecret(presented)
-	var owned bool
-	_ = a.store.view(func(st *oauthState) error { t := st.Tokens[key]; owned = t != nil && t.Client == clientID; return nil })
 	if owned {
 		err := a.store.update(func(st *oauthState) error {
 			if t := st.Tokens[key]; t != nil && t.Client == clientID {
