@@ -80,7 +80,7 @@ access explicitly; do not silently skip the provider policy check.
 ## Server image
 
 Publishing a server image is deferred to
-[#188](https://github.com/acoz-labs/mandalore/issues/188). 2.0.0 publishes no
+[#188](https://github.com/acoz-labs/mandalore/issues/188). 2.0.x publishes no
 image. It ships `packaging/server/Dockerfile`, which operators build locally
 from the release tag (see [server](server.md#docker)), and the release record
 says "container image: build from packaging/server; published image to follow."
