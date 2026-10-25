@@ -68,7 +68,11 @@ see the [project receipt](operations/project.md) and issue #1 for live follow-up
 My Friday is archived and its planning board is closed; historical work is
 preserved rather than marked successfully implemented.
 
-## Razor Crest — proposed remote access
+## Razor Crest — superseded by 2.0
+
+The 2.0 [server](server.md) replaces Razor Crest, which left the build in
+[#167](https://github.com/acoz-labs/mandalore/issues/167); the record below is
+historical.
 
 [#146](https://github.com/acoz-labs/mandalore/issues/146) tracks the optional,
 provider-independent remote memory MVP. The selected initial target is a portable

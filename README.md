@@ -18,8 +18,12 @@ CLI installation/update and guarded same-byte release tooling are implemented.
 is published from the independently accepted retained candidate. See the
 [release record](docs/releases/1.3.0.md) for provenance, verification and limits.
 
-Claude Code, Codex and Pi integrations are released with
-[session-authorized automatic synchronization](docs/synchronization.md#session-authorized-transport).
+`main` is now 2.0 development: the single-writer [Mandalore server](docs/server.md)
+(`mandalore serve`) replaces the stdio MCP server, lifecycle hooks, session
+synchronization and Razor Crest. The text below describes the released 1.x line.
+
+Claude Code, Codex and Pi integrations are released in 1.x with
+[session-authorized automatic synchronization](docs/synchronization.md).
 Enabled sessions attempt refresh before context and delivery after semantic saves.
 Existing 1.2 connections keep their transport behavior until a reviewed update
 adopts the new policy. Read-only connections are never silently upgraded.
@@ -41,8 +45,8 @@ for the selected profile; publication does not automatically upgrade operators.
 - **Foundlings**: linked historical references, kept separate from current memory.
 - **The Armorer**: the on-demand setup and maintenance skill (`the-armorer`),
   including read-only connection inspection (`connection armorer`).
-- **Razor Crest**: the optional authenticated remote-memory service, currently
-  [under implementation and acceptance](docs/razor-crest.md).
+- **Server**: `mandalore serve`, the 2.0 [single-writer MCP server](docs/server.md)
+  that replaces the Razor Crest candidate.
 
 Learning should work without the cue. Memory is revisable evidence, not rules
 that override current user direction. Journals are semantic summaries, not a
@@ -65,7 +69,7 @@ portability is not included.
 - [Signet data format](docs/signet-format.md) and [source extraction](docs/memory-extraction.md)
 - [Development CLI, local MCP and machine bindings](docs/interface.md)
 - [Git synchronization, offline work and freshness](docs/synchronization.md)
-- [Razor Crest remote-memory service (candidate)](docs/razor-crest.md)
+- [Mandalore server (2.0 development)](docs/server.md) and its [design](docs/design/2.0.md)
 - [Privacy, retention and the limits of forgetting](docs/privacy.md)
 - [Guided setup and CLI installation](docs/setup.md) and [historical foundlings](docs/foundlings.md)
 - [Codex plugin](plugins/codex/README.md) and [native engineering evidence](docs/codex-native-evidence.md)

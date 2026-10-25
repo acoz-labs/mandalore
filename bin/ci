@@ -44,7 +44,9 @@ done
   echo "Node 24.1.0 is required for Pi adapter tests; use mise exec -- bin/ci." >&2
   exit 1
 }
-node --test plugins/pi/test/*.test.mjs
+# connection.test.mjs drives the 1.x stdio/session runtime that 2.0 removed
+# (#167); the Pi plugin and this step leave the build in #163.
+node --test $(ls plugins/pi/test/*.test.mjs | grep -v '/connection\.test\.mjs$')
 python3 -B -m unittest discover -s plugins/hermes/test -v
 go mod verify
 git --version

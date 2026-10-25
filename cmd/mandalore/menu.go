@@ -13,12 +13,14 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/acoz-labs/mandalore/internal/api"
 	"github.com/acoz-labs/mandalore/internal/binding"
 	"github.com/acoz-labs/mandalore/internal/console"
 	"github.com/acoz-labs/mandalore/internal/install"
+	signetsync "github.com/acoz-labs/mandalore/internal/sync"
 )
 
 // This adapter owns conversation flow only. Every durable operation delegates
@@ -470,11 +472,12 @@ func (m *menu) setup(create bool) error {
 
 func (m *menu) inspect() error {
 	m.block(console.Block{Title: "Selected memory", Fields: []console.Field{{Label: "Binding", Value: m.binding}}, Body: "Read-only local inspection; remote freshness is not tested."})
-	for _, name := range []string{"memory_inspect", "memory_sync_status"} {
-		v := m.call(name, nil, true)
-		title := "Signet structure"
-		if name == "memory_sync_status" {
-			title = "Local synchronization status"
+	for _, title := range []string{"Signet structure", "Local synchronization status"} {
+		var v api.Envelope
+		if title == "Signet structure" {
+			v = m.call("memory_inspect", nil, true)
+		} else {
+			v = m.git(false)
 		}
 		if err := m.outcome(title, v); err != nil {
 			return err
@@ -482,6 +485,33 @@ func (m *menu) inspect() error {
 		m.jsonBlock(title, v.Result)
 	}
 	return nil
+}
+
+// git inspects or synchronizes the selected 1.x clone directly; agents no
+// longer have synchronization tools. It leaves with the 1.x connections.
+func (m *menu) git(sync bool) api.Envelope {
+	s, err := binding.Open(m.binding, "menu")
+	if err != nil {
+		return api.Failure("binding.invalid", "Cannot open the selected binding; inspect it or connect a signet first.", false)
+	}
+	g, err := signetsync.Open(s.Root(), s.ID())
+	if err != nil {
+		return api.Failure("binding.invalid", "The signet identity changed; inspect and explicitly rebind.", false)
+	}
+	if !sync {
+		inspection, err := g.Inspect(m.ctx)
+		if err != nil {
+			return api.Failure("sync.failed", "Cannot read local synchronization state; inspect the signet's Git repository.", false)
+		}
+		return api.Success(inspection)
+	}
+	status, err := g.Sync(m.ctx, 10*time.Second)
+	if err != nil {
+		out := api.Failure("sync.failed", "Synchronization stopped; a write or delivery may have occurred. Inspect history before retrying.", true)
+		out.Error.SyncStatus = &status
+		return out
+	}
+	return api.Success(status)
 }
 
 func (m *menu) sync() error {
@@ -492,7 +522,7 @@ func (m *menu) sync() error {
 	if err := m.confirm(); err != nil {
 		return err
 	}
-	v := m.call("memory_sync", nil, true)
+	v := m.git(true)
 	if err := m.outcome("Synchronization command completed (inspect delivery state below)", v); err != nil {
 		return err
 	}
