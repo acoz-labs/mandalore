@@ -128,3 +128,77 @@ func TestRetireReportsDisablesBeforeAFailure(t *testing.T) {
 		t.Fatalf("rerun: %+v %v", r, err)
 	}
 }
+
+// A partial retire names every profile with the state its configuration shows
+// after the disable, not what the disable command reported.
+func TestRetireLabelsEachProfileWithItsRealState(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	l := testfixture.NewLegacySignet(t, "device-a")
+	clone := l.Clones["device-a"].Root
+	restoreWrite(t, clone)
+	base := t.TempDir()
+	homes := map[string]string{}
+	profiles := []cutover.NativeProfile{}
+	for _, name := range []string{"works", "noop", "fails", "later"} {
+		homes[name] = filepath.Join(base, name)
+		claudeProfile(t, homes[name], true)
+		profiles = append(profiles, cutover.NativeProfile{Harness: "claude-code", Home: homes[name], Binary: "/fixture/bin/claude"})
+	}
+	// works disables for real; noop exits 0 but changes nothing.
+	disable := func(_ context.Context, c cutover.LegacyConnection) error {
+		if strings.HasSuffix(c.Home, "works") {
+			claudeProfile(t, c.Home, false)
+		}
+		return nil
+	}
+	_, err := cutover.Retire(context.Background(), clone, "https://memory.example.com", profiles, disable)
+	var partial *cutover.PartialError
+	if !errors.As(err, &partial) {
+		t.Fatalf("partial retire: %v", err)
+	}
+	for _, want := range []string{
+		"mandalore@mandalore in " + homes["works"] + ": disabled",
+		"mandalore@mandalore in " + homes["noop"] + ": unchanged, still enabled",
+		homes["fails"] + ": not reached",
+		homes["later"] + ": not reached",
+	} {
+		if !strings.Contains(partial.Err.Error(), want) {
+			t.Errorf("message %q lacks %q", partial.Err, want)
+		}
+	}
+	if !strings.Contains(partial.Written, "works") || strings.Contains(partial.Written, "noop") {
+		t.Errorf("written %q must list only the real disable", partial.Written)
+	}
+
+	// Now noop works, and fails' disable errors without changing anything.
+	_, err = cutover.Retire(context.Background(), clone, "https://memory.example.com", profiles, func(_ context.Context, c cutover.LegacyConnection) error {
+		if strings.HasSuffix(c.Home, "fails") {
+			return errors.New("synthetic failure")
+		}
+		claudeProfile(t, c.Home, false)
+		return nil
+	})
+	if !errors.As(err, &partial) {
+		t.Fatalf("second partial retire: %v", err)
+	}
+	for _, want := range []string{
+		homes["works"] + ": already clear",
+		"mandalore@mandalore in " + homes["noop"] + ": disabled",
+		"mandalore@mandalore in " + homes["fails"] + ": failed, still enabled",
+		homes["later"] + ": not reached",
+		"synthetic failure",
+	} {
+		if !strings.Contains(partial.Err.Error(), want) {
+			t.Errorf("message %q lacks %q", partial.Err, want)
+		}
+	}
+	if _, err := os.Lstat(filepath.Join(clone, cutover.RetiredNote)); !errors.Is(err, os.ErrNotExist) {
+		t.Fatal("RETIRED.md written after a partial retire")
+	}
+
+	// Nothing changes at all: a refusal that still names the enabled profile.
+	_, err = cutover.Retire(context.Background(), clone, "https://memory.example.com", profiles[2:3], func(context.Context, cutover.LegacyConnection) error { return nil })
+	if err == nil || errors.As(err, &partial) || !strings.Contains(err.Error(), homes["fails"]+": unchanged, still enabled") {
+		t.Fatalf("no-op retire: %v", err)
+	}
+}

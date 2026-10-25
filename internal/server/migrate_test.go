@@ -140,3 +140,37 @@ func chmodTree(t *testing.T, root string, mode fs.FileMode) {
 		return nil
 	})
 }
+
+// Temp files an interrupted write left behind do not fail init's writability
+// probe, and the probe leaves nothing of its own.
+func TestInitIgnoresStaleTempFiles(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	_, in := migrateFixture(t)
+	c, err := readConfig(in.ConfigPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	state := filepath.Join(c.StateDir, "signets", in.Slug)
+	if err := os.MkdirAll(state, 0700); err != nil {
+		t.Fatal(err)
+	}
+	for _, stale := range []string{in.ConfigPath + ".tmp", filepath.Join(state, "migration.json.tmp")} {
+		if err := os.WriteFile(stale, []byte("{\"interrupted\":"), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := Init(context.Background(), in); err != nil {
+		t.Fatalf("init with stale temp files: %v", err)
+	}
+	if _, err := LoadConfig(in.ConfigPath); err != nil {
+		t.Fatalf("configuration after init: %v", err)
+	}
+	for _, dir := range []string{filepath.Dir(in.ConfigPath), state} {
+		entries, _ := os.ReadDir(dir)
+		for _, e := range entries {
+			if strings.Contains(e.Name(), ".tmp") || strings.Contains(e.Name(), ".probe-") {
+				t.Errorf("init left %s in %s", e.Name(), dir)
+			}
+		}
+	}
+}
