@@ -1,6 +1,7 @@
 package memory
 
 import (
+	"fmt"
 	"slices"
 	"strings"
 	"testing"
@@ -132,5 +133,40 @@ func TestEmptyRecallListsInRevisionOrder(t *testing.T) {
 	}
 	if !slices.IsSorted(ids) {
 		t.Fatalf("empty recall out of revision order: %v", ids)
+	}
+}
+
+// Round 2 of #227 review: a record matching one query term only in its body
+// is incidental, and with Names only those words anchor.
+func TestRecallMarksIncidentalMatchesAndNamedAnchors(t *testing.T) {
+	s := fixture(t)
+	ids := rememberAll(t, s,
+		Write{Kind: "decision", Summary: "Public API rate limit", Body: "600 requests per minute per key."},
+		Write{Kind: "entity", Summary: "Beacon is the house voice assistant", Body: "Runs on the hub."},
+	)
+	for i := range 20 {
+		rememberAll(t, s, Write{Kind: "project-state", Summary: fmt.Sprintf("Notes %d", i), Body: "Garden and shed."})
+	}
+	head := func(p Packet, record string) string {
+		for _, r := range p.Current {
+			if r.RecordID == record {
+				return r.ID
+			}
+		}
+		t.Fatalf("%s not recalled", record)
+		return ""
+	}
+	p, err := s.store.Recall(Query{Text: "600 divided by seven", AllScopes: true}, time.Now())
+	if err != nil || !p.Incidental[head(p, ids[0])] {
+		t.Fatalf("body-only single match not incidental: %+v %v", p.Incidental, err)
+	}
+	p, _ = s.store.Recall(Query{Text: "api rate limit", AllScopes: true}, time.Now())
+	if p.Incidental[head(p, ids[0])] {
+		t.Fatal("summary match marked incidental")
+	}
+	named, _ := s.store.Recall(Query{Text: "what is beacon", AllScopes: true, Names: []string{"Beacon?"}}, time.Now())
+	unnamed, _ := s.store.Recall(Query{Text: "what is beacon", AllScopes: true, Names: []string{}}, time.Now())
+	if named.Anchor[head(named, ids[1])] == 0 || unnamed.Anchor[head(unnamed, ids[1])] != 0 {
+		t.Fatalf("names: anchored %v, unnamed %v", named.Anchor, unnamed.Anchor)
 	}
 }

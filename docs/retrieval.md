@@ -56,8 +56,11 @@ prompts got a record. 2.1.0 changes all three:
   response shape are unchanged. A decision or preference scores 1.2 times as
   much as other kinds on a non-empty query. Ties, and an empty query's list,
   order by revision ID.
-- **Threshold (the hook only).** A recalled record is relevant if any of
-  three measures clears its bar:
+- **Threshold (the hook only).** A recalled record that matches just one of
+  the prompt's content terms, and only in its body, is incidental and never
+  relevant: sharing one word such as "600", "two-factor" or "days" with a
+  prompt doesn't make a record about it. Otherwise a record is relevant if any
+  of three measures clears its bar:
   - *Coverage* ≥ 0.25: its BM25 score as a share of the most a record could
     score on the prompt. Every prompt term counts, weighted by IDF, so a
     prompt about a topic the signet lacks (its terms in no record) covers
@@ -66,11 +69,10 @@ prompts got a record. 2.1.0 changes all three:
     other record contains. It doesn't fall when a prompt adds words, so
     instruction preambles ("Without looking anything up, …") don't hide an
     answer that matches several of the question's terms.
-  - *Anchor* ≥ 0.7: the rarest prompt term in its summary or identifiers,
-    or anywhere in it when the term is identifier-shaped (has a digit, dot or
-    hyphen, such as a host or `signal-000001`), as that term's IDF over the
-    most possible. A name such as "Beacon" in "What is Beacon?" anchors its
-    record even inside filler.
+  - *Anchor* ≥ 0.7: the rarest of the prompt's names (words capitalized
+    mid-sentence) in its summary or identifiers, as that term's IDF over the
+    most possible. "Beacon" in "What is Beacon?" anchors its record even
+    inside filler; an all-lowercase prompt has no names.
 
   A prompt with no relevant record gets nothing. A record less than 0.65 as
   relevant as the best (relevance being the largest of the three measures
@@ -94,26 +96,42 @@ full of the same domain and meta words. Hosts use `memory.example.com`.
 
 Each case has three phrasings. The hook sees each alone and inside 15
 instruction wrappers ("Answer from context you already have; don't call
-tools.", "In one line: …"), 2112 prompts in all. 48 prompts that no record
+tools.", "In one line: …"), 2112 prompts in all. 90 prompts that no record
 answers cover acknowledgements, general knowledge, coding questions and
-uncovered topics. A scripted 20-turn session measures injected bytes.
+uncovered topics, 42 of them written to collide with the signet's words:
+hyphenated words, numbers, versions, file names, code calls and words from
+record summaries ("How do I read a config.toml file in Rust?", "Is 17 a prime
+number?", "Recommend a good font for a resume."). A scripted 20-turn session
+measures injected bytes.
 
 **Splits.** The tuning split is each case's question and paraphrase, 9
-wrappers and 32 no-memory prompts. Every tuning decision (the hook's stop
-words, the three bars, the relative cut and the kind boost) was made on it
-alone; each hook stop word occurs in it. The held-out split is a third
-phrasing per case, 6 wrappers and 16 no-memory prompts, written during
-review of #227 before any run used them. A prompt is held out if it uses the
-third phrasing or a held-out wrapper. The held-out split was run three times:
-with coverage and evidence; after the anchor was added and tuned on the tuning
-split; and after the anchor also took identifier-shaped terms in a body, a fix
-for the 1,000-record latency fixture that changed no evaluation number. No
-held-out result informed a decision. An earlier version of the set had a held-out split that
-tuning had looked at; it is now part of the tuning split.
+wrappers and 62 no-memory prompts (30 of them colliding). Every tuning
+decision (the hook's stop words, the incidental rule, the names rule, the
+three bars, the relative cut and the kind boost) was made on it alone; each
+hook stop word occurs in it. The held-out split is a third phrasing per case,
+6 wrappers and 28 no-memory prompts (12 colliding), each written before any
+run used it. A prompt is held out if it uses the third phrasing or a held-out
+wrapper. The held-out split is computed only with `MANDALORE_EVAL_HELDOUT=1`;
+`bin/ci` and every other run score the tuning split alone.
+
+**Held-out exposure.** For 2.1.0 the held-out split was computed in every
+evaluation run of the second review round, since the test then always scored
+both splits and the tuning-only curve only hid it. Its numbers were shown in
+three runs of the hook's development builds (76.3%/83.8%, 77.6%/85.5% and
+77.6%/85.5% top-1/top-3), two runs without the kind boost (69.1%/76.1% and
+70.7%/77.8%) and one both-split curve. Other runs computed and saved them
+without showing them (one with other bars recorded 78.2%/86.6%). No held-out
+number informed a decision. From the third
+round, held-out was computed once, after the code was frozen: the numbers
+below. The held-out split is easier for 2.0.3 than the tuning split (61.9%
+against 44.8% top-3), so similar held-out and tuning numbers partly reflect
+easier prompts. The first version of the set had a held-out split that tuning
+had looked at; it is part of the tuning split now.
 
 `TestContextSelectionEvaluation` runs it in `bin/ci` and fails under these
 floors. The tuning floors sit a little under its rates. The held-out floors
-were set before the held-out split was first run and are not moved to fit it.
+were set before the held-out split was first run and are not moved to fit it;
+they are checked when it is computed.
 
 | Floor | Tuning | Held out |
 | --- | --- | --- |
@@ -129,50 +147,57 @@ between two builds.
 
 | Measure | Split | 2.0.3 | 2.1.0 | 2.1.0, no kind boost |
 | --- | --- | --- | --- | --- |
-| `memory_context` top-1 / top-3 | tuning (880 prompts) | 18.4% / 44.8% | 78.6% / 87.7% | 71.6% / 83.2% |
-| | held out (1232) | 33.3% / 61.9% | 77.6% / 85.5% | 70.7% / 77.8% |
+| `memory_context` top-1 / top-3 | tuning (880 prompts) | 18.4% / 44.8% | 79.3% / 86.6% | 72.0% / 82.4% |
+| | held out (1232) | 33.3% / 61.9% | 77.2% / 84.5% | not measured |
 | `memory_recall` top-1 / top-3 | tuning (88 queries) | 22.7% / 37.5% | 77.3% / 93.2% | 75.0% / 88.6% |
-| | held out (44) | 11.4% / 29.5% | 75.0% / 88.6% | 72.7% / 86.4% |
-| False injection | tuning (32) | 46.9% | 0% | 0% |
-| | held out (16) | 56.2% | 6.2% | 6.2% |
-| Injected bytes per prompt, 20-turn session | | 1030 | 573 (363 with `session`) | 596 |
+| | held out (44) | 11.4% / 29.5% | 75.0% / 88.6% | not measured |
+| False injection | tuning (62) | 71.0% (44) | 11.3% (7) | 9.7% (6) |
+| | held out (28) | 67.9% (19) | 7.1% (2) | not measured |
+| Injected bytes per prompt, 20-turn session | | 1030 | 572 (353 with `session`) | 594 |
 | Warm p95, 250 records | | | 12 ms | |
 
 The 2.0.3 column runs the same test file against 816ea1b. The kind boost was
-kept because without it, on the tuning split, `memory_context` top-3 falls
-under 85% and recall top-3 under 90%, and the "Without looking anything up"
-wrapper falls below 2.0.3. With the boost every wrapper in both splits is at or
-above 2.0.3 on top-3; without it, four held-out wrappers are below.
+kept because without it, on the tuning split, `memory_context` falls under
+both its top-1 and top-3 floors and recall top-3 under 90%.
 
-`MANDALORE_EVAL_CURVE=tune` logs the trade-off on the tuning split, and `all`
-adds the held-out split:
+`MANDALORE_EVAL_CURVE=tune` logs the trade-off on the tuning split (`all`,
+with `MANDALORE_EVAL_HELDOUT=1`, adds the held-out split):
 
-| Coverage / evidence / anchor / relative | Top-3 tune / held out | Worst wrapper tune / held out | False injection tune / held out | Bytes |
+| Coverage / evidence / anchor / relative | Top-1 / top-3 | Worst wrapper top-3 | False injection | Bytes |
 | --- | --- | --- | --- | --- |
-| none / – / – / 0.65 | 89.8% / 89.8% | 85.2% / 86.4% | 13/32 / 9/16 | 674 |
-| 0.25 / – / – / 0.65 | 82.2% / 60.8% | 52.3% / 38.6% | 0/32 / 1/16 | 573 |
-| 0.25 / 0.70 / – / 0.65 | 87.2% / 83.8% | 79.5% / 81.1% | 0/32 / 1/16 | 573 |
-| 0.20 / 0.70 / 0.70 / 0.65 | 88.5% / 86.0% | 81.8% / 83.3% | 2/32 / 3/16 | 573 |
-| 0.25 / 0.60 / 0.70 / 0.65 | 88.8% / 86.6% | 85.2% / 85.6% | 5/32 / 5/16 | 573 |
-| 0.25 / 0.70 / 0.60 / 0.65 | 87.7% / 85.5% | 81.8% / 83.3% | 1/32 / 2/16 | 573 |
-| **0.25 / 0.70 / 0.70 / 0.65** | **87.7% / 85.5%** | **81.8% / 83.3%** | **0/32 / 1/16** | **573** |
-| 0.25 / 0.70 / 0.80 / 0.65 | 87.2% / 83.8% | 79.5% / 81.1% | 0/32 / 1/16 | 573 |
-| 0.25 / 0.80 / 0.70 / 0.65 | 86.4% / 82.1% | 77.3% / 78.0% | 0/32 / 1/16 | 573 |
-| 0.30 / 0.70 / 0.70 / 0.65 | 85.7% / 85.4% | 81.8% / 83.3% | 0/32 / 1/16 | 573 |
-| 0.25 / 0.70 / 0.70 / none | 88.5% / 85.7% | 83.0% / 84.1% | 0/32 / 1/16 | 1179 |
-| 0.25 / 0.70 / 0.70 / 0.50 | 87.8% / 85.6% | 81.8% / 83.3% | 0/32 / 1/16 | 647 |
-| 0.25 / 0.70 / 0.70 / 0.80 | 86.4% / 84.8% | 81.8% / 82.6% | 0/32 / 1/16 | 428 |
+| none (incidental rule only) | 81.8% / 89.4% | 87.5% | 19/62 | 666 |
+| 0.25 / – / – / 0.65 | 75.0% / 81.0% | 52.3% | 6/62 | 572 |
+| 0.25 / 0.70 / – / 0.65 | 78.8% / 86.0% | 79.5% | 7/62 | 572 |
+| 0.20 / 0.70 / 0.70 / 0.65 | 80.7% / 88.1% | 81.8% | 9/62 | 572 |
+| 0.25 / 0.60 / 0.70 / 0.65 | 80.2% / 87.5% | 84.1% | 10/62 | 572 |
+| **0.25 / 0.70 / 0.70 / 0.65** | **79.3% / 86.6%** | **81.8%** | **7/62** | **572** |
+| 0.25 / 0.80 / 0.70 / 0.65 | 78.2% / 85.2% | 77.3% | 7/62 | 572 |
+| 0.30 / 0.80 / 0.70 / 0.65 | 76.5% / 83.4% | 77.3% | 6/62 | 572 |
+| 0.25 / 0.70 / 0.70 / none | 78.0% / 87.2% | 83.0% | 7/62 | 1179 |
+| 0.25 / 0.70 / 0.70 / 0.80 | 79.3% / 86.0% | 81.8% | 7/62 | 428 |
 
-The chosen setting is the highest tuning top-3 with no tuning false
-injection. Each bar sits just above the strongest tuning prompt that no record
-answers (coverage 0.238, evidence 0.687, anchor 0.687), so it is fitted to the
-tuning split; the held-out column is the check. The relative cut barely moves
-hits but halves the bytes.
+The chosen bars are the ones from before the colliding prompts were added;
+with the incidental and names rules they still give the best tuning top-3 at
+the lowest false injection short of losing hits. The seven tuning prompts it
+still injects for match the signet on two or more words, or on a summary word:
+"How do I enable two-factor authentication on a GitHub account?" (mail
+provider settings), "Convert this variable name to kebab-case in Python."
+(flag naming), "How do I read a config.toml file in Rust?" (the CLI's config
+path), "Format a date as 24-hour time in JavaScript." (the date-format
+preference), "How do I cache API responses in a Flutter app?" (notes on the
+API cache), "What theme should we pick for a wedding?" (editor theme) and
+"Recommend a good font for a resume." (terminal font). A rule that also
+dropped single summary-word matches removed the last two but lost the
+answers to "Which editor do I use?", "Which units do I prefer?" and three
+more, the same shape, so it wasn't taken. The relative cut barely moves hits
+but halves the bytes.
 
 Known limits, all lexical: a question whose only distinctive word is common in
 the signet, inside an instruction wrapper, can fall under every bar
-(`orchard-compost`'s "How often should the compost be turned?"). The hook drops
-words under three letters, so a record found by recall through "go" can miss.
+(`orchard-compost`'s "How often should the compost be turned?"). A prompt that
+shares two or more words, or a summary word, with an unrelated record can
+still get it. A name typed in lower case doesn't anchor. The hook drops words
+under three letters, so a record found by recall through "go" can miss.
 Synonyms still miss. Five recall queries rank their answer lower than 2.0.3
 did; see [the release notes](releases/2.1.0.md#known-deviations).
 

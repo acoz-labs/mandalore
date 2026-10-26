@@ -238,15 +238,15 @@ plugin's hook. It returns Claude Code hook output JSON,
   line") and acknowledgements ("ok", "ready", "thanks, go ahead") are dropped.
   A prompt with no term left gets nothing.
 - **Selection.** Recall ranks the 10 best current records across every visible
-  scope (see [retrieval](retrieval.md#hook-selection)). A record is relevant
-  if any of three measures clears its bar:
+  scope (see [retrieval](retrieval.md#hook-selection)). A record that matches
+  just one of the prompt's terms, and only in its body, is never injected.
+  Otherwise a record is relevant if any of three measures clears its bar:
   - its match covers at least 0.25 of the prompt's terms, weighted by how rare
     each term is;
   - its matched evidence is worth at least 0.7 of a fully matched term no
     other record has, which extra words in a long prompt don't dilute;
-  - its summary or identifiers contain a prompt term at least 0.7 as rare as
-    the rarest possible, such as a name; an identifier-shaped term (with a
-    digit, dot or hyphen, such as a host) counts anywhere in the record.
+  - its summary or identifiers contain one of the prompt's names (a word
+    capitalized mid-sentence) at least 0.7 as rare as the rarest possible.
 
   If no record is relevant, nothing is injected. Otherwise records and
   matching conflicts less than 0.65 as relevant as the best are left out.

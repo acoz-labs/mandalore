@@ -41,6 +41,9 @@ func assertEvaluation(t *testing.T, r evalReport) {
 		context1, context3, recall1, recall3 float64
 		falseInjection                       float64
 	}{{false, 75, 85, 72, 88, 15}, {true, 65, 80, 60, 80, 25}} {
+		if split.heldOut && !heldOutRequested() {
+			continue
+		}
 		name := map[bool]string{false: "tune", true: "held-out"}[split.heldOut]
 		x := rates(r.Trials, func(tr evalTrial) bool { return tr.HeldOut == split.heldOut })
 		injected, n := 0, 0
@@ -81,6 +84,9 @@ func TestContextThresholdCurve(t *testing.T) {
 	split := os.Getenv("MANDALORE_EVAL_CURVE")
 	if split != "tune" && split != "all" {
 		t.Skip("set MANDALORE_EVAL_CURVE=tune (or all) to log the threshold curve")
+	}
+	if split == "all" && !heldOutRequested() {
+		t.Skip("MANDALORE_EVAL_CURVE=all also needs MANDALORE_EVAL_HELDOUT=1")
 	}
 	m, e := testfixture.LoadEvaluation(t, "testdata/context-eval.json")
 	m.CacheReads()

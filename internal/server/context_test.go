@@ -138,7 +138,7 @@ func TestMemoryContextLatencyOnLargeSignet(t *testing.T) {
 	samples := make([]time.Duration, 40)
 	for i := range samples {
 		start := time.Now()
-		text, err := contextOf(f.Service, ContextInput{Event: "prompt", Prompt: fmt.Sprintf("status of signal-%06d in the fictional project", i*25), BudgetBytes: &max}, nil)
+		text, err := contextOf(f.Service, ContextInput{Event: "prompt", Prompt: fmt.Sprintf("status of checkpoint %06d in the fictional project", i*25), BudgetBytes: &max}, nil)
 		samples[i] = time.Since(start)
 		if err != nil || len(text) > contextMaxBytes || !strings.Contains(text, fmt.Sprintf("signal-%06d", i*25)) {
 			t.Fatalf("sample %d: %d bytes: %v", i, len(text), err)
@@ -163,7 +163,10 @@ func TestMemoryContextLatencyOnEvaluationSignet(t *testing.T) {
 	m.CacheReads()
 	contextFor(t, m, "prompt", "warm the read cache")
 	var samples []time.Duration
-	evalPrompts(e, func(_ int, _, text string, w evalWrapper) {
+	evalPrompts(e, func(_ int, form, text string, w evalWrapper) {
+		if form == "variant" || w.heldOut {
+			return // the tuning split only; see heldOutRequested
+		}
 		start := time.Now()
 		contextFor(t, m, "prompt", strings.ReplaceAll(w.text, "{q}", text))
 		samples = append(samples, time.Since(start))
@@ -190,7 +193,7 @@ func TestMemoryContextAfterWriteLatency(t *testing.T) {
 			t.Fatal(err)
 		}
 		start := time.Now()
-		text := contextFor(t, f.Service, "prompt", fmt.Sprintf("status of signal-%06d", i*50))
+		text := contextFor(t, f.Service, "prompt", fmt.Sprintf("status of checkpoint %06d", i*50))
 		samples[i] = time.Since(start)
 		if !strings.Contains(text, fmt.Sprintf("signal-%06d", i*50)) {
 			t.Fatalf("sample %d missed its record", i)
@@ -209,7 +212,7 @@ func BenchmarkMemoryContext(b *testing.B) {
 	f.Service.CacheReads()
 	max := contextMaxBytes
 	testfixture.Measure(b, func() ([]byte, error) {
-		text, err := contextOf(f.Service, ContextInput{Event: "prompt", Prompt: "status of signal-000500 in the fictional project", BudgetBytes: &max}, nil)
+		text, err := contextOf(f.Service, ContextInput{Event: "prompt", Prompt: "status of checkpoint 000500 in the fictional project", BudgetBytes: &max}, nil)
 		return []byte(text), err
 	})
 }
@@ -333,11 +336,53 @@ func TestContextRelevanceThreshold(t *testing.T) {
 		{map[string]float64{"a": 0.1, "x1": 0.5, "x2": 0}, nil, "record-x"},
 		// Enough evidence carries a record whose coverage a long prompt diluted.
 		{map[string]float64{"a": 0.05, "b": 0.05}, map[string]float64{"a": contextMinEvidence, "b": 0.1}, "a"},
+		// An incidental match is never relevant, however strong.
+		{map[string]float64{"a": 0.9, "b": 0.3}, nil, "b"},
 	} {
 		p := packet(tc.strengths)
 		p.Evidence = tc.evidence
+		p.Incidental = map[string]bool{"a": tc.strengths["a"] == 0.9}
 		if got := ids(relevant(p)); got != tc.want {
 			t.Errorf("%v %v: got %q, want %q", tc.strengths, tc.evidence, got, tc.want)
+		}
+	}
+}
+
+func TestContextNames(t *testing.T) {
+	for prompt, want := range map[string]string{
+		"What is Beacon?":                               "Beacon?",
+		"In one line: what is Beacon? Thanks.":          "Beacon?",
+		"Beacon keeps dropping. Why does Relay answer?": "Relay",
+		"Recommend a good font for a resume.":           "",
+		`Is "Tidepool" on Postgres or MySQL?`:           "Tidepool\" Postgres MySQL?",
+		"what is beacon":                                "",
+	} {
+		if got := strings.Join(names(prompt), " "); got != want {
+			t.Errorf("%q: got %q, want %q", prompt, got, want)
+		}
+	}
+}
+
+// Round 2 of #227 review, H1: a record sharing one incidental word with a
+// prompt, such as a number or a hyphenated word in its body, isn't injected;
+// one whose summary names the prompt's subject is.
+func TestMemoryContextIgnoresIncidentalMatches(t *testing.T) {
+	writes := []memory.Write{
+		{Kind: "decision", Summary: "Public API rate limit", Body: "600 requests per minute per key; two-factor sign-in for the dashboard."},
+		{Kind: "entity", Summary: "Beacon is the house voice assistant", Body: "Self-hosted; runs on the hub."},
+	}
+	for i := range 30 { // IDF needs a signet of realistic size
+		writes = append(writes, memory.Write{Kind: "project-state", Summary: fmt.Sprintf("Session notes %d", i), Body: "Checked the garden, the shed and the kitchen lights again."})
+	}
+	m, ids := contextService(t, writes...)
+	for _, prompt := range []string{"What is 600 divided by 7?", "How do I add two-factor login to Django?", "Is self-hosted email worth it?"} {
+		if text := contextFor(t, m, "prompt", prompt); text != "" {
+			t.Errorf("%q injected:\n%s", prompt, text)
+		}
+	}
+	for prompt, want := range map[string]string{"What's the API rate limit?": ids[0], "Without looking anything up, what is Beacon?": ids[1]} {
+		if ranks := contextRanks(contextFor(t, m, "prompt", prompt)); len(ranks) == 0 || ranks[0] != want {
+			t.Errorf("%q injected %v, want %s first", prompt, ranks, want)
 		}
 	}
 }

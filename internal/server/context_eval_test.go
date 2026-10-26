@@ -91,6 +91,11 @@ func evalPrompts(e testfixture.Evaluation, each func(c int, form string, text st
 	}
 }
 
+// heldOutRequested reports whether a run may compute the held-out split. It is
+// computed once, after the code is frozen (docs/retrieval.md#evaluation-set),
+// so every other run, bin/ci's included, scores the tuning split alone.
+func heldOutRequested() bool { return os.Getenv("MANDALORE_EVAL_HELDOUT") == "1" }
+
 // runEvaluation scores testdata/context-eval.json: memory_recall on each
 // case's phrasings in the record's scope, memory_context on each
 // prompt, on the prompts no record answers and on the scripted session.
@@ -100,6 +105,9 @@ func runEvaluation(t *testing.T, m *memory.Service, e testfixture.Evaluation) ev
 	recalled := map[string][]string{}
 	evalPrompts(e, func(i int, form, text string, w evalWrapper) {
 		c := e.Cases[i]
+		if (form == "variant" || w.heldOut) && !heldOutRequested() {
+			return
+		}
 		if _, ok := recalled[text]; !ok {
 			scope := e.Scopes[c.Expect]
 			p, err := m.Recall(text, &scope, 5, 8192)
@@ -122,6 +130,9 @@ func runEvaluation(t *testing.T, m *memory.Service, e testfixture.Evaluation) ev
 		prompts []string
 		heldOut bool
 	}{{e.NoMemory.Tune, false}, {e.NoMemory.HeldOut, true}} {
+		if set.heldOut && !heldOutRequested() {
+			continue
+		}
 		for _, prompt := range set.prompts {
 			report.NoMemory = append(report.NoMemory, struct {
 				Prompt  string
@@ -187,6 +198,9 @@ func logReport(t *testing.T, r evalReport) {
 		name string
 		keep func(evalTrial) bool
 	}{{"tune", func(tr evalTrial) bool { return !tr.HeldOut }}, {"held-out", func(tr evalTrial) bool { return tr.HeldOut }}, {"all", func(evalTrial) bool { return true }}} {
+		if split.name != "tune" && !heldOutRequested() {
+			continue
+		}
 		x := rates(r.Trials, split.keep)
 		t.Logf("%-8s memory_context top-1 %5.1f%% top-3 %5.1f%% (%d prompts); memory_recall top-1 %5.1f%% top-3 %5.1f%% (%d queries)",
 			split.name, x.Context1, x.Context3, x.Prompts, x.Recall1, x.Recall3, x.Queries)

@@ -114,6 +114,9 @@ type Query struct {
 	// AllScopes ranks every stored scope in one pass and surfaces only the
 	// conflicts whose heads match the query. It overrides Scope and ExactScope.
 	AllScopes bool
+	// Names, when not nil, are the query's words written as names; only they
+	// can anchor a record (Packet.Anchor). Ranking ignores them.
+	Names []string
 }
 type RevisionConflict struct {
 	RecordID  string     `json:"record_id"`
@@ -134,10 +137,14 @@ type Packet struct {
 	// Unlike Strength it doesn't fall as the query grows.
 	Evidence map[string]float64 `json:"-"`
 	// Anchor is, for each current or competing head, the rarest query term it
-	// contains exactly in its summary or identifiers, or anywhere when the term
-	// is identifier-shaped, as that term's IDF over the most a term can have,
-	// by revision ID; 0 when there is none.
+	// contains exactly in its summary or identifiers, as that term's IDF over
+	// the most a term can have, by revision ID; 0 when there is none. With
+	// Query.Names, only those terms anchor.
 	Anchor map[string]float64 `json:"-"`
+	// Incidental marks the current or competing heads that match just one of
+	// the query's content terms, and only outside their summary and
+	// identifiers, by revision ID.
+	Incidental map[string]bool `json:"-"`
 }
 
 func (s *Store) validateGraph(records []Revision) error {
@@ -470,10 +477,6 @@ func (ix termIndex) weight(t string) int {
 	return w
 }
 
-// identifierShaped reports whether a term looks like a name for one thing, such
-// as a host, version or ID: it has a digit, dot or hyphen in it.
-func identifierShaped(t string) bool { return strings.ContainsAny(t, "0123456789.-") }
-
 // BM25 parameters: term-frequency saturation and length normalization.
 const bm25K1, bm25B = 1.2, 0.75
 
@@ -501,13 +504,13 @@ func IsFunctionWord(term string) bool { return functionWords[term] }
 // A nil query matches every candidate equally. strengths gives each content
 // score as a share of the most a record could score, which is IDF-normalized:
 // matching the query's rare terms counts for more than matching common ones.
-func rank(query []string, candidates []termIndex) (content, function, strengths, evidence, anchors []float64) {
+func rank(query []string, names map[string]bool, candidates []termIndex) (content, function, strengths, evidence, anchors []float64, incidental []bool) {
 	if query == nil {
 		content = make([]float64, len(candidates))
 		for i := range content {
 			content[i] = 1
 		}
-		return content, make([]float64, len(candidates)), content, content, content
+		return content, make([]float64, len(candidates)), content, content, content, make([]bool, len(candidates))
 	}
 	seen := map[string]bool{}
 	var topical, common []string
@@ -524,20 +527,22 @@ func rank(query []string, candidates []termIndex) (content, function, strengths,
 	if len(topical) == 0 {
 		topical, common = common, nil
 	}
-	content, strengths, evidence, anchors = bm25(topical, candidates)
-	function, _, _, _ = bm25(common, candidates)
-	return content, function, strengths, evidence, anchors
+	content, strengths, evidence, anchors, incidental = bm25(topical, names, candidates)
+	function, _, _, _, _ = bm25(common, names, candidates)
+	return content, function, strengths, evidence, anchors, incidental
 }
 
 // bm25 scores candidates on distinct terms, with document frequencies and
 // average length taken from the candidates themselves, so a term common
 // across them counts for little and a long record gains little from repeating
 // it. A candidate that matches none of the terms scores 0.
-func bm25(terms []string, candidates []termIndex) (scores, strengths, evidence, anchors []float64) {
+func bm25(terms []string, names map[string]bool, candidates []termIndex) (scores, strengths, evidence, anchors []float64, incidental []bool) {
 	scores = make([]float64, len(candidates))
 	strengths = make([]float64, len(candidates))
 	evidence = make([]float64, len(candidates))
 	anchors = make([]float64, len(candidates))
+	incidental = make([]bool, len(candidates))
+	matched, inTitle := make([]int, len(candidates)), make([]bool, len(candidates))
 	weights := make([][]int, len(candidates))
 	df := make([]int, len(terms))
 	total := 0
@@ -568,16 +573,22 @@ func bm25(terms []string, candidates []termIndex) (scores, strengths, evidence, 
 			}
 			f := float64(w) / 4
 			scores[i] += idf[j] * f * (bm25K1 + 1) / (f + norm)
-			if ix.summary[terms[j]] || ix.identifiers[terms[j]] > 0 || ix.tokens[terms[j]] > 0 && identifierShaped(terms[j]) {
-				anchors[i] = max(anchors[i], idf[j]/rarest)
+			titled := ix.summary[terms[j]] || ix.identifiers[terms[j]] > 0
+			matched[i]++
+			if titled {
+				inTitle[i] = true
+				if names == nil || names[terms[j]] {
+					anchors[i] = max(anchors[i], idf[j]/rarest)
+				}
 			}
 		}
 		if most > 0 {
 			strengths[i] = scores[i] / most
 		}
 		evidence[i] = scores[i] / (rarest * (bm25K1 + 1))
+		incidental[i] = matched[i] == 1 && !inTitle[i]
 	}
-	return scores, strengths, evidence, anchors
+	return scores, strengths, evidence, anchors, incidental
 }
 
 func relevance(r Revision, query string) int {
@@ -659,11 +670,18 @@ func (s *Store) recallHeads(q Query, p Packet, heads map[string][]Revision) Pack
 			candidates = append(candidates, s.reads.index(r))
 		}
 	}
-	content, function, strengths, evidence, anchors := rank(query, candidates)
-	p.Strength, p.Evidence, p.Anchor = map[string]float64{}, map[string]float64{}, map[string]float64{}
+	var names map[string]bool
+	if q.Names != nil {
+		names = map[string]bool{}
+		for _, t := range terms(strings.Join(q.Names, " ")) {
+			names[t] = true
+		}
+	}
+	content, function, strengths, evidence, anchors, incidental := rank(query, names, candidates)
+	p.Strength, p.Evidence, p.Anchor, p.Incidental = map[string]float64{}, map[string]float64{}, map[string]float64{}, map[string]bool{}
 	for i, r := range competing {
 		j := len(p.Current) + i
-		p.Strength[r.ID], p.Evidence[r.ID], p.Anchor[r.ID] = strengths[j], evidence[j], anchors[j]
+		p.Strength[r.ID], p.Evidence[r.ID], p.Anchor[r.ID], p.Incidental[r.ID] = strengths[j], evidence[j], anchors[j], incidental[j]
 	}
 	scores := map[string][2]float64{}
 	matching := p.Current[:0]
@@ -675,7 +693,7 @@ func (s *Store) recallHeads(q Query, p Packet, heads map[string][]Revision) Pack
 				evidence[i] *= standingGuidanceBoost
 			}
 			scores[r.ID] = [2]float64{content[i], function[i]}
-			p.Strength[r.ID], p.Evidence[r.ID], p.Anchor[r.ID] = strengths[i], evidence[i], anchors[i]
+			p.Strength[r.ID], p.Evidence[r.ID], p.Anchor[r.ID], p.Incidental[r.ID] = strengths[i], evidence[i], anchors[i], incidental[i]
 			matching = append(matching, r)
 		}
 	}

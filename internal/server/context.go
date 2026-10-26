@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/acoz-labs/mandalore/internal/memory"
@@ -68,6 +69,24 @@ func significant(prompt string) string {
 	return strings.Join(kept, " ")
 }
 
+// names lists the prompt's words written as names: capitalized, and not the
+// first word of a sentence ("What is Beacon?"). Only they can anchor a record.
+func names(prompt string) []string {
+	if len(prompt) > contextMaxPromptBytes {
+		prompt = prompt[:contextMaxPromptBytes]
+	}
+	out := []string{}
+	start := true
+	for _, w := range strings.Fields(prompt) {
+		word := strings.TrimLeft(w, "\"'([{")
+		if r, _ := utf8.DecodeRuneInString(word); !start && unicode.IsUpper(r) {
+			out = append(out, word)
+		}
+		start = strings.ContainsAny(w[len(w)-1:], ".!?:")
+	}
+	return out
+}
+
 func oneLine(s string) string { return strings.Join(strings.Fields(s), " ") }
 
 // contextEntry is one record's line: its claim, which may be clipped, and
@@ -127,19 +146,24 @@ func packTop(entries []contextEntry, room int) []contextEntry {
 }
 
 // Calibrated on the tuning split of testdata/context-eval.json
-// (docs/retrieval.md#hook-selection). A record is relevant when its match
-// covers at least contextMinStrength of the prompt's IDF-weighted terms,
-// carries at least contextMinEvidence of evidence (memory.Packet.Evidence),
-// which a long prompt's extra words don't dilute, or names a term at least
-// contextMinAnchor rare in its summary or identifiers (memory.Packet.Anchor),
-// as "What is Beacon?" does. A record less relevant than
-// contextRelativeStrength of the best one is left out.
+// (docs/retrieval.md#hook-selection). A record that matches just one of the
+// prompt's terms, and only in its body, is incidental and never relevant.
+// Otherwise it is relevant when its match covers at least contextMinStrength
+// of the prompt's IDF-weighted terms, carries at least contextMinEvidence of
+// evidence (memory.Packet.Evidence), which a long prompt's extra words don't
+// dilute, or has a name from the prompt at least contextMinAnchor rare in its
+// summary or identifiers (memory.Packet.Anchor), as "What is Beacon?" does. A
+// record less relevant than contextRelativeStrength of the best one is left
+// out.
 var contextMinStrength, contextMinEvidence, contextMinAnchor, contextRelativeStrength = 0.25, 0.70, 0.70, 0.65
 
 // relevant keeps the recalled records and conflicts relevant enough to
 // inject, in rank order. A conflict counts by its most relevant head.
 func relevant(p memory.Packet) ([]memory.Revision, []memory.RevisionConflict) {
 	of := func(r memory.Revision) float64 {
+		if p.Incidental[r.ID] {
+			return 0
+		}
 		return max(p.Strength[r.ID]/contextMinStrength, p.Evidence[r.ID]/contextMinEvidence, p.Anchor[r.ID]/contextMinAnchor)
 	}
 	strongest := func(c memory.RevisionConflict) float64 {
@@ -196,7 +220,7 @@ func memoryContext(m *memory.Service, in ContextInput, session *contextSession) 
 		if query == "" {
 			return contextResult{}, nil
 		}
-		p, err := m.RecallAll(query, contextRecallLimit)
+		p, err := m.RecallAllNamed(query, names(in.Prompt), contextRecallLimit)
 		if err != nil {
 			return contextResult{}, err
 		}
