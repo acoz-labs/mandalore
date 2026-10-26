@@ -1,0 +1,3 @@
+Adding marketplace…
+✔ Successfully added marketplace: mandalore (declared in user settings)
+Installing plugin "mandalore@mandalore"...✔ Successfully installed plugin: mandalore@mandalore (scope: user)

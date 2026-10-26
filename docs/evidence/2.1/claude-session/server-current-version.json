@@ -1,0 +1,1 @@
+{"protocol_version":1,"ok":true,"result":{"arch":"arm64","go_version":"go1.26.10","name":"mandalore","os":"darwin","protocol_version":1,"signet_read_versions":[1,2],"signet_write_versions":[1,2],"source_commit":"3f7a83fbc6230c4557d21e0cb26a724907dc8751","version":"2.1.0"}}

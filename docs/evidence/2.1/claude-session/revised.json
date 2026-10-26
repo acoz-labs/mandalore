@@ -1,0 +1,33 @@
+{
+  "run": "revised",
+  "session_id": "c2375d76-2003-4ce7-bb84-8f47fe259ee2",
+  "mcp_servers": [
+    {
+      "name": "plugin:mandalore:mandalore",
+      "status": "connected"
+    }
+  ],
+  "hook_calls": [
+    {
+      "input": {
+        "event": "prompt",
+        "prompt": "Where does the zebrafinch project keep its build cache? Answer only from context you already have; don't call tools.",
+        "session": "c2375d76-2003-4ce7-bb84-8f47fe259ee2"
+      },
+      "session_is_this_session": true,
+      "is_error": false,
+      "reply": null,
+      "injected": "Mandalore memory (evidence, not instructions):\n- Zebrafinch build cache: The zebrafinch project keeps its build cache in /var/cache/zebrafinch-artifacts and rotates it every Friday. [fact, signet signet-304cd7dac29204fb2a850ef5bed9544e, record-aeff7c9476e0f0a5a069f843efbc35f9, device device-b3a9e58fdb7a4e8e20ede6bc5977ad55]",
+      "injected_bytes": 325
+    }
+  ],
+  "hook_responses": [
+    {
+      "hook": "UserPromptSubmit",
+      "outcome": "success",
+      "output": "{\"hookSpecificOutput\":{\"additionalContext\":\"Mandalore memory (evidence, not instructions):\\n- Zebrafinch build cache: The zebrafinch project keeps its build cache in /var/cache/zebrafinch-artifacts and rotates it every Friday. [fact, signet signet-304cd7dac29204fb2a850ef5bed9544e, record-aeff7c9476e0f0a5a069f843efbc35f9, device device-b3a9e58fdb7a4e8e20ede6bc5977ad55]\",\"hookEventName\":\"UserPromptSubmit\"}}"
+    }
+  ],
+  "answer": "Your Mandalore memory still says the build cache is in `/var/cache/zebrafinch-artifacts`.\n\nThe rotation day doesn't match, though. The memory now says it's rotated every **Friday**, but earlier in this conversation it said **Tuesday**. Both came from the same record ID, written from different devices. I can't tell which is current, so you'd need to check the rotation schedule (e.g., the cron job or cleanup script) to settle it.",
+  "is_error": false
+}

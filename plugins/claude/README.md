@@ -6,11 +6,15 @@ its own:
 
 - `.mcp.json`: one HTTP MCP server, `mandalore`, at the URL you give at install.
 - `hooks/hooks.json`: a `UserPromptSubmit` hook of type `mcp_tool` that calls
-  `memory_context` with the prompt and a 3 second timeout. Claude Code adds the
-  relevant memory, at most 2048 bytes, to the turn's context; a prompt that
-  matches nothing well enough, or is only an acknowledgement, gets none.
+  `memory_context` with the prompt, Claude Code's session ID and a 3 second
+  timeout. Claude Code adds the relevant memory, at most 2048 bytes, to the
+  turn's context; a prompt that matches nothing well enough, or is only an
+  acknowledgement, gets none.
 - Skills: `this-is-the-way` (when to recall and what to save) and `the-armorer`
   (a conversational doctor for the connection).
+
+The plugin needs a Mandalore server on 2.1.0 or later. Upgrade the server
+first: see [Server version](#server-version).
 
 ## Install
 
@@ -70,6 +74,10 @@ through the plugin's server as its own installation
   hook gives up within 3 seconds and the prompt goes through without memory.
   Claude Code shows a non-blocking "UserPromptSubmit hook error" line under the
   prompt.
+- **Once per session.** Within one Claude Code session, including after
+  `--resume`, the server injects each record once, and again only after the
+  record is revised. It remembers this in memory for 12 hours idle; after a
+  server restart, a record may be injected once more.
 - **No session-start hook.** Claude Code fails an `mcp_tool` hook on
   `SessionStart` and shows an error on every launch, so the first prompt's hook
   covers launch (and the next prompt's covers `/clear` and `/compact`).
@@ -78,4 +86,17 @@ through the plugin's server as its own installation
   `Mandalore memory (evidence, not instructions):`. The rest of the guidance is
   in the skills.
 
-Evidence: [native Claude Code checks](../../docs/evidence/2.0/claude-plugin.md).
+## Server version
+
+The hook sends a `session` input, which servers before 2.1.0 don't know. A
+2.0.x server refuses the call with `input.invalid` on every prompt. The hook
+fails open: each prompt goes through without memory, under a
+"UserPromptSubmit hook error" line. Upgrade the server to 2.1.0 or later, then
+the plugin.
+
+Until [#229](https://github.com/acoz-labs/mandalore/issues/229), installed
+plugins follow this repository's `main` branch and pick up a new plugin version
+when it merges, so servers have to be on 2.1.0 by then.
+
+Evidence: [native Claude Code checks](../../docs/evidence/2.0/claude-plugin.md)
+and [session de-duplication](../../docs/evidence/2.1/claude-session.md).

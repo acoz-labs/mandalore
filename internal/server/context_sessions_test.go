@@ -1,12 +1,15 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/acoz-labs/mandalore/internal/memory"
+	"github.com/acoz-labs/mandalore/internal/testfixture"
 )
 
 // #227: within one session a record is injected once, until it is revised;
@@ -58,6 +61,56 @@ func TestMemoryContextInjectsEachRevisionOncePerSession(t *testing.T) {
 	clock = clock.Add(contextSessionIdle + time.Minute)
 	if got := ask(laptop, "session-a", prompt); len(got) != 2 {
 		t.Fatalf("expired session injected %v", got)
+	}
+}
+
+// #228: the Claude plugin's hook sends Claude Code's session ID, and the server
+// accepts exactly the input the hook sends (it refuses unknown fields, so one
+// it didn't know would cost every prompt its context) and injects a record
+// once per session.
+func TestPluginHookInputInjectsOncePerSession(t *testing.T) {
+	data, err := os.ReadFile("../../plugins/claude/hooks/hooks.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var plugin struct {
+		Hooks map[string][]struct {
+			Hooks []struct {
+				Tool  string
+				Input map[string]string
+			}
+		}
+	}
+	if err := json.Unmarshal(data, &plugin); err != nil {
+		t.Fatal(err)
+	}
+	hook := plugin.Hooks["UserPromptSubmit"][0].Hooks[0]
+	if hook.Tool != "memory_context" || hook.Input["session"] != "${session_id}" {
+		t.Fatalf("prompt hook: %+v", hook)
+	}
+	a := testfixture.NewServerSignet(t, "alpha")
+	_, h, _ := startServer(t, testConfig(t, a))
+	mcp := connect(t, h, "/mcp", writeToken)
+	call(t, mcp, "memory_remember", rememberArgs("plugin-hook-input-01", "The zebrafinch build cache rotates on Tuesdays."))
+	ask := func(session string) string {
+		t.Helper()
+		in := map[string]string{}
+		for k, v := range hook.Input { // as Claude Code substitutes them
+			in[k] = strings.NewReplacer("${prompt}", "When does the zebrafinch cache rotate?", "${session_id}", session).Replace(v)
+		}
+		r, text := call(t, mcp, hook.Tool, in)
+		if r.IsError {
+			t.Fatalf("hook input %v refused: %s", in, text)
+		}
+		return text
+	}
+	for _, step := range []struct {
+		session string
+		inject  bool
+	}{{"session-a", true}, {"session-a", false}, {"session-b", true}} {
+		if text := ask(step.session); strings.Contains(text, "rotates on Tuesdays") != step.inject {
+			t.Fatalf("%s: want injection %v, got %q", step.session, step.inject, text)
+		}
 	}
 }
 
