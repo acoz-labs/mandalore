@@ -49,6 +49,7 @@ type signet struct {
 	mu       sync.Mutex
 	devices  map[string]string // Client.device() → enrolled device ID
 	handlers map[string]http.Handler
+	contexts contextSessions
 
 	backupMu sync.Mutex
 	backup   Backup
@@ -80,7 +81,7 @@ func openSignet(c Config, sc SignetConfig, logger *log.Logger, t timing) (*signe
 		return nil, fmt.Errorf("signet %s: cannot open checkout", sc.Slug)
 	}
 	s := &signet{config: sc, owner: c.Owner.Name, state: filepath.Join(c.StateDir, "signets", sc.Slug), log: logger, timing: t, memory: m, git: g,
-		devices: map[string]string{}, handlers: map[string]http.Handler{}, backup: Backup{State: "unknown", Remote: "unknown"}, kick: make(chan struct{}, 1)}
+		devices: map[string]string{}, handlers: map[string]http.Handler{}, contexts: contextSessions{now: time.Now}, backup: Backup{State: "unknown", Remote: "unknown"}, kick: make(chan struct{}, 1)}
 	switch c.auth() {
 	case AuthLoopbackTrust:
 		s.auth = loopbackTrust{scope: c.LocalScope}

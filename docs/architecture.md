@@ -122,7 +122,7 @@ Corrections preserve history through supersession edges. Concurrent heads remain
 conflicts; a successful Git merge does not prove semantic agreement. Reads must
 use current local state, not an unbounded stale process cache; only the server,
 as sole writer, keeps the validated graph between its own writes. Start with scoped
-lexical retrieval, byte budgets, pagination and history access. Lexical tokens
+lexical retrieval ranked by BM25, byte budgets, pagination and history access. Lexical tokens
 ignore terminal prose periods but preserve internal dots/hyphens; absent synonyms
 remain a limitation. A graph validation reuses successful device checks only
 within that validation, never across later service operations. Full source and

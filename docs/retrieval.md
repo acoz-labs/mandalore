@@ -38,6 +38,91 @@ This does not make multi-file reads atomic against uncoordinated filesystem edit
 or introduce an index. Freshness/corruption tests and a same-fixture performance
 comparison are required for this correction.
 
+## Hook selection
+
+[#227](https://github.com/acoz-labs/mandalore/issues/227) found the
+`memory_context` hook injecting a weak match while `memory_recall` found the
+right record. Raw term frequency let long records full of common domain words
+outrank a short, specific answer. The packer also skipped a top hit whose whole
+claim didn't fit the budget, and any score above 0 injected something, so most
+prompts got a record. 2.1.0 changes all three:
+
+- **Ranking (recall and the hook).** BM25 over the existing field weights:
+  summary hits count four times a body hit and identifier hits eight times,
+  with inflections at a quarter. Document frequency and average length come
+  from the records the query can return, so ranking within a scope ignores
+  other scopes. Function words ("what", "is", "the") still make a record match
+  but only break ties, so a query's membership and the response shape are
+  unchanged. A decision or preference scores 1.2 times as much as other kinds.
+  Ties order by revision ID.
+- **Threshold (the hook only).** Each match has a strength: its BM25 score as a
+  share of the most a record could score on the query, so matching the
+  prompt's rare terms counts for more than matching its common ones. Up to
+  three prompt terms that no record contains count against every strength. A
+  prompt whose best strength is under 0.2 gets nothing, and a record under
+  0.65 of the best is left out.
+- **Packing (the hook only).** The default budget is 2048 bytes. The top 3
+  records always appear, each clipped to an even share with a `…` mark and
+  never losing its provenance. Further records appear only whole. Within a
+  session (an optional `session` input) a revision is injected once. See
+  [the server](server.md#tools).
+
+Explicit `memory_recall` has no threshold and no de-duplication.
+
+### Evaluation set
+
+`internal/server/testdata/context-eval.json` is a synthetic signet of 250
+records in eight scopes: 44 short answers (decisions, preferences, facts and
+procedures), 26 long status and research notes that use the answers' words,
+and 180 generated session notes full of the same domain and meta words. Hosts
+use `memory.example.com`. Each case has a question and a paraphrase. The hook
+sees each alone and inside 9 instruction wrappers ("Answer from context you
+already have; don't call tools.", "In one line: …"), 880 prompts in all.
+32 prompts that no record answers cover acknowledgements, general knowledge,
+coding questions and uncovered topics. A scripted 20-turn session measures
+injected bytes. Paraphrases, 5 of the wrappers and half the no-memory prompts
+are held out: tuning looked only at the rest.
+
+`TestContextSelectionEvaluation` runs it in `bin/ci` and fails under these
+floors: hook top-1 80% and top-3 85% (held-out 82%), recall top-1 65% and
+top-3 78%, at most 15% false injection, the hook carrying recall's first record
+in at least 90% of the prompts where that is the case's record, and at most
+800 injected bytes per session prompt. `MANDALORE_EVAL_REPORT=FILE` writes
+every outcome, for a per-case comparison between two builds.
+
+| Measure | 2.0.3 | 2.1.0 |
+| --- | --- | --- |
+| `memory_context` top-1 / top-3 (880 prompts) | 17.3% / 43.9% | 83.2% / 87.6% |
+| held-out only (660) | 15.2% / 41.2% | 79.7% / 84.5% |
+| `memory_recall` top-1 / top-3 (88 queries) | 21.6% / 35.2% | 83.0% / 95.5% |
+| False injection (32 no-memory prompts) | 46.9% | 6.2% |
+| Injected bytes per prompt, 20-turn session | 1038 | 558 (411 with `session`) |
+| Warm p95, 250 records | | 11 ms |
+
+The 2.0.3 column runs the same test file against 816ea1b.
+`MANDALORE_EVAL_CURVE=1` logs the threshold trade-off:
+
+| Min strength | Top-3 | Held-out top-3 | False injection |
+| --- | --- | --- | --- |
+| 0 (none) | 92.3% | 90.8% | 40.6% |
+| 0.10 | 92.3% | 90.8% | 28.1% |
+| 0.15 | 91.4% | 89.5% | 18.8% |
+| 0.17 | 90.3% | 88.2% | 12.5% |
+| **0.20** | 87.6% | 84.5% | 6.2% |
+| 0.25 | 83.2% | 79.1% | 0% |
+| 0.30 | 71.2% | 64.5% | 0% |
+
+0.2 keeps false injection well under 15% with top-3 above 85%. The relative
+cut barely moves hits (87.8% with none, 86.7% at 0.8) but halves the bytes
+(1177 with none, 558 at 0.65).
+
+Known limits, all lexical: a prompt padded with words no record contains
+weakens every match, so a held-out wrapper such as "Without looking anything
+up, …" loses some answers it found on 2.0.3, when everything was injected. The
+hook drops words under three letters, so a record found by recall through
+"go" can miss. One recall query ranks its answer second instead of first,
+behind a note that matches one more of its words. Synonyms still miss.
+
 ## Reproduce measurements
 
 Use Go 1.26.10 on a disposable development checkout. These opt-in benchmarks create

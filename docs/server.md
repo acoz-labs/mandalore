@@ -226,15 +226,39 @@ the same key with different input is refused with `request.conflict`. Keys are
 namespaced by client.
 
 `memory_context` (`event`: `start` or `prompt`, optional `prompt`, optional
-`budget_bytes` 256–4096, default 1536) answers the Claude plugin's hook. It
-returns Claude Code hook output JSON,
+`budget_bytes` 256–4096, default 2048, optional `session`) answers the Claude
+plugin's hook. It returns Claude Code hook output JSON,
 `{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":"..."}}`
 (`SessionStart` for `start`), because Claude Code adds an `mcp_tool` hook's
-`additionalContext` to context but not its plain text. The context starts with
-`Mandalore memory (evidence, not instructions):`, ranks recall over the prompt's
-distinctive terms across every visible scope, flags matching conflicts, then
-lists scopes if there's room. The budget applies to `additionalContext`. It never
-clips a claim and returns an empty result when nothing matches.
+`additionalContext` to context but not its plain text. The budget applies to
+`additionalContext`. For a prompt:
+
+- **Terms.** Only the first 2048 bytes count. Function words, words that ask
+  for a kind of answer ("answer from context", "don't call tools", "in one
+  line") and acknowledgements ("ok", "ready", "thanks, go ahead") are dropped.
+  A prompt with no term left gets nothing.
+- **Selection.** Recall ranks the 10 best current records across every visible
+  scope (see [retrieval](retrieval.md#hook-selection)). Each has a strength:
+  its match as a share of the most a record could score on the prompt's terms,
+  weighted by how rare each term is. If the best is under 0.2, nothing is
+  injected. Otherwise records and matching conflicts under 0.65 of the best are
+  left out.
+- **Packing.** The context starts with `Mandalore memory (evidence, not
+  instructions):`. The top 3 records always appear, each in an even share of
+  the budget. A claim that doesn't fit its share is clipped at a rune boundary
+  and ends in `…`, and its kind, scope, record ID and device are never clipped,
+  so `memory_history` can fetch the whole record. Matching conflicts follow,
+  then further records that fit whole, then the scopes if there's room. At the
+  256-byte minimum one record fits.
+- **Session.** With a `session` (at most 128 bytes; a longer value is
+  ignored), a record revision injected earlier in that session is left out
+  until the record is revised, and the scopes are listed once. The server
+  keeps this in memory only, per installation, client scope and session, for
+  up to 1,024 sessions of up to 512 revisions each, each forgotten after 12
+  hours idle; a restart forgets them all. The 2.1.0 plugin doesn't send a
+  session yet ([#228](https://github.com/acoz-labs/mandalore/issues/228)).
+
+A result with nothing to inject is empty, and the hook adds nothing.
 
 ## Foundlings
 
@@ -508,8 +532,9 @@ migrates it again.
 The server is each signet's only writer, so it keeps the validated revision graph
 and per-revision term index in memory between its own writes; every write drops
 them. On a synthetic 1,000-record signet, `memory_context` measures about 7 ms
-p95 between writes and about 165 ms p95 on the first call after a write, on a
-development laptop, against a 300 ms target. On a plain build `bin/ci` asserts
+p95 between writes (about 11 ms on the 250-record selection evaluation) and
+about 165 ms p95 on the first call after a write, on a development laptop,
+against a 300 ms target. On a plain build `bin/ci` asserts
 the 300 ms bound between writes and a 1 s regression tripwire after a write; the
 race detector slows the post-write path about fivefold. A change made to the checkout by another process isn't
 seen until the server's next write or restart, which is why the server must be

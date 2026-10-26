@@ -71,8 +71,9 @@ go mod verify
 git --version
 go test -race ./...
 # The race detector slows memory_context several times over; on a plain build
-# assert criterion 7's 300 ms warm-path p95 and the 1 s post-write tripwire.
-go test -count=1 -run '^TestMemoryContext(LatencyOnLargeSignet|AfterWriteLatency)$' ./internal/server/
+# assert criterion 7's 300 ms warm-path p95 (on 1,000 records and on #227's
+# 250-record evaluation signet) and the 1 s post-write tripwire.
+go test -count=1 -run '^TestMemoryContext(LatencyOnLargeSignet|LatencyOnEvaluationSignet|AfterWriteLatency)$' ./internal/server/
 go vet ./...
 for target_os in darwin linux; do
   for target_arch in amd64 arm64; do

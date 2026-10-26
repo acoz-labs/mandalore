@@ -7,7 +7,8 @@ its own:
 - `.mcp.json`: one HTTP MCP server, `mandalore`, at the URL you give at install.
 - `hooks/hooks.json`: a `UserPromptSubmit` hook of type `mcp_tool` that calls
   `memory_context` with the prompt and a 3 second timeout. Claude Code adds the
-  relevant memory to the turn's context.
+  relevant memory, at most 2048 bytes, to the turn's context; a prompt that
+  matches nothing well enough, or is only an acknowledgement, gets none.
 - Skills: `this-is-the-way` (when to recall and what to save) and `the-armorer`
   (a conversational doctor for the connection).
 

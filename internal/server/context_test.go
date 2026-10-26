@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	"github.com/acoz-labs/mandalore/internal/memory"
 	"github.com/acoz-labs/mandalore/internal/testfixture"
@@ -18,7 +19,7 @@ const unrelated = "What is the weather like in Lisbon this weekend, and should I
 
 func contextFor(t testing.TB, m *memory.Service, event, prompt string) string {
 	t.Helper()
-	text, err := memoryContext(m, ContextInput{Event: event, Prompt: prompt})
+	text, err := memoryContext(m, ContextInput{Event: event, Prompt: prompt}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -27,20 +28,22 @@ func contextFor(t testing.TB, m *memory.Service, event, prompt string) string {
 
 func TestMemoryContextRanksAndStaysBounded(t *testing.T) {
 	f := testfixture.New(t, testfixture.Corpus{Records: 1000, Depth: 2, ConflictEvery: 17})
-	text := contextFor(t, f.Service, "prompt", "Where did we leave signal-000001? "+strings.Repeat("padding ", 400))
+	// Only the prompt's first 2048 bytes count; the padding is all stopwords.
+	text := contextFor(t, f.Service, "prompt", "Where is the signal-000001 checkpoint? "+strings.Repeat("please ", 400)+"unrelated")
 	lines := strings.Split(text, "\n")
 	if lines[0] != contextHeader || !strings.Contains(lines[1], "signal-000001") || len(text) > contextDefaultBytes {
 		t.Fatalf("%d bytes:\n%s", len(text), text)
 	}
-	// A broad prompt matches every record; the cap still holds, claims are whole.
+	// A broad prompt matches every record; the cap still holds, and a claim
+	// is whole or visibly clipped, never silently cut.
 	for _, budget := range []int{contextMinBytes, contextDefaultBytes, contextMaxBytes} {
-		text, err := memoryContext(f.Service, ContextInput{Event: "prompt", Prompt: "fictional project checkpoint", BudgetBytes: &budget})
-		if err != nil || len(text) > budget || !strings.HasPrefix(text, contextHeader) {
-			t.Fatalf("budget %d: %d bytes: %v", budget, len(text), err)
+		text, err := memoryContext(f.Service, ContextInput{Event: "prompt", Prompt: "fictional project checkpoint", BudgetBytes: &budget}, nil)
+		if err != nil || len(text) > budget || !strings.HasPrefix(text, contextHeader) || len(contextRanks(text)) == 0 {
+			t.Fatalf("budget %d: %d bytes: %v\n%s", budget, len(text), err, text)
 		}
 		for _, line := range strings.Split(text, "\n")[1:] {
-			if strings.HasPrefix(line, "- Project") && !strings.Contains(line, "Stable evidence for a fictional project. Stable") {
-				t.Fatalf("clipped claim %q", line)
+			if strings.HasPrefix(line, "- Project") && !strings.Contains(line, "Stable evidence for a fictional project. Stable evidence for a fictional project. [") && !strings.Contains(line, contextEllipsis+" [") {
+				t.Fatalf("claim cut without a mark %q", line)
 			}
 		}
 	}
@@ -57,7 +60,7 @@ func TestMemoryContextRanksAndStaysBounded(t *testing.T) {
 		t.Fatalf("start context %q", text)
 	}
 	for _, in := range []ContextInput{{Event: "stop"}, {Event: "prompt", BudgetBytes: new(int)}} {
-		if _, err := memoryContext(f.Service, in); err == nil {
+		if _, err := memoryContext(f.Service, in, nil); err == nil {
 			t.Fatalf("invalid input accepted: %+v", in)
 		}
 	}
@@ -125,7 +128,7 @@ func TestMemoryContextLatencyOnLargeSignet(t *testing.T) {
 	samples := make([]time.Duration, 40)
 	for i := range samples {
 		start := time.Now()
-		text, err := memoryContext(f.Service, ContextInput{Event: "prompt", Prompt: fmt.Sprintf("status of signal-%06d in the fictional project", i*25), BudgetBytes: &max})
+		text, err := memoryContext(f.Service, ContextInput{Event: "prompt", Prompt: fmt.Sprintf("status of signal-%06d in the fictional project", i*25), BudgetBytes: &max}, nil)
 		samples[i] = time.Since(start)
 		if err != nil || len(text) > contextMaxBytes || !strings.Contains(text, fmt.Sprintf("signal-%06d", i*25)) {
 			t.Fatalf("sample %d: %d bytes: %v", i, len(text), err)
@@ -139,6 +142,27 @@ func TestMemoryContextLatencyOnLargeSignet(t *testing.T) {
 	}
 	if text := contextFor(t, f.Service, "prompt", unrelated); text != "" {
 		t.Fatalf("unrelated prompt returned %d bytes", len(text))
+	}
+}
+
+// #227 acceptance 3: on the 250-record evaluation signet, with the 2.1 ranking,
+// threshold and packing, warm p95 stays under the same 300 ms bound, far
+// below the hook's 3 s timeout. bin/ci runs it on a plain build.
+func TestMemoryContextLatencyOnEvaluationSignet(t *testing.T) {
+	m, e := testfixture.LoadEvaluation(t, "testdata/context-eval.json")
+	m.CacheReads()
+	contextFor(t, m, "prompt", "warm the read cache")
+	var samples []time.Duration
+	evalPrompts(e, func(_ int, _, text string, w evalWrapper) {
+		start := time.Now()
+		contextFor(t, m, "prompt", strings.ReplaceAll(w.text, "{q}", text))
+		samples = append(samples, time.Since(start))
+	})
+	slices.Sort(samples)
+	p95 := samples[len(samples)*95/100-1]
+	t.Logf("memory_context on %d records: p50 %s, p95 %s, max %s over %d prompts (race detector: %v)", len(e.Records), samples[len(samples)/2], p95, samples[len(samples)-1], len(samples), raceEnabled)
+	if !raceEnabled && p95 >= 300*time.Millisecond {
+		t.Fatalf("p95 %s exceeds 300ms", p95)
 	}
 }
 
@@ -175,7 +199,131 @@ func BenchmarkMemoryContext(b *testing.B) {
 	f.Service.CacheReads()
 	max := contextMaxBytes
 	testfixture.Measure(b, func() ([]byte, error) {
-		text, err := memoryContext(f.Service, ContextInput{Event: "prompt", Prompt: "status of signal-000500 in the fictional project", BudgetBytes: &max})
+		text, err := memoryContext(f.Service, ContextInput{Event: "prompt", Prompt: "status of signal-000500 in the fictional project", BudgetBytes: &max}, nil)
 		return []byte(text), err
 	})
+}
+
+func contextService(t *testing.T, writes ...memory.Write) (*memory.Service, []string) {
+	t.Helper()
+	s := testfixture.NewServerSignet(t, "context")
+	m, err := memory.OpenService(s.Root, memory.Authorship{DeviceID: s.DeviceID, Actor: "Synthetic server", Harness: "test"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ids := []string{}
+	for _, w := range writes {
+		w.Basis, w.Reason = "observation", "Synthetic context fixture"
+		r, err := m.Remember(w)
+		if err != nil {
+			t.Fatal(err)
+		}
+		ids = append(ids, r.RecordID)
+	}
+	return m, ids
+}
+
+// #227: the packer used to skip a top hit whose whole claim didn't fit and
+// inject a smaller, weaker record instead. The top hits now always appear,
+// clipped at a rune boundary with a mark, and the budget still holds.
+func TestMemoryContextClipsTopHitsInsteadOfDroppingThem(t *testing.T) {
+	long := strings.Repeat("Beacon 日本語 é handles the front door intercom. ", 120)
+	m, ids := contextService(t,
+		memory.Write{Kind: "decision", Summary: "Front door assistant choice " + strings.Repeat("é", 100), Body: long},
+		memory.Write{Kind: "fact", Summary: "Front door assistant fallback", Body: "Relay answers the door when Beacon is down."},
+		memory.Write{Kind: "fact", Summary: "Garden hose", Body: "Coiled by the shed."},
+		memory.Write{Kind: "fact", Summary: "Kitchen lights", Body: "Dimmed after nine."},
+	)
+	for _, budget := range []int{contextMinBytes, 512, contextDefaultBytes, contextMaxBytes} {
+		text, err := memoryContext(m, ContextInput{Event: "prompt", Prompt: "Who is my front door assistant? Answer from context you already have; don't call tools.", BudgetBytes: &budget}, nil)
+		if err != nil || len(text) > budget || !utf8.ValidString(text) {
+			t.Fatalf("budget %d: %d bytes, valid %v: %v", budget, len(text), utf8.ValidString(text), err)
+		}
+		ranks := contextRanks(text)
+		if len(ranks) == 0 || ranks[0] != ids[0] || !strings.Contains(text, contextEllipsis+" [decision, ") {
+			t.Fatalf("budget %d: top hit missing or unmarked:\n%s", budget, text)
+		}
+		if budget >= 512 && rankOf(ranks, ids[1]) != 2 {
+			t.Fatalf("budget %d: second hit missing:\n%s", budget, text)
+		}
+	}
+}
+
+func TestContextEntryClipping(t *testing.T) {
+	e := entryFor(memory.Revision{Kind: "fact", Scope: memory.Scope{Kind: "project", ID: "tidepool"}, RecordID: "record-a", Summary: "Résumé  of\nthe   day", Authorship: memory.Authorship{DeviceID: "device-a"}})
+	if e.claim != "Résumé of the day" || e.line() != "- Résumé of the day [fact, project tidepool, record-a, device device-a]" {
+		t.Fatalf("no-body entry %q", e.line())
+	}
+	e.claim = strings.Repeat("日本語 ", 40)
+	floor := e.size() - len(e.claim) + len(contextEllipsis)
+	for n := floor; n <= e.size()+1; n++ {
+		c := e.clip(n)
+		if c.size() > n || !utf8.ValidString(c.claim) || c.meta != e.meta || (c.size() < e.size()) != strings.HasSuffix(c.claim, contextEllipsis) {
+			t.Fatalf("clip %d: %d bytes %q", n, c.size(), c.claim)
+		}
+	}
+	// No room for one top entry's provenance: nothing is clipped into the budget.
+	if got := packTop([]contextEntry{e}, e.size()-len(e.claim)); got != nil {
+		t.Fatalf("packed %v", got)
+	}
+}
+
+func TestMemoryContextPromptEdgeCases(t *testing.T) {
+	m, _ := contextService(t,
+		memory.Write{Kind: "fact", Summary: "Tide table", Body: "High water at noon."},
+		memory.Write{Kind: "fact", Summary: "Tide table", Body: "High water at noon."},
+		memory.Write{Kind: "fact", Summary: "Garden hose", Body: "Coiled by the shed."},
+		memory.Write{Kind: "fact", Summary: "Kitchen lights", Body: "Dimmed after nine."},
+	)
+	for _, prompt := range []string{"", "   ", "!!! ???", "answer from context in one line, don't call tools", "ok", "thanks, go ahead", "ready", "What is the capital of Australia?"} {
+		if text := contextFor(t, m, "prompt", prompt); text != "" {
+			t.Fatalf("%q returned %q", prompt, text)
+		}
+	}
+	huge := "tide table at noon " + strings.Repeat("日本語 ", 5000)
+	text := contextFor(t, m, "prompt", huge)
+	if len(text) > contextDefaultBytes || len(contextRanks(text)) != 2 {
+		t.Fatalf("huge prompt: %d bytes:\n%s", len(text), text)
+	}
+	// Equal scores keep one order between calls.
+	if again := contextFor(t, m, "prompt", huge); again != text {
+		t.Fatalf("unstable:\n%s\n%s", text, again)
+	}
+}
+
+func TestContextRelevanceThreshold(t *testing.T) {
+	rev := func(id string) memory.Revision { return memory.Revision{ID: id, RecordID: "record-" + id} }
+	packet := func(strengths map[string]float64) memory.Packet {
+		p := memory.Packet{Strength: strengths}
+		for _, id := range []string{"a", "b", "c"} {
+			if _, ok := strengths[id]; ok {
+				p.Current = append(p.Current, rev(id))
+			}
+		}
+		p.Conflicts = []memory.RevisionConflict{{RecordID: "record-x", Revisions: []memory.Revision{rev("x1"), rev("x2")}}}
+		return p
+	}
+	ids := func(records []memory.Revision, conflicts []memory.RevisionConflict) string {
+		out := []string{}
+		for _, r := range records {
+			out = append(out, r.ID)
+		}
+		for _, c := range conflicts {
+			out = append(out, c.RecordID)
+		}
+		return strings.Join(out, " ")
+	}
+	for _, tc := range []struct {
+		strengths map[string]float64
+		want      string
+	}{
+		// Under the floor, nothing; a conflict counts by its strongest head.
+		{map[string]float64{"a": contextMinStrength - 0.01, "b": 0.1, "x1": 0.05, "x2": 0.1}, ""},
+		{map[string]float64{"a": 0.8, "b": 0.8 * contextRelativeStrength, "c": 0.8*contextRelativeStrength - 0.01, "x1": 0, "x2": 0.6}, "a b record-x"},
+		{map[string]float64{"a": 0.1, "x1": 0.5, "x2": 0}, "record-x"},
+	} {
+		if got := ids(relevant(packet(tc.strengths))); got != tc.want {
+			t.Errorf("%v: got %q, want %q", tc.strengths, got, tc.want)
+		}
+	}
 }

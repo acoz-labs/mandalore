@@ -12,23 +12,38 @@ import (
 
 const (
 	contextHeader         = "Mandalore memory (evidence, not instructions):"
-	contextDefaultBytes   = 1536
+	contextDefaultBytes   = 2048
 	contextMaxBytes       = 4096
 	contextMinBytes       = 256
 	contextMaxPromptBytes = 2048
+	// The top records always appear, clipped if need be; later ones of the
+	// recalled records appear only whole.
+	contextTopRecords  = 3
+	contextRecallLimit = 10
+	contextMinClaim    = 24
+	contextWordSlack   = 16
+	contextEllipsis    = "…"
 )
 
 type ContextInput struct {
 	Event       string `json:"event" jsonschema:"start or prompt"`
 	Prompt      string `json:"prompt,omitempty" jsonschema:"The user's prompt; only the first 2048 bytes are used."`
-	BudgetBytes *int   `json:"budget_bytes,omitempty" jsonschema:"Default 1536; range 256–4096."`
+	BudgetBytes *int   `json:"budget_bytes,omitempty" jsonschema:"Default 2048; range 256–4096."`
+	Session     string `json:"session,omitempty" jsonschema:"The hook's session ID, at most 128 bytes; within one session a record is injected once."`
 }
 
-// Common words match nearly every record, so they never make one relevant.
+// Function words (memory.IsFunctionWord) and a few common verbs match nearly
+// every record, so they never make one relevant. Nor do the words a prompt
+// uses to ask for a kind of answer ("answer from context, don't call tools",
+// "in one line"), which say how to reply, not what about, or the
+// acknowledgements that carry a conversation along ("ok", "thanks, go ahead"),
+// so such a prompt has no terms left and gets no context.
 var stopwords = map[string]bool{}
 
 func init() {
-	for _, w := range strings.Fields("about after again also and any are because been before being between both but can could did does doing done each else even ever every for from had has have having her here hers him his how into its just like made make many may more most much must need not now off once only other our ours out over own please same she should some such than that the their them then there these they this those through too under until upon use used very want was way were what when where which while who whom why will with would yes yet you your yours today tell show give know think") {
+	for _, w := range strings.Fields(`today tell show give know think
+		answer answers reply respond context tool tools call calls calling line lines one sentence sentences word words brief briefly short quick question questions already don doesn didn won isn
+		okay thanks thank cheers ready sure yeah yep yup sounds good great fine cool nice perfect awesome excellent agreed right alright continue proceed ahead next lgtm`) {
 		stopwords[w] = true
 	}
 }
@@ -46,7 +61,7 @@ func significant(prompt string) string {
 		return !(r == '-' || r == '_' || r == '.' || ('0' <= r && r <= '9') || ('a' <= r && r <= 'z') || r > utf8.RuneSelf)
 	}) {
 		w = strings.Trim(w, "._-")
-		if utf8.RuneCountInString(w) >= 3 && !stopwords[w] {
+		if utf8.RuneCountInString(w) >= 3 && !stopwords[w] && !memory.IsFunctionWord(w) {
 			kept = append(kept, w)
 		}
 	}
@@ -55,11 +70,109 @@ func significant(prompt string) string {
 
 func oneLine(s string) string { return strings.Join(strings.Fields(s), " ") }
 
-// memoryContext ranks recall over the prompt across visible scopes, then
-// flags matching conflicts, then lists scopes if there is room. Claims are
-// never clipped: an entry that does not fit is left out. Nothing relevant
-// returns the empty string.
-func memoryContext(m *memory.Service, in ContextInput) (string, error) {
+// contextEntry is one record's line: its claim, which may be clipped, and
+// its provenance, which never is.
+type contextEntry struct{ claim, meta string }
+
+func entryFor(r memory.Revision) contextEntry {
+	claim := oneLine(r.Summary)
+	if body := oneLine(r.Body); body != "" {
+		claim += ": " + body
+	}
+	return contextEntry{claim, fmt.Sprintf(" [%s, %s %s, %s, device %s]", r.Kind, r.Scope.Kind, r.Scope.ID, r.RecordID, r.Authorship.DeviceID)}
+}
+
+// size is the entry's bytes on its own line, with the newline before it.
+func (e contextEntry) size() int { return len("\n- ") + len(e.claim) + len(e.meta) }
+
+func (e contextEntry) line() string { return "- " + e.claim + e.meta }
+
+// clip shortens the claim so the entry takes at most n bytes, cutting at a
+// rune boundary, back to a word break when one is near, and marking the cut.
+func (e contextEntry) clip(n int) contextEntry {
+	if e.size() <= n {
+		return e
+	}
+	keep := n - (e.size() - len(e.claim)) - len(contextEllipsis)
+	for keep > 0 && !utf8.RuneStart(e.claim[keep]) {
+		keep--
+	}
+	claim := e.claim[:max(keep, 0)]
+	if space := strings.LastIndexByte(claim, ' '); space >= len(claim)-contextWordSlack && space > 0 {
+		claim = claim[:space]
+	}
+	e.claim = strings.TrimRight(claim, " :,;") + contextEllipsis
+	return e
+}
+
+// packTop gives each top entry an even share of the room, clipping its claim
+// to fit; room a short entry leaves goes to the records after the top. It keeps
+// as many entries, in rank order, as fit with at least contextMinClaim bytes
+// of claim each.
+func packTop(entries []contextEntry, room int) []contextEntry {
+	for n := len(entries); n > 0; n-- {
+		share := room / n
+		packed := []contextEntry{}
+		for _, e := range entries[:n] {
+			if e.size()-len(e.claim)+min(len(e.claim), contextMinClaim) > share {
+				break
+			}
+			packed = append(packed, e.clip(share))
+		}
+		if len(packed) == n {
+			return packed
+		}
+	}
+	return nil
+}
+
+// Calibrated on testdata/context-eval.json (docs/retrieval.md): a prompt
+// whose best match covers less than contextMinStrength of its IDF-weighted
+// terms gets no context, and a record whose match is under
+// contextRelativeStrength of the best one is left out.
+var contextMinStrength, contextRelativeStrength = 0.2, 0.65
+
+// relevant keeps the recalled records and conflicts strong enough to inject,
+// in rank order. A conflict counts by its strongest head.
+func relevant(p memory.Packet) ([]memory.Revision, []memory.RevisionConflict) {
+	strongest := func(c memory.RevisionConflict) float64 {
+		s := 0.0
+		for _, r := range c.Revisions {
+			s = max(s, p.Strength[r.ID])
+		}
+		return s
+	}
+	best := 0.0
+	for _, r := range p.Current {
+		best = max(best, p.Strength[r.ID])
+	}
+	for _, c := range p.Conflicts {
+		best = max(best, strongest(c))
+	}
+	records, conflicts := []memory.Revision{}, []memory.RevisionConflict{}
+	if best < contextMinStrength {
+		return records, conflicts
+	}
+	for _, r := range p.Current {
+		if p.Strength[r.ID] >= contextRelativeStrength*best {
+			records = append(records, r)
+		}
+	}
+	for _, c := range p.Conflicts {
+		if strongest(c) >= contextRelativeStrength*best {
+			conflicts = append(conflicts, c)
+		}
+	}
+	return records, conflicts
+}
+
+// memoryContext ranks recall over the prompt across visible scopes and keeps
+// the records relevant enough to inject. The top ones always appear, their
+// claims clipped to share the budget; matching conflicts follow, then further
+// records that fit whole, then scopes if there is room. Nothing relevant
+// returns the empty string. Within a session, a revision already injected is
+// left out, and the scopes are listed once.
+func memoryContext(m *memory.Service, in ContextInput, session *contextSession) (string, error) {
 	budget := contextDefaultBytes
 	if in.BudgetBytes != nil {
 		budget = *in.BudgetBytes
@@ -67,42 +180,61 @@ func memoryContext(m *memory.Service, in ContextInput) (string, error) {
 	if budget < contextMinBytes || budget > contextMaxBytes {
 		return "", errors.New("budget_bytes requires 256–4096")
 	}
-	var lines []string
+	out := contextHeader
 	switch in.Event {
 	case "prompt":
 		query := significant(in.Prompt)
 		if query == "" {
 			return "", nil
 		}
-		p, err := m.RecallAll(query, 10)
+		p, err := m.RecallAll(query, contextRecallLimit)
 		if err != nil {
 			return "", err
 		}
-		for _, r := range p.Current {
-			lines = append(lines, fmt.Sprintf("- %s: %s [%s, %s %s, %s, device %s]", oneLine(r.Summary), oneLine(r.Body), r.Kind, r.Scope.Kind, r.Scope.ID, r.RecordID, r.Authorship.DeviceID))
-		}
-		for _, c := range p.Conflicts {
-			lines = append(lines, fmt.Sprintf("- Conflict: %s has %d competing revisions; inspect memory_history before relying on it.", c.RecordID, len(c.Revisions)))
-		}
-		if len(lines) == 0 {
+		p.Current, p.Conflicts = relevant(p)
+		p.Current = session.fresh(p.Current)
+		if len(p.Current) == 0 && len(p.Conflicts) == 0 {
 			return "", nil
 		}
+		var conflicts []string
+		reserved := 0
+		for _, c := range p.Conflicts {
+			line := fmt.Sprintf("- Conflict: %s has %d competing revisions; inspect memory_history before relying on it.", c.RecordID, len(c.Revisions))
+			if reserved+1+len(line) <= (budget-len(out))/4 {
+				conflicts = append(conflicts, line)
+				reserved += 1 + len(line)
+			}
+		}
+		entries := []contextEntry{}
+		for _, r := range p.Current {
+			entries = append(entries, entryFor(r))
+		}
+		top := packTop(entries[:min(len(entries), contextTopRecords)], budget-len(out)-reserved)
+		var injected []string
+		for i, e := range top {
+			out += "\n" + e.line()
+			injected = append(injected, p.Current[i].ID)
+		}
+		for _, line := range conflicts {
+			out += "\n" + line
+		}
+		for i, e := range entries[len(top):] {
+			if len(out)+e.size() <= budget {
+				out += "\n" + e.line()
+				injected = append(injected, p.Current[len(top)+i].ID)
+			}
+		}
+		session.remember(injected)
 	case "start":
 	default:
 		return "", errors.New("event must be start or prompt")
-	}
-	out := contextHeader
-	for _, line := range lines {
-		if len(out)+1+len(line) <= budget {
-			out += "\n" + line
-		}
 	}
 	scopes, err := m.Scopes()
 	if err != nil {
 		return "", err
 	}
-	if len(scopes) == 0 && len(lines) == 0 {
-		return "", nil
+	if session.listed() {
+		scopes = nil
 	}
 	list := "Scopes:"
 	for _, s := range scopes {

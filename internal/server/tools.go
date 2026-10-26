@@ -188,7 +188,7 @@ func (s *signet) call(ctx context.Context, c Client, name string, raw []byte) *s
 		if strictjson.Decode(raw, &in, api.MaxInputBytes) != nil {
 			return result(api.Failure("input.invalid", "Invalid memory_context input.", false))
 		}
-		text, err := memoryContext(s.memory, in)
+		text, err := memoryContext(s.memory, in, s.contexts.session(c, in.Session))
 		if err != nil {
 			return result(api.Failure("input.invalid", err.Error(), false))
 		}
