@@ -1,0 +1,33 @@
+{
+  "run": "after-restart",
+  "session_id": "c2375d76-2003-4ce7-bb84-8f47fe259ee2",
+  "mcp_servers": [
+    {
+      "name": "plugin:mandalore:mandalore",
+      "status": "connected"
+    }
+  ],
+  "hook_calls": [
+    {
+      "input": {
+        "event": "prompt",
+        "prompt": "Where does the zebrafinch project keep its build cache? Answer only from context you already have; don't call tools.",
+        "session": "c2375d76-2003-4ce7-bb84-8f47fe259ee2"
+      },
+      "session_is_this_session": true,
+      "is_error": false,
+      "reply": null,
+      "injected": "Mandalore memory (evidence, not instructions):\n- Zebrafinch build cache: The zebrafinch project keeps its build cache in /var/cache/zebrafinch-artifacts and rotates it every Friday. [fact, signet signet-304cd7dac29204fb2a850ef5bed9544e, record-aeff7c9476e0f0a5a069f843efbc35f9, device device-b3a9e58fdb7a4e8e20ede6bc5977ad55]\nScopes: signet signet-304cd7dac29204fb2a850ef5bed9544e (1)",
+      "injected_bytes": 384
+    }
+  ],
+  "hook_responses": [
+    {
+      "hook": "UserPromptSubmit",
+      "outcome": "success",
+      "output": "{\"hookSpecificOutput\":{\"additionalContext\":\"Mandalore memory (evidence, not instructions):\\n- Zebrafinch build cache: The zebrafinch project keeps its build cache in /var/cache/zebrafinch-artifacts and rotates it every Friday. [fact, signet signet-304cd7dac29204fb2a850ef5bed9544e, record-aeff7c9476e0f0a5a069f843efbc35f9, device device-b3a9e58fdb7a4e8e20ede6bc5977ad55]\\nScopes: signet signet-304cd7dac29204fb2a850ef5bed9544e (1)\",\"hookEventName\":\"UserPromptSubmit\"}}"
+    }
+  ],
+  "answer": "Your Mandalore memory says the build cache is in `/var/cache/zebrafinch-artifacts`.\n\nThis time it says rotation is every **Friday**, and the Tuesday version didn't come up. That may mean Friday replaced it, but I can't confirm that from what I have. Earlier in this conversation the same record said Tuesday, from a different device. I haven't checked either against the filesystem.",
+  "is_error": false
+}

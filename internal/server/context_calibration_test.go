@@ -156,8 +156,9 @@ func wrapperRates(trials []evalTrial, heldOut bool) map[string]evalRates {
 }
 
 // TestContextSessionBytes reports the scripted session's injected bytes per
-// prompt without a session ID, as Claude Code's 2.1.0 plugin calls the hook,
-// and with one, which de-duplicates within the session.
+// prompt without a session ID, as the 2.1.0 plugin calls the hook, and with
+// one, as the plugin calls it since #228, which de-duplicates within the
+// session.
 func TestContextSessionBytes(t *testing.T) {
 	m, e := testfixture.LoadEvaluation(t, "testdata/context-eval.json")
 	m.CacheReads()
@@ -176,7 +177,7 @@ func TestContextSessionBytes(t *testing.T) {
 	t.Logf("scripted session, injected bytes per prompt: %.0f without a session ID, %.0f with one", average(without), average(with))
 	t.Logf("per turn without: %v", without)
 	t.Logf("per turn with:    %v", with)
-	if average(with) > average(without) {
-		t.Fatal("de-duplication added bytes")
+	if average(with) >= average(without) {
+		t.Fatal("de-duplication saved no bytes")
 	}
 }

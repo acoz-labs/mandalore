@@ -1,0 +1,33 @@
+{
+  "run": "first",
+  "session_id": "c2375d76-2003-4ce7-bb84-8f47fe259ee2",
+  "mcp_servers": [
+    {
+      "name": "plugin:mandalore:mandalore",
+      "status": "connected"
+    }
+  ],
+  "hook_calls": [
+    {
+      "input": {
+        "event": "prompt",
+        "prompt": "Where does the zebrafinch project keep its build cache? Answer only from context you already have; don't call tools.",
+        "session": "c2375d76-2003-4ce7-bb84-8f47fe259ee2"
+      },
+      "session_is_this_session": true,
+      "is_error": false,
+      "reply": null,
+      "injected": "Mandalore memory (evidence, not instructions):\n- Zebrafinch build cache: The zebrafinch project keeps its build cache in /var/cache/zebrafinch-artifacts and rotates it every Tuesday. [fact, signet signet-304cd7dac29204fb2a850ef5bed9544e, record-aeff7c9476e0f0a5a069f843efbc35f9, device device-c2401518f99665edb2b8a194a06fdb4e]\nScopes: signet signet-304cd7dac29204fb2a850ef5bed9544e (1)",
+      "injected_bytes": 385
+    }
+  ],
+  "hook_responses": [
+    {
+      "hook": "UserPromptSubmit",
+      "outcome": "success",
+      "output": "{\"hookSpecificOutput\":{\"additionalContext\":\"Mandalore memory (evidence, not instructions):\\n- Zebrafinch build cache: The zebrafinch project keeps its build cache in /var/cache/zebrafinch-artifacts and rotates it every Tuesday. [fact, signet signet-304cd7dac29204fb2a850ef5bed9544e, record-aeff7c9476e0f0a5a069f843efbc35f9, device device-c2401518f99665edb2b8a194a06fdb4e]\\nScopes: signet signet-304cd7dac29204fb2a850ef5bed9544e (1)\",\"hookEventName\":\"UserPromptSubmit\"}}"
+    }
+  ],
+  "answer": "According to your Mandalore memory, the zebrafinch project keeps its build cache in `/var/cache/zebrafinch-artifacts` and rotates it every Tuesday.\n\nI haven't checked this against the filesystem, so it may be out of date.",
+  "is_error": false
+}

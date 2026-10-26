@@ -1,0 +1,33 @@
+{
+  "run": "older-server",
+  "session_id": "c0845ea4-bea2-4136-a938-aadf35e36840",
+  "mcp_servers": [
+    {
+      "name": "plugin:mandalore:mandalore",
+      "status": "connected"
+    }
+  ],
+  "hook_calls": [
+    {
+      "input": {
+        "event": "prompt",
+        "prompt": "Where does the zebrafinch project keep its build cache? Answer only from context you already have; don't call tools.",
+        "session": "c0845ea4-bea2-4136-a938-aadf35e36840"
+      },
+      "session_is_this_session": true,
+      "is_error": true,
+      "reply": "{\"protocol_version\":1,\"ok\":false,\"error\":{\"code\":\"input.invalid\",\"message\":\"Invalid memory_context input.\",\"retryable\":false,\"write_may_have_occurred\":false,\"inspect_before_retry\":false}}",
+      "injected": "",
+      "injected_bytes": 0
+    }
+  ],
+  "hook_responses": [
+    {
+      "hook": "UserPromptSubmit",
+      "outcome": "error",
+      "output": "{\"protocol_version\":1,\"ok\":false,\"error\":{\"code\":\"input.invalid\",\"message\":\"Invalid memory_context input.\",\"retryable\":false,\"write_may_have_occurred\":false,\"inspect_before_retry\":false}}"
+    }
+  ],
+  "answer": "I don't know. My current context says nothing about a zebrafinch project or where it keeps its build cache. It doesn't come up in this conversation, the working directory or any loaded memory.\n\nI could check your Mandalore memory, or search the project files for cache config such as build tool settings, `.cache` directories or environment variables.",
+  "is_error": false
+}

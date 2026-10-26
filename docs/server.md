@@ -262,8 +262,10 @@ plugin's hook. It returns Claude Code hook output JSON,
   until the record is revised, and the scopes are listed once. The server
   keeps this in memory only, per installation, client scope and session, for
   up to 1,024 sessions of up to 512 revisions each, each forgotten after 12
-  hours idle; a restart forgets them all. The 2.1.0 plugin doesn't send a
-  session yet ([#228](https://github.com/acoz-labs/mandalore/issues/228)).
+  hours idle; a restart forgets them all. The Claude plugin sends Claude
+  Code's session ID from 2.1.1 on
+  ([#228](https://github.com/acoz-labs/mandalore/issues/228)), which stays the
+  same across `--resume`.
 
 A result with nothing to inject is empty, and the hook adds nothing.
 

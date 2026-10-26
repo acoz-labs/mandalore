@@ -7,7 +7,7 @@
             "type": "mcp_tool",
             "server": "plugin:mandalore:mandalore",
             "tool": "memory_context",
-            "input": {"event": "prompt", "prompt": "${prompt}"},
+            "input": {"event": "prompt", "prompt": "${prompt}", "session": "${session_id}"},
             "timeout": 3
           }
         ]
