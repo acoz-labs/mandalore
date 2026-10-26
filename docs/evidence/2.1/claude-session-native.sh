@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
 # Native Claude Code checks for the plugin's session de-duplication (#228).
 # Everything runs against a synthetic signet in a new temporary directory, with
-# HOME pointed there too, as in docs/evidence/2.0/claude-plugin-native.sh.
+# HOME and CLAUDE_CONFIG_DIR pointed there too, so Claude Code uses its own
+# config and credential store, never the operator's.
 #
 #   docs/evidence/2.1/claude-session-native.sh SERVER_2_1 SERVER_2_0_3 OUTPUT_DIR
 #
 # SERVER_2_1 is a 2.1.0 or later mandalore binary, SERVER_2_0_3 a 2.0.3 one.
 # Claude Code reaches the server through claude-session-proxy.py, which logs
-# each memory_context call's input and reply. Needs an authenticated `claude`
-# on PATH; the test server is signed out of Claude Code before and after.
+# each memory_context call's input and reply. Needs `claude` on PATH and a
+# credential in the environment: CLAUDE_CODE_OAUTH_TOKEN (from `claude
+# setup-token`) or ANTHROPIC_API_KEY. The server trusts loopback, so Claude
+# Code never stores an MCP token, and no `claude mcp` command is run.
 set -euo pipefail
 
 abs() { echo "$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"; }
@@ -21,7 +24,6 @@ port=28730
 upstream=28731
 url="http://localhost:$port/mcp"
 work=$(mktemp -d)
-real_home=$HOME
 server_pid=""
 proxy_pid=""
 
@@ -33,15 +35,16 @@ stop() { # pid variable name
     printf -v "$1" ''
   fi
 }
-signed_in=""
-sign_out() { [[ -n "$signed_in" ]] && claude mcp logout plugin:mandalore:mandalore > /dev/null 2>&1 || true; }
-trap 'stop server_pid; stop proxy_pid; sign_out; rm -rf "$work"' EXIT
+trap 'stop server_pid; stop proxy_pid; rm -rf "$work"' EXIT
 
-export HOME="$work/home" GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 ENABLE_CLAUDEAI_MCP_SERVERS=false
+[[ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}${ANTHROPIC_API_KEY:-}" ]] || {
+  echo "Set CLAUDE_CODE_OAUTH_TOKEN or ANTHROPIC_API_KEY; the run never uses the operator's login." >&2
+  exit 1
+}
+export HOME="$work/home" CLAUDE_CONFIG_DIR="$work/claude-config" GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 ENABLE_CLAUDEAI_MCP_SERVERS=false
 export GIT_AUTHOR_NAME=Synthetic GIT_AUTHOR_EMAIL=synthetic@example.invalid GIT_COMMITTER_NAME=Synthetic GIT_COMMITTER_EMAIL=synthetic@example.invalid
-unset CLAUDECODE CLAUDE_CODE_SESSION_ID CLAUDE_CODE_ENTRYPOINT CLAUDE_CODE_CHILD_SESSION CLAUDE_CONFIG_DIR
-mkdir -p "$HOME/Library" "$work/project"
-[[ "$(uname)" == Darwin ]] && ln -s "$real_home/Library/Keychains" "$HOME/Library/Keychains"
+unset CLAUDECODE CLAUDE_CODE_SESSION_ID CLAUDE_CODE_ENTRYPOINT CLAUDE_CODE_CHILD_SESSION
+mkdir -p "$HOME" "$CLAUDE_CONFIG_DIR" "$work/project"
 
 # Synthetic signet with one seeded fact.
 "$current" signet create --repository "$work/signet" --name "Synthetic acceptance" --device-label "Synthetic server" > "$work/create.json"
@@ -80,8 +83,6 @@ proxy_pid=$!
 
 # Install the plugin from this checkout's marketplace, as a user would.
 claude plugin install mandalore --marketplace "$repo" --config "server_url=$url" > "$out/install.txt"
-signed_in=1
-sign_out
 
 question="Where does the zebrafinch project keep its build cache? Answer only from context you already have; don't call tools."
 ask() { # name session-flag-or-empty

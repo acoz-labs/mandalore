@@ -3,9 +3,25 @@
 Engineering evidence for the plugin sending `session: "${session_id}"`,
 recorded 2026-10-26 with Claude Code 2.1.310 on macOS (arm64). It is not
 release acceptance. Every run used a synthetic signet with one seeded fact in a
-new temporary directory and a temporary `HOME`, linked back to the real home
-only through the login keychain so Claude Code could sign in. The test server
-was signed out of Claude Code before and after.
+new temporary directory.
+
+**Isolation.** The script gives Claude Code a temporary `HOME` and a temporary
+`CLAUDE_CONFIG_DIR`, so its settings, plugins and credential store are its
+own. It links nothing back to the real home, and it runs no `claude mcp`
+command: the server trusts loopback, so Claude Code never stores an MCP token.
+It needs a credential in the environment, `CLAUDE_CODE_OAUTH_TOKEN` (from
+`claude setup-token`) or `ANTHROPIC_API_KEY`, and refuses to start without one.
+
+The committed outputs came from an earlier version of the script, which set
+only `HOME` and linked the login keychain back for sign-in. On macOS that
+shares Claude Code's credential item with the operator's own sessions, so the
+`claude mcp logout` it ran before and after acted on the operator's real
+Mandalore login, not a sandbox. The fixed script was not re-run with a real login. The
+independent review of #234 re-ran the same scenario fully isolated (temporary
+`HOME` and `CLAUDE_CONFIG_DIR`, an environment token, no `claude mcp`
+command). Its hook calls matched these outputs byte for byte. Its model turns
+failed on that token's account, after the hooks had run, so the model answers
+below come from the earlier runs only.
 
 The servers were `mandalore` 2.1.0 and 2.0.3, built from the `v2.1.0` and
 `v2.0.3` tags ([current](claude-session/server-current-version.json),
@@ -17,7 +33,7 @@ the server doesn't log hook input. [`claude-session-native.sh`](claude-session-n
 reproduces the runs:
 
 ```sh
-docs/evidence/2.1/claude-session-native.sh /tmp/mandalore-2.1.0 /tmp/mandalore-2.0.3 /tmp/session-evidence
+CLAUDE_CODE_OAUTH_TOKEN=... docs/evidence/2.1/claude-session-native.sh /tmp/mandalore-2.1.0 /tmp/mandalore-2.0.3 /tmp/session-evidence
 ```
 
 It installs the plugin from this checkout's marketplace and asks the same
