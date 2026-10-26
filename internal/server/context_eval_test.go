@@ -23,6 +23,8 @@ type evalTrial struct {
 	// ContextHasTop whether memory_context injected it (acceptance 1).
 	RecallTop     string
 	ContextHasTop bool
+	// Injected counts the records memory_context injected for the prompt.
+	Injected int
 }
 
 // evalReport is everything one build measured on the evaluation set.
@@ -77,11 +79,11 @@ func evalWrappers(e testfixture.Evaluation) []evalWrapper {
 }
 
 // evalPrompts calls each case's phrasings with every wrapper. A prompt is held
-// out when it uses the paraphrase or a held-out wrapper, which tuning never
-// looked at.
+// out when it uses the variant phrasing or a held-out wrapper, which no
+// tuning decision looked at.
 func evalPrompts(e testfixture.Evaluation, each func(c int, form string, text string, w evalWrapper)) {
 	for i, c := range e.Cases {
-		for _, form := range []struct{ name, text string }{{"question", c.Question}, {"paraphrase", c.Paraphrase}} {
+		for _, form := range []struct{ name, text string }{{"question", c.Question}, {"paraphrase", c.Paraphrase}, {"variant", c.Variant}} {
 			for _, w := range evalWrappers(e) {
 				each(i, form.name, form.text, w)
 			}
@@ -90,7 +92,7 @@ func evalPrompts(e testfixture.Evaluation, each func(c int, form string, text st
 }
 
 // runEvaluation scores testdata/context-eval.json: memory_recall on each
-// case's question and paraphrase in the record's scope, memory_context on each
+// case's phrasings in the record's scope, memory_context on each
 // prompt, on the prompts no record answers and on the scripted session.
 func runEvaluation(t *testing.T, m *memory.Service, e testfixture.Evaluation) evalReport {
 	t.Helper()
@@ -113,8 +115,8 @@ func runEvaluation(t *testing.T, m *memory.Service, e testfixture.Evaluation) ev
 			top = r[0]
 		}
 		injected := contextRanks(contextFor(t, m, "prompt", strings.ReplaceAll(w.text, "{q}", text)))
-		report.Trials = append(report.Trials, evalTrial{Case: c.Name, Expect: c.Expect, Form: form, Wrapper: w.text, HeldOut: form == "paraphrase" || w.heldOut,
-			Recall: rankOf(recalled[text], c.Expect), Context: rankOf(injected, c.Expect), RecallTop: top, ContextHasTop: top != "" && rankOf(injected, top) > 0})
+		report.Trials = append(report.Trials, evalTrial{Case: c.Name, Expect: c.Expect, Form: form, Wrapper: w.text, HeldOut: form == "variant" || w.heldOut,
+			Recall: rankOf(recalled[text], c.Expect), Context: rankOf(injected, c.Expect), RecallTop: top, ContextHasTop: top != "" && rankOf(injected, top) > 0, Injected: len(injected)})
 	})
 	for _, set := range []struct {
 		prompts []string

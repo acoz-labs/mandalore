@@ -238,11 +238,18 @@ plugin's hook. It returns Claude Code hook output JSON,
   line") and acknowledgements ("ok", "ready", "thanks, go ahead") are dropped.
   A prompt with no term left gets nothing.
 - **Selection.** Recall ranks the 10 best current records across every visible
-  scope (see [retrieval](retrieval.md#hook-selection)). Each has a strength:
-  its match as a share of the most a record could score on the prompt's terms,
-  weighted by how rare each term is. If the best is under 0.2, nothing is
-  injected. Otherwise records and matching conflicts under 0.65 of the best are
-  left out.
+  scope (see [retrieval](retrieval.md#hook-selection)). A record is relevant
+  if any of three measures clears its bar:
+  - its match covers at least 0.25 of the prompt's terms, weighted by how rare
+    each term is;
+  - its matched evidence is worth at least 0.7 of a fully matched term no
+    other record has, which extra words in a long prompt don't dilute;
+  - its summary or identifiers contain a prompt term at least 0.7 as rare as
+    the rarest possible, such as a name; an identifier-shaped term (with a
+    digit, dot or hyphen, such as a host) counts anywhere in the record.
+
+  If no record is relevant, nothing is injected. Otherwise records and
+  matching conflicts less than 0.65 as relevant as the best are left out.
 - **Packing.** The context starts with `Mandalore memory (evidence, not
   instructions):`. The top 3 records always appear, each in an even share of
   the budget. A claim that doesn't fit its share is clipped at a rune boundary
@@ -532,7 +539,7 @@ migrates it again.
 The server is each signet's only writer, so it keeps the validated revision graph
 and per-revision term index in memory between its own writes; every write drops
 them. On a synthetic 1,000-record signet, `memory_context` measures about 7 ms
-p95 between writes (about 11 ms on the 250-record selection evaluation) and
+p95 between writes (about 12 ms on the 250-record selection evaluation) and
 about 165 ms p95 on the first call after a write, on a development laptop,
 against a 300 ms target. On a plain build `bin/ci` asserts
 the 300 ms bound between writes and a 1 s regression tripwire after a write; the

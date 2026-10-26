@@ -21,7 +21,7 @@ func TestMemoryContextInjectsEachRevisionOncePerSession(t *testing.T) {
 	laptop := Client{ID: "https://client.memory.example.com/metadata.json", Installation: "inst-0000000000000001", Scope: ScopeReadWrite}
 	ask := func(c Client, session, prompt string) []string {
 		t.Helper()
-		text, err := memoryContext(m, ContextInput{Event: "prompt", Prompt: prompt, Session: session}, cs.session(c, session))
+		text, err := contextOf(m, ContextInput{Event: "prompt", Prompt: prompt, Session: session}, cs.session(c, session))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -75,7 +75,7 @@ func TestContextSessionsStayBounded(t *testing.T) {
 	cs := contextSessions{now: func() time.Time { return clock }}
 	c := Client{ID: "client-a", Scope: ScopeRead}
 	first := cs.session(c, "session-0000")
-	first.remember([]string{"revision-a"})
+	first.delivered(contextResult{injected: []string{"revision-a"}})
 	for i := 1; i <= contextSessionsMax; i++ {
 		clock = clock.Add(time.Second)
 		cs.session(c, fmt.Sprintf("session-%04d", i))
@@ -88,9 +88,32 @@ func TestContextSessionsStayBounded(t *testing.T) {
 	}
 	s := cs.session(c, "session-full")
 	for i := range contextSessionRevisions + 10 {
-		s.remember([]string{fmt.Sprintf("revision-%d", i)})
+		s.delivered(contextResult{injected: []string{fmt.Sprintf("revision-%d", i)}})
 	}
 	if len(s.injected) != contextSessionRevisions {
 		t.Fatalf("%d revisions kept", len(s.injected))
+	}
+}
+
+// Round 1 of #227 review, L3: a call records nothing in the session until
+// it has succeeded, so a result that never reaches the hook doesn't
+// suppress its records for the rest of the session.
+func TestMemoryContextSessionRecordsOnlyDeliveredResults(t *testing.T) {
+	m, _ := contextService(t, memory.Write{Kind: "decision", Summary: "Tidepool primary database", Body: "Postgres 17."})
+	cs := contextSessions{now: time.Now}
+	session := cs.session(Client{ID: "client-a", Scope: ScopeRead}, "session-a")
+	in := ContextInput{Event: "prompt", Prompt: "Which database does tidepool use?", Session: "session-a"}
+	first, err := memoryContext(m, in, session)
+	if err != nil || len(contextRanks(first.text)) != 1 || !first.listed {
+		t.Fatalf("first call: %+v %v", first, err)
+	}
+	// Not delivered: the next call injects the record and lists scopes again.
+	again, err := memoryContext(m, in, session)
+	if err != nil || again.text != first.text {
+		t.Fatalf("undelivered result suppressed the next one: %q", again.text)
+	}
+	session.delivered(again)
+	if after, err := memoryContext(m, in, session); err != nil || after.text != "" {
+		t.Fatalf("delivered result injected again: %q %v", after.text, err)
 	}
 }

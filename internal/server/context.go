@@ -42,8 +42,8 @@ var stopwords = map[string]bool{}
 
 func init() {
 	for _, w := range strings.Fields(`today tell show give know think
-		answer answers reply respond context tool tools call calls calling line lines one sentence sentences word words brief briefly short quick question questions already don doesn didn won isn
-		okay thanks thank cheers ready sure yeah yep yup sounds good great fine cool nice perfect awesome excellent agreed right alright continue proceed ahead next lgtm`) {
+		answer answers reply context tool tools call calls calling line one sentence short quick question already don
+		thanks thank ready sounds good great perfect continue ahead next lgtm`) {
 		stopwords[w] = true
 	}
 }
@@ -126,35 +126,42 @@ func packTop(entries []contextEntry, room int) []contextEntry {
 	return nil
 }
 
-// Calibrated on testdata/context-eval.json (docs/retrieval.md): a prompt
-// whose best match covers less than contextMinStrength of its IDF-weighted
-// terms gets no context, and a record whose match is under
+// Calibrated on the tuning split of testdata/context-eval.json
+// (docs/retrieval.md#hook-selection). A record is relevant when its match
+// covers at least contextMinStrength of the prompt's IDF-weighted terms,
+// carries at least contextMinEvidence of evidence (memory.Packet.Evidence),
+// which a long prompt's extra words don't dilute, or names a term at least
+// contextMinAnchor rare in its summary or identifiers (memory.Packet.Anchor),
+// as "What is Beacon?" does. A record less relevant than
 // contextRelativeStrength of the best one is left out.
-var contextMinStrength, contextRelativeStrength = 0.2, 0.65
+var contextMinStrength, contextMinEvidence, contextMinAnchor, contextRelativeStrength = 0.25, 0.70, 0.70, 0.65
 
-// relevant keeps the recalled records and conflicts strong enough to inject,
-// in rank order. A conflict counts by its strongest head.
+// relevant keeps the recalled records and conflicts relevant enough to
+// inject, in rank order. A conflict counts by its most relevant head.
 func relevant(p memory.Packet) ([]memory.Revision, []memory.RevisionConflict) {
+	of := func(r memory.Revision) float64 {
+		return max(p.Strength[r.ID]/contextMinStrength, p.Evidence[r.ID]/contextMinEvidence, p.Anchor[r.ID]/contextMinAnchor)
+	}
 	strongest := func(c memory.RevisionConflict) float64 {
 		s := 0.0
 		for _, r := range c.Revisions {
-			s = max(s, p.Strength[r.ID])
+			s = max(s, of(r))
 		}
 		return s
 	}
 	best := 0.0
 	for _, r := range p.Current {
-		best = max(best, p.Strength[r.ID])
+		best = max(best, of(r))
 	}
 	for _, c := range p.Conflicts {
 		best = max(best, strongest(c))
 	}
 	records, conflicts := []memory.Revision{}, []memory.RevisionConflict{}
-	if best < contextMinStrength {
+	if best < 1 {
 		return records, conflicts
 	}
 	for _, r := range p.Current {
-		if p.Strength[r.ID] >= contextRelativeStrength*best {
+		if of(r) >= contextRelativeStrength*best {
 			records = append(records, r)
 		}
 	}
@@ -171,30 +178,32 @@ func relevant(p memory.Packet) ([]memory.Revision, []memory.RevisionConflict) {
 // claims clipped to share the budget; matching conflicts follow, then further
 // records that fit whole, then scopes if there is room. Nothing relevant
 // returns the empty string. Within a session, a revision already injected is
-// left out, and the scopes are listed once.
-func memoryContext(m *memory.Service, in ContextInput, session *contextSession) (string, error) {
+// left out, and the scopes are listed once. The result says what it delivers;
+// the caller records that in the session only once the call has succeeded.
+func memoryContext(m *memory.Service, in ContextInput, session *contextSession) (contextResult, error) {
 	budget := contextDefaultBytes
 	if in.BudgetBytes != nil {
 		budget = *in.BudgetBytes
 	}
 	if budget < contextMinBytes || budget > contextMaxBytes {
-		return "", errors.New("budget_bytes requires 256–4096")
+		return contextResult{}, errors.New("budget_bytes requires 256–4096")
 	}
 	out := contextHeader
+	var injected []string
 	switch in.Event {
 	case "prompt":
 		query := significant(in.Prompt)
 		if query == "" {
-			return "", nil
+			return contextResult{}, nil
 		}
 		p, err := m.RecallAll(query, contextRecallLimit)
 		if err != nil {
-			return "", err
+			return contextResult{}, err
 		}
 		p.Current, p.Conflicts = relevant(p)
 		p.Current = session.fresh(p.Current)
 		if len(p.Current) == 0 && len(p.Conflicts) == 0 {
-			return "", nil
+			return contextResult{}, nil
 		}
 		var conflicts []string
 		reserved := 0
@@ -210,7 +219,6 @@ func memoryContext(m *memory.Service, in ContextInput, session *contextSession) 
 			entries = append(entries, entryFor(r))
 		}
 		top := packTop(entries[:min(len(entries), contextTopRecords)], budget-len(out)-reserved)
-		var injected []string
 		for i, e := range top {
 			out += "\n" + e.line()
 			injected = append(injected, p.Current[i].ID)
@@ -224,16 +232,15 @@ func memoryContext(m *memory.Service, in ContextInput, session *contextSession) 
 				injected = append(injected, p.Current[len(top)+i].ID)
 			}
 		}
-		session.remember(injected)
 	case "start":
 	default:
-		return "", errors.New("event must be start or prompt")
+		return contextResult{}, errors.New("event must be start or prompt")
 	}
 	scopes, err := m.Scopes()
 	if err != nil {
-		return "", err
+		return contextResult{}, err
 	}
-	if session.listed() {
+	if session != nil && session.scopes {
 		scopes = nil
 	}
 	list := "Scopes:"
@@ -244,13 +251,22 @@ func memoryContext(m *memory.Service, in ContextInput, session *contextSession) 
 		}
 		list += entry
 	}
-	if list != "Scopes:" {
+	listed := list != "Scopes:"
+	if listed {
 		out += "\n" + strings.TrimSuffix(list, ";")
 	}
 	if out == contextHeader {
-		return "", nil
+		return contextResult{}, nil
 	}
-	return out, nil
+	return contextResult{text: out, injected: injected, listed: listed}, nil
+}
+
+// contextResult is the context text, the revisions it injects and whether it
+// lists the scopes.
+type contextResult struct {
+	text     string
+	injected []string
+	listed   bool
 }
 
 // hookEvents names the Claude Code hook each event answers.

@@ -111,3 +111,26 @@ func TestScopedRankingIgnoresOtherScopes(t *testing.T) {
 		t.Fatalf("other scope changed the order: %v then %v", before, after)
 	}
 }
+
+// Round 1 of #227 review, L2: an empty query lists current memory in
+// revision-ID order whatever the kinds, as before.
+func TestEmptyRecallListsInRevisionOrder(t *testing.T) {
+	s := fixture(t)
+	rememberAll(t, s,
+		Write{Kind: "fact", Summary: "Tide table", Body: "High water at noon."},
+		Write{Kind: "decision", Summary: "Harbour", Body: "Moor at the east pontoon."},
+		Write{Kind: "project-state", Summary: "Boat", Body: "Antifouled in spring."},
+		Write{Kind: "preference", Summary: "Sailing", Body: "Prefer mornings."},
+	)
+	p, err := s.Recall("", nil, 50, 32768)
+	if err != nil || len(p.Current) != 4 {
+		t.Fatal(p, err)
+	}
+	ids := []string{}
+	for _, h := range p.Current {
+		ids = append(ids, h.ID)
+	}
+	if !slices.IsSorted(ids) {
+		t.Fatalf("empty recall out of revision order: %v", ids)
+	}
+}

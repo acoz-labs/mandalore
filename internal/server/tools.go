@@ -188,11 +188,13 @@ func (s *signet) call(ctx context.Context, c Client, name string, raw []byte) *s
 		if strictjson.Decode(raw, &in, api.MaxInputBytes) != nil {
 			return result(api.Failure("input.invalid", "Invalid memory_context input.", false))
 		}
-		text, err := memoryContext(s.memory, in, s.contexts.session(c, in.Session))
+		session := s.contexts.session(c, in.Session)
+		r, err := memoryContext(s.memory, in, session)
 		if err != nil {
 			return result(api.Failure("input.invalid", err.Error(), false))
 		}
-		return &sdk.CallToolResult{Content: []sdk.Content{&sdk.TextContent{Text: hookOutput(in.Event, text)}}}
+		session.delivered(r)
+		return &sdk.CallToolResult{Content: []sdk.Content{&sdk.TextContent{Text: hookOutput(in.Event, r.text)}}}
 	}
 	if !isWrite(name) {
 		return result(api.New(s.memory, true).WithFoundlings(foundlings.NewConfigured(s.memory, s.foundlings)).Call(ctx, name, raw))

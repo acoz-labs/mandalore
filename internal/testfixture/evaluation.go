@@ -27,6 +27,7 @@ type Evaluation struct {
 		Expect     string `json:"expect"`
 		Question   string `json:"question"`
 		Paraphrase string `json:"paraphrase"`
+		Variant    string `json:"variant"`
 	} `json:"cases"`
 	Records []struct {
 		Record  string              `json:"record"`

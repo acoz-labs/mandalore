@@ -80,24 +80,16 @@ func (s *contextSession) fresh(revisions []memory.Revision) []memory.Revision {
 	return kept
 }
 
-func (s *contextSession) remember(ids []string) {
+// delivered records what a successful call gave the session. A nil session
+// records nothing.
+func (s *contextSession) delivered(r contextResult) {
 	if s == nil {
 		return
 	}
-	for _, id := range ids {
+	for _, id := range r.injected {
 		if len(s.injected) < contextSessionRevisions {
 			s.injected[id] = true
 		}
 	}
-}
-
-// listed reports whether the session was already given the scope list, and
-// notes that it now has been. A nil session lists scopes every time.
-func (s *contextSession) listed() bool {
-	if s == nil {
-		return false
-	}
-	listed := s.scopes
-	s.scopes = true
-	return listed
+	s.scopes = s.scopes || r.listed
 }

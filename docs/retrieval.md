@@ -47,20 +47,34 @@ outrank a short, specific answer. The packer also skipped a top hit whose whole
 claim didn't fit the budget, and any score above 0 injected something, so most
 prompts got a record. 2.1.0 changes all three:
 
-- **Ranking (recall and the hook).** BM25 over the existing field weights:
-  summary hits count four times a body hit and identifier hits eight times,
-  with inflections at a quarter. Document frequency and average length come
-  from the records the query can return, so ranking within a scope ignores
-  other scopes. Function words ("what", "is", "the") still make a record match
-  but only break ties, so a query's membership and the response shape are
-  unchanged. A decision or preference scores 1.2 times as much as other kinds.
-  Ties order by revision ID.
-- **Threshold (the hook only).** Each match has a strength: its BM25 score as a
-  share of the most a record could score on the query, so matching the
-  prompt's rare terms counts for more than matching its common ones. Up to
-  three prompt terms that no record contains count against every strength. A
-  prompt whose best strength is under 0.2 gets nothing, and a record under
-  0.65 of the best is left out.
+- **Ranking (recall and the hook).** BM25 (k1 1.2, b 0.75) over the existing
+  field weights: summary hits count four times a body hit and identifier hits
+  eight times, with inflections at a quarter. Document frequency and average
+  length come from the records the query can return, so ranking within a
+  scope ignores other scopes. Function words ("what", "is", "the") still make
+  a record match but only break ties, so a query's membership and the
+  response shape are unchanged. A decision or preference scores 1.2 times as
+  much as other kinds on a non-empty query. Ties, and an empty query's list,
+  order by revision ID.
+- **Threshold (the hook only).** A recalled record is relevant if any of
+  three measures clears its bar:
+  - *Coverage* ≥ 0.25: its BM25 score as a share of the most a record could
+    score on the prompt. Every prompt term counts, weighted by IDF, so a
+    prompt about a topic the signet lacks (its terms in no record) covers
+    little.
+  - *Evidence* ≥ 0.7: its score in units of one fully matched term that no
+    other record contains. It doesn't fall when a prompt adds words, so
+    instruction preambles ("Without looking anything up, …") don't hide an
+    answer that matches several of the question's terms.
+  - *Anchor* ≥ 0.7: the rarest prompt term in its summary or identifiers,
+    or anywhere in it when the term is identifier-shaped (has a digit, dot or
+    hyphen, such as a host or `signal-000001`), as that term's IDF over the
+    most possible. A name such as "Beacon" in "What is Beacon?" anchors its
+    record even inside filler.
+
+  A prompt with no relevant record gets nothing. A record less than 0.65 as
+  relevant as the best (relevance being the largest of the three measures
+  over its bar) is left out.
 - **Packing (the hook only).** The default budget is 2048 bytes. The top 3
   records always appear, each clipped to an even share with a `…` mark and
   never losing its provenance. Further records appear only whole. Within a
@@ -73,55 +87,94 @@ Explicit `memory_recall` has no threshold and no de-duplication.
 
 `internal/server/testdata/context-eval.json` is a synthetic signet of 250
 records in eight scopes: 44 short answers (decisions, preferences, facts and
-procedures), 26 long status and research notes that use the answers' words,
-and 180 generated session notes full of the same domain and meta words. Hosts
-use `memory.example.com`. Each case has a question and a paraphrase. The hook
-sees each alone and inside 9 instruction wrappers ("Answer from context you
-already have; don't call tools.", "In one line: …"), 880 prompts in all.
-32 prompts that no record answers cover acknowledgements, general knowledge,
-coding questions and uncovered topics. A scripted 20-turn session measures
-injected bytes. Paraphrases, 5 of the wrappers and half the no-memory prompts
-are held out: tuning looked only at the rest.
+procedures), 36 decisions and preferences on neighbouring topics in the same
+scopes, so a record's kind doesn't give the answer away, 26 long status and
+research notes that use the answers' words, and 144 generated session notes
+full of the same domain and meta words. Hosts use `memory.example.com`.
+
+Each case has three phrasings. The hook sees each alone and inside 15
+instruction wrappers ("Answer from context you already have; don't call
+tools.", "In one line: …"), 2112 prompts in all. 48 prompts that no record
+answers cover acknowledgements, general knowledge, coding questions and
+uncovered topics. A scripted 20-turn session measures injected bytes.
+
+**Splits.** The tuning split is each case's question and paraphrase, 9
+wrappers and 32 no-memory prompts. Every tuning decision (the hook's stop
+words, the three bars, the relative cut and the kind boost) was made on it
+alone; each hook stop word occurs in it. The held-out split is a third
+phrasing per case, 6 wrappers and 16 no-memory prompts, written during
+review of #227 before any run used them. A prompt is held out if it uses the
+third phrasing or a held-out wrapper. The held-out split was run three times:
+with coverage and evidence; after the anchor was added and tuned on the tuning
+split; and after the anchor also took identifier-shaped terms in a body, a fix
+for the 1,000-record latency fixture that changed no evaluation number. No
+held-out result informed a decision. An earlier version of the set had a held-out split that
+tuning had looked at; it is now part of the tuning split.
 
 `TestContextSelectionEvaluation` runs it in `bin/ci` and fails under these
-floors: hook top-1 80% and top-3 85% (held-out 82%), recall top-1 65% and
-top-3 78%, at most 15% false injection, the hook carrying recall's first record
-in at least 90% of the prompts where that is the case's record, and at most
-800 injected bytes per session prompt. `MANDALORE_EVAL_REPORT=FILE` writes
-every outcome, for a per-case comparison between two builds.
+floors. The tuning floors sit a little under its rates. The held-out floors
+were set before the held-out split was first run and are not moved to fit it.
 
-| Measure | 2.0.3 | 2.1.0 |
+| Floor | Tuning | Held out |
 | --- | --- | --- |
-| `memory_context` top-1 / top-3 (880 prompts) | 17.3% / 43.9% | 83.2% / 87.6% |
-| held-out only (660) | 15.2% / 41.2% | 79.7% / 84.5% |
-| `memory_recall` top-1 / top-3 (88 queries) | 21.6% / 35.2% | 83.0% / 95.5% |
-| False injection (32 no-memory prompts) | 46.9% | 6.2% |
-| Injected bytes per prompt, 20-turn session | 1038 | 558 (411 with `session`) |
-| Warm p95, 250 records | | 11 ms |
+| `memory_context` top-1 / top-3 | 75% / 85% | 65% / 80% |
+| `memory_recall` top-1 / top-3 | 72% / 88% | 60% / 80% |
+| False injection, at most | 15% | 25% |
 
-The 2.0.3 column runs the same test file against 816ea1b.
-`MANDALORE_EVAL_CURVE=1` logs the threshold trade-off:
+It also fails if any tuning wrapper's top-3 is under 75%, if the hook carries
+recall's first record in under 90% of the prompts where that is the case's
+record, or if session prompts average over 800 injected bytes.
+`MANDALORE_EVAL_REPORT=FILE` writes every outcome, for a per-case comparison
+between two builds.
 
-| Min strength | Top-3 | Held-out top-3 | False injection |
-| --- | --- | --- | --- |
-| 0 (none) | 92.3% | 90.8% | 40.6% |
-| 0.10 | 92.3% | 90.8% | 28.1% |
-| 0.15 | 91.4% | 89.5% | 18.8% |
-| 0.17 | 90.3% | 88.2% | 12.5% |
-| **0.20** | 87.6% | 84.5% | 6.2% |
-| 0.25 | 83.2% | 79.1% | 0% |
-| 0.30 | 71.2% | 64.5% | 0% |
+| Measure | Split | 2.0.3 | 2.1.0 | 2.1.0, no kind boost |
+| --- | --- | --- | --- | --- |
+| `memory_context` top-1 / top-3 | tuning (880 prompts) | 18.4% / 44.8% | 78.6% / 87.7% | 71.6% / 83.2% |
+| | held out (1232) | 33.3% / 61.9% | 77.6% / 85.5% | 70.7% / 77.8% |
+| `memory_recall` top-1 / top-3 | tuning (88 queries) | 22.7% / 37.5% | 77.3% / 93.2% | 75.0% / 88.6% |
+| | held out (44) | 11.4% / 29.5% | 75.0% / 88.6% | 72.7% / 86.4% |
+| False injection | tuning (32) | 46.9% | 0% | 0% |
+| | held out (16) | 56.2% | 6.2% | 6.2% |
+| Injected bytes per prompt, 20-turn session | | 1030 | 573 (363 with `session`) | 596 |
+| Warm p95, 250 records | | | 12 ms | |
 
-0.2 keeps false injection well under 15% with top-3 above 85%. The relative
-cut barely moves hits (87.8% with none, 86.7% at 0.8) but halves the bytes
-(1177 with none, 558 at 0.65).
+The 2.0.3 column runs the same test file against 816ea1b. The kind boost was
+kept because without it, on the tuning split, `memory_context` top-3 falls
+under 85% and recall top-3 under 90%, and the "Without looking anything up"
+wrapper falls below 2.0.3. With the boost every wrapper in both splits is at or
+above 2.0.3 on top-3; without it, four held-out wrappers are below.
 
-Known limits, all lexical: a prompt padded with words no record contains
-weakens every match, so a held-out wrapper such as "Without looking anything
-up, …" loses some answers it found on 2.0.3, when everything was injected. The
-hook drops words under three letters, so a record found by recall through
-"go" can miss. One recall query ranks its answer second instead of first,
-behind a note that matches one more of its words. Synonyms still miss.
+`MANDALORE_EVAL_CURVE=tune` logs the trade-off on the tuning split, and `all`
+adds the held-out split:
+
+| Coverage / evidence / anchor / relative | Top-3 tune / held out | Worst wrapper tune / held out | False injection tune / held out | Bytes |
+| --- | --- | --- | --- | --- |
+| none / – / – / 0.65 | 89.8% / 89.8% | 85.2% / 86.4% | 13/32 / 9/16 | 674 |
+| 0.25 / – / – / 0.65 | 82.2% / 60.8% | 52.3% / 38.6% | 0/32 / 1/16 | 573 |
+| 0.25 / 0.70 / – / 0.65 | 87.2% / 83.8% | 79.5% / 81.1% | 0/32 / 1/16 | 573 |
+| 0.20 / 0.70 / 0.70 / 0.65 | 88.5% / 86.0% | 81.8% / 83.3% | 2/32 / 3/16 | 573 |
+| 0.25 / 0.60 / 0.70 / 0.65 | 88.8% / 86.6% | 85.2% / 85.6% | 5/32 / 5/16 | 573 |
+| 0.25 / 0.70 / 0.60 / 0.65 | 87.7% / 85.5% | 81.8% / 83.3% | 1/32 / 2/16 | 573 |
+| **0.25 / 0.70 / 0.70 / 0.65** | **87.7% / 85.5%** | **81.8% / 83.3%** | **0/32 / 1/16** | **573** |
+| 0.25 / 0.70 / 0.80 / 0.65 | 87.2% / 83.8% | 79.5% / 81.1% | 0/32 / 1/16 | 573 |
+| 0.25 / 0.80 / 0.70 / 0.65 | 86.4% / 82.1% | 77.3% / 78.0% | 0/32 / 1/16 | 573 |
+| 0.30 / 0.70 / 0.70 / 0.65 | 85.7% / 85.4% | 81.8% / 83.3% | 0/32 / 1/16 | 573 |
+| 0.25 / 0.70 / 0.70 / none | 88.5% / 85.7% | 83.0% / 84.1% | 0/32 / 1/16 | 1179 |
+| 0.25 / 0.70 / 0.70 / 0.50 | 87.8% / 85.6% | 81.8% / 83.3% | 0/32 / 1/16 | 647 |
+| 0.25 / 0.70 / 0.70 / 0.80 | 86.4% / 84.8% | 81.8% / 82.6% | 0/32 / 1/16 | 428 |
+
+The chosen setting is the highest tuning top-3 with no tuning false
+injection. Each bar sits just above the strongest tuning prompt that no record
+answers (coverage 0.238, evidence 0.687, anchor 0.687), so it is fitted to the
+tuning split; the held-out column is the check. The relative cut barely moves
+hits but halves the bytes.
+
+Known limits, all lexical: a question whose only distinctive word is common in
+the signet, inside an instruction wrapper, can fall under every bar
+(`orchard-compost`'s "How often should the compost be turned?"). The hook drops
+words under three letters, so a record found by recall through "go" can miss.
+Synonyms still miss. Five recall queries rank their answer lower than 2.0.3
+did; see [the release notes](releases/2.1.0.md#known-deviations).
 
 ## Reproduce measurements
 
