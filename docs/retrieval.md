@@ -196,7 +196,10 @@ Known limits, all lexical: a question whose only distinctive word is common in
 the signet, inside an instruction wrapper, can fall under every bar
 (`orchard-compost`'s "How often should the compost be turned?"). A prompt that
 shares two or more words, or a summary word, with an unrelated record can
-still get it. A name typed in lower case doesn't anchor. The hook drops words
+still get it. A name typed in lower case, or first in its sentence
+("Beacon: what is it?"), doesn't anchor; on the tuning split the Beacon case
+then hits in 75% and 85% of its prompts instead of all of them, the misses
+being heavily wrapped ones. The hook drops words
 under three letters, so a record found by recall through "go" can miss.
 Synonyms still miss. Five recall queries rank their answer lower than 2.0.3
 did; see [the release notes](releases/2.1.0.md#known-deviations).
