@@ -1,5 +1,5 @@
 {
- "about": "Synthetic evaluation set for memory_context and memory_recall (#227). Every record, name and host is invented; hosts use memory.example.com. A record's scope of kind signet is the signet created at load time. history lists earlier revisions, oldest first, that the record's current revision supersedes. Each case expects one record. question and paraphrase are tuning phrasings; variant is held out. memory_context is evaluated on each phrasing alone and inside every wrapper. Held out: variant, wrappers.held_out and no_memory.held_out, which were written for round 1 of review and never used for a tuning decision. no_memory prompts should inject nothing; session is a scripted 20-turn session for injected bytes per prompt.",
+ "about": "Synthetic evaluation set for memory_context and memory_recall (#227). Every record, name and host is invented; hosts use memory.example.com. A record's scope of kind signet is the signet created at load time. history lists earlier revisions, oldest first, that the record's current revision supersedes. Each case expects one record. question and paraphrase are tuning phrasings; variant is held out. memory_context is evaluated on each phrasing alone and inside every wrapper. Held out: variant, wrappers.held_out and no_memory.held_out, which were written for round 1 of review and never used for a tuning decision. no_memory prompts should inject nothing; session is a scripted 20-turn session for injected bytes per prompt. short.tune holds short questions whose answer hinges on one distinctive word, mostly in a record's body; collisions.tune holds prompts no record answers that each share a word with some record. Both were written for round 4 of review and are tuning only.",
  "wrappers": {
   "tune": [
    "{q} Answer from context you already have; don't call tools.",
@@ -115,6 +115,190 @@
    "What is the difference between git pull and git fetch --all?",
    "Explain what a 40-hour work week costs in overtime.",
    "How do I parse ISO dates with datetime.fromisoformat()?"
+  ]
+ },
+ "short": {
+  "tune": [
+   {
+    "prompt": "Is Redis a cache?",
+    "expect": "record-eval-tidepool-database"
+   },
+   {
+    "prompt": "Which Postgres version?",
+    "expect": "record-eval-tidepool-database"
+   },
+   {
+    "prompt": "Is the ad-blocking container still around?",
+    "expect": "record-eval-dns-resolver"
+   },
+   {
+    "prompt": "How many Restic snapshots do we keep?",
+    "expect": "record-eval-nas-backup"
+   },
+   {
+    "prompt": "Are the cameras isolated?",
+    "expect": "record-eval-iot-vlan"
+   },
+   {
+    "prompt": "Is it channel 36?",
+    "expect": "record-eval-upstairs-ap"
+   },
+   {
+    "prompt": "What happens to the NAS on battery?",
+    "expect": "record-eval-ups-runtime"
+   },
+   {
+    "prompt": "Do I need a vendor driver?",
+    "expect": "record-eval-office-printer"
+   },
+   {
+    "prompt": "Where do production deploys come from?",
+    "expect": "record-eval-tidepool-deploy"
+   },
+   {
+    "prompt": "What's the burst allowance?",
+    "expect": "record-eval-tidepool-rate-limit"
+   },
+   {
+    "prompt": "Do refresh tokens rotate?",
+    "expect": "record-eval-tidepool-token-lifetime"
+   },
+   {
+    "prompt": "Is it RFC 9457?",
+    "expect": "record-eval-tidepool-error-format"
+   },
+   {
+    "prompt": "When is the pager handoff?",
+    "expect": "record-eval-tidepool-oncall"
+   },
+   {
+    "prompt": "Is hand-written SQL allowed in a deploy?",
+    "expect": "record-eval-tidepool-migrations"
+   },
+   {
+    "prompt": "What does LANTERNFISH_CONFIG do?",
+    "expect": "record-eval-lanternfish-config-path"
+   },
+   {
+    "prompt": "Do we ship a NOTICE file?",
+    "expect": "record-eval-lanternfish-license"
+   },
+   {
+    "prompt": "Are short flags okay?",
+    "expect": "record-eval-lanternfish-flag-style"
+   },
+   {
+    "prompt": "Any network calls?",
+    "expect": "record-eval-lanternfish-telemetry"
+   },
+   {
+    "prompt": "When can seedlings go out?",
+    "expect": "record-eval-orchard-frost-date"
+   },
+   {
+    "prompt": "Are we growing Sungold?",
+    "expect": "record-eval-orchard-tomatoes"
+   },
+   {
+    "prompt": "Skip watering after rain?",
+    "expect": "record-eval-orchard-drip"
+   },
+   {
+    "prompt": "When do I add browns?",
+    "expect": "record-eval-orchard-compost"
+   },
+   {
+    "prompt": "What goes to the Reading folder?",
+    "expect": "record-eval-mail-newsletters"
+   },
+   {
+    "prompt": "Phone number in my signature?",
+    "expect": "record-eval-mail-signature"
+   },
+   {
+    "prompt": "What moves each January?",
+    "expect": "record-eval-mail-archive"
+   },
+   {
+    "prompt": "Is there a hard stop?",
+    "expect": "record-eval-cloud-budget-alert"
+   },
+   {
+    "prompt": "Is eu-central fine?",
+    "expect": "record-eval-cloud-region"
+   },
+   {
+    "prompt": "What starts November 14?",
+    "expect": "record-eval-release-freeze"
+   },
+   {
+    "prompt": "Is the platform team captain?",
+    "expect": "record-eval-release-captain"
+   },
+   {
+    "prompt": "When is the blocker list frozen?",
+    "expect": "record-eval-release-go-no-go"
+   },
+   {
+    "prompt": "Berlin time?",
+    "expect": "record-eval-schedule-timezone"
+   },
+   {
+    "prompt": "Imperative subject?",
+    "expect": "record-eval-commit-style"
+   },
+   {
+    "prompt": "Metric, right?",
+    "expect": "record-eval-units"
+   },
+   {
+    "prompt": "Do I indent with tabs?",
+    "expect": "record-eval-editor"
+   },
+   {
+    "prompt": "US spelling in code?",
+    "expect": "record-eval-spelling"
+   },
+   {
+    "prompt": "Oh My Zsh or nothing?",
+    "expect": "record-eval-default-shell"
+   },
+   {
+    "prompt": "Who answers at the hallway panel?",
+    "expect": "record-eval-front-door-assistant"
+   },
+   {
+    "prompt": "Does Beacon have a cloud fallback?",
+    "expect": "record-eval-beacon-entity"
+   }
+  ]
+ },
+ "collisions": {
+  "tune": [
+   "How do I install Redis on Ubuntu?",
+   "What is the burst capacity of an AWS T3 instance?",
+   "Write a cover letter for a job in Berlin.",
+   "Explain how a VLAN tag is added to an Ethernet frame.",
+   "What does RFC 2119 say about MUST and SHOULD?",
+   "Explain unbound variables in Lisp.",
+   "How did pagers work before mobile phones?",
+   "How do I flush the DNS cache on Windows?",
+   "How long does a Canada goose live?",
+   "Recommend a thriller novel for reading on a plane.",
+   "What are the signs of a weak car battery?",
+   "How do I pick a phone number for a new business line?",
+   "How do tokens work in a large language model?",
+   "Is Berlin or Bonn the capital of Germany?",
+   "What is the January effect in stock markets?",
+   "Explain the imperative mood in Spanish grammar.",
+   "How do I set up a drip campaign in Mailchimp?",
+   "What width should a kitchen countertop be?",
+   "How do I close a channel safely in Go?",
+   "What does duplex mode on a printer do?",
+   "How do I raise the hard limit for open files on Linux?",
+   "Who invented the metric system?",
+   "Translate good morning into Japanese.",
+   "How do I snapshot a VM in VirtualBox?"
   ]
  },
  "session": [

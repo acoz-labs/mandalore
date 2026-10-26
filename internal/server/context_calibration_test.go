@@ -64,6 +64,14 @@ func assertEvaluation(t *testing.T, r evalReport) {
 	for w, x := range wrapperRates(r.Trials, false) {
 		floors = append(floors, floor{"tune memory_context top-3 inside " + w, x.Context3, 75})
 	}
+	// The short questions need their answer in the top 3. The collision
+	// prompts' tripwire is the count measured when they were added (round 4
+	// of #227 review); the injections it allows go through coverage, evidence
+	// and summary matches, not the incidental rule (docs/retrieval.md).
+	floors = append(floors, floor{"tune short questions in memory_context top-3", pct(shortHits(r), len(r.Short)), 90})
+	if n := collisionsInjected(r); n > 7 {
+		t.Errorf("collision prompts injected on %d of %d, over the tripwire of 7", n, len(r.Collisions))
+	}
 	for _, f := range floors {
 		if f.got < f.want {
 			t.Errorf("%s %.1f%% is under its %.0f%% floor", f.name, f.got, f.want)
@@ -106,7 +114,7 @@ func TestContextThresholdCurve(t *testing.T) {
 	for _, rel := range []float64{0, 0.5, 0.8} {
 		settings = append(settings, [4]float64{coverage, evidence, anchor, rel})
 	}
-	t.Logf("cov  ev      anchor  rel  | split    | ctx top-1 top-3 | worst wrapper top-3 | false inj | recall top-1 top-3 | bytes")
+	t.Logf("cov  ev      anchor  rel  | split    | ctx top-1 top-3 | worst wrapper top-3 | false inj | recall top-1 top-3 | bytes | short top-3 | collisions")
 	for _, s := range settings {
 		contextMinStrength, contextMinEvidence, contextMinAnchor, contextRelativeStrength = s[0], s[1], s[2], s[3]
 		r := runEvaluation(t, m, e)
@@ -127,8 +135,8 @@ func TestContextThresholdCurve(t *testing.T) {
 				}
 			}
 			name := map[bool]string{false: "tune", true: "held-out"}[heldOut]
-			t.Logf("%.2f %7.2f %7.2f %.2f | %-8s | %5.1f%% %5.1f%%   | %5.1f%%              | %2d/%2d     | %5.1f%% %5.1f%%      | %4.0f",
-				s[0], s[1], s[2], s[3], name, x.Context1, x.Context3, worst, injected, n, x.Recall1, x.Recall3, average(r.Session))
+			t.Logf("%.2f %7.2f %7.2f %.2f | %-8s | %5.1f%% %5.1f%%   | %5.1f%%              | %2d/%2d     | %5.1f%% %5.1f%%      | %4.0f  | %2d/%2d       | %2d/%2d",
+				s[0], s[1], s[2], s[3], name, x.Context1, x.Context3, worst, injected, n, x.Recall1, x.Recall3, average(r.Session), shortHits(r), len(r.Short), collisionsInjected(r), len(r.Collisions))
 		}
 	}
 }

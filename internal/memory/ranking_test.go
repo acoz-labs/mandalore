@@ -137,7 +137,7 @@ func TestEmptyRecallListsInRevisionOrder(t *testing.T) {
 }
 
 // Round 2 of #227 review: a record matching one query term only in its body
-// is incidental, and with Names only those words anchor.
+// can be incidental, and with Names only those words anchor.
 func TestRecallMarksIncidentalMatchesAndNamedAnchors(t *testing.T) {
 	s := fixture(t)
 	ids := rememberAll(t, s,
@@ -156,11 +156,16 @@ func TestRecallMarksIncidentalMatchesAndNamedAnchors(t *testing.T) {
 		t.Fatalf("%s not recalled", record)
 		return ""
 	}
-	p, err := s.store.Recall(Query{Text: "600 divided by seven", AllScopes: true}, time.Now())
-	if err != nil || !p.Incidental[head(p, ids[0])] {
-		t.Fatalf("body-only single match not incidental: %+v %v", p.Incidental, err)
+	// Round 4: it is incidental only while two of the query's other terms go
+	// unmatched, or one does and the match is a number.
+	for query, want := range map[string]bool{"600 divided by seven": true, "600 percent": true, "requests elsewhere today": true,
+		"requests": false, "requests allowed": false} {
+		p, err := s.store.Recall(Query{Text: query, AllScopes: true}, time.Now())
+		if err != nil || p.Incidental[head(p, ids[0])] != want {
+			t.Errorf("%q: incidental %v, want %v (%v)", query, p.Incidental[head(p, ids[0])], want, err)
+		}
 	}
-	p, _ = s.store.Recall(Query{Text: "api rate limit", AllScopes: true}, time.Now())
+	p, _ := s.store.Recall(Query{Text: "api rate limit", AllScopes: true}, time.Now())
 	if p.Incidental[head(p, ids[0])] {
 		t.Fatal("summary match marked incidental")
 	}

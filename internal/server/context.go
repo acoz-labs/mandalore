@@ -147,7 +147,8 @@ func packTop(entries []contextEntry, room int) []contextEntry {
 
 // Calibrated on the tuning split of testdata/context-eval.json
 // (docs/retrieval.md#hook-selection). A record that matches just one of the
-// prompt's terms, and only in its body, is incidental and never relevant.
+// prompt's terms, and only in its body, while enough of the others go
+// unmatched is incidental and never relevant (memory.Packet.Incidental).
 // Otherwise it is relevant when its match covers at least contextMinStrength
 // of the prompt's IDF-weighted terms, carries at least contextMinEvidence of
 // evidence (memory.Packet.Evidence), which a long prompt's extra words don't

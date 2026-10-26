@@ -58,8 +58,12 @@ prompts got a record. 2.1.0 changes all three:
   order by revision ID.
 - **Threshold (the hook only).** A recalled record that matches just one of
   the prompt's content terms, and only in its body, is incidental and never
-  relevant: sharing one word such as "600", "two-factor" or "days" with a
-  prompt doesn't make a record about it. Otherwise a record is relevant if any
+  relevant while two or more of the prompt's other content terms go
+  unmatched, or one does and the match is a number: sharing "two-factor" with
+  "How do I add two-factor login to Django?" or "600" with "What is 15 percent
+  of 600?" doesn't make a record about it. When the matched word is most of a
+  short question ("Is it self-hosted?", "Are we growing Sungold?") the record
+  is judged on the bars like any other. Otherwise a record is relevant if any
   of three measures clears its bar:
   - *Coverage* ≥ 0.25: its BM25 score as a share of the most a record could
     score on the prompt. Every prompt term counts, weighted by IDF, so a
@@ -101,11 +105,16 @@ answers cover acknowledgements, general knowledge, coding questions and
 uncovered topics, 42 of them written to collide with the signet's words:
 hyphenated words, numbers, versions, file names, code calls and words from
 record summaries ("How do I read a config.toml file in Rust?", "Is 17 a prime
-number?", "Recommend a good font for a resume."). A scripted 20-turn session
-measures injected bytes.
+number?", "Recommend a good font for a resume."). 38 short questions each hinge
+on one distinctive word that is mostly in the answer's body, not its summary
+("Are we growing Sungold?", "Metric, right?"), and 24 more prompts no record
+answers each share a word with some record ("How do I install Redis on
+Ubuntu?"); both were added in round 4 of #227 review. A scripted 20-turn
+session measures injected bytes.
 
 **Splits.** The tuning split is each case's question and paraphrase, 9
-wrappers and 62 no-memory prompts (30 of them colliding). Every tuning
+wrappers, 62 no-memory prompts (30 of them colliding), the 38 short
+questions and the 24 collision prompts. Every tuning
 decision (the hook's stop words, the incidental rule, the names rule, the
 three bars, the relative cut and the kind boost) was made on it alone; each
 hook stop word occurs in it. The held-out split is a third phrasing per case,
@@ -121,9 +130,14 @@ three runs of the hook's development builds (76.3%/83.8%, 77.6%/85.5% and
 77.6%/85.5% top-1/top-3), two runs without the kind boost (69.1%/76.1% and
 70.7%/77.8%) and one both-split curve. Other runs computed and saved them
 without showing them (one with other bars recorded 78.2%/86.6%). No held-out
-number informed a decision. From the third
-round, held-out was computed once, after the code was frozen: the numbers
-below. The held-out split is easier for 2.0.3 than the tuning split (61.9%
+number informed a decision. From the third round, held-out was computed once
+per round, after the code was frozen; the numbers below are round 4's. Round
+3's rule gave 77.2%/84.5% and 2 of 28 held-out false injections. Round 4's
+adds "What does the SQL HAVING clause do?" (the migrations decision, through
+"SQL") and "Explain the 80/20 rule." (the commit style through "explaining"
+and a mail note through "rule"): two-word prompts sharing one word with a
+record, the trade-off described under the curve below. The held-out split is
+easier for 2.0.3 than the tuning split (61.9%
 against 44.8% top-3), so similar held-out and tuning numbers partly reflect
 easier prompts. The first version of the set had a held-out split that tuning
 had looked at; it is part of the tuning split now.
@@ -139,7 +153,9 @@ they are checked when it is computed.
 | `memory_recall` top-1 / top-3 | 72% / 88% | 60% / 80% |
 | False injection, at most | 15% | 25% |
 
-It also fails if any tuning wrapper's top-3 is under 75%, if the hook carries
+It also fails if fewer than 90% of the short questions get their answer in
+the hook's top 3, if more than 7 of the 24 collision prompts inject (the
+count when they were added), if any tuning wrapper's top-3 is under 75%, if the hook carries
 recall's first record in under 90% of the prompts where that is the case's
 record, or if session prompts average over 800 injected bytes.
 `MANDALORE_EVAL_REPORT=FILE` writes every outcome, for a per-case comparison
@@ -147,12 +163,14 @@ between two builds.
 
 | Measure | Split | 2.0.3 | 2.1.0 | 2.1.0, no kind boost |
 | --- | --- | --- | --- | --- |
-| `memory_context` top-1 / top-3 | tuning (880 prompts) | 18.4% / 44.8% | 79.3% / 86.6% | 72.0% / 82.4% |
-| | held out (1232) | 33.3% / 61.9% | 77.2% / 84.5% | not measured |
+| `memory_context` top-1 / top-3 | tuning (880 prompts) | 18.4% / 44.8% | 78.9% / 87.4% | 71.6% / 83.2% |
+| | held out (1232) | 33.3% / 61.9% | 77.3% / 84.6% | not measured |
 | `memory_recall` top-1 / top-3 | tuning (88 queries) | 22.7% / 37.5% | 77.3% / 93.2% | 75.0% / 88.6% |
 | | held out (44) | 11.4% / 29.5% | 75.0% / 88.6% | not measured |
-| False injection | tuning (62) | 71.0% (44) | 11.3% (7) | 9.7% (6) |
-| | held out (28) | 67.9% (19) | 7.1% (2) | not measured |
+| False injection | tuning (62) | 71.0% (44) | 14.5% (9) | 12.9% (8) |
+| | held out (28) | 67.9% (19) | 14.3% (4) | not measured |
+| Short questions, answer in the hook's top 3 | tuning (38) | 25 | 35 | 34 |
+| Collision prompts injected | tuning (24) | 23 | 7 | 7 |
 | Injected bytes per prompt, 20-turn session | | 1030 | 572 (353 with `session`) | 594 |
 | Warm p95, 250 records | | | 12 ms | |
 
@@ -163,23 +181,30 @@ both its top-1 and top-3 floors and recall top-3 under 90%.
 `MANDALORE_EVAL_CURVE=tune` logs the trade-off on the tuning split (`all`,
 with `MANDALORE_EVAL_HELDOUT=1`, adds the held-out split):
 
-| Coverage / evidence / anchor / relative | Top-1 / top-3 | Worst wrapper top-3 | False injection | Bytes |
-| --- | --- | --- | --- | --- |
-| none (incidental rule only) | 81.8% / 89.4% | 87.5% | 19/62 | 666 |
-| 0.25 / – / – / 0.65 | 75.0% / 81.0% | 52.3% | 6/62 | 572 |
-| 0.25 / 0.70 / – / 0.65 | 78.8% / 86.0% | 79.5% | 7/62 | 572 |
-| 0.20 / 0.70 / 0.70 / 0.65 | 80.7% / 88.1% | 81.8% | 9/62 | 572 |
-| 0.25 / 0.60 / 0.70 / 0.65 | 80.2% / 87.5% | 84.1% | 10/62 | 572 |
-| **0.25 / 0.70 / 0.70 / 0.65** | **79.3% / 86.6%** | **81.8%** | **7/62** | **572** |
-| 0.25 / 0.80 / 0.70 / 0.65 | 78.2% / 85.2% | 77.3% | 7/62 | 572 |
-| 0.30 / 0.80 / 0.70 / 0.65 | 76.5% / 83.4% | 77.3% | 6/62 | 572 |
-| 0.25 / 0.70 / 0.70 / none | 78.0% / 87.2% | 83.0% | 7/62 | 1179 |
-| 0.25 / 0.70 / 0.70 / 0.80 | 79.3% / 86.0% | 81.8% | 7/62 | 428 |
+| Coverage / evidence / anchor / relative | Top-1 / top-3 | Worst wrapper top-3 | False injection | Bytes | Short questions top-3 | Collisions injected |
+| --- | --- | --- | --- | --- | --- | --- |
+| none (incidental rule only) | 81.4% / 90.2% | 87.5% | 21/62 | 666 | 35/38 | 14/24 |
+| 0.25 / – / – / 0.65 | 74.5% / 81.8% | 52.3% | 8/62 | 572 | 35/38 | 6/24 |
+| 0.25 / 0.70 / – / 0.65 | 78.3% / 86.8% | 79.5% | 9/62 | 572 | 35/38 | 7/24 |
+| 0.20 / 0.70 / 0.70 / 0.65 | 80.2% / 88.9% | 81.8% | 11/62 | 572 | 35/38 | 9/24 |
+| 0.25 / 0.60 / 0.70 / 0.65 | 79.8% / 88.3% | 84.1% | 12/62 | 572 | 35/38 | 8/24 |
+| **0.25 / 0.70 / 0.70 / 0.65** | **78.9% / 87.4%** | **81.8%** | **9/62** | **572** | **35/38** | **7/24** |
+| 0.25 / 0.80 / 0.70 / 0.65 | 77.7% / 86.0% | 77.3% | 9/62 | 572 | 35/38 | 7/24 |
+| 0.30 / 0.80 / 0.70 / 0.65 | 76.0% / 84.2% | 77.3% | 8/62 | 572 | 34/38 | 6/24 |
+| 0.25 / 0.70 / 0.70 / none | 78.5% / 87.8% | 83.0% | 9/62 | 1179 | 35/38 | 7/24 |
+| 0.25 / 0.70 / 0.70 / 0.80 | 78.9% / 86.2% | 81.8% | 9/62 | 428 | 35/38 | 7/24 |
 
 The chosen bars are the ones from before the colliding prompts were added;
 with the incidental and names rules they still give the best tuning top-3 at
-the lowest false injection short of losing hits. The seven tuning prompts it
-still injects for match the signet on two or more words, or on a summary word:
+the lowest false injection short of losing hits; the round-4 incidental rule
+didn't move them. Two of the nine no-memory tuning prompts it still injects
+for share one word with a record and have one other word: "Is 17 a prime
+number?" (the mail signature's "no phone number") and "How many days are in
+30 weeks?" (retention and lifetime notes). The incidental rule can't tell them
+from a short question such as "Metric, right?"; it lets them through, which
+the 38 short questions bought (27 of 38 in the top 3 under the round-3 rule,
+35 now). The other seven match the signet on two or more words, or on a
+summary word:
 "How do I enable two-factor authentication on a GitHub account?" (mail
 provider settings), "Convert this variable name to kebab-case in Python."
 (flag naming), "How do I read a config.toml file in Rust?" (the CLI's config
@@ -192,9 +217,22 @@ answers to "Which editor do I use?", "Which units do I prefer?" and three
 more, the same shape, so it wasn't taken. The relative cut barely moves hits
 but halves the bytes.
 
+The 24 collision prompts inject on 7, the same 7 as under the round-3 rule
+(2.0.3: 23). None goes through the incidental rule: "How do I install Redis
+on Ubuntu?", "How long does a Canada goose live?", "What width should a
+kitchen countertop be?" and "How do I snapshot a VM in VirtualBox?" match a
+summary word ("install", "live", "kitchen", "snapshot"); "How do I flush the
+DNS cache on Windows?" matches summary words ("cache", "windows") and two body
+words; "How do I pick a phone number for a new business line?" and "Explain
+the imperative mood in Spanish grammar." match two or more body words. They
+are the summary-word and two-word limits below, not addressed in 2.1.0.
+
 Known limits, all lexical: a question whose only distinctive word is common in
 the signet, inside an instruction wrapper, can fall under every bar
-(`orchard-compost`'s "How often should the compost be turned?"). A prompt that
+(`orchard-compost`'s "How often should the compost be turned?"). A question
+whose answer hinges on one word in a record's body gets nothing once two more
+of its words go unmatched ("Which port does Unbound listen on?"), and an
+unrelated two-word prompt that shares one word with a record can get it. A prompt that
 shares two or more words, or a summary word, with an unrelated record can
 still get it. A name typed in lower case, or first in its sentence
 ("Beacon: what is it?"), doesn't anchor; on the tuning split the Beacon case

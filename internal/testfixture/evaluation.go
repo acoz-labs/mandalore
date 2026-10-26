@@ -21,6 +21,19 @@ type Evaluation struct {
 		Tune    []string `json:"tune"`
 		HeldOut []string `json:"held_out"`
 	} `json:"no_memory"`
+	// Short holds short questions whose answer hinges on one distinctive
+	// word, which a record's body often holds and its summary doesn't.
+	Short struct {
+		Tune []struct {
+			Prompt string `json:"prompt"`
+			Expect string `json:"expect"`
+		} `json:"tune"`
+	} `json:"short"`
+	// Collisions holds prompts no record answers that each share a word
+	// with some record.
+	Collisions struct {
+		Tune []string `json:"tune"`
+	} `json:"collisions"`
 	Session []string `json:"session"`
 	Cases   []struct {
 		Name       string `json:"name"`

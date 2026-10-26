@@ -36,6 +36,16 @@ type evalReport struct {
 		HeldOut bool
 		Bytes   int
 	}
+	// Short holds memory_context's rank of the answer to each short question.
+	Short []struct {
+		Prompt  string
+		Context int
+	}
+	// Collisions holds the injected bytes for each collision prompt.
+	Collisions []struct {
+		Prompt string
+		Bytes  int
+	}
 	// Session holds the injected bytes for each turn of the scripted session.
 	Session []int
 }
@@ -141,6 +151,18 @@ func runEvaluation(t *testing.T, m *memory.Service, e testfixture.Evaluation) ev
 			}{prompt, set.heldOut, len(contextFor(t, m, "prompt", prompt))})
 		}
 	}
+	for _, s := range e.Short.Tune {
+		report.Short = append(report.Short, struct {
+			Prompt  string
+			Context int
+		}{s.Prompt, rankOf(contextRanks(contextFor(t, m, "prompt", s.Prompt)), s.Expect)})
+	}
+	for _, prompt := range e.Collisions.Tune {
+		report.Collisions = append(report.Collisions, struct {
+			Prompt string
+			Bytes  int
+		}{prompt, len(contextFor(t, m, "prompt", prompt))})
+	}
 	for _, prompt := range e.Session {
 		report.Session = append(report.Session, len(contextFor(t, m, "prompt", prompt)))
 	}
@@ -192,6 +214,22 @@ func average(bytes []int) float64 {
 	return float64(total) / max(float64(len(bytes)), 1)
 }
 
+func shortHits(r evalReport) int {
+	hits := 0
+	for _, s := range r.Short {
+		hits += b2i(s.Context >= 1 && s.Context <= 3)
+	}
+	return hits
+}
+
+func collisionsInjected(r evalReport) int {
+	injected := 0
+	for _, c := range r.Collisions {
+		injected += b2i(c.Bytes > 0)
+	}
+	return injected
+}
+
 func logReport(t *testing.T, r evalReport) {
 	t.Helper()
 	for _, split := range []struct {
@@ -214,6 +252,8 @@ func logReport(t *testing.T, r evalReport) {
 		}
 	}
 	t.Logf("false injection %d of %d no-memory prompts (%.1f%%; held out %d of %d)", injected, len(r.NoMemory), pct(injected, len(r.NoMemory)), heldOutInjected, heldOut)
+	t.Logf("short questions: answer in memory_context's top 3 for %d of %d", shortHits(r), len(r.Short))
+	t.Logf("collision prompts: injected on %d of %d", collisionsInjected(r), len(r.Collisions))
 	maxBytes := 0
 	for _, b := range r.Session {
 		maxBytes = max(maxBytes, b)

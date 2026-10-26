@@ -380,7 +380,8 @@ func TestMemoryContextIgnoresIncidentalMatches(t *testing.T) {
 			t.Errorf("%q injected:\n%s", prompt, text)
 		}
 	}
-	for prompt, want := range map[string]string{"What's the API rate limit?": ids[0], "Without looking anything up, what is Beacon?": ids[1]} {
+	// Round 4 of #227 review: a short question's one word isn't incidental.
+	for prompt, want := range map[string]string{"What's the API rate limit?": ids[0], "Without looking anything up, what is Beacon?": ids[1], "Is it self-hosted?": ids[1]} {
 		if ranks := contextRanks(contextFor(t, m, "prompt", prompt)); len(ranks) == 0 || ranks[0] != want {
 			t.Errorf("%q injected %v, want %s first", prompt, ranks, want)
 		}

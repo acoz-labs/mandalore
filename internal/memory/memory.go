@@ -143,7 +143,8 @@ type Packet struct {
 	Anchor map[string]float64 `json:"-"`
 	// Incidental marks the current or competing heads that match just one of
 	// the query's content terms, and only outside their summary and
-	// identifiers, by revision ID.
+	// identifiers, while two or more of the others go unmatched (one, when
+	// the match is a number), by revision ID.
 	Incidental map[string]bool `json:"-"`
 }
 
@@ -567,6 +568,7 @@ func bm25(terms []string, names map[string]bool, candidates []termIndex) (scores
 	rarest := math.Log(1 + (n+0.5)/0.5)
 	for i, ix := range candidates {
 		norm := bm25K1 * (1 - bm25B + bm25B*float64(ix.length)/average)
+		lone := ""
 		for j, w := range weights[i] {
 			if w == 0 {
 				continue
@@ -575,6 +577,7 @@ func bm25(terms []string, names map[string]bool, candidates []termIndex) (scores
 			scores[i] += idf[j] * f * (bm25K1 + 1) / (f + norm)
 			titled := ix.summary[terms[j]] || ix.identifiers[terms[j]] > 0
 			matched[i]++
+			lone = terms[j]
 			if titled {
 				inTitle[i] = true
 				if names == nil || names[terms[j]] {
@@ -586,7 +589,12 @@ func bm25(terms []string, names map[string]bool, candidates []termIndex) (scores
 			strengths[i] = scores[i] / most
 		}
 		evidence[i] = scores[i] / (rarest * (bm25K1 + 1))
-		incidental[i] = matched[i] == 1 && !inTitle[i]
+		// A lone match outside the summary is incidental when two or more of
+		// the prompt's other terms go unmatched, or one does and the match is
+		// a bare number, which recurs across unrelated topics ("15 percent of
+		// 600"). A short question's one word ("Where does Unbound run?")
+		// still counts.
+		incidental[i] = matched[i] == 1 && !inTitle[i] && (len(terms) > 2 || len(terms) == 2 && strings.Trim(lone, "0123456789.") == "")
 	}
 	return scores, strengths, evidence, anchors, incidental
 }
