@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -113,6 +114,9 @@ type Query struct {
 	// AllScopes ranks every stored scope in one pass and surfaces only the
 	// conflicts whose heads match the query. It overrides Scope and ExactScope.
 	AllScopes bool
+	// Names, when not nil, are the query's words written as names; only they
+	// can anchor a record (Packet.Anchor). Ranking ignores them.
+	Names []string
 }
 type RevisionConflict struct {
 	RecordID  string     `json:"record_id"`
@@ -124,6 +128,24 @@ type Packet struct {
 	Current     []Revision         `json:"current"`
 	Conflicts   []RevisionConflict `json:"conflicts"`
 	Notice      string             `json:"notice"`
+	// Strength is each current or competing head's match as a share of the
+	// most a revision could score on this query, by revision ID: from 0 to 1,
+	// times the standing-guidance boost for a decision or preference.
+	Strength map[string]float64 `json:"-"`
+	// Evidence is each current or competing head's score in units of one
+	// fully matched term that no other revision contains, by revision ID.
+	// Unlike Strength it doesn't fall as the query grows.
+	Evidence map[string]float64 `json:"-"`
+	// Anchor is, for each current or competing head, the rarest query term it
+	// contains exactly in its summary or identifiers, as that term's IDF over
+	// the most a term can have, by revision ID; 0 when there is none. With
+	// Query.Names, only those terms anchor.
+	Anchor map[string]float64 `json:"-"`
+	// Incidental marks the current or competing heads that match just one of
+	// the query's content terms, and only outside their summary and
+	// identifiers, while two or more of the others go unmatched (one, when
+	// the match is a number), by revision ID.
+	Incidental map[string]bool `json:"-"`
 }
 
 func (s *Store) validateGraph(records []Revision) error {
@@ -399,18 +421,24 @@ func (s *Store) anyRelevant(revisions []Revision, query []string) bool {
 }
 
 // termIndex is a revision's weighted terms: summary terms outweigh body terms
-// and identifiers outweigh both.
+// and identifiers outweigh both. summary holds the summary's own terms, and
+// length counts its summary and body terms.
 type termIndex struct {
 	tokens, identifiers map[string]int
+	summary             map[string]bool
+	length              int
 }
 
 func indexTerms(r Revision) termIndex {
-	ix := termIndex{tokens: map[string]int{}, identifiers: map[string]int{}}
+	ix := termIndex{tokens: map[string]int{}, identifiers: map[string]int{}, summary: map[string]bool{}}
 	for _, t := range terms(r.Body) {
 		ix.tokens[t]++
+		ix.length++
 	}
 	for _, t := range terms(r.Summary) {
 		ix.tokens[t] += 4
+		ix.summary[t] = true
+		ix.length++
 	}
 	for _, t := range terms(r.ID + " " + r.RecordID + " " + r.Scope.ID) {
 		ix.identifiers[t] += 8
@@ -433,14 +461,142 @@ func (ix termIndex) score(query []string) int {
 	}
 	score := 0
 	for _, t := range query {
-		score += 4 * (ix.tokens[t] + ix.identifiers[t])
-		for word, weight := range ix.tokens {
-			if word != t && (inflected(t, word) || inflected(word, t)) {
-				score += weight
+		score += ix.weight(t)
+	}
+	return score
+}
+
+// weight is the term's matches in the revision: four per exact body hit, 16
+// per summary hit, 32 per identifier hit, and the plain weight of an inflection.
+func (ix termIndex) weight(t string) int {
+	w := 4 * (ix.tokens[t] + ix.identifiers[t])
+	for word, weight := range ix.tokens {
+		if word != t && (inflected(t, word) || inflected(word, t)) {
+			w += weight
+		}
+	}
+	return w
+}
+
+// BM25 parameters: term-frequency saturation and length normalization.
+const bm25K1, bm25B = 1.2, 0.75
+
+// Decisions and preferences are standing guidance, so on similar matches they
+// rank above status notes and research that mention the same words.
+const standingGuidanceBoost = 1.2
+
+// functionWords are English words that carry no topic. They still make a
+// record match, but rank only between records that tie on the other terms.
+var functionWords = map[string]bool{}
+
+func init() {
+	for _, w := range strings.Fields("a about after again all also am an and any are as at be because been before being between both but by can could did do does doing done each else even ever every for from had has have having he her here hers him his how i if in into is it its just like made make many may me more most much must my need not now of off on once only or other our ours out over own please same she should so some such than that the their them then there these they this those through to too under until up upon us use used very want was way we were what when where which while who whom why will with would yes yet you your yours") {
+		functionWords[w] = true
+	}
+}
+
+// IsFunctionWord reports whether the term is a function word, which ranks
+// no record above another that matches the query's other terms.
+func IsFunctionWord(term string) bool { return functionWords[term] }
+
+// rank scores candidates by BM25 over the query's content terms; a query of
+// function words alone ranks by those. Function words score separately, as a
+// tie-break, so a record matching only them still matches but ranks last.
+// A nil query matches every candidate equally. strengths gives each content
+// score as a share of the most a record could score, which is IDF-normalized:
+// matching the query's rare terms counts for more than matching common ones.
+func rank(query []string, names map[string]bool, candidates []termIndex) (content, function, strengths, evidence, anchors []float64, incidental []bool) {
+	if query == nil {
+		content = make([]float64, len(candidates))
+		for i := range content {
+			content[i] = 1
+		}
+		return content, make([]float64, len(candidates)), content, content, content, make([]bool, len(candidates))
+	}
+	seen := map[string]bool{}
+	var topical, common []string
+	for _, t := range query {
+		if !seen[t] {
+			seen[t] = true
+			if functionWords[t] {
+				common = append(common, t)
+			} else {
+				topical = append(topical, t)
 			}
 		}
 	}
-	return score
+	if len(topical) == 0 {
+		topical, common = common, nil
+	}
+	content, strengths, evidence, anchors, incidental = bm25(topical, names, candidates)
+	function, _, _, _, _ = bm25(common, names, candidates)
+	return content, function, strengths, evidence, anchors, incidental
+}
+
+// bm25 scores candidates on distinct terms, with document frequencies and
+// average length taken from the candidates themselves, so a term common
+// across them counts for little and a long record gains little from repeating
+// it. A candidate that matches none of the terms scores 0.
+func bm25(terms []string, names map[string]bool, candidates []termIndex) (scores, strengths, evidence, anchors []float64, incidental []bool) {
+	scores = make([]float64, len(candidates))
+	strengths = make([]float64, len(candidates))
+	evidence = make([]float64, len(candidates))
+	anchors = make([]float64, len(candidates))
+	incidental = make([]bool, len(candidates))
+	matched, inTitle := make([]int, len(candidates)), make([]bool, len(candidates))
+	weights := make([][]int, len(candidates))
+	df := make([]int, len(terms))
+	total := 0
+	for i, ix := range candidates {
+		total += ix.length
+		weights[i] = make([]int, len(terms))
+		for j, t := range terms {
+			if w := ix.weight(t); w > 0 {
+				weights[i][j] = w
+				df[j]++
+			}
+		}
+	}
+	n := float64(len(candidates))
+	average := math.Max(1, float64(total)/math.Max(1, n))
+	idf := make([]float64, len(terms))
+	most := 0.0
+	for j := range terms {
+		idf[j] = math.Log(1 + (n-float64(df[j])+0.5)/(float64(df[j])+0.5))
+		most += idf[j] * (bm25K1 + 1)
+	}
+	rarest := math.Log(1 + (n+0.5)/0.5)
+	for i, ix := range candidates {
+		norm := bm25K1 * (1 - bm25B + bm25B*float64(ix.length)/average)
+		lone := ""
+		for j, w := range weights[i] {
+			if w == 0 {
+				continue
+			}
+			f := float64(w) / 4
+			scores[i] += idf[j] * f * (bm25K1 + 1) / (f + norm)
+			titled := ix.summary[terms[j]] || ix.identifiers[terms[j]] > 0
+			matched[i]++
+			lone = terms[j]
+			if titled {
+				inTitle[i] = true
+				if names == nil || names[terms[j]] {
+					anchors[i] = max(anchors[i], idf[j]/rarest)
+				}
+			}
+		}
+		if most > 0 {
+			strengths[i] = scores[i] / most
+		}
+		evidence[i] = scores[i] / (rarest * (bm25K1 + 1))
+		// A lone match outside the summary is incidental when two or more of
+		// the prompt's other terms go unmatched, or one does and the match is
+		// a bare number, which recurs across unrelated topics ("15 percent of
+		// 600"). A short question's one word ("Where does Unbound run?")
+		// still counts.
+		incidental[i] = matched[i] == 1 && !inTitle[i] && (len(terms) > 2 || len(terms) == 2 && strings.Trim(lone, "0123456789.") == "")
+	}
+	return scores, strengths, evidence, anchors, incidental
 }
 
 func relevance(r Revision, query string) int {
@@ -488,8 +644,8 @@ func (s *Store) recallHeads(q Query, p Packet, heads map[string][]Revision) Pack
 	// Scores belong to this fresh read, not a persistent index. Tokenizing the
 	// same bodies inside the sort comparator makes broad recalls needlessly
 	// expensive as a bank grows; compute each candidate's relevance only once.
-	scores := map[string]int{}
 	query := queryTerms(q.Text)
+	var candidates []termIndex
 	for recordID, revisions := range heads {
 		scoped := revisions[0].Scope
 		if !q.AllScopes && q.ExactScope && scoped != q.Scope {
@@ -510,17 +666,52 @@ func (s *Store) recallHeads(q Query, p Packet, heads map[string][]Revision) Pack
 			p.Conflicts = append(p.Conflicts, RevisionConflict{RecordID: recordID, Revisions: revisions})
 			continue
 		}
-		if score := s.reads.index(revisions[0]).score(query); score > 0 {
-			scores[revisions[0].ID] = score
-			p.Current = append(p.Current, revisions[0])
+		p.Current = append(p.Current, revisions[0])
+		candidates = append(candidates, s.reads.index(revisions[0]))
+	}
+	// Competing heads count toward term statistics and get strengths too, so
+	// a caller can weigh a matching conflict like a current record.
+	var competing []Revision
+	for _, c := range p.Conflicts {
+		for _, r := range c.Revisions {
+			competing = append(competing, r)
+			candidates = append(candidates, s.reads.index(r))
 		}
 	}
+	var names map[string]bool
+	if q.Names != nil {
+		names = map[string]bool{}
+		for _, t := range terms(strings.Join(q.Names, " ")) {
+			names[t] = true
+		}
+	}
+	content, function, strengths, evidence, anchors, incidental := rank(query, names, candidates)
+	p.Strength, p.Evidence, p.Anchor, p.Incidental = map[string]float64{}, map[string]float64{}, map[string]float64{}, map[string]bool{}
+	for i, r := range competing {
+		j := len(p.Current) + i
+		p.Strength[r.ID], p.Evidence[r.ID], p.Anchor[r.ID], p.Incidental[r.ID] = strengths[j], evidence[j], anchors[j], incidental[j]
+	}
+	scores := map[string][2]float64{}
+	matching := p.Current[:0]
+	for i, r := range p.Current {
+		if content[i] > 0 || function[i] > 0 {
+			if query != nil && (r.Kind == "decision" || r.Kind == "preference") {
+				content[i] *= standingGuidanceBoost
+				strengths[i] *= standingGuidanceBoost
+				evidence[i] *= standingGuidanceBoost
+			}
+			scores[r.ID] = [2]float64{content[i], function[i]}
+			p.Strength[r.ID], p.Evidence[r.ID], p.Anchor[r.ID], p.Incidental[r.ID] = strengths[i], evidence[i], anchors[i], incidental[i]
+			matching = append(matching, r)
+		}
+	}
+	p.Current = matching
 	sort.Slice(p.Current, func(i, j int) bool {
 		a, b := scores[p.Current[i].ID], scores[p.Current[j].ID]
-		if a == b {
-			return p.Current[i].ID < p.Current[j].ID
+		if a != b {
+			return a[0] > b[0] || a[0] == b[0] && a[1] > b[1]
 		}
-		return a > b
+		return p.Current[i].ID < p.Current[j].ID
 	})
 	sort.Slice(p.Conflicts, func(i, j int) bool { return p.Conflicts[i].RecordID < p.Conflicts[j].RecordID })
 	limit := q.Limit

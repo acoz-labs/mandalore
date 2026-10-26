@@ -1,0 +1,3370 @@
+{
+ "about": "Synthetic evaluation set for memory_context and memory_recall (#227). Every record, name and host is invented; hosts use memory.example.com. A record's scope of kind signet is the signet created at load time. history lists earlier revisions, oldest first, that the record's current revision supersedes. Each case expects one record. question and paraphrase are tuning phrasings; variant is held out. memory_context is evaluated on each phrasing alone and inside every wrapper. Held out: variant, wrappers.held_out and no_memory.held_out, which were written for round 1 of review and never used for a tuning decision. no_memory prompts should inject nothing; session is a scripted 20-turn session for injected bytes per prompt. short.tune holds short questions whose answer hinges on one distinctive word, mostly in a record's body; collisions.tune holds prompts no record answers that each share a word with some record. Both were written for round 4 of review and are tuning only.",
+ "wrappers": {
+  "tune": [
+   "{q} Answer from context you already have; don't call tools.",
+   "In one line: {q}",
+   "Quick question, keep it short: {q}",
+   "{q} One line please, no tool calls.",
+   "Without looking anything up, {q}",
+   "{q} Reply in one sentence and use what you already know rather than calling any tools.",
+   "Context check before we start this session: {q} Just the answer, please.",
+   "Please tell me from memory only, in one short line: {q}",
+   "I already asked this once, so answer directly: {q}"
+  ],
+  "held_out": [
+   "Hey, quick one before I forget: {q}",
+   "{q} No need to search anything, I just want a reminder.",
+   "Using whatever you remember, tell me: {q}",
+   "Short version only, please. {q}",
+   "{q} Skip the lookups and keep it to a single sentence.",
+   "Before we get going today: {q} Thanks!"
+  ]
+ },
+ "no_memory": {
+  "tune": [
+   "ok",
+   "ready",
+   "thanks, go ahead",
+   "sounds good",
+   "yes",
+   "continue",
+   "What is the capital of Australia?",
+   "Explain how photosynthesis works in simple terms.",
+   "Who wrote Pride and Prejudice?",
+   "How do I reverse a slice in Go?",
+   "Write a Python function that checks whether a string is a palindrome.",
+   "What does git rebase --onto do?",
+   "Why does my React component render twice in development?",
+   "What's a good recipe for banana bread?",
+   "How do I change a flat bicycle tyre?",
+   "Summarise the plot of Hamlet in a paragraph.",
+   "great, do it",
+   "lgtm",
+   "next",
+   "perfect, thank you",
+   "go on",
+   "How many bones are in the adult human body?",
+   "What is the difference between TCP and UDP?",
+   "Convert 72 degrees Fahrenheit to Celsius.",
+   "How do I write a database migration in Rails?",
+   "Explain Big O notation with an example.",
+   "Why is my Docker build cache not being used?",
+   "How do I centre a div with CSS grid?",
+   "Plan a three-day trip to Lisbon.",
+   "What are good exercises for lower back pain?",
+   "Write a haiku about autumn leaves.",
+   "What's the best way to learn to play chess?",
+   "How do I enable two-factor authentication on a GitHub account?",
+   "Why does my sign-in page redirect in a loop in Next.js?",
+   "Is self-hosted GitLab worth it for a small team?",
+   "What is a top-level await in JavaScript?",
+   "How do long-lived connections work with HTTP/2?",
+   "Write a follow-up email after a sales call.",
+   "What should a weekly check-in with my manager cover?",
+   "How do on-call rotations usually work at large tech companies?",
+   "Convert this variable name to kebab-case in Python.",
+   "What is a catch-all exception handler in Java?",
+   "What does HTTP status 100 mean?",
+   "What is 15 percent of 600?",
+   "How many days are in 30 weeks?",
+   "Is 17 a prime number?",
+   "What is the square root of 200?",
+   "What changed in Python 2.4?",
+   "What's new in Bootstrap 4.0?",
+   "How do I read a config.toml file in Rust?",
+   "What does os.path.join() do?",
+   "Fix this TypeError: user.address.city is undefined when address is null.",
+   "Format a date as 24-hour time in JavaScript.",
+   "How do lower-case and upper-case conversions work in Unicode?",
+   "When is a hand-written parser better than a generated one?",
+   "How do I store free-text search queries in Postgres efficiently?",
+   "Plan a 14-day itinerary for Japan.",
+   "Review my resume for a junior developer role.",
+   "What theme should we pick for a wedding?",
+   "How do I cache API responses in a Flutter app?",
+   "Write unit tests for a Go HTTP handler.",
+   "Recommend a good font for a resume."
+  ],
+  "held_out": [
+   "got it",
+   "alright, carry on",
+   "yes, go for it",
+   "sounds right to me",
+   "What causes the northern lights?",
+   "How tall is Mount Everest?",
+   "Who painted the Mona Lisa?",
+   "Why does water boil at a lower temperature at altitude?",
+   "How do I parse JSON in Rust?",
+   "Explain the difference between a mutex and a semaphore.",
+   "What does the SQL HAVING clause do?",
+   "How do I undo the last git commit but keep the changes?",
+   "Write a bash loop that renames every .txt file to .md.",
+   "Suggest a name for a new puppy.",
+   "What should I cook for dinner tonight?",
+   "How do I get red wine out of a carpet?",
+   "How do I set up a self-signed certificate for localhost?",
+   "What does a no-go theorem mean in physics?",
+   "Explain the 80/20 rule.",
+   "What's the time complexity of heapq.heappush() in Python?",
+   "How long does it take to walk 25 kilometres?",
+   "Should I learn Vue 3 or React 18?",
+   "How do I rotate logs with logrotate on Ubuntu?",
+   "What is a short-lived certificate in TLS?",
+   "How does the Windows registry store settings?",
+   "What is the difference between git pull and git fetch --all?",
+   "Explain what a 40-hour work week costs in overtime.",
+   "How do I parse ISO dates with datetime.fromisoformat()?"
+  ]
+ },
+ "short": {
+  "tune": [
+   {
+    "prompt": "Is Redis a cache?",
+    "expect": "record-eval-tidepool-database"
+   },
+   {
+    "prompt": "Which Postgres version?",
+    "expect": "record-eval-tidepool-database"
+   },
+   {
+    "prompt": "Is the ad-blocking container still around?",
+    "expect": "record-eval-dns-resolver"
+   },
+   {
+    "prompt": "How many Restic snapshots do we keep?",
+    "expect": "record-eval-nas-backup"
+   },
+   {
+    "prompt": "Are the cameras isolated?",
+    "expect": "record-eval-iot-vlan"
+   },
+   {
+    "prompt": "Is it channel 36?",
+    "expect": "record-eval-upstairs-ap"
+   },
+   {
+    "prompt": "What happens to the NAS on battery?",
+    "expect": "record-eval-ups-runtime"
+   },
+   {
+    "prompt": "Do I need a vendor driver?",
+    "expect": "record-eval-office-printer"
+   },
+   {
+    "prompt": "Where do production deploys come from?",
+    "expect": "record-eval-tidepool-deploy"
+   },
+   {
+    "prompt": "What's the burst allowance?",
+    "expect": "record-eval-tidepool-rate-limit"
+   },
+   {
+    "prompt": "Do refresh tokens rotate?",
+    "expect": "record-eval-tidepool-token-lifetime"
+   },
+   {
+    "prompt": "Is it RFC 9457?",
+    "expect": "record-eval-tidepool-error-format"
+   },
+   {
+    "prompt": "When is the pager handoff?",
+    "expect": "record-eval-tidepool-oncall"
+   },
+   {
+    "prompt": "Is hand-written SQL allowed in a deploy?",
+    "expect": "record-eval-tidepool-migrations"
+   },
+   {
+    "prompt": "What does LANTERNFISH_CONFIG do?",
+    "expect": "record-eval-lanternfish-config-path"
+   },
+   {
+    "prompt": "Do we ship a NOTICE file?",
+    "expect": "record-eval-lanternfish-license"
+   },
+   {
+    "prompt": "Are short flags okay?",
+    "expect": "record-eval-lanternfish-flag-style"
+   },
+   {
+    "prompt": "Any network calls?",
+    "expect": "record-eval-lanternfish-telemetry"
+   },
+   {
+    "prompt": "When can seedlings go out?",
+    "expect": "record-eval-orchard-frost-date"
+   },
+   {
+    "prompt": "Are we growing Sungold?",
+    "expect": "record-eval-orchard-tomatoes"
+   },
+   {
+    "prompt": "Skip watering after rain?",
+    "expect": "record-eval-orchard-drip"
+   },
+   {
+    "prompt": "When do I add browns?",
+    "expect": "record-eval-orchard-compost"
+   },
+   {
+    "prompt": "What goes to the Reading folder?",
+    "expect": "record-eval-mail-newsletters"
+   },
+   {
+    "prompt": "Phone number in my signature?",
+    "expect": "record-eval-mail-signature"
+   },
+   {
+    "prompt": "What moves each January?",
+    "expect": "record-eval-mail-archive"
+   },
+   {
+    "prompt": "Is there a hard stop?",
+    "expect": "record-eval-cloud-budget-alert"
+   },
+   {
+    "prompt": "Is eu-central fine?",
+    "expect": "record-eval-cloud-region"
+   },
+   {
+    "prompt": "What starts November 14?",
+    "expect": "record-eval-release-freeze"
+   },
+   {
+    "prompt": "Is the platform team captain?",
+    "expect": "record-eval-release-captain"
+   },
+   {
+    "prompt": "When is the blocker list frozen?",
+    "expect": "record-eval-release-go-no-go"
+   },
+   {
+    "prompt": "Berlin time?",
+    "expect": "record-eval-schedule-timezone"
+   },
+   {
+    "prompt": "Imperative subject?",
+    "expect": "record-eval-commit-style"
+   },
+   {
+    "prompt": "Metric, right?",
+    "expect": "record-eval-units"
+   },
+   {
+    "prompt": "Do I indent with tabs?",
+    "expect": "record-eval-editor"
+   },
+   {
+    "prompt": "US spelling in code?",
+    "expect": "record-eval-spelling"
+   },
+   {
+    "prompt": "Oh My Zsh or nothing?",
+    "expect": "record-eval-default-shell"
+   },
+   {
+    "prompt": "Who answers at the hallway panel?",
+    "expect": "record-eval-front-door-assistant"
+   },
+   {
+    "prompt": "Does Beacon have a cloud fallback?",
+    "expect": "record-eval-beacon-entity"
+   }
+  ]
+ },
+ "collisions": {
+  "tune": [
+   "How do I install Redis on Ubuntu?",
+   "What is the burst capacity of an AWS T3 instance?",
+   "Write a cover letter for a job in Berlin.",
+   "Explain how a VLAN tag is added to an Ethernet frame.",
+   "What does RFC 2119 say about MUST and SHOULD?",
+   "Explain unbound variables in Lisp.",
+   "How did pagers work before mobile phones?",
+   "How do I flush the DNS cache on Windows?",
+   "How long does a Canada goose live?",
+   "Recommend a thriller novel for reading on a plane.",
+   "What are the signs of a weak car battery?",
+   "How do I pick a phone number for a new business line?",
+   "How do tokens work in a large language model?",
+   "Is Berlin or Bonn the capital of Germany?",
+   "What is the January effect in stock markets?",
+   "Explain the imperative mood in Spanish grammar.",
+   "How do I set up a drip campaign in Mailchimp?",
+   "What width should a kitchen countertop be?",
+   "How do I close a channel safely in Go?",
+   "What does duplex mode on a printer do?",
+   "How do I raise the hard limit for open files on Linux?",
+   "Who invented the metric system?",
+   "Translate good morning into Japanese.",
+   "How do I snapshot a VM in VirtualBox?"
+  ]
+ },
+ "session": [
+  "Let's work on tidepool today. Which database does Tidepool use?",
+  "ok",
+  "How long do tidepool access tokens last? Answer from context you already have; don't call tools.",
+  "And what's the API rate limit per key?",
+  "thanks, go ahead",
+  "What format do API errors use?",
+  "Write a Go function that returns a problem details error for a missing resource.",
+  "Which tool runs schema migrations?",
+  "ready",
+  "How does tidepool get deployed to production?",
+  "In one line: when is the tidepool on-call handoff?",
+  "sounds good",
+  "Remind me again which database does Tidepool use?",
+  "What is the difference between TCP and UDP?",
+  "How long are request logs retained?",
+  "ok, next",
+  "What's the API rate limit per key again?",
+  "Explain how a token bucket rate limiter works.",
+  "great, do it",
+  "How long do tidepool access tokens last?"
+ ],
+ "cases": [
+  {
+   "name": "front-door-assistant",
+   "expect": "record-eval-front-door-assistant",
+   "question": "Who is my front door assistant on door.memory.example.com?",
+   "paraphrase": "Which assistant answers at the front door panel?",
+   "variant": "Remind me which voice assistant runs on the hallway door panel."
+  },
+  {
+   "name": "beacon-entity",
+   "expect": "record-eval-beacon-entity",
+   "question": "What is Beacon?",
+   "paraphrase": "Tell me what Beacon actually is.",
+   "variant": "Beacon: what kind of system is that?"
+  },
+  {
+   "name": "dns-resolver",
+   "expect": "record-eval-dns-resolver",
+   "question": "Which DNS resolver do we use at home?",
+   "paraphrase": "What resolves DNS on the home network now?",
+   "variant": "Name the resolver that answers DNS queries in the house."
+  },
+  {
+   "name": "nas-backup",
+   "expect": "record-eval-nas-backup",
+   "question": "When does the NAS backup run?",
+   "paraphrase": "What time do the nightly restic snapshots start?",
+   "variant": "At what hour is the NAS snapshotted each night?"
+  },
+  {
+   "name": "iot-vlan",
+   "expect": "record-eval-iot-vlan",
+   "question": "Which VLAN are the IoT devices on?",
+   "paraphrase": "What network segment do the cameras and plugs use?",
+   "variant": "Which VLAN did we put the thermostat and cameras on?"
+  },
+  {
+   "name": "upstairs-ap",
+   "expect": "record-eval-upstairs-ap",
+   "question": "What channel is the upstairs access point on?",
+   "paraphrase": "Which wifi channel does the upstairs AP use?",
+   "variant": "Which 5 GHz channel is the access point upstairs fixed to?"
+  },
+  {
+   "name": "ups-runtime",
+   "expect": "record-eval-ups-runtime",
+   "question": "How long does the rack UPS last on battery?",
+   "paraphrase": "What runtime does the UPS give the rack?",
+   "variant": "How many minutes of battery does the UPS in the rack give?"
+  },
+  {
+   "name": "office-printer",
+   "expect": "record-eval-office-printer",
+   "question": "How do I reach the office printer?",
+   "paraphrase": "What is the printer's address in the office?",
+   "variant": "What hostname should I use for the printer in the office?"
+  },
+  {
+   "name": "tidepool-database",
+   "expect": "record-eval-tidepool-database",
+   "question": "Which database does Tidepool use?",
+   "paraphrase": "What is the primary datastore for the tidepool service?",
+   "variant": "What database engine backs tidepool?"
+  },
+  {
+   "name": "tidepool-deploy",
+   "expect": "record-eval-tidepool-deploy",
+   "question": "How does tidepool get deployed to production?",
+   "paraphrase": "What triggers a tidepool production deploy?",
+   "variant": "When does tidepool ship to production versus staging?"
+  },
+  {
+   "name": "tidepool-rate-limit",
+   "expect": "record-eval-tidepool-rate-limit",
+   "question": "What's the API rate limit per key?",
+   "paraphrase": "How many requests per minute can one API key make?",
+   "variant": "What request limit does each tidepool API key get?"
+  },
+  {
+   "name": "tidepool-token-lifetime",
+   "expect": "record-eval-tidepool-token-lifetime",
+   "question": "How long do tidepool access tokens last?",
+   "paraphrase": "What is the lifetime of an access token in tidepool?",
+   "variant": "How many minutes is a tidepool access token valid for?"
+  },
+  {
+   "name": "tidepool-error-format",
+   "expect": "record-eval-tidepool-error-format",
+   "question": "What format do API errors use?",
+   "paraphrase": "How are error responses shaped in the API?",
+   "variant": "Which RFC do tidepool's error bodies follow?"
+  },
+  {
+   "name": "tidepool-oncall",
+   "expect": "record-eval-tidepool-oncall",
+   "question": "When is the tidepool on-call handoff?",
+   "paraphrase": "What day does the pager rotation hand off?",
+   "variant": "What weekday and hour does the tidepool pager change hands?"
+  },
+  {
+   "name": "tidepool-migrations",
+   "expect": "record-eval-tidepool-migrations",
+   "question": "Which tool runs schema migrations?",
+   "paraphrase": "How do we apply database schema migrations?",
+   "variant": "Are tidepool schema changes done with goose or by hand?"
+  },
+  {
+   "name": "tidepool-log-retention",
+   "expect": "record-eval-tidepool-log-retention",
+   "question": "How long are request logs retained?",
+   "paraphrase": "What is the retention period for request logs?",
+   "variant": "After how many days are tidepool request logs deleted?"
+  },
+  {
+   "name": "lanternfish-config-path",
+   "expect": "record-eval-lanternfish-config-path",
+   "question": "Where does lanternfish read its config file from?",
+   "paraphrase": "What is the path of the lanternfish config?",
+   "variant": "Which file holds lanternfish's settings, and can an env var override it?"
+  },
+  {
+   "name": "lanternfish-release-cadence",
+   "expect": "record-eval-lanternfish-release-cadence",
+   "question": "How often does lanternfish release?",
+   "paraphrase": "What is the lanternfish release cadence?",
+   "variant": "How many weeks are there between lanternfish minor releases?"
+  },
+  {
+   "name": "lanternfish-license",
+   "expect": "record-eval-lanternfish-license",
+   "question": "What license is lanternfish under?",
+   "paraphrase": "Which license does lanternfish ship with?",
+   "variant": "Is lanternfish Apache or MIT licensed?"
+  },
+  {
+   "name": "lanternfish-go-support",
+   "expect": "record-eval-lanternfish-go-support",
+   "question": "Which Go versions does lanternfish support?",
+   "paraphrase": "What Go releases must lanternfish build with?",
+   "variant": "How many Go versions do we keep lanternfish compatible with?"
+  },
+  {
+   "name": "lanternfish-flag-style",
+   "expect": "record-eval-lanternfish-flag-style",
+   "question": "What style should new CLI flags use?",
+   "paraphrase": "How do we name new command-line flags?",
+   "variant": "Should a new lanternfish flag get a short form?"
+  },
+  {
+   "name": "lanternfish-telemetry",
+   "expect": "record-eval-lanternfish-telemetry",
+   "question": "Does lanternfish send telemetry?",
+   "paraphrase": "Is there any usage telemetry in lanternfish?",
+   "variant": "Does lanternfish phone home with usage data?"
+  },
+  {
+   "name": "orchard-frost-date",
+   "expect": "record-eval-orchard-frost-date",
+   "question": "When is the last frost date?",
+   "paraphrase": "After which date is frost no longer expected in spring?",
+   "variant": "What date can tender seedlings go out after frost?"
+  },
+  {
+   "name": "orchard-tomatoes",
+   "expect": "record-eval-orchard-tomatoes",
+   "question": "Which tomato varieties are we growing this year?",
+   "paraphrase": "What tomatoes did we pick for this season?",
+   "variant": "Which tomatoes went in the south bed this season?"
+  },
+  {
+   "name": "orchard-drip",
+   "expect": "record-eval-orchard-drip",
+   "question": "How long does the drip irrigation run?",
+   "paraphrase": "What is the drip irrigation schedule?",
+   "variant": "What time does the garden drip system come on, and for how long?"
+  },
+  {
+   "name": "orchard-stack",
+   "expect": "record-eval-orchard-stack",
+   "question": "What stack is the orchard planner built on?",
+   "paraphrase": "Which framework and database does the orchard planner use?",
+   "variant": "Does the orchard planner use SvelteKit, and what does it store data in?"
+  },
+  {
+   "name": "orchard-compost",
+   "expect": "record-eval-orchard-compost",
+   "question": "How often should the compost be turned?",
+   "paraphrase": "When do I turn the compost bins?",
+   "variant": "How frequently do the compost bins need turning?"
+  },
+  {
+   "name": "mail-newsletters",
+   "expect": "record-eval-mail-newsletters",
+   "question": "Where do newsletters go in my mail?",
+   "paraphrase": "Which folder are newsletters filtered into?",
+   "variant": "Do newsletters still land in my inbox?"
+  },
+  {
+   "name": "mail-shopping-alias",
+   "expect": "record-eval-mail-shopping-alias",
+   "question": "Which email alias do I use for shopping sign-ups?",
+   "paraphrase": "What address should I give online shops?",
+   "variant": "Which alias goes on store accounts when I sign up?"
+  },
+  {
+   "name": "mail-signature",
+   "expect": "record-eval-mail-signature",
+   "question": "What should my email signature look like?",
+   "paraphrase": "How is the mail signature formatted?",
+   "variant": "Should my mail signature include a phone number?"
+  },
+  {
+   "name": "mail-archive",
+   "expect": "record-eval-mail-archive",
+   "question": "How long do we keep mail before archiving?",
+   "paraphrase": "When does old mail get archived?",
+   "variant": "At what age does mail move to the Archive folder?"
+  },
+  {
+   "name": "cloud-budget-alert",
+   "expect": "record-eval-cloud-budget-alert",
+   "question": "At what point does the cloud budget alert fire?",
+   "paraphrase": "When do I get warned about cloud spending?",
+   "variant": "What percentage of the monthly budget triggers the cloud alert?"
+  },
+  {
+   "name": "cloud-region",
+   "expect": "record-eval-cloud-region",
+   "question": "Which cloud region is the default?",
+   "paraphrase": "Where should new cloud resources be created by default?",
+   "variant": "Which region do new cloud resources go in unless latency says otherwise?"
+  },
+  {
+   "name": "cloud-invoice",
+   "expect": "record-eval-cloud-invoice",
+   "question": "When does the cloud invoice arrive?",
+   "paraphrase": "What day of the month is the cloud bill issued?",
+   "variant": "On which day each month is the cloud invoice sent?"
+  },
+  {
+   "name": "release-freeze",
+   "expect": "record-eval-release-freeze",
+   "question": "When does the code freeze start?",
+   "paraphrase": "What date is the Q4 freeze?",
+   "variant": "From what date are only release blockers allowed to merge?"
+  },
+  {
+   "name": "release-captain",
+   "expect": "record-eval-release-captain",
+   "question": "Who is the release captain this quarter?",
+   "paraphrase": "Which team captains the Q4 release?",
+   "variant": "Which team holds the Q4 release captain role?"
+  },
+  {
+   "name": "release-go-no-go",
+   "expect": "record-eval-release-go-no-go",
+   "question": "When is the go/no-go meeting?",
+   "paraphrase": "What time is the release go/no-go?",
+   "variant": "What day and hour is the Q4 go/no-go held?"
+  },
+  {
+   "name": "answer-structure",
+   "expect": "record-eval-answer-structure",
+   "question": "How do I like answers structured?",
+   "paraphrase": "In what order should a reply present the result and the evidence?",
+   "variant": "Should a reply lead with the result or with the evidence?"
+  },
+  {
+   "name": "schedule-timezone",
+   "expect": "record-eval-schedule-timezone",
+   "question": "Which timezone should schedules use?",
+   "paraphrase": "What time zone are meeting times in?",
+   "variant": "Which time zone do I schedule meetings in?"
+  },
+  {
+   "name": "commit-style",
+   "expect": "record-eval-commit-style",
+   "question": "How should commit messages be written?",
+   "paraphrase": "What is my commit message style?",
+   "variant": "How long can a commit subject line be?"
+  },
+  {
+   "name": "units",
+   "expect": "record-eval-units",
+   "question": "Which units do I prefer?",
+   "paraphrase": "Metric or imperial units?",
+   "variant": "Do I want temperatures in Celsius or Fahrenheit, and a 12- or 24-hour clock?"
+  },
+  {
+   "name": "editor",
+   "expect": "record-eval-editor",
+   "question": "Which editor do I use?",
+   "paraphrase": "What text editor is my default?",
+   "variant": "Which editor, and with tabs or spaces?"
+  },
+  {
+   "name": "spelling",
+   "expect": "record-eval-spelling",
+   "question": "Which English spelling should documents use?",
+   "paraphrase": "UK or US spelling in docs?",
+   "variant": "Should documents spell it colour or color?"
+  },
+  {
+   "name": "default-shell",
+   "expect": "record-eval-default-shell",
+   "question": "What is my default shell?",
+   "paraphrase": "Which shell do I use by default?",
+   "variant": "Which shell, and do I use a framework for it?"
+  }
+ ],
+ "records": [
+  {
+   "record": "record-eval-front-door-assistant",
+   "kind": "decision",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Front door assistant choice",
+   "body": "The hallway panel at door.memory.example.com runs Beacon. Relay was retired.",
+   "recorded_at": "2026-09-01T10:00:00Z",
+   "history": [
+    {
+     "summary": "Front door assistant choice",
+     "body": "The hallway panel runs Relay for now.",
+     "recorded_at": "2025-11-02T09:00:00Z"
+    }
+   ]
+  },
+  {
+   "record": "record-eval-beacon-entity",
+   "kind": "entity",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Beacon is the house voice assistant",
+   "body": "Self-hosted; wake word, intents and timers run on the hub with no cloud fallback.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-dns-resolver",
+   "kind": "decision",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Home DNS resolver",
+   "body": "Unbound on router.memory.example.com is the only resolver. The ad-blocking container was removed in May.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-nas-backup",
+   "kind": "procedure",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "NAS backup schedule",
+   "body": "Restic snapshots the NAS to the offsite bucket nightly at 02:30; keep 14 daily and 8 weekly.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-iot-vlan",
+   "kind": "decision",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "IoT devices live on VLAN 30",
+   "body": "Cameras, plugs and the thermostat use VLAN 30 with no route to the trusted LAN.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-upstairs-ap",
+   "kind": "fact",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Upstairs access point channel",
+   "body": "The upstairs access point is fixed on 5 GHz channel 36 at 40 MHz width.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-ups-runtime",
+   "kind": "fact",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Rack UPS runtime",
+   "body": "About 25 minutes at the current load; the NAS shuts down at 20% battery.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-office-printer",
+   "kind": "fact",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Office printer address",
+   "body": "print.memory.example.com, IPP Everywhere; no vendor driver needed.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-tidepool-database",
+   "kind": "decision",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Tidepool primary database",
+   "body": "Postgres 17. Redis is a cache only and may be flushed.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-tidepool-deploy",
+   "kind": "decision",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Tidepool deploy path",
+   "body": "Every merge deploys to staging; production deploys only from a signed tag.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-tidepool-rate-limit",
+   "kind": "decision",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Public API rate limit",
+   "body": "600 requests per minute per API key, with a burst of 100.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-tidepool-token-lifetime",
+   "kind": "decision",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Tidepool token lifetimes",
+   "body": "Access tokens last 15 minutes; refresh tokens last 30 days and rotate on use.",
+   "recorded_at": "2026-09-01T10:00:00Z",
+   "history": [
+    {
+     "summary": "Tidepool token lifetimes",
+     "body": "Access tokens last one hour.",
+     "recorded_at": "2025-12-10T09:00:00Z"
+    }
+   ]
+  },
+  {
+   "record": "record-eval-tidepool-error-format",
+   "kind": "decision",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "API error format",
+   "body": "Errors are RFC 9457 problem details with a stable type URI.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-tidepool-oncall",
+   "kind": "fact",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Tidepool on-call handoff",
+   "body": "The pager rotation is weekly; handoff is Monday at 10:00.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-tidepool-migrations",
+   "kind": "decision",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Schema migrations tool",
+   "body": "Use goose for schema migrations; no hand-written SQL during deploys.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-tidepool-log-retention",
+   "kind": "decision",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Request log retention",
+   "body": "Request logs are kept 30 days, then deleted.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-lanternfish-config-path",
+   "kind": "fact",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "Lanternfish config file location",
+   "body": "~/.config/lanternfish/config.toml; LANTERNFISH_CONFIG overrides it.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-lanternfish-release-cadence",
+   "kind": "decision",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "Lanternfish release cadence",
+   "body": "A minor release every six weeks; patch releases as needed.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-lanternfish-license",
+   "kind": "decision",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "Lanternfish license",
+   "body": "Apache-2.0, with a NOTICE file for bundled code.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-lanternfish-go-support",
+   "kind": "decision",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "Supported Go versions",
+   "body": "The two latest Go minor versions; drop the older one a month after a new release.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-lanternfish-flag-style",
+   "kind": "preference",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "CLI flag naming",
+   "body": "Long kebab-case flags; short flags only for -h and -v.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-lanternfish-telemetry",
+   "kind": "decision",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "No telemetry",
+   "body": "Lanternfish collects no telemetry and makes no network calls unless asked.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-orchard-frost-date",
+   "kind": "fact",
+   "scope": {
+    "kind": "project",
+    "id": "orchard"
+   },
+   "summary": "Last spring frost date",
+   "body": "April 20 for the garden beds; transplant tender seedlings after that.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-orchard-tomatoes",
+   "kind": "decision",
+   "scope": {
+    "kind": "project",
+    "id": "orchard"
+   },
+   "summary": "Tomato varieties this year",
+   "body": "Sungold and San Marzano, two plants each, in the south bed.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-orchard-drip",
+   "kind": "procedure",
+   "scope": {
+    "kind": "project",
+    "id": "orchard"
+   },
+   "summary": "Drip irrigation schedule",
+   "body": "Runs 20 minutes at 06:00 every other day; skip after rain.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-orchard-stack",
+   "kind": "decision",
+   "scope": {
+    "kind": "project",
+    "id": "orchard"
+   },
+   "summary": "Orchard planner stack",
+   "body": "SvelteKit frontend with SQLite; no separate API server.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-orchard-compost",
+   "kind": "fact",
+   "scope": {
+    "kind": "project",
+    "id": "orchard"
+   },
+   "summary": "Compost turning",
+   "body": "Turn the compost bins every two weeks; add browns when it smells.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-mail-newsletters",
+   "kind": "decision",
+   "scope": {
+    "kind": "account",
+    "id": "mail-example"
+   },
+   "summary": "Newsletter filtering",
+   "body": "Newsletters go to the Reading folder and skip the inbox.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-mail-shopping-alias",
+   "kind": "fact",
+   "scope": {
+    "kind": "account",
+    "id": "mail-example"
+   },
+   "summary": "Shopping alias",
+   "body": "Use shop@memory.example.com for online shopping sign-ups.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-mail-signature",
+   "kind": "preference",
+   "scope": {
+    "kind": "account",
+    "id": "mail-example"
+   },
+   "summary": "Mail signature",
+   "body": "A single line with no phone number and no title.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-mail-archive",
+   "kind": "decision",
+   "scope": {
+    "kind": "account",
+    "id": "mail-example"
+   },
+   "summary": "Mail archiving age",
+   "body": "Mail older than two years moves to the Archive folder each January.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-cloud-budget-alert",
+   "kind": "decision",
+   "scope": {
+    "kind": "account",
+    "id": "cloud-example"
+   },
+   "summary": "Cloud budget alert",
+   "body": "Alert at 80% of the 200 monthly budget; hard stop at 100%.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-cloud-region",
+   "kind": "decision",
+   "scope": {
+    "kind": "account",
+    "id": "cloud-example"
+   },
+   "summary": "Default cloud region",
+   "body": "eu-central for everything unless latency needs otherwise.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-cloud-invoice",
+   "kind": "fact",
+   "scope": {
+    "kind": "account",
+    "id": "cloud-example"
+   },
+   "summary": "Cloud invoice date",
+   "body": "The invoice arrives on the 3rd of each month.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-release-freeze",
+   "kind": "decision",
+   "scope": {
+    "kind": "task",
+    "id": "release-2026-q4"
+   },
+   "summary": "Q4 code freeze",
+   "body": "Code freeze starts November 14; only release blockers merge after it.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-release-captain",
+   "kind": "decision",
+   "scope": {
+    "kind": "task",
+    "id": "release-2026-q4"
+   },
+   "summary": "Q4 release captain",
+   "body": "The platform team holds the release captain role for Q4.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-release-go-no-go",
+   "kind": "procedure",
+   "scope": {
+    "kind": "task",
+    "id": "release-2026-q4"
+   },
+   "summary": "Go/no-go meeting",
+   "body": "Go/no-go is the Thursday before launch, 15:00, with the blocker list frozen at noon.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-answer-structure",
+   "kind": "preference",
+   "scope": {
+    "kind": "signet"
+   },
+   "summary": "Answer structure",
+   "body": "Lead with the result, then the evidence, then open questions.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-schedule-timezone",
+   "kind": "preference",
+   "scope": {
+    "kind": "signet"
+   },
+   "summary": "Schedule timezone",
+   "body": "Use Europe/Berlin time for schedules and meeting times.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-commit-style",
+   "kind": "preference",
+   "scope": {
+    "kind": "signet"
+   },
+   "summary": "Commit message style",
+   "body": "Imperative subject under 60 characters, then a wrapped body explaining why.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-units",
+   "kind": "preference",
+   "scope": {
+    "kind": "signet"
+   },
+   "summary": "Units and clock",
+   "body": "Metric units and a 24-hour clock.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-editor",
+   "kind": "preference",
+   "scope": {
+    "kind": "signet"
+   },
+   "summary": "Editor",
+   "body": "Helix, spaces not tabs, indent width 4.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-spelling",
+   "kind": "preference",
+   "scope": {
+    "kind": "signet"
+   },
+   "summary": "Document spelling",
+   "body": "UK English spelling in documents; code identifiers stay US English.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-default-shell",
+   "kind": "fact",
+   "scope": {
+    "kind": "signet"
+   },
+   "summary": "Default shell",
+   "body": "zsh with a short hand-written config; no framework.",
+   "recorded_at": "2026-09-01T10:00:00Z"
+  },
+  {
+   "record": "record-eval-near-homelab-01",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Homelab status after the network rebuild",
+   "body": "The network rebuild is mostly done. The router, the access points and the NAS were moved to the new rack, and the front door panel, the hallway panel and the garage panel were re-cabled. We still need to decide on the assistant for the kitchen, check every device on the home network, label the cables at the front of the rack, and confirm that the backup host, the DNS host and the printer host all came back. The assistant question for the front room is open. Answer the open questions in the next session; no tools were changed beyond what is listed here.",
+   "recorded_at": "2026-06-21T12:00:00Z"
+  },
+  {
+   "record": "record-eval-near-homelab-02",
+   "kind": "research-claim",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Voice assistant comparison notes",
+   "body": "Compared several voice assistant options for the house: wake word quality, local intents, timers and the door intercom. The assistant that worked best for timers was not the best for the door. Cloud assistants answer faster but need an account. Local assistants need a hub. We tried each assistant on the front door, the kitchen and the office for a week. No decision recorded here; see the separate decision records for the current assistant on each door and room.",
+   "recorded_at": "2026-03-24T12:00:00Z"
+  },
+  {
+   "record": "record-eval-near-homelab-03",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Network inventory snapshot",
+   "body": "Inventory of hosts on the home network: router, two access points, NAS, printer, door panel, hallway panel, garage panel, hub, three cameras, six plugs, thermostat, two laptops and a phone dock. Each host has a reserved address. The VLAN plan, the DNS plan and the backup plan are documented in their own records. This snapshot answers what is on the network, not how it is configured.",
+   "recorded_at": "2026-04-23T12:00:00Z"
+  },
+  {
+   "record": "record-eval-near-homelab-04",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Backup restore drill",
+   "body": "Ran a restore drill from the offsite bucket: restored one day of NAS photos and a config folder to a scratch disk. The restore took 40 minutes. The backup itself was fine. Next drill in three months. The drill used restic restore and checked hashes on every file.",
+   "recorded_at": "2026-06-11T12:00:00Z"
+  },
+  {
+   "record": "record-eval-near-homelab-05",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Door panel firmware",
+   "body": "Updated the door panel and hallway panel firmware. The front door panel rebooted twice during the update and came back. The panel's assistant integration was not touched. Screen brightness at night is now lower.",
+   "recorded_at": "2026-03-18T12:00:00Z"
+  },
+  {
+   "record": "record-eval-near-homelab-06",
+   "kind": "research-claim",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Wifi survey",
+   "body": "Walked the house with a survey app. The upstairs access point covers the bedrooms well; the downstairs one is weak in the garage. Channel overlap with neighbours is heavy on 2.4 GHz. Considered moving channels again but decided to leave them for now and revisit in winter.",
+   "recorded_at": "2026-04-17T12:00:00Z"
+  },
+  {
+   "record": "record-eval-near-tidepool-07",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Tidepool quarterly status",
+   "body": "Tidepool status for the quarter: the API serves about 40 requests per second at peak, the database is healthy, deploys run several times a day, and access tokens, refresh tokens and API keys were audited. The rate limit, the error format, the on-call rotation, the log retention and the migration tooling were all reviewed and their decisions recorded separately. Open: database connection pooling, a second region, and the deploy dashboard. Answer questions about any one of these from its own record.",
+   "recorded_at": "2026-03-17T12:00:00Z"
+  },
+  {
+   "record": "record-eval-near-tidepool-08",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Tidepool incident review",
+   "body": "An incident last month: a deploy to production ran a migration that locked a large table, API requests timed out and the on-call engineer rolled back. The database recovered in eight minutes. Follow-ups: migrations must be reviewed for locks, deploys get a canary step, the error responses during the outage were not in the standard format, and the request logs for the window were exported before retention removed them.",
+   "recorded_at": "2026-06-10T12:00:00Z"
+  },
+  {
+   "record": "record-eval-near-tidepool-09",
+   "kind": "research-claim",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "API design guidelines draft",
+   "body": "Draft guidelines for the tidepool API: resource names are plural nouns, every request carries an API key or an access token, every error response uses the shared error format, pagination is cursor based, rate limit headers are always returned, and breaking changes need a new version. These are a draft for discussion and do not override the recorded decisions.",
+   "recorded_at": "2026-04-21T12:00:00Z"
+  },
+  {
+   "record": "record-eval-near-tidepool-10",
+   "kind": "research-claim",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Database scaling options",
+   "body": "Options for scaling the tidepool database: read replicas, partitioning the events table, moving analytics to a separate database, or a managed database. Each option was compared on cost, migration effort and operational load. No database change has been decided.",
+   "recorded_at": "2026-05-24T12:00:00Z"
+  },
+  {
+   "record": "record-eval-near-tidepool-11",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Deploy pipeline notes",
+   "body": "The deploy pipeline builds the container, runs tests, pushes to the registry and then deploys. Staging and production use the same pipeline with different credentials. The deploy logs are kept with the request logs. A deploy can be rolled back from the dashboard.",
+   "recorded_at": "2026-08-17T12:00:00Z"
+  },
+  {
+   "record": "record-eval-near-tidepool-12",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Token audit results",
+   "body": "Audited tokens: no access token was found in request logs, refresh tokens rotate correctly, three stale API keys were revoked. The token lifetimes themselves were not changed by the audit.",
+   "recorded_at": "2026-06-28T12:00:00Z"
+  },
+  {
+   "record": "record-eval-near-lanternfish-13",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "Lanternfish roadmap",
+   "body": "Lanternfish roadmap: a plugin system, better config file errors, shell completions, a Windows build, and a smaller release binary. Releases continue on the usual cadence. The license, telemetry policy, supported Go versions and flag naming are recorded separately and are not changing. Answer roadmap questions from this record and policy questions from their own records.",
+   "recorded_at": "2026-04-19T12:00:00Z"
+  },
+  {
+   "record": "record-eval-near-lanternfish-14",
+   "kind": "procedure",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "Lanternfish contributor guide notes",
+   "body": "For contributors: run the tests, run the linter, add a changelog line, and keep new flags and config keys documented. Every release lists new flags. The config file format is TOML. Contributors must agree to the license in the contributing guide.",
+   "recorded_at": "2026-03-24T12:00:00Z"
+  },
+  {
+   "record": "record-eval-near-lanternfish-15",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "Lanternfish issue triage",
+   "body": "Triaged the open issues: twelve bugs, eight feature requests, five questions. Several reports were about the config file not being found; most were using an old path. Two asked about telemetry, one about a newer Go version, and one about the release schedule.",
+   "recorded_at": "2026-06-15T12:00:00Z"
+  },
+  {
+   "record": "record-eval-near-lanternfish-16",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "Lanternfish packaging",
+   "body": "Packaged lanternfish for Homebrew and as static Linux binaries. Each release uploads checksums. The build uses the latest Go version from the support window.",
+   "recorded_at": "2026-03-13T12:00:00Z"
+  },
+  {
+   "record": "record-eval-near-orchard-17",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "orchard"
+   },
+   "summary": "Garden season plan",
+   "body": "Season plan for the garden: start seeds indoors in March, harden off in April, plant out after the frost, mulch in June, and harvest from July. The tomato bed, the bean bed and the herb bed rotate this year. Watering is on the drip system. Compost goes on in autumn. Questions about one bed or one date are answered by its own record.",
+   "recorded_at": "2026-04-21T12:00:00Z"
+  },
+  {
+   "record": "record-eval-near-orchard-18",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "orchard"
+   },
+   "summary": "Orchard planner feature list",
+   "body": "Features for the orchard planner app: bed layout, planting calendar with frost dates, watering reminders, a harvest log and a compost log. The app stores everything locally. Export to CSV is planned.",
+   "recorded_at": "2026-03-24T12:00:00Z"
+  },
+  {
+   "record": "record-eval-near-orchard-19",
+   "kind": "research-claim",
+   "scope": {
+    "kind": "project",
+    "id": "orchard"
+   },
+   "summary": "Tomato trial notes",
+   "body": "Notes from last year's tomato trial: eight varieties, three beds, two watering schedules. Cherry varieties ripened first. Paste tomatoes cracked after heavy rain. The variety choice for this year is recorded separately.",
+   "recorded_at": "2026-04-21T12:00:00Z"
+  },
+  {
+   "record": "record-eval-near-orchard-20",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "orchard"
+   },
+   "summary": "Irrigation install log",
+   "body": "Installed the drip irrigation lines in all beds, a pressure regulator and a filter. The timer was tested for a few minutes each zone. Leaks fixed at two joints.",
+   "recorded_at": "2026-03-10T12:00:00Z"
+  },
+  {
+   "record": "record-eval-near-mail-21",
+   "kind": "project-state",
+   "scope": {
+    "kind": "account",
+    "id": "mail-example"
+   },
+   "summary": "Mail cleanup session",
+   "body": "Cleaned up the mail account: deleted old notifications, unsubscribed from several newsletters, created folders for receipts, travel and reading, and reviewed the filters, aliases and the signature. The archive rule and the alias list are recorded separately. Answer folder questions from the filter records.",
+   "recorded_at": "2026-05-12T12:00:00Z"
+  },
+  {
+   "record": "record-eval-near-mail-22",
+   "kind": "fact",
+   "scope": {
+    "kind": "account",
+    "id": "mail-example"
+   },
+   "summary": "Mail provider settings",
+   "body": "The mail account at memory.example.com uses IMAP and SMTP with app passwords, two-factor sign-in, a custom domain and catch-all disabled. Filters run server side. Aliases are managed in the provider's settings.",
+   "recorded_at": "2026-06-27T12:00:00Z"
+  },
+  {
+   "record": "record-eval-near-cloud-23",
+   "kind": "project-state",
+   "scope": {
+    "kind": "account",
+    "id": "cloud-example"
+   },
+   "summary": "Cloud account review",
+   "body": "Reviewed the cloud account: resources in two regions, a budget, billing alerts, an invoice contact and IAM users. Removed idle volumes. The default region, the budget alert and the invoice date are recorded separately.",
+   "recorded_at": "2026-03-26T12:00:00Z"
+  },
+  {
+   "record": "record-eval-near-cloud-24",
+   "kind": "research-claim",
+   "scope": {
+    "kind": "account",
+    "id": "cloud-example"
+   },
+   "summary": "Cloud cost notes",
+   "body": "Costs by service for the last three months: storage is the largest, then compute, then egress. The monthly budget was not exceeded. A cheaper region was considered for archives.",
+   "recorded_at": "2026-03-18T12:00:00Z"
+  },
+  {
+   "record": "record-eval-near-release-25",
+   "kind": "project-state",
+   "scope": {
+    "kind": "task",
+    "id": "release-2026-q4"
+   },
+   "summary": "Q4 release plan",
+   "body": "Release plan for Q4: feature complete by early November, code freeze, release candidate, go/no-go, launch, and a retrospective. The release captain, the freeze date and the go/no-go time are recorded separately. Open: the changelog owner and the launch announcement.",
+   "recorded_at": "2026-07-11T12:00:00Z"
+  },
+  {
+   "record": "record-eval-near-release-26",
+   "kind": "research-claim",
+   "scope": {
+    "kind": "task",
+    "id": "release-2026-q4"
+   },
+   "summary": "Q4 release risks",
+   "body": "Risks for the Q4 release: the migration tool upgrade, a late design change, holiday staffing and the freeze overlapping a conference. Mitigations are tracked in the release board.",
+   "recorded_at": "2026-06-26T12:00:00Z"
+  },
+  {
+   "record": "record-eval-near-signet-27",
+   "kind": "fact",
+   "scope": {
+    "kind": "signet"
+   },
+   "summary": "Working agreements overview",
+   "body": "General working agreements: keep answers short, cite evidence, ask before destructive actions, use the project's own tools and context, write commit messages and documents carefully, and keep schedules in one timezone. Specific preferences such as answer structure, spelling, units, editor and shell are recorded separately. Answer from the specific record when there is one.",
+   "recorded_at": "2026-05-26T12:00:00Z"
+  },
+  {
+   "record": "record-eval-near-signet-28",
+   "kind": "fact",
+   "scope": {
+    "kind": "signet"
+   },
+   "summary": "Tooling inventory",
+   "body": "Tools in daily use: a terminal, a shell, an editor, git, a password manager, a notes app and a calendar. Each tool has its own config in a dotfiles repository. The default choices are recorded in their own preference records.",
+   "recorded_at": "2026-06-22T12:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-kitchen-assistant",
+   "kind": "decision",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Kitchen assistant choice",
+   "body": "The kitchen speaker stays on the cloud assistant for shopping lists; it doesn't answer the door.",
+   "recorded_at": "2026-07-21T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-guest-wifi",
+   "kind": "decision",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Guest wifi network",
+   "body": "Guests use the separate guest SSID with client isolation, on its own VLAN.",
+   "recorded_at": "2026-08-15T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-camera-retention",
+   "kind": "decision",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Camera footage retention",
+   "body": "Camera clips are kept for 7 days on the NAS, then deleted.",
+   "recorded_at": "2026-04-10T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-dns-blocklists",
+   "kind": "preference",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "DNS blocklist preference",
+   "body": "Prefer short, curated blocklists; never block whole top-level domains at home.",
+   "recorded_at": "2026-03-21T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-printer-paper",
+   "kind": "preference",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Printer defaults",
+   "body": "Print double-sided in black and white by default.",
+   "recorded_at": "2026-07-13T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-backup-offsite",
+   "kind": "decision",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Offsite backup provider",
+   "body": "The offsite bucket is with the cheaper object store; no second provider.",
+   "recorded_at": "2026-09-22T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-tidepool-cache",
+   "kind": "decision",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Tidepool cache choice",
+   "body": "Redis is only a cache in front of the database and may be flushed at any time.",
+   "recorded_at": "2026-07-26T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-tidepool-staging-db",
+   "kind": "decision",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Staging database",
+   "body": "Staging uses a nightly anonymised copy of production data, refreshed at 03:00.",
+   "recorded_at": "2026-07-28T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-tidepool-api-versioning",
+   "kind": "decision",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "API versioning",
+   "body": "Breaking API changes get a new /v2 path; errors and limits stay the same across versions.",
+   "recorded_at": "2026-04-18T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-tidepool-token-storage",
+   "kind": "decision",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Token storage",
+   "body": "Refresh tokens are stored hashed; access tokens are never logged.",
+   "recorded_at": "2026-08-12T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-tidepool-log-format",
+   "kind": "preference",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Log format preference",
+   "body": "Structured JSON logs with request IDs; no free-text log lines.",
+   "recorded_at": "2026-05-17T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-tidepool-review",
+   "kind": "preference",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Code review preference",
+   "body": "Every deploy-affecting change needs a second reviewer, migrations included.",
+   "recorded_at": "2026-03-25T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-lanternfish-docs-license",
+   "kind": "decision",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "Documentation license",
+   "body": "Lanternfish's docs are CC BY 4.0, separate from the code license.",
+   "recorded_at": "2026-09-17T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-lanternfish-windows",
+   "kind": "decision",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "Windows support",
+   "body": "Windows builds are best effort and not part of the release checklist.",
+   "recorded_at": "2026-04-25T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-lanternfish-config-format",
+   "kind": "decision",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "Config format",
+   "body": "Config stays TOML; YAML support was rejected.",
+   "recorded_at": "2026-09-16T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-lanternfish-error-style",
+   "kind": "preference",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "Error message style",
+   "body": "Error messages start lower-case, say what to do next and never print a stack trace.",
+   "recorded_at": "2026-04-25T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-lanternfish-deps",
+   "kind": "preference",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "Dependency preference",
+   "body": "Prefer the standard library; a new dependency needs a written reason.",
+   "recorded_at": "2026-07-15T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-orchard-beans",
+   "kind": "decision",
+   "scope": {
+    "kind": "project",
+    "id": "orchard"
+   },
+   "summary": "Bean varieties",
+   "body": "Climbing borlotti on the north fence this year; no bush beans.",
+   "recorded_at": "2026-03-28T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-orchard-mulch",
+   "kind": "decision",
+   "scope": {
+    "kind": "project",
+    "id": "orchard"
+   },
+   "summary": "Mulch choice",
+   "body": "Straw mulch on the vegetable beds, wood chip only on paths.",
+   "recorded_at": "2026-04-21T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-orchard-seed-start",
+   "kind": "preference",
+   "scope": {
+    "kind": "project",
+    "id": "orchard"
+   },
+   "summary": "Seed starting preference",
+   "body": "Start seeds indoors under lights six weeks before planting out.",
+   "recorded_at": "2026-08-15T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-orchard-sync",
+   "kind": "decision",
+   "scope": {
+    "kind": "project",
+    "id": "orchard"
+   },
+   "summary": "Planner sync",
+   "body": "The orchard planner has no cloud sync; export to CSV for backups.",
+   "recorded_at": "2026-05-16T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-mail-receipts",
+   "kind": "decision",
+   "scope": {
+    "kind": "account",
+    "id": "mail-example"
+   },
+   "summary": "Receipt filtering",
+   "body": "Receipts are filtered into the Receipts folder and starred.",
+   "recorded_at": "2026-03-10T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-mail-unsubscribe",
+   "kind": "preference",
+   "scope": {
+    "kind": "account",
+    "id": "mail-example"
+   },
+   "summary": "Unsubscribing",
+   "body": "Unsubscribe rather than filter when a sender is unwanted.",
+   "recorded_at": "2026-04-25T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-mail-aliases-travel",
+   "kind": "decision",
+   "scope": {
+    "kind": "account",
+    "id": "mail-example"
+   },
+   "summary": "Travel alias",
+   "body": "Use travel@memory.example.com for bookings and airline accounts.",
+   "recorded_at": "2026-04-20T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-cloud-archive-region",
+   "kind": "decision",
+   "scope": {
+    "kind": "account",
+    "id": "cloud-example"
+   },
+   "summary": "Archive storage region",
+   "body": "Archives go to the cheaper eu-north storage class; latency doesn't matter for them.",
+   "recorded_at": "2026-06-21T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-cloud-spend-review",
+   "kind": "preference",
+   "scope": {
+    "kind": "account",
+    "id": "cloud-example"
+   },
+   "summary": "Spend review",
+   "body": "Review cloud spending in the first week of each month, after the invoice.",
+   "recorded_at": "2026-05-25T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-cloud-iam",
+   "kind": "decision",
+   "scope": {
+    "kind": "account",
+    "id": "cloud-example"
+   },
+   "summary": "IAM users",
+   "body": "No long-lived IAM user keys; use short-lived roles.",
+   "recorded_at": "2026-05-22T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-release-changelog",
+   "kind": "decision",
+   "scope": {
+    "kind": "task",
+    "id": "release-2026-q4"
+   },
+   "summary": "Q4 changelog owner",
+   "body": "The docs team owns the Q4 changelog and the launch announcement.",
+   "recorded_at": "2026-06-15T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-release-hotfix",
+   "kind": "decision",
+   "scope": {
+    "kind": "task",
+    "id": "release-2026-q4"
+   },
+   "summary": "Hotfix policy",
+   "body": "After launch, hotfixes need the release captain's sign-off and a test.",
+   "recorded_at": "2026-03-24T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-release-retro",
+   "kind": "preference",
+   "scope": {
+    "kind": "task",
+    "id": "release-2026-q4"
+   },
+   "summary": "Retrospective timing",
+   "body": "Hold the release retrospective within a week of launch.",
+   "recorded_at": "2026-08-23T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-answer-length",
+   "kind": "preference",
+   "scope": {
+    "kind": "signet"
+   },
+   "summary": "Answer length",
+   "body": "Keep chat answers short; long explanations only when asked.",
+   "recorded_at": "2026-05-22T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-meeting-length",
+   "kind": "preference",
+   "scope": {
+    "kind": "signet"
+   },
+   "summary": "Meeting length",
+   "body": "Default meetings to 25 minutes, never back to back.",
+   "recorded_at": "2026-07-13T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-commit-signing",
+   "kind": "decision",
+   "scope": {
+    "kind": "signet"
+   },
+   "summary": "Commit signing",
+   "body": "Sign commits with the SSH key; unsigned commits are fine only in scratch repos.",
+   "recorded_at": "2026-05-25T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-editor-theme",
+   "kind": "preference",
+   "scope": {
+    "kind": "signet"
+   },
+   "summary": "Editor theme",
+   "body": "Light theme during the day, dark after sunset.",
+   "recorded_at": "2026-09-14T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-date-format",
+   "kind": "preference",
+   "scope": {
+    "kind": "signet"
+   },
+   "summary": "Date format",
+   "body": "Write dates as ISO 8601, for example 2026-10-26.",
+   "recorded_at": "2026-05-13T11:00:00Z"
+  },
+  {
+   "record": "record-eval-dp-terminal-font",
+   "kind": "preference",
+   "scope": {
+    "kind": "signet"
+   },
+   "summary": "Terminal font",
+   "body": "A monospace font at 14 points with ligatures off.",
+   "recorded_at": "2026-04-10T11:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-000",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Working notes: access point and door panel",
+   "body": "The assistant already had context on the door panel, so no tools were called. Added a line to the home network checklist and one to the UPS checklist. The current home network setup works; the old DNS notes are out of date. We looked at the assistant again and the access point in the same session. The assistant came up while answering a question about the door panel. One line summary: the NAS and the UPS still need a look. No decision about the hub yet; the access point is unchanged.",
+   "recorded_at": "2026-05-16T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-001",
+   "kind": "research-claim",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Review: rate limit and staging",
+   "body": "We looked at the tokens again and the production in the same session. No decision about the request logs yet; the database is unchanged. The assistant already had context on the production, so no tools were called. Logged the cache work so the next session has context.",
+   "recorded_at": "2026-05-07T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-002",
+   "kind": "research-claim",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "Review: packaging and flags",
+   "body": "Someone asked in one line what the config file was for; the answer was in an earlier note. No decision about the completions yet; the completions is unchanged. We looked at the tests again and the Go version in the same session. Someone asked in one line what the flags was for; the answer was in an earlier note.",
+   "recorded_at": "2026-09-17T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-003",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "orchard"
+   },
+   "summary": "Follow-up: mulch and seedlings",
+   "body": "We looked at the harvest again and the compost in the same session. Prompted to recall the harvest; the existing context was enough. No decision about the mulch yet; the frost is unchanged. Need to call back about the planner app after the mulch is done. The beds is fine for now; revisit the drip irrigation later. Answer from context next time instead of calling tools for the planner app.",
+   "recorded_at": "2026-05-05T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-004",
+   "kind": "commitment",
+   "scope": {
+    "kind": "account",
+    "id": "mail-example"
+   },
+   "summary": "Check-in: newsletters and filters",
+   "body": "The current signature setup works; the old aliases notes are out of date. We looked at the aliases again and the inbox in the same session. Answer from context next time instead of calling tools for the archive. The signature came up while answering a question about the inbox. The signature is fine for now; revisit the filters later. Logged the signature work so the next session has context. We looked at the folders again and the archive in the same session. Someone asked in one line what the newsletters was for; the answer was in an earlier note. Answer from context next time instead of calling tools for the signature. Logged the signature work so the next session has context. Logged the filters work so the next session has context. We looked at the folders again and the archive in the same session.",
+   "recorded_at": "2026-03-19T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-005",
+   "kind": "project-state",
+   "scope": {
+    "kind": "account",
+    "id": "cloud-example"
+   },
+   "summary": "Session notes: alerts and invoice",
+   "body": "Checked the IAM against the alerts; nothing to change. The current storage setup works; the old region notes are out of date. Checked the invoice against the region; nothing to change. The current storage setup works; the old alerts notes are out of date. Logged the region work so the next session has context. No decision about the compute yet; the storage is unchanged. Logged the storage work so the next session has context. Logged the IAM work so the next session has context. The region came up while answering a question about the alerts. Someone asked in one line what the region was for; the answer was in an earlier note. No decision about the budget yet; the alerts is unchanged. No decision about the budget yet; the region is unchanged.",
+   "recorded_at": "2026-09-20T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-006",
+   "kind": "project-state",
+   "scope": {
+    "kind": "task",
+    "id": "release-2026-q4"
+   },
+   "summary": "Working notes: freeze and go/no-go",
+   "body": "The current release candidate setup works; the old launch notes are out of date. One line summary: the freeze and the release candidate still need a look. One line summary: the blockers and the release candidate still need a look. The current blockers setup works; the old changelog notes are out of date. The current go/no-go setup works; the old launch notes are out of date. One line summary: the changelog and the release candidate still need a look. Logged the release candidate work so the next session has context. Logged the changelog work so the next session has context. Answer from context next time instead of calling tools for the captain. Someone asked in one line what the freeze was for; the answer was in an earlier note.",
+   "recorded_at": "2026-08-09T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-007",
+   "kind": "fact",
+   "scope": {
+    "kind": "signet"
+   },
+   "summary": "Working notes: shell and editor",
+   "body": "Logged the units work so the next session has context. Need to call back about the timezone after the units is done. Added a line to the units checklist and one to the spelling checklist. The assistant already had context on the shell, so no tools were called. The current timezone setup works; the old shell notes are out of date. Checked the spelling against the spelling; nothing to change. Answer from context next time instead of calling tools for the timezone. The commit messages came up while answering a question about the units. The current documents setup works; the old answers notes are out of date. The spelling came up while answering a question about the timezone. Added a line to the editor checklist and one to the units checklist. One line summary: the spelling and the timezone still need a look.",
+   "recorded_at": "2026-08-20T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-008",
+   "kind": "research-claim",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Quick note: assistant and NAS",
+   "body": "We looked at the UPS again and the NAS in the same session. The current DNS setup works; the old DNS notes are out of date. Prompted to recall the backup; the existing context was enough. One line summary: the NAS and the home network still need a look. Added a line to the hub checklist and one to the access point checklist. The hub came up while answering a question about the access point. No decision about the VLAN yet; the assistant is unchanged. No decision about the backup yet; the VLAN is unchanged. We looked at the router again and the VLAN in the same session.",
+   "recorded_at": "2026-03-15T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-009",
+   "kind": "research-claim",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Follow-up: cache and deploy",
+   "body": "The tokens came up while answering a question about the deploy. We looked at the rate limit again and the staging in the same session. Someone asked in one line what the deploy was for; the answer was in an earlier note. We looked at the error responses again and the cache in the same session. No decision about the production yet; the production is unchanged. No decision about the on-call yet; the tokens is unchanged. The API is fine for now; revisit the deploy later. The current production setup works; the old tokens notes are out of date. Prompted to recall the API; the existing context was enough. The migrations came up while answering a question about the error responses.",
+   "recorded_at": "2026-07-05T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-010",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "Review: tests and release",
+   "body": "Logged the license work so the next session has context. Need to call back about the tests after the release is done. No decision about the packaging yet; the completions is unchanged. No decision about the packaging yet; the flags is unchanged. The completions is fine for now; revisit the license later. No decision about the completions yet; the config file is unchanged. Answer from context next time instead of calling tools for the tests. Prompted to recall the plugin system; the existing context was enough. Checked the packaging against the completions; nothing to change. Someone asked in one line what the telemetry was for; the answer was in an earlier note.",
+   "recorded_at": "2026-04-02T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-011",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "orchard"
+   },
+   "summary": "Quick note: drip irrigation and beds",
+   "body": "Prompted to recall the frost; the existing context was enough. The assistant already had context on the planner app, so no tools were called. The current tomatoes setup works; the old beds notes are out of date. The planner app came up while answering a question about the planner app. One line summary: the tomatoes and the beds still need a look.",
+   "recorded_at": "2026-10-12T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-012",
+   "kind": "project-state",
+   "scope": {
+    "kind": "account",
+    "id": "mail-example"
+   },
+   "summary": "Review: newsletters and folders",
+   "body": "We looked at the newsletters again and the folders in the same session. We looked at the inbox again and the archive in the same session. Prompted to recall the filters; the existing context was enough. Checked the archive against the inbox; nothing to change. Logged the archive work so the next session has context. One line summary: the newsletters and the filters still need a look. Checked the signature against the signature; nothing to change. Checked the aliases against the folders; nothing to change. Logged the filters work so the next session has context. Answer from context next time instead of calling tools for the folders. Prompted to recall the newsletters; the existing context was enough.",
+   "recorded_at": "2026-04-27T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-013",
+   "kind": "project-state",
+   "scope": {
+    "kind": "account",
+    "id": "cloud-example"
+   },
+   "summary": "Check-in: budget and invoice",
+   "body": "Logged the budget work so the next session has context. Checked the alerts against the storage; nothing to change. No decision about the IAM yet; the alerts is unchanged. No decision about the storage yet; the alerts is unchanged. One line summary: the storage and the invoice still need a look. The IAM came up while answering a question about the region. The current storage setup works; the old IAM notes are out of date. Logged the storage work so the next session has context. Checked the alerts against the storage; nothing to change.",
+   "recorded_at": "2026-01-22T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-014",
+   "kind": "fact",
+   "scope": {
+    "kind": "task",
+    "id": "release-2026-q4"
+   },
+   "summary": "Follow-up: blockers and captain",
+   "body": "The current captain setup works; the old go/no-go notes are out of date. Added a line to the captain checklist and one to the release candidate checklist. The freeze is fine for now; revisit the go/no-go later. Added a line to the release candidate checklist and one to the release candidate checklist. The captain is fine for now; revisit the captain later. Logged the captain work so the next session has context. The freeze came up while answering a question about the blockers. The captain is fine for now; revisit the go/no-go later. Someone asked in one line what the launch was for; the answer was in an earlier note. Logged the blockers work so the next session has context. The launch came up while answering a question about the launch.",
+   "recorded_at": "2026-01-25T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-015",
+   "kind": "commitment",
+   "scope": {
+    "kind": "signet"
+   },
+   "summary": "Check-in: shell and answers",
+   "body": "Added a line to the editor checklist and one to the commit messages checklist. Logged the spelling work so the next session has context. The answers came up while answering a question about the shell. Prompted to recall the documents; the existing context was enough. One line summary: the documents and the commit messages still need a look. We looked at the documents again and the timezone in the same session.",
+   "recorded_at": "2026-09-18T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-016",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Working notes: assistant and hub",
+   "body": "The assistant came up while answering a question about the firmware. The assistant already had context on the NAS, so no tools were called. Logged the hub work so the next session has context. Need to call back about the firmware after the door panel is done. The NAS is fine for now; revisit the backup later.",
+   "recorded_at": "2026-07-10T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-017",
+   "kind": "fact",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Review: tokens and error responses",
+   "body": "Answer from context next time instead of calling tools for the error responses. One line summary: the tokens and the production still need a look. The current tokens setup works; the old cache notes are out of date. The tokens is fine for now; revisit the tokens later. Added a line to the error responses checklist and one to the on-call checklist. One line summary: the staging and the cache still need a look. Checked the request logs against the error responses; nothing to change. No decision about the tokens yet; the migrations is unchanged. No decision about the API yet; the production is unchanged. Checked the deploy against the tokens; nothing to change. Checked the production against the API; nothing to change. Someone asked in one line what the deploy was for; the answer was in an earlier note.",
+   "recorded_at": "2026-03-18T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-018",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "Check-in: flags and plugin system",
+   "body": "Someone asked in one line what the telemetry was for; the answer was in an earlier note. Need to call back about the completions after the plugin system is done. Answer from context next time instead of calling tools for the license. We looked at the tests again and the release in the same session. Prompted to recall the tests; the existing context was enough. One line summary: the flags and the telemetry still need a look. Prompted to recall the plugin system; the existing context was enough. Prompted to recall the tests; the existing context was enough.",
+   "recorded_at": "2026-05-06T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-019",
+   "kind": "research-claim",
+   "scope": {
+    "kind": "project",
+    "id": "orchard"
+   },
+   "summary": "Quick note: harvest and planner app",
+   "body": "Logged the seedlings work so the next session has context. Added a line to the compost checklist and one to the compost checklist. We looked at the tomatoes again and the drip irrigation in the same session. Added a line to the frost checklist and one to the compost checklist. Added a line to the frost checklist and one to the frost checklist. The assistant already had context on the harvest, so no tools were called. Answer from context next time instead of calling tools for the planner app. The compost is fine for now; revisit the frost later. Answer from context next time instead of calling tools for the compost. Prompted to recall the tomatoes; the existing context was enough.",
+   "recorded_at": "2026-10-02T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-020",
+   "kind": "research-claim",
+   "scope": {
+    "kind": "account",
+    "id": "mail-example"
+   },
+   "summary": "Session notes: aliases and archive",
+   "body": "The current aliases setup works; the old filters notes are out of date. The assistant already had context on the archive, so no tools were called. Added a line to the aliases checklist and one to the folders checklist. We looked at the archive again and the folders in the same session. The folders came up while answering a question about the archive.",
+   "recorded_at": "2026-04-25T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-021",
+   "kind": "project-state",
+   "scope": {
+    "kind": "account",
+    "id": "cloud-example"
+   },
+   "summary": "Working notes: IAM and budget",
+   "body": "One line summary: the alerts and the alerts still need a look. The current alerts setup works; the old region notes are out of date. Checked the compute against the compute; nothing to change. Someone asked in one line what the compute was for; the answer was in an earlier note. One line summary: the alerts and the budget still need a look. We looked at the region again and the budget in the same session. We looked at the storage again and the budget in the same session. Prompted to recall the budget; the existing context was enough.",
+   "recorded_at": "2026-09-14T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-022",
+   "kind": "commitment",
+   "scope": {
+    "kind": "task",
+    "id": "release-2026-q4"
+   },
+   "summary": "Status: go/no-go and blockers",
+   "body": "Answer from context next time instead of calling tools for the release candidate. No decision about the release candidate yet; the changelog is unchanged. No decision about the launch yet; the blockers is unchanged. Prompted to recall the launch; the existing context was enough.",
+   "recorded_at": "2026-01-07T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-023",
+   "kind": "project-state",
+   "scope": {
+    "kind": "signet"
+   },
+   "summary": "Quick note: commit messages and spelling",
+   "body": "Need to call back about the units after the documents is done. Answer from context next time instead of calling tools for the shell. The documents came up while answering a question about the answers. We looked at the commit messages again and the units in the same session. Logged the units work so the next session has context. The current editor setup works; the old timezone notes are out of date. Prompted to recall the documents; the existing context was enough. Added a line to the timezone checklist and one to the timezone checklist. Checked the shell against the shell; nothing to change. Added a line to the units checklist and one to the editor checklist.",
+   "recorded_at": "2026-06-03T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-024",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Quick note: home network and cameras",
+   "body": "Checked the assistant against the access point; nothing to change. Prompted to recall the cameras; the existing context was enough. The home network is fine for now; revisit the hub later. The hub came up while answering a question about the assistant. No decision about the printer yet; the router is unchanged. Added a line to the DNS checklist and one to the router checklist. The assistant already had context on the printer, so no tools were called.",
+   "recorded_at": "2026-09-03T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-025",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Session notes: production and rate limit",
+   "body": "Answer from context next time instead of calling tools for the on-call. The error responses is fine for now; revisit the staging later. Added a line to the rate limit checklist and one to the API checklist. Added a line to the on-call checklist and one to the staging checklist. Need to call back about the database after the error responses is done. The current request logs setup works; the old on-call notes are out of date. The current tokens setup works; the old cache notes are out of date. Answer from context next time instead of calling tools for the request logs. Logged the tokens work so the next session has context. One line summary: the production and the tokens still need a look.",
+   "recorded_at": "2026-02-24T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-026",
+   "kind": "fact",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "Working notes: Go version and license",
+   "body": "Logged the license work so the next session has context. Added a line to the config file checklist and one to the config file checklist. Logged the Go version work so the next session has context. One line summary: the completions and the tests still need a look. The release came up while answering a question about the config file. One line summary: the release and the plugin system still need a look.",
+   "recorded_at": "2026-09-04T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-027",
+   "kind": "commitment",
+   "scope": {
+    "kind": "project",
+    "id": "orchard"
+   },
+   "summary": "Quick note: mulch and planner app",
+   "body": "Logged the harvest work so the next session has context. We looked at the beds again and the frost in the same session. No decision about the compost yet; the drip irrigation is unchanged. Someone asked in one line what the frost was for; the answer was in an earlier note.",
+   "recorded_at": "2026-10-17T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-028",
+   "kind": "fact",
+   "scope": {
+    "kind": "account",
+    "id": "mail-example"
+   },
+   "summary": "Follow-up: folders and newsletters",
+   "body": "No decision about the filters yet; the inbox is unchanged. Need to call back about the signature after the signature is done. The current archive setup works; the old aliases notes are out of date. The current signature setup works; the old aliases notes are out of date. We looked at the archive again and the newsletters in the same session.",
+   "recorded_at": "2026-07-25T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-029",
+   "kind": "commitment",
+   "scope": {
+    "kind": "account",
+    "id": "cloud-example"
+   },
+   "summary": "Check-in: IAM and region",
+   "body": "The assistant already had context on the region, so no tools were called. Answer from context next time instead of calling tools for the region. Checked the storage against the IAM; nothing to change. Logged the budget work so the next session has context. Added a line to the storage checklist and one to the invoice checklist. Checked the invoice against the compute; nothing to change. The budget is fine for now; revisit the compute later. The assistant already had context on the IAM, so no tools were called. Someone asked in one line what the region was for; the answer was in an earlier note. Someone asked in one line what the compute was for; the answer was in an earlier note. One line summary: the region and the IAM still need a look.",
+   "recorded_at": "2026-07-25T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-030",
+   "kind": "project-state",
+   "scope": {
+    "kind": "task",
+    "id": "release-2026-q4"
+   },
+   "summary": "Status: changelog and captain",
+   "body": "No decision about the launch yet; the go/no-go is unchanged. Checked the go/no-go against the blockers; nothing to change. No decision about the changelog yet; the go/no-go is unchanged. We looked at the go/no-go again and the blockers in the same session. The go/no-go came up while answering a question about the freeze. Someone asked in one line what the launch was for; the answer was in an earlier note. We looked at the release candidate again and the launch in the same session. We looked at the launch again and the blockers in the same session.",
+   "recorded_at": "2026-04-17T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-031",
+   "kind": "research-claim",
+   "scope": {
+    "kind": "signet"
+   },
+   "summary": "Quick note: units and timezone",
+   "body": "The assistant already had context on the shell, so no tools were called. The editor came up while answering a question about the units. Answer from context next time instead of calling tools for the documents. One line summary: the commit messages and the documents still need a look. The editor came up while answering a question about the units.",
+   "recorded_at": "2026-08-07T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-032",
+   "kind": "fact",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Session notes: home network and DNS",
+   "body": "No decision about the printer yet; the hub is unchanged. Prompted to recall the NAS; the existing context was enough. The firmware is fine for now; revisit the VLAN later. No decision about the home network yet; the assistant is unchanged. The hub is fine for now; revisit the VLAN later. The printer is fine for now; revisit the UPS later. The assistant is fine for now; revisit the router later. Prompted to recall the hub; the existing context was enough. No decision about the hub yet; the home network is unchanged. The DNS came up while answering a question about the firmware. No decision about the router yet; the printer is unchanged. Logged the home network work so the next session has context.",
+   "recorded_at": "2026-06-15T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-033",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Working notes: migrations and staging",
+   "body": "One line summary: the database and the production still need a look. Answer from context next time instead of calling tools for the migrations. The current database setup works; the old API notes are out of date. Logged the deploy work so the next session has context. Someone asked in one line what the on-call was for; the answer was in an earlier note. The current deploy setup works; the old rate limit notes are out of date. Need to call back about the error responses after the database is done. Logged the migrations work so the next session has context. We looked at the migrations again and the staging in the same session. Answer from context next time instead of calling tools for the production.",
+   "recorded_at": "2026-06-25T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-034",
+   "kind": "commitment",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "Context: packaging and completions",
+   "body": "The completions is fine for now; revisit the flags later. The current tests setup works; the old telemetry notes are out of date. The tests came up while answering a question about the plugin system. No decision about the Go version yet; the license is unchanged. Need to call back about the config file after the license is done. Checked the release against the completions; nothing to change. Someone asked in one line what the completions was for; the answer was in an earlier note. One line summary: the config file and the plugin system still need a look. The current tests setup works; the old completions notes are out of date. No decision about the plugin system yet; the config file is unchanged. Need to call back about the release after the telemetry is done.",
+   "recorded_at": "2026-06-15T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-035",
+   "kind": "fact",
+   "scope": {
+    "kind": "project",
+    "id": "orchard"
+   },
+   "summary": "Working notes: compost and harvest",
+   "body": "Need to call back about the mulch after the seedlings is done. The current frost setup works; the old seedlings notes are out of date. Checked the beds against the compost; nothing to change. The drip irrigation is fine for now; revisit the planner app later. Logged the tomatoes work so the next session has context. Checked the frost against the beds; nothing to change. Prompted to recall the drip irrigation; the existing context was enough. The current beds setup works; the old planner app notes are out of date. The frost is fine for now; revisit the tomatoes later. No decision about the beds yet; the beds is unchanged. Someone asked in one line what the frost was for; the answer was in an earlier note.",
+   "recorded_at": "2026-01-09T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-036",
+   "kind": "project-state",
+   "scope": {
+    "kind": "account",
+    "id": "mail-example"
+   },
+   "summary": "Follow-up: archive and newsletters",
+   "body": "Answer from context next time instead of calling tools for the signature. Someone asked in one line what the inbox was for; the answer was in an earlier note. Checked the filters against the signature; nothing to change. Prompted to recall the signature; the existing context was enough. The archive came up while answering a question about the archive. The assistant already had context on the folders, so no tools were called. Prompted to recall the archive; the existing context was enough.",
+   "recorded_at": "2026-09-19T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-037",
+   "kind": "project-state",
+   "scope": {
+    "kind": "account",
+    "id": "cloud-example"
+   },
+   "summary": "Status: alerts and compute",
+   "body": "The budget came up while answering a question about the compute. We looked at the budget again and the compute in the same session. Need to call back about the IAM after the budget is done. We looked at the IAM again and the IAM in the same session. Someone asked in one line what the IAM was for; the answer was in an earlier note. One line summary: the compute and the alerts still need a look. The region is fine for now; revisit the budget later. The compute is fine for now; revisit the budget later. The current region setup works; the old storage notes are out of date. Need to call back about the invoice after the budget is done.",
+   "recorded_at": "2026-09-13T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-038",
+   "kind": "research-claim",
+   "scope": {
+    "kind": "task",
+    "id": "release-2026-q4"
+   },
+   "summary": "Follow-up: release candidate and captain",
+   "body": "The current blockers setup works; the old go/no-go notes are out of date. Answer from context next time instead of calling tools for the go/no-go. No decision about the release candidate yet; the launch is unchanged. Someone asked in one line what the changelog was for; the answer was in an earlier note. We looked at the launch again and the changelog in the same session. Someone asked in one line what the changelog was for; the answer was in an earlier note. Someone asked in one line what the changelog was for; the answer was in an earlier note. We looked at the captain again and the changelog in the same session. The current captain setup works; the old blockers notes are out of date. The launch is fine for now; revisit the release candidate later. The current release candidate setup works; the old go/no-go notes are out of date. One line summary: the go/no-go and the changelog still need a look.",
+   "recorded_at": "2026-05-28T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-039",
+   "kind": "project-state",
+   "scope": {
+    "kind": "signet"
+   },
+   "summary": "Working notes: answers and spelling",
+   "body": "The documents came up while answering a question about the editor. The current shell setup works; the old documents notes are out of date. Checked the editor against the timezone; nothing to change. The units is fine for now; revisit the units later. One line summary: the commit messages and the documents still need a look. The current documents setup works; the old editor notes are out of date. No decision about the answers yet; the units is unchanged.",
+   "recorded_at": "2026-05-23T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-040",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Follow-up: assistant and UPS",
+   "body": "One line summary: the UPS and the access point still need a look. We looked at the assistant again and the door panel in the same session. Someone asked in one line what the access point was for; the answer was in an earlier note. No decision about the firmware yet; the assistant is unchanged. Someone asked in one line what the cameras was for; the answer was in an earlier note. No decision about the firmware yet; the cameras is unchanged.",
+   "recorded_at": "2026-05-26T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-041",
+   "kind": "commitment",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Review: API and staging",
+   "body": "Prompted to recall the cache; the existing context was enough. The current request logs setup works; the old on-call notes are out of date. Someone asked in one line what the staging was for; the answer was in an earlier note. One line summary: the database and the error responses still need a look.",
+   "recorded_at": "2026-04-24T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-042",
+   "kind": "fact",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "Session notes: tests and release",
+   "body": "Answer from context next time instead of calling tools for the flags. The telemetry came up while answering a question about the Go version. Added a line to the packaging checklist and one to the Go version checklist. Someone asked in one line what the Go version was for; the answer was in an earlier note. Someone asked in one line what the flags was for; the answer was in an earlier note. The assistant already had context on the release, so no tools were called.",
+   "recorded_at": "2026-07-05T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-043",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "orchard"
+   },
+   "summary": "Working notes: drip irrigation and frost",
+   "body": "Added a line to the mulch checklist and one to the seedlings checklist. We looked at the drip irrigation again and the mulch in the same session. One line summary: the drip irrigation and the drip irrigation still need a look. The planner app is fine for now; revisit the harvest later. Prompted to recall the tomatoes; the existing context was enough. The current frost setup works; the old harvest notes are out of date. The tomatoes came up while answering a question about the harvest. Logged the planner app work so the next session has context.",
+   "recorded_at": "2026-04-11T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-044",
+   "kind": "project-state",
+   "scope": {
+    "kind": "account",
+    "id": "mail-example"
+   },
+   "summary": "Status: filters and inbox",
+   "body": "Checked the inbox against the folders; nothing to change. Need to call back about the folders after the newsletters is done. The folders is fine for now; revisit the signature later. The newsletters is fine for now; revisit the filters later. One line summary: the aliases and the archive still need a look. The current signature setup works; the old archive notes are out of date. Added a line to the filters checklist and one to the signature checklist.",
+   "recorded_at": "2026-04-10T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-045",
+   "kind": "research-claim",
+   "scope": {
+    "kind": "account",
+    "id": "cloud-example"
+   },
+   "summary": "Review: region and IAM",
+   "body": "The invoice came up while answering a question about the compute. Checked the alerts against the region; nothing to change. The storage came up while answering a question about the invoice. The assistant already had context on the region, so no tools were called. Someone asked in one line what the invoice was for; the answer was in an earlier note. Need to call back about the alerts after the IAM is done. No decision about the invoice yet; the compute is unchanged. Checked the region against the budget; nothing to change. Added a line to the IAM checklist and one to the budget checklist.",
+   "recorded_at": "2026-05-06T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-046",
+   "kind": "commitment",
+   "scope": {
+    "kind": "task",
+    "id": "release-2026-q4"
+   },
+   "summary": "Quick note: captain and blockers",
+   "body": "Prompted to recall the go/no-go; the existing context was enough. Answer from context next time instead of calling tools for the launch. One line summary: the freeze and the go/no-go still need a look. The assistant already had context on the launch, so no tools were called.",
+   "recorded_at": "2026-02-07T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-047",
+   "kind": "commitment",
+   "scope": {
+    "kind": "signet"
+   },
+   "summary": "Context: shell and spelling",
+   "body": "Checked the editor against the documents; nothing to change. Checked the units against the commit messages; nothing to change. The timezone came up while answering a question about the spelling. The assistant already had context on the shell, so no tools were called. Logged the units work so the next session has context. The units is fine for now; revisit the spelling later. The commit messages came up while answering a question about the shell. Added a line to the timezone checklist and one to the documents checklist. The current commit messages setup works; the old documents notes are out of date. Need to call back about the shell after the timezone is done. Checked the spelling against the commit messages; nothing to change.",
+   "recorded_at": "2026-05-05T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-048",
+   "kind": "research-claim",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Working notes: home network and cameras",
+   "body": "Answer from context next time instead of calling tools for the UPS. Logged the hub work so the next session has context. The home network came up while answering a question about the DNS. Answer from context next time instead of calling tools for the cameras. One line summary: the door panel and the backup still need a look. Prompted to recall the printer; the existing context was enough. The assistant already had context on the cameras, so no tools were called. Checked the home network against the door panel; nothing to change. The DNS came up while answering a question about the DNS. The assistant already had context on the firmware, so no tools were called. Checked the cameras against the router; nothing to change.",
+   "recorded_at": "2026-01-20T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-049",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Working notes: cache and staging",
+   "body": "The API is fine for now; revisit the on-call later. The on-call is fine for now; revisit the production later. Added a line to the production checklist and one to the tokens checklist. Prompted to recall the cache; the existing context was enough. Need to call back about the API after the rate limit is done.",
+   "recorded_at": "2026-04-01T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-050",
+   "kind": "commitment",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "Quick note: plugin system and license",
+   "body": "The current release setup works; the old plugin system notes are out of date. The assistant already had context on the release, so no tools were called. Checked the config file against the license; nothing to change. Answer from context next time instead of calling tools for the completions. The tests came up while answering a question about the telemetry. The telemetry is fine for now; revisit the packaging later. We looked at the Go version again and the tests in the same session. Logged the release work so the next session has context. Need to call back about the flags after the plugin system is done. No decision about the config file yet; the packaging is unchanged. Checked the Go version against the Go version; nothing to change. Checked the telemetry against the completions; nothing to change.",
+   "recorded_at": "2026-08-03T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-051",
+   "kind": "fact",
+   "scope": {
+    "kind": "project",
+    "id": "orchard"
+   },
+   "summary": "Context: seedlings and compost",
+   "body": "Someone asked in one line what the compost was for; the answer was in an earlier note. Logged the seedlings work so the next session has context. The current mulch setup works; the old beds notes are out of date. Need to call back about the compost after the tomatoes is done. Added a line to the frost checklist and one to the harvest checklist. Checked the planner app against the compost; nothing to change. No decision about the compost yet; the harvest is unchanged.",
+   "recorded_at": "2026-10-13T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-052",
+   "kind": "project-state",
+   "scope": {
+    "kind": "account",
+    "id": "mail-example"
+   },
+   "summary": "Working notes: filters and inbox",
+   "body": "Answer from context next time instead of calling tools for the archive. The assistant already had context on the inbox, so no tools were called. Checked the archive against the filters; nothing to change. The assistant already had context on the signature, so no tools were called.",
+   "recorded_at": "2026-08-04T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-053",
+   "kind": "commitment",
+   "scope": {
+    "kind": "account",
+    "id": "cloud-example"
+   },
+   "summary": "Quick note: storage and alerts",
+   "body": "The assistant already had context on the alerts, so no tools were called. No decision about the budget yet; the budget is unchanged. One line summary: the budget and the alerts still need a look. Need to call back about the storage after the storage is done. The alerts came up while answering a question about the storage. Prompted to recall the region; the existing context was enough. Added a line to the alerts checklist and one to the IAM checklist. Need to call back about the compute after the storage is done. One line summary: the IAM and the storage still need a look. No decision about the alerts yet; the storage is unchanged. Someone asked in one line what the compute was for; the answer was in an earlier note. No decision about the invoice yet; the IAM is unchanged.",
+   "recorded_at": "2026-05-21T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-054",
+   "kind": "fact",
+   "scope": {
+    "kind": "task",
+    "id": "release-2026-q4"
+   },
+   "summary": "Status: captain and go/no-go",
+   "body": "One line summary: the changelog and the changelog still need a look. The assistant already had context on the freeze, so no tools were called. We looked at the launch again and the blockers in the same session. Logged the go/no-go work so the next session has context. Added a line to the freeze checklist and one to the blockers checklist. One line summary: the changelog and the captain still need a look.",
+   "recorded_at": "2026-03-19T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-055",
+   "kind": "commitment",
+   "scope": {
+    "kind": "signet"
+   },
+   "summary": "Check-in: spelling and commit messages",
+   "body": "One line summary: the units and the units still need a look. Checked the timezone against the editor; nothing to change. The commit messages is fine for now; revisit the timezone later. Added a line to the answers checklist and one to the editor checklist. The assistant already had context on the answers, so no tools were called.",
+   "recorded_at": "2026-02-11T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-056",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Status: DNS and VLAN",
+   "body": "The cameras is fine for now; revisit the backup later. We looked at the home network again and the hub in the same session. Answer from context next time instead of calling tools for the VLAN. The current router setup works; the old router notes are out of date. One line summary: the VLAN and the printer still need a look. Logged the assistant work so the next session has context. Prompted to recall the assistant; the existing context was enough. Added a line to the backup checklist and one to the UPS checklist. Someone asked in one line what the printer was for; the answer was in an earlier note. Need to call back about the door panel after the router is done. Added a line to the router checklist and one to the DNS checklist.",
+   "recorded_at": "2026-02-18T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-057",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Context: migrations and API",
+   "body": "We looked at the database again and the rate limit in the same session. Someone asked in one line what the database was for; the answer was in an earlier note. Checked the rate limit against the error responses; nothing to change. Answer from context next time instead of calling tools for the request logs. We looked at the error responses again and the database in the same session. We looked at the database again and the staging in the same session.",
+   "recorded_at": "2026-10-17T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-058",
+   "kind": "commitment",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "Review: config file and packaging",
+   "body": "Checked the tests against the config file; nothing to change. The current packaging setup works; the old completions notes are out of date. The current flags setup works; the old tests notes are out of date. Answer from context next time instead of calling tools for the Go version. No decision about the flags yet; the plugin system is unchanged. Someone asked in one line what the flags was for; the answer was in an earlier note. The assistant already had context on the config file, so no tools were called. The release came up while answering a question about the Go version. The assistant already had context on the Go version, so no tools were called.",
+   "recorded_at": "2026-03-21T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-059",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "orchard"
+   },
+   "summary": "Check-in: drip irrigation and beds",
+   "body": "Answer from context next time instead of calling tools for the tomatoes. Someone asked in one line what the beds was for; the answer was in an earlier note. We looked at the compost again and the tomatoes in the same session. Prompted to recall the tomatoes; the existing context was enough. Added a line to the harvest checklist and one to the drip irrigation checklist. Someone asked in one line what the beds was for; the answer was in an earlier note. Checked the seedlings against the harvest; nothing to change.",
+   "recorded_at": "2026-03-04T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-060",
+   "kind": "project-state",
+   "scope": {
+    "kind": "account",
+    "id": "mail-example"
+   },
+   "summary": "Quick note: aliases and filters",
+   "body": "Someone asked in one line what the archive was for; the answer was in an earlier note. Added a line to the archive checklist and one to the archive checklist. The assistant already had context on the folders, so no tools were called. Logged the newsletters work so the next session has context. One line summary: the signature and the filters still need a look. We looked at the inbox again and the archive in the same session. Need to call back about the folders after the folders is done. Need to call back about the aliases after the folders is done. Checked the newsletters against the aliases; nothing to change. Checked the newsletters against the filters; nothing to change.",
+   "recorded_at": "2026-03-23T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-061",
+   "kind": "commitment",
+   "scope": {
+    "kind": "account",
+    "id": "cloud-example"
+   },
+   "summary": "Status: region and invoice",
+   "body": "The IAM came up while answering a question about the IAM. One line summary: the storage and the invoice still need a look. Someone asked in one line what the IAM was for; the answer was in an earlier note. We looked at the IAM again and the region in the same session. Need to call back about the IAM after the alerts is done. Someone asked in one line what the region was for; the answer was in an earlier note. Need to call back about the IAM after the region is done.",
+   "recorded_at": "2026-07-16T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-062",
+   "kind": "fact",
+   "scope": {
+    "kind": "task",
+    "id": "release-2026-q4"
+   },
+   "summary": "Session notes: captain and freeze",
+   "body": "We looked at the freeze again and the release candidate in the same session. Answer from context next time instead of calling tools for the changelog. Someone asked in one line what the captain was for; the answer was in an earlier note. Logged the changelog work so the next session has context. One line summary: the blockers and the launch still need a look. Logged the freeze work so the next session has context. The release candidate came up while answering a question about the go/no-go. The current freeze setup works; the old launch notes are out of date. Added a line to the changelog checklist and one to the release candidate checklist.",
+   "recorded_at": "2026-01-05T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-063",
+   "kind": "research-claim",
+   "scope": {
+    "kind": "signet"
+   },
+   "summary": "Quick note: editor and answers",
+   "body": "Need to call back about the units after the answers is done. Answer from context next time instead of calling tools for the documents. One line summary: the answers and the editor still need a look. Answer from context next time instead of calling tools for the timezone.",
+   "recorded_at": "2026-07-26T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-064",
+   "kind": "fact",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Status: NAS and UPS",
+   "body": "Added a line to the backup checklist and one to the backup checklist. Logged the home network work so the next session has context. Added a line to the UPS checklist and one to the hub checklist. Added a line to the hub checklist and one to the access point checklist. Someone asked in one line what the assistant was for; the answer was in an earlier note. Added a line to the router checklist and one to the NAS checklist. Added a line to the cameras checklist and one to the firmware checklist. Answer from context next time instead of calling tools for the printer.",
+   "recorded_at": "2026-06-09T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-065",
+   "kind": "fact",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Session notes: tokens and error responses",
+   "body": "Answer from context next time instead of calling tools for the error responses. Prompted to recall the staging; the existing context was enough. Checked the on-call against the cache; nothing to change. The current staging setup works; the old production notes are out of date. The assistant already had context on the on-call, so no tools were called. No decision about the migrations yet; the request logs is unchanged. Someone asked in one line what the rate limit was for; the answer was in an earlier note.",
+   "recorded_at": "2026-02-08T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-066",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "Quick note: telemetry and tests",
+   "body": "We looked at the Go version again and the plugin system in the same session. Need to call back about the packaging after the Go version is done. Checked the plugin system against the completions; nothing to change. The Go version is fine for now; revisit the plugin system later. The flags came up while answering a question about the release. Prompted to recall the license; the existing context was enough. Checked the release against the Go version; nothing to change. No decision about the Go version yet; the completions is unchanged. The current packaging setup works; the old plugin system notes are out of date. One line summary: the telemetry and the config file still need a look.",
+   "recorded_at": "2026-09-27T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-067",
+   "kind": "research-claim",
+   "scope": {
+    "kind": "project",
+    "id": "orchard"
+   },
+   "summary": "Session notes: compost and beds",
+   "body": "Checked the tomatoes against the compost; nothing to change. No decision about the drip irrigation yet; the seedlings is unchanged. Checked the compost against the planner app; nothing to change. The current drip irrigation setup works; the old harvest notes are out of date. Logged the frost work so the next session has context. The harvest is fine for now; revisit the mulch later. We looked at the planner app again and the frost in the same session. Logged the compost work so the next session has context. One line summary: the beds and the compost still need a look.",
+   "recorded_at": "2026-07-09T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-068",
+   "kind": "fact",
+   "scope": {
+    "kind": "account",
+    "id": "mail-example"
+   },
+   "summary": "Quick note: archive and inbox",
+   "body": "Checked the archive against the aliases; nothing to change. The current newsletters setup works; the old filters notes are out of date. Prompted to recall the folders; the existing context was enough. Checked the folders against the signature; nothing to change. Logged the folders work so the next session has context. Someone asked in one line what the signature was for; the answer was in an earlier note. Checked the inbox against the filters; nothing to change. Answer from context next time instead of calling tools for the signature. Checked the inbox against the aliases; nothing to change. Logged the aliases work so the next session has context.",
+   "recorded_at": "2026-06-17T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-069",
+   "kind": "commitment",
+   "scope": {
+    "kind": "account",
+    "id": "cloud-example"
+   },
+   "summary": "Working notes: invoice and IAM",
+   "body": "Checked the invoice against the compute; nothing to change. No decision about the storage yet; the region is unchanged. No decision about the alerts yet; the storage is unchanged. The current IAM setup works; the old alerts notes are out of date. One line summary: the region and the invoice still need a look. Answer from context next time instead of calling tools for the compute. Added a line to the compute checklist and one to the alerts checklist. The current budget setup works; the old alerts notes are out of date. Need to call back about the IAM after the budget is done. One line summary: the budget and the budget still need a look. The budget is fine for now; revisit the compute later.",
+   "recorded_at": "2026-02-25T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-070",
+   "kind": "research-claim",
+   "scope": {
+    "kind": "task",
+    "id": "release-2026-q4"
+   },
+   "summary": "Review: launch and go/no-go",
+   "body": "The launch is fine for now; revisit the blockers later. The assistant already had context on the go/no-go, so no tools were called. The release candidate is fine for now; revisit the blockers later. One line summary: the freeze and the changelog still need a look. One line summary: the blockers and the changelog still need a look.",
+   "recorded_at": "2026-06-02T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-071",
+   "kind": "project-state",
+   "scope": {
+    "kind": "signet"
+   },
+   "summary": "Review: commit messages and spelling",
+   "body": "The editor came up while answering a question about the documents. Added a line to the editor checklist and one to the shell checklist. No decision about the shell yet; the answers is unchanged. Logged the units work so the next session has context. We looked at the spelling again and the units in the same session. Prompted to recall the commit messages; the existing context was enough. No decision about the units yet; the timezone is unchanged. Logged the commit messages work so the next session has context. The answers came up while answering a question about the answers. The current answers setup works; the old units notes are out of date. Someone asked in one line what the editor was for; the answer was in an earlier note. The current shell setup works; the old answers notes are out of date.",
+   "recorded_at": "2026-01-21T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-072",
+   "kind": "commitment",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Working notes: printer and UPS",
+   "body": "The firmware came up while answering a question about the access point. One line summary: the assistant and the door panel still need a look. One line summary: the backup and the printer still need a look. One line summary: the printer and the firmware still need a look. Logged the assistant work so the next session has context. The assistant already had context on the printer, so no tools were called.",
+   "recorded_at": "2026-05-23T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-073",
+   "kind": "commitment",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Quick note: production and API",
+   "body": "Logged the database work so the next session has context. Someone asked in one line what the migrations was for; the answer was in an earlier note. Logged the migrations work so the next session has context. Added a line to the migrations checklist and one to the migrations checklist. Prompted to recall the production; the existing context was enough. The migrations is fine for now; revisit the rate limit later.",
+   "recorded_at": "2026-06-24T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-074",
+   "kind": "research-claim",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "Context: tests and completions",
+   "body": "Need to call back about the license after the flags is done. Logged the release work so the next session has context. We looked at the license again and the tests in the same session. Someone asked in one line what the license was for; the answer was in an earlier note. Logged the release work so the next session has context. Logged the tests work so the next session has context. Prompted to recall the packaging; the existing context was enough. The assistant already had context on the Go version, so no tools were called. No decision about the tests yet; the completions is unchanged. Need to call back about the flags after the Go version is done. One line summary: the flags and the packaging still need a look.",
+   "recorded_at": "2026-10-14T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-075",
+   "kind": "research-claim",
+   "scope": {
+    "kind": "project",
+    "id": "orchard"
+   },
+   "summary": "Session notes: beds and drip irrigation",
+   "body": "Checked the tomatoes against the tomatoes; nothing to change. The current seedlings setup works; the old beds notes are out of date. Someone asked in one line what the frost was for; the answer was in an earlier note. One line summary: the drip irrigation and the mulch still need a look. Checked the compost against the compost; nothing to change. Someone asked in one line what the beds was for; the answer was in an earlier note. Logged the frost work so the next session has context. The planner app is fine for now; revisit the tomatoes later.",
+   "recorded_at": "2026-03-06T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-076",
+   "kind": "research-claim",
+   "scope": {
+    "kind": "account",
+    "id": "mail-example"
+   },
+   "summary": "Context: inbox and filters",
+   "body": "Prompted to recall the signature; the existing context was enough. The aliases came up while answering a question about the signature. Prompted to recall the inbox; the existing context was enough. The newsletters is fine for now; revisit the newsletters later. Prompted to recall the filters; the existing context was enough. The filters is fine for now; revisit the filters later. The archive came up while answering a question about the newsletters. Need to call back about the aliases after the inbox is done. The inbox is fine for now; revisit the filters later. Added a line to the folders checklist and one to the inbox checklist.",
+   "recorded_at": "2026-03-02T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-077",
+   "kind": "research-claim",
+   "scope": {
+    "kind": "account",
+    "id": "cloud-example"
+   },
+   "summary": "Follow-up: compute and IAM",
+   "body": "The current IAM setup works; the old compute notes are out of date. We looked at the storage again and the storage in the same session. One line summary: the region and the budget still need a look. Need to call back about the invoice after the budget is done. The current alerts setup works; the old compute notes are out of date. Added a line to the alerts checklist and one to the compute checklist. Prompted to recall the alerts; the existing context was enough.",
+   "recorded_at": "2026-09-22T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-078",
+   "kind": "research-claim",
+   "scope": {
+    "kind": "task",
+    "id": "release-2026-q4"
+   },
+   "summary": "Working notes: release candidate and launch",
+   "body": "We looked at the launch again and the freeze in the same session. The current changelog setup works; the old captain notes are out of date. Answer from context next time instead of calling tools for the captain. No decision about the captain yet; the launch is unchanged. The blockers came up while answering a question about the release candidate. The go/no-go is fine for now; revisit the freeze later. Prompted to recall the changelog; the existing context was enough. Checked the go/no-go against the launch; nothing to change. Answer from context next time instead of calling tools for the launch.",
+   "recorded_at": "2026-10-22T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-079",
+   "kind": "commitment",
+   "scope": {
+    "kind": "signet"
+   },
+   "summary": "Status: shell and spelling",
+   "body": "Added a line to the timezone checklist and one to the shell checklist. The assistant already had context on the documents, so no tools were called. Answer from context next time instead of calling tools for the shell. No decision about the spelling yet; the units is unchanged. The assistant already had context on the spelling, so no tools were called. The shell came up while answering a question about the units. The current timezone setup works; the old documents notes are out of date. Need to call back about the spelling after the editor is done.",
+   "recorded_at": "2026-04-14T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-080",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Session notes: VLAN and backup",
+   "body": "Need to call back about the door panel after the access point is done. The cameras came up while answering a question about the printer. Need to call back about the home network after the door panel is done. One line summary: the DNS and the router still need a look. Someone asked in one line what the cameras was for; the answer was in an earlier note.",
+   "recorded_at": "2026-03-15T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-081",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Status: error responses and on-call",
+   "body": "One line summary: the migrations and the cache still need a look. Answer from context next time instead of calling tools for the production. One line summary: the request logs and the migrations still need a look. Someone asked in one line what the staging was for; the answer was in an earlier note. Someone asked in one line what the cache was for; the answer was in an earlier note. Added a line to the deploy checklist and one to the deploy checklist. The on-call is fine for now; revisit the on-call later. Someone asked in one line what the error responses was for; the answer was in an earlier note. One line summary: the cache and the tokens still need a look.",
+   "recorded_at": "2026-09-12T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-082",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "Review: flags and tests",
+   "body": "One line summary: the telemetry and the plugin system still need a look. The Go version came up while answering a question about the telemetry. We looked at the config file again and the telemetry in the same session. Answer from context next time instead of calling tools for the Go version. The assistant already had context on the tests, so no tools were called. The completions came up while answering a question about the config file. Prompted to recall the plugin system; the existing context was enough. One line summary: the tests and the tests still need a look. Answer from context next time instead of calling tools for the release. Need to call back about the config file after the config file is done.",
+   "recorded_at": "2026-01-12T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-083",
+   "kind": "commitment",
+   "scope": {
+    "kind": "project",
+    "id": "orchard"
+   },
+   "summary": "Check-in: frost and beds",
+   "body": "Checked the drip irrigation against the tomatoes; nothing to change. Prompted to recall the compost; the existing context was enough. One line summary: the compost and the seedlings still need a look. Added a line to the harvest checklist and one to the beds checklist.",
+   "recorded_at": "2026-02-11T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-084",
+   "kind": "project-state",
+   "scope": {
+    "kind": "account",
+    "id": "mail-example"
+   },
+   "summary": "Review: archive and signature",
+   "body": "The newsletters came up while answering a question about the signature. We looked at the archive again and the inbox in the same session. Someone asked in one line what the folders was for; the answer was in an earlier note. Prompted to recall the aliases; the existing context was enough. We looked at the signature again and the archive in the same session. Logged the archive work so the next session has context. We looked at the folders again and the folders in the same session. One line summary: the newsletters and the newsletters still need a look. The current aliases setup works; the old archive notes are out of date.",
+   "recorded_at": "2026-10-08T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-085",
+   "kind": "project-state",
+   "scope": {
+    "kind": "account",
+    "id": "cloud-example"
+   },
+   "summary": "Session notes: storage and compute",
+   "body": "The current invoice setup works; the old budget notes are out of date. Prompted to recall the invoice; the existing context was enough. We looked at the region again and the budget in the same session. The assistant already had context on the invoice, so no tools were called.",
+   "recorded_at": "2026-02-24T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-086",
+   "kind": "fact",
+   "scope": {
+    "kind": "task",
+    "id": "release-2026-q4"
+   },
+   "summary": "Status: go/no-go and launch",
+   "body": "The blockers came up while answering a question about the launch. The launch is fine for now; revisit the changelog later. Added a line to the blockers checklist and one to the launch checklist. The assistant already had context on the go/no-go, so no tools were called. The assistant already had context on the release candidate, so no tools were called.",
+   "recorded_at": "2026-09-14T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-087",
+   "kind": "commitment",
+   "scope": {
+    "kind": "signet"
+   },
+   "summary": "Working notes: timezone and documents",
+   "body": "Added a line to the documents checklist and one to the editor checklist. Someone asked in one line what the shell was for; the answer was in an earlier note. The units came up while answering a question about the shell. Answer from context next time instead of calling tools for the commit messages. The documents came up while answering a question about the editor. Answer from context next time instead of calling tools for the documents.",
+   "recorded_at": "2026-09-02T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-088",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Review: door panel and DNS",
+   "body": "Someone asked in one line what the NAS was for; the answer was in an earlier note. Logged the printer work so the next session has context. Prompted to recall the cameras; the existing context was enough. Need to call back about the cameras after the NAS is done. The assistant already had context on the firmware, so no tools were called. Logged the printer work so the next session has context. Need to call back about the home network after the NAS is done. The assistant came up while answering a question about the VLAN. The current home network setup works; the old backup notes are out of date. Checked the hub against the NAS; nothing to change.",
+   "recorded_at": "2026-07-13T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-089",
+   "kind": "fact",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Check-in: request logs and staging",
+   "body": "Checked the API against the request logs; nothing to change. Checked the on-call against the tokens; nothing to change. No decision about the production yet; the migrations is unchanged. Answer from context next time instead of calling tools for the staging. The API came up while answering a question about the tokens. The assistant already had context on the staging, so no tools were called. Checked the request logs against the deploy; nothing to change. Checked the staging against the production; nothing to change.",
+   "recorded_at": "2026-07-19T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-090",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "Working notes: plugin system and tests",
+   "body": "The flags came up while answering a question about the flags. One line summary: the license and the tests still need a look. The license is fine for now; revisit the Go version later. The current flags setup works; the old telemetry notes are out of date. Answer from context next time instead of calling tools for the Go version.",
+   "recorded_at": "2026-04-28T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-091",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "orchard"
+   },
+   "summary": "Status: tomatoes and mulch",
+   "body": "Added a line to the mulch checklist and one to the frost checklist. We looked at the drip irrigation again and the drip irrigation in the same session. Logged the planner app work so the next session has context. We looked at the mulch again and the frost in the same session. The mulch is fine for now; revisit the beds later. Checked the drip irrigation against the planner app; nothing to change. Answer from context next time instead of calling tools for the seedlings. Added a line to the compost checklist and one to the frost checklist.",
+   "recorded_at": "2026-07-01T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-092",
+   "kind": "commitment",
+   "scope": {
+    "kind": "account",
+    "id": "mail-example"
+   },
+   "summary": "Working notes: archive and signature",
+   "body": "Logged the newsletters work so the next session has context. One line summary: the folders and the aliases still need a look. Logged the filters work so the next session has context. Someone asked in one line what the inbox was for; the answer was in an earlier note. Logged the newsletters work so the next session has context. Added a line to the newsletters checklist and one to the folders checklist.",
+   "recorded_at": "2026-04-09T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-093",
+   "kind": "project-state",
+   "scope": {
+    "kind": "account",
+    "id": "cloud-example"
+   },
+   "summary": "Context: invoice and IAM",
+   "body": "The assistant already had context on the storage, so no tools were called. The assistant already had context on the IAM, so no tools were called. One line summary: the IAM and the alerts still need a look. The assistant already had context on the compute, so no tools were called. Checked the budget against the compute; nothing to change. The current compute setup works; the old invoice notes are out of date. Prompted to recall the region; the existing context was enough.",
+   "recorded_at": "2026-09-22T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-094",
+   "kind": "commitment",
+   "scope": {
+    "kind": "task",
+    "id": "release-2026-q4"
+   },
+   "summary": "Check-in: freeze and launch",
+   "body": "The changelog is fine for now; revisit the blockers later. One line summary: the launch and the changelog still need a look. The freeze came up while answering a question about the go/no-go. Checked the blockers against the freeze; nothing to change. Someone asked in one line what the go/no-go was for; the answer was in an earlier note.",
+   "recorded_at": "2026-08-04T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-095",
+   "kind": "commitment",
+   "scope": {
+    "kind": "signet"
+   },
+   "summary": "Working notes: units and editor",
+   "body": "Answer from context next time instead of calling tools for the shell. We looked at the commit messages again and the answers in the same session. Checked the timezone against the spelling; nothing to change. The editor is fine for now; revisit the units later. We looked at the commit messages again and the spelling in the same session.",
+   "recorded_at": "2026-07-08T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-096",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Quick note: home network and DNS",
+   "body": "Someone asked in one line what the backup was for; the answer was in an earlier note. The assistant already had context on the VLAN, so no tools were called. Checked the UPS against the DNS; nothing to change. The current UPS setup works; the old VLAN notes are out of date. Prompted to recall the cameras; the existing context was enough.",
+   "recorded_at": "2026-03-09T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-097",
+   "kind": "research-claim",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Status: API and deploy",
+   "body": "Prompted to recall the staging; the existing context was enough. Need to call back about the API after the cache is done. The current rate limit setup works; the old request logs notes are out of date. Logged the error responses work so the next session has context. Checked the staging against the database; nothing to change. Someone asked in one line what the migrations was for; the answer was in an earlier note. The assistant already had context on the error responses, so no tools were called. The production is fine for now; revisit the staging later. The current request logs setup works; the old production notes are out of date. Added a line to the staging checklist and one to the API checklist.",
+   "recorded_at": "2026-10-15T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-098",
+   "kind": "fact",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "Status: release and completions",
+   "body": "Someone asked in one line what the telemetry was for; the answer was in an earlier note. Logged the license work so the next session has context. No decision about the flags yet; the license is unchanged. Need to call back about the license after the flags is done. Logged the telemetry work so the next session has context. We looked at the telemetry again and the completions in the same session. Prompted to recall the release; the existing context was enough. The assistant already had context on the packaging, so no tools were called. One line summary: the telemetry and the Go version still need a look.",
+   "recorded_at": "2026-03-28T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-099",
+   "kind": "fact",
+   "scope": {
+    "kind": "project",
+    "id": "orchard"
+   },
+   "summary": "Review: seedlings and mulch",
+   "body": "We looked at the frost again and the frost in the same session. The seedlings is fine for now; revisit the compost later. Answer from context next time instead of calling tools for the planner app. Need to call back about the mulch after the beds is done. Someone asked in one line what the planner app was for; the answer was in an earlier note. Logged the frost work so the next session has context. The assistant already had context on the drip irrigation, so no tools were called. Logged the compost work so the next session has context. The assistant already had context on the mulch, so no tools were called.",
+   "recorded_at": "2026-08-02T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-100",
+   "kind": "project-state",
+   "scope": {
+    "kind": "account",
+    "id": "mail-example"
+   },
+   "summary": "Session notes: filters and aliases",
+   "body": "Added a line to the signature checklist and one to the folders checklist. No decision about the folders yet; the filters is unchanged. Someone asked in one line what the archive was for; the answer was in an earlier note. Logged the inbox work so the next session has context.",
+   "recorded_at": "2026-02-03T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-101",
+   "kind": "project-state",
+   "scope": {
+    "kind": "account",
+    "id": "cloud-example"
+   },
+   "summary": "Working notes: storage and budget",
+   "body": "Answer from context next time instead of calling tools for the alerts. We looked at the compute again and the budget in the same session. Checked the storage against the invoice; nothing to change. Checked the alerts against the alerts; nothing to change. The region is fine for now; revisit the alerts later. Someone asked in one line what the compute was for; the answer was in an earlier note. No decision about the alerts yet; the invoice is unchanged. The current alerts setup works; the old budget notes are out of date. Someone asked in one line what the storage was for; the answer was in an earlier note. The current region setup works; the old IAM notes are out of date.",
+   "recorded_at": "2026-04-27T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-102",
+   "kind": "research-claim",
+   "scope": {
+    "kind": "task",
+    "id": "release-2026-q4"
+   },
+   "summary": "Review: blockers and launch",
+   "body": "The blockers is fine for now; revisit the blockers later. Answer from context next time instead of calling tools for the freeze. We looked at the launch again and the blockers in the same session. Added a line to the blockers checklist and one to the captain checklist. Someone asked in one line what the captain was for; the answer was in an earlier note.",
+   "recorded_at": "2026-07-07T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-103",
+   "kind": "fact",
+   "scope": {
+    "kind": "signet"
+   },
+   "summary": "Context: commit messages and units",
+   "body": "Prompted to recall the spelling; the existing context was enough. Checked the shell against the shell; nothing to change. The current timezone setup works; the old commit messages notes are out of date. The commit messages is fine for now; revisit the documents later. The units is fine for now; revisit the answers later.",
+   "recorded_at": "2026-04-03T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-104",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Follow-up: home network and firmware",
+   "body": "Added a line to the cameras checklist and one to the assistant checklist. The current home network setup works; the old DNS notes are out of date. One line summary: the UPS and the printer still need a look. The DNS is fine for now; revisit the printer later.",
+   "recorded_at": "2026-07-09T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-105",
+   "kind": "fact",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Working notes: tokens and request logs",
+   "body": "Added a line to the error responses checklist and one to the error responses checklist. We looked at the on-call again and the on-call in the same session. Logged the rate limit work so the next session has context. Need to call back about the API after the database is done. We looked at the deploy again and the database in the same session. The migrations came up while answering a question about the error responses. No decision about the tokens yet; the tokens is unchanged. The API is fine for now; revisit the migrations later. We looked at the database again and the staging in the same session. The on-call came up while answering a question about the migrations. Added a line to the staging checklist and one to the rate limit checklist.",
+   "recorded_at": "2026-01-21T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-106",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "Working notes: plugin system and completions",
+   "body": "The assistant already had context on the tests, so no tools were called. The current config file setup works; the old flags notes are out of date. Logged the flags work so the next session has context. The current tests setup works; the old tests notes are out of date. The packaging came up while answering a question about the completions.",
+   "recorded_at": "2026-06-20T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-107",
+   "kind": "fact",
+   "scope": {
+    "kind": "project",
+    "id": "orchard"
+   },
+   "summary": "Quick note: planner app and seedlings",
+   "body": "Someone asked in one line what the beds was for; the answer was in an earlier note. No decision about the drip irrigation yet; the planner app is unchanged. Someone asked in one line what the beds was for; the answer was in an earlier note. Logged the planner app work so the next session has context. Checked the harvest against the planner app; nothing to change. One line summary: the harvest and the frost still need a look. Prompted to recall the frost; the existing context was enough. Checked the seedlings against the beds; nothing to change. No decision about the tomatoes yet; the compost is unchanged. Answer from context next time instead of calling tools for the beds. The harvest came up while answering a question about the harvest.",
+   "recorded_at": "2026-01-20T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-108",
+   "kind": "project-state",
+   "scope": {
+    "kind": "account",
+    "id": "mail-example"
+   },
+   "summary": "Check-in: signature and archive",
+   "body": "The assistant already had context on the archive, so no tools were called. Prompted to recall the inbox; the existing context was enough. We looked at the newsletters again and the aliases in the same session. Logged the signature work so the next session has context.",
+   "recorded_at": "2026-03-18T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-109",
+   "kind": "fact",
+   "scope": {
+    "kind": "account",
+    "id": "cloud-example"
+   },
+   "summary": "Follow-up: IAM and compute",
+   "body": "We looked at the budget again and the compute in the same session. Added a line to the IAM checklist and one to the region checklist. Someone asked in one line what the compute was for; the answer was in an earlier note. Checked the IAM against the invoice; nothing to change. Logged the compute work so the next session has context. The alerts came up while answering a question about the invoice. Answer from context next time instead of calling tools for the compute. Need to call back about the compute after the invoice is done. Logged the region work so the next session has context. Checked the storage against the compute; nothing to change. Logged the storage work so the next session has context.",
+   "recorded_at": "2026-04-04T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-110",
+   "kind": "project-state",
+   "scope": {
+    "kind": "task",
+    "id": "release-2026-q4"
+   },
+   "summary": "Follow-up: captain and release candidate",
+   "body": "The current go/no-go setup works; the old captain notes are out of date. We looked at the changelog again and the release candidate in the same session. The assistant already had context on the freeze, so no tools were called. Prompted to recall the release candidate; the existing context was enough.",
+   "recorded_at": "2026-09-22T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-111",
+   "kind": "project-state",
+   "scope": {
+    "kind": "signet"
+   },
+   "summary": "Check-in: documents and answers",
+   "body": "The current shell setup works; the old documents notes are out of date. Added a line to the units checklist and one to the timezone checklist. The assistant already had context on the commit messages, so no tools were called. Need to call back about the shell after the answers is done. Added a line to the commit messages checklist and one to the units checklist.",
+   "recorded_at": "2026-06-09T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-112",
+   "kind": "commitment",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Quick note: assistant and backup",
+   "body": "Logged the DNS work so the next session has context. Answer from context next time instead of calling tools for the assistant. We looked at the access point again and the DNS in the same session. Logged the backup work so the next session has context.",
+   "recorded_at": "2026-08-11T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-113",
+   "kind": "fact",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Quick note: request logs and rate limit",
+   "body": "Checked the database against the deploy; nothing to change. The assistant already had context on the staging, so no tools were called. Someone asked in one line what the database was for; the answer was in an earlier note. Prompted to recall the tokens; the existing context was enough. The cache is fine for now; revisit the database later. The current request logs setup works; the old error responses notes are out of date. Added a line to the tokens checklist and one to the staging checklist. No decision about the request logs yet; the cache is unchanged. Someone asked in one line what the cache was for; the answer was in an earlier note.",
+   "recorded_at": "2026-06-23T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-114",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "Working notes: config file and plugin system",
+   "body": "The assistant already had context on the telemetry, so no tools were called. No decision about the flags yet; the license is unchanged. Need to call back about the flags after the config file is done. We looked at the flags again and the license in the same session.",
+   "recorded_at": "2026-10-04T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-115",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "orchard"
+   },
+   "summary": "Quick note: tomatoes and beds",
+   "body": "We looked at the frost again and the seedlings in the same session. We looked at the frost again and the mulch in the same session. The current planner app setup works; the old seedlings notes are out of date. Logged the tomatoes work so the next session has context. Prompted to recall the drip irrigation; the existing context was enough.",
+   "recorded_at": "2026-01-05T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-116",
+   "kind": "project-state",
+   "scope": {
+    "kind": "account",
+    "id": "mail-example"
+   },
+   "summary": "Check-in: newsletters and filters",
+   "body": "The inbox is fine for now; revisit the inbox later. Need to call back about the folders after the archive is done. The current archive setup works; the old archive notes are out of date. The inbox came up while answering a question about the archive. Someone asked in one line what the folders was for; the answer was in an earlier note. Prompted to recall the archive; the existing context was enough.",
+   "recorded_at": "2026-04-04T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-117",
+   "kind": "fact",
+   "scope": {
+    "kind": "account",
+    "id": "cloud-example"
+   },
+   "summary": "Context: region and budget",
+   "body": "The assistant already had context on the compute, so no tools were called. The assistant already had context on the alerts, so no tools were called. The assistant already had context on the alerts, so no tools were called. No decision about the storage yet; the alerts is unchanged.",
+   "recorded_at": "2026-08-28T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-118",
+   "kind": "fact",
+   "scope": {
+    "kind": "task",
+    "id": "release-2026-q4"
+   },
+   "summary": "Check-in: release candidate and launch",
+   "body": "Prompted to recall the freeze; the existing context was enough. Added a line to the release candidate checklist and one to the go/no-go checklist. We looked at the go/no-go again and the go/no-go in the same session. The blockers is fine for now; revisit the captain later. We looked at the go/no-go again and the blockers in the same session. Answer from context next time instead of calling tools for the blockers. Added a line to the captain checklist and one to the captain checklist.",
+   "recorded_at": "2026-01-04T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-119",
+   "kind": "project-state",
+   "scope": {
+    "kind": "signet"
+   },
+   "summary": "Quick note: units and spelling",
+   "body": "Need to call back about the timezone after the units is done. Need to call back about the timezone after the documents is done. Logged the answers work so the next session has context. The commit messages is fine for now; revisit the timezone later. Answer from context next time instead of calling tools for the commit messages.",
+   "recorded_at": "2026-06-01T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-120",
+   "kind": "commitment",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Check-in: VLAN and printer",
+   "body": "Logged the UPS work so the next session has context. Logged the cameras work so the next session has context. One line summary: the assistant and the access point still need a look. The assistant already had context on the printer, so no tools were called. The assistant came up while answering a question about the firmware. No decision about the home network yet; the home network is unchanged. The current router setup works; the old DNS notes are out of date.",
+   "recorded_at": "2026-02-19T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-121",
+   "kind": "commitment",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Check-in: database and on-call",
+   "body": "Need to call back about the staging after the staging is done. Added a line to the rate limit checklist and one to the error responses checklist. Need to call back about the database after the tokens is done. Checked the production against the production; nothing to change. Someone asked in one line what the production was for; the answer was in an earlier note. Someone asked in one line what the API was for; the answer was in an earlier note. Logged the rate limit work so the next session has context. Someone asked in one line what the production was for; the answer was in an earlier note. Logged the production work so the next session has context. Prompted to recall the staging; the existing context was enough.",
+   "recorded_at": "2026-05-23T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-122",
+   "kind": "fact",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "Working notes: release and telemetry",
+   "body": "The current packaging setup works; the old tests notes are out of date. Need to call back about the release after the packaging is done. The assistant already had context on the flags, so no tools were called. Added a line to the tests checklist and one to the Go version checklist. The release is fine for now; revisit the completions later. Need to call back about the config file after the plugin system is done. The assistant already had context on the tests, so no tools were called. Someone asked in one line what the plugin system was for; the answer was in an earlier note. The current Go version setup works; the old plugin system notes are out of date. The packaging is fine for now; revisit the completions later. Answer from context next time instead of calling tools for the plugin system.",
+   "recorded_at": "2026-07-03T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-123",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "orchard"
+   },
+   "summary": "Check-in: planner app and seedlings",
+   "body": "Someone asked in one line what the tomatoes was for; the answer was in an earlier note. The current planner app setup works; the old seedlings notes are out of date. We looked at the beds again and the tomatoes in the same session. Added a line to the seedlings checklist and one to the compost checklist. We looked at the seedlings again and the harvest in the same session. The planner app came up while answering a question about the frost. Prompted to recall the frost; the existing context was enough. One line summary: the seedlings and the drip irrigation still need a look. We looked at the frost again and the tomatoes in the same session. The drip irrigation came up while answering a question about the planner app. No decision about the planner app yet; the harvest is unchanged. Logged the mulch work so the next session has context.",
+   "recorded_at": "2026-01-11T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-124",
+   "kind": "fact",
+   "scope": {
+    "kind": "account",
+    "id": "mail-example"
+   },
+   "summary": "Follow-up: newsletters and inbox",
+   "body": "The filters is fine for now; revisit the signature later. Logged the newsletters work so the next session has context. Answer from context next time instead of calling tools for the aliases. The filters is fine for now; revisit the folders later. Added a line to the filters checklist and one to the aliases checklist.",
+   "recorded_at": "2026-04-19T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-125",
+   "kind": "fact",
+   "scope": {
+    "kind": "account",
+    "id": "cloud-example"
+   },
+   "summary": "Status: compute and region",
+   "body": "Checked the budget against the region; nothing to change. Prompted to recall the storage; the existing context was enough. Checked the alerts against the alerts; nothing to change. One line summary: the invoice and the storage still need a look.",
+   "recorded_at": "2026-09-12T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-126",
+   "kind": "project-state",
+   "scope": {
+    "kind": "task",
+    "id": "release-2026-q4"
+   },
+   "summary": "Quick note: freeze and go/no-go",
+   "body": "The current changelog setup works; the old blockers notes are out of date. One line summary: the changelog and the changelog still need a look. The current blockers setup works; the old release candidate notes are out of date. Checked the changelog against the changelog; nothing to change. One line summary: the changelog and the release candidate still need a look. One line summary: the launch and the release candidate still need a look.",
+   "recorded_at": "2026-09-05T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-127",
+   "kind": "project-state",
+   "scope": {
+    "kind": "signet"
+   },
+   "summary": "Context: editor and commit messages",
+   "body": "The assistant already had context on the timezone, so no tools were called. The commit messages is fine for now; revisit the editor later. The units came up while answering a question about the documents. The spelling is fine for now; revisit the spelling later. Logged the timezone work so the next session has context.",
+   "recorded_at": "2026-08-26T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-128",
+   "kind": "commitment",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Follow-up: hub and DNS",
+   "body": "Checked the backup against the NAS; nothing to change. Need to call back about the VLAN after the cameras is done. Logged the home network work so the next session has context. Someone asked in one line what the UPS was for; the answer was in an earlier note. The assistant already had context on the hub, so no tools were called. Added a line to the hub checklist and one to the home network checklist.",
+   "recorded_at": "2026-08-11T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-129",
+   "kind": "research-claim",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Context: deploy and migrations",
+   "body": "Logged the migrations work so the next session has context. The API came up while answering a question about the cache. The current rate limit setup works; the old cache notes are out of date. The assistant already had context on the error responses, so no tools were called. The current tokens setup works; the old API notes are out of date.",
+   "recorded_at": "2026-02-23T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-130",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "Quick note: flags and tests",
+   "body": "Checked the packaging against the release; nothing to change. The release is fine for now; revisit the license later. Logged the completions work so the next session has context. One line summary: the packaging and the Go version still need a look. The assistant already had context on the packaging, so no tools were called. Prompted to recall the flags; the existing context was enough. Answer from context next time instead of calling tools for the tests. The Go version is fine for now; revisit the plugin system later.",
+   "recorded_at": "2026-01-24T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-131",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "orchard"
+   },
+   "summary": "Session notes: mulch and compost",
+   "body": "No decision about the tomatoes yet; the beds is unchanged. No decision about the seedlings yet; the compost is unchanged. One line summary: the tomatoes and the tomatoes still need a look. Checked the planner app against the drip irrigation; nothing to change. The planner app came up while answering a question about the frost. The mulch came up while answering a question about the seedlings. The assistant already had context on the beds, so no tools were called. The current beds setup works; the old seedlings notes are out of date. No decision about the compost yet; the beds is unchanged. Checked the seedlings against the beds; nothing to change. The current seedlings setup works; the old planner app notes are out of date.",
+   "recorded_at": "2026-06-09T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-132",
+   "kind": "project-state",
+   "scope": {
+    "kind": "account",
+    "id": "mail-example"
+   },
+   "summary": "Follow-up: aliases and newsletters",
+   "body": "The assistant already had context on the folders, so no tools were called. Someone asked in one line what the inbox was for; the answer was in an earlier note. Prompted to recall the newsletters; the existing context was enough. The assistant already had context on the inbox, so no tools were called. The assistant already had context on the newsletters, so no tools were called. The folders came up while answering a question about the folders.",
+   "recorded_at": "2026-02-08T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-133",
+   "kind": "fact",
+   "scope": {
+    "kind": "account",
+    "id": "cloud-example"
+   },
+   "summary": "Working notes: alerts and invoice",
+   "body": "The assistant already had context on the budget, so no tools were called. Someone asked in one line what the compute was for; the answer was in an earlier note. Answer from context next time instead of calling tools for the region. Prompted to recall the region; the existing context was enough. We looked at the compute again and the alerts in the same session. Logged the compute work so the next session has context. One line summary: the storage and the budget still need a look. Logged the budget work so the next session has context.",
+   "recorded_at": "2026-07-12T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-134",
+   "kind": "project-state",
+   "scope": {
+    "kind": "task",
+    "id": "release-2026-q4"
+   },
+   "summary": "Review: go/no-go and changelog",
+   "body": "We looked at the go/no-go again and the blockers in the same session. Checked the changelog against the changelog; nothing to change. Prompted to recall the captain; the existing context was enough. Someone asked in one line what the go/no-go was for; the answer was in an earlier note. Someone asked in one line what the captain was for; the answer was in an earlier note. Logged the release candidate work so the next session has context. Need to call back about the captain after the launch is done. Added a line to the blockers checklist and one to the release candidate checklist. The assistant already had context on the launch, so no tools were called. We looked at the changelog again and the freeze in the same session.",
+   "recorded_at": "2026-02-13T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-135",
+   "kind": "project-state",
+   "scope": {
+    "kind": "signet"
+   },
+   "summary": "Quick note: spelling and timezone",
+   "body": "Added a line to the editor checklist and one to the units checklist. Checked the answers against the timezone; nothing to change. No decision about the documents yet; the editor is unchanged. Answer from context next time instead of calling tools for the answers. Checked the commit messages against the answers; nothing to change. We looked at the documents again and the answers in the same session. Need to call back about the timezone after the shell is done. The current answers setup works; the old spelling notes are out of date.",
+   "recorded_at": "2026-08-21T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-136",
+   "kind": "fact",
+   "scope": {
+    "kind": "project",
+    "id": "homelab"
+   },
+   "summary": "Quick note: DNS and door panel",
+   "body": "No decision about the home network yet; the backup is unchanged. No decision about the access point yet; the firmware is unchanged. No decision about the cameras yet; the firmware is unchanged. Need to call back about the UPS after the VLAN is done. Logged the VLAN work so the next session has context.",
+   "recorded_at": "2026-10-06T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-137",
+   "kind": "project-state",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Follow-up: API and request logs",
+   "body": "Checked the tokens against the staging; nothing to change. Logged the tokens work so the next session has context. The deploy came up while answering a question about the cache. The tokens came up while answering a question about the error responses. Someone asked in one line what the on-call was for; the answer was in an earlier note. Logged the production work so the next session has context. Answer from context next time instead of calling tools for the API. Answer from context next time instead of calling tools for the request logs. The assistant already had context on the deploy, so no tools were called. Added a line to the migrations checklist and one to the staging checklist. No decision about the rate limit yet; the production is unchanged. Checked the API against the API; nothing to change.",
+   "recorded_at": "2026-06-22T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-138",
+   "kind": "commitment",
+   "scope": {
+    "kind": "project",
+    "id": "lanternfish"
+   },
+   "summary": "Status: tests and release",
+   "body": "Checked the config file against the config file; nothing to change. One line summary: the Go version and the telemetry still need a look. Logged the telemetry work so the next session has context. Added a line to the flags checklist and one to the telemetry checklist. One line summary: the Go version and the packaging still need a look. Need to call back about the plugin system after the Go version is done. Someone asked in one line what the telemetry was for; the answer was in an earlier note. Prompted to recall the completions; the existing context was enough.",
+   "recorded_at": "2026-09-09T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-139",
+   "kind": "fact",
+   "scope": {
+    "kind": "project",
+    "id": "orchard"
+   },
+   "summary": "Context: seedlings and harvest",
+   "body": "The current harvest setup works; the old drip irrigation notes are out of date. Prompted to recall the planner app; the existing context was enough. No decision about the harvest yet; the mulch is unchanged. The beds came up while answering a question about the frost. No decision about the harvest yet; the drip irrigation is unchanged. Prompted to recall the beds; the existing context was enough. No decision about the frost yet; the planner app is unchanged. Need to call back about the tomatoes after the seedlings is done. The frost is fine for now; revisit the drip irrigation later. Checked the compost against the beds; nothing to change. The current planner app setup works; the old compost notes are out of date.",
+   "recorded_at": "2026-04-18T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-140",
+   "kind": "commitment",
+   "scope": {
+    "kind": "account",
+    "id": "mail-example"
+   },
+   "summary": "Status: folders and signature",
+   "body": "Logged the archive work so the next session has context. Logged the folders work so the next session has context. Prompted to recall the newsletters; the existing context was enough. Need to call back about the newsletters after the archive is done. Someone asked in one line what the folders was for; the answer was in an earlier note. Prompted to recall the inbox; the existing context was enough.",
+   "recorded_at": "2026-05-08T08:00:00Z"
+  },
+  {
+   "record": "record-eval-noise-141",
+   "kind": "fact",
+   "scope": {
+    "kind": "account",
+    "id": "cloud-example"
+   },
+   "summary": "Status: region and compute",
+   "body": "One line summary: the invoice and the storage still need a look. The compute is fine for now; revisit the alerts later. Answer from context next time instead of calling tools for the budget. Someone asked in one line what the region was for; the answer was in an earlier note. The current budget setup works; the old invoice notes are out of date. Answer from context next time instead of calling tools for the IAM. The IAM came up while answering a question about the invoice. Checked the alerts against the storage; nothing to change. One line summary: the budget and the invoice still need a look. We looked at the region again and the budget in the same session. The storage is fine for now; revisit the budget later.",
+   "recorded_at": "2026-10-22T08:00:00Z"
+  }
+ ]
+}
