@@ -189,8 +189,8 @@ install 2.0, so bootstrap with the 2.0 release's own script. It verifies the
 platform binary against `SHA256SUMS` and runs that binary's installer:
 
 ```sh
-curl -fsSLO https://github.com/acoz-labs/mandalore/releases/download/v2.0.3/install.sh
-sh install.sh 2.0.3
+curl -fsSLO https://github.com/acoz-labs/mandalore/releases/download/v2.1.0/install.sh
+sh install.sh 2.1.0
 ```
 
 In a prefix that holds a 1.x install (both default to `~/.local`), 2.0 updates
@@ -202,7 +202,7 @@ mandalore release install --retained 6b9f5107b0d7dfd8bf8d0323b38e52276b9d0ec702f
 ```
 
 1.6.1 can't read a 2.0 install, so it can't return to 2.0 by itself. Run
-`sh install.sh 2.0.3` again, or the retained 2.0 runtime under
+`sh install.sh 2.1.0` again, or the retained 2.0 runtime under
 `PREFIX/lib/mandalore/releases/` with `release install --retained` and its
 identity. 1.6.1's own `sh install.sh 1.6.1` refuses a prefix that holds 2.0.
 Where no 1.6.1 runtime is retained, as after a fresh 2.0 install, move both
