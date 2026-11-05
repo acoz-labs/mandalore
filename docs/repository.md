@@ -55,7 +55,6 @@ Document any required deviation in `docs/development.md`.
   Without it, it refuses before any write: check that no draft or tag
   exists, then rerun with the token.
 
-
 ## Conventions
 
 - Public receipts and evidence say "the owner", never a personal name, and
@@ -161,6 +160,7 @@ Document any required deviation in `docs/development.md`.
   records (`docs/evidence/**`, `*-engineering-evidence.md`) are the expected
   exception. Exclude them by explicit path and put the grep in the PR.
 
+## Current delivery
 
 Profile: `artifact`. Follow [the local delivery runbook](delivery.md)
 and [portable evidence commands](operations/local-verification.md). All configured

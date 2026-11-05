@@ -80,7 +80,8 @@ A departure from the plan updates `plan.md` in the same PR.
   a follow-up issue.
 - **Low**: worth fixing, harmless if not. Doesn't block.
 
-Report at most 5 lows per review and give the rest as a count.
+Report at most 5 lows per review and give the rest as a count. An item the
+author flags as borderline is judged in this review, not deferred.
 
 ## Do not report
 
@@ -88,4 +89,3 @@ Report at most 5 lows per review and give the rest as a count.
 - Preferences with no effect on behaviour, safety or clarity.
 - Pre-existing problems the diff doesn't touch; file an issue instead.
 - Automated review-bot noise already triaged.
-- A borderline item the author flagged is judged in the review, not deferred.
