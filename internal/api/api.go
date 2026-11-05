@@ -323,6 +323,10 @@ func (a *API) failure(op Operation, err error) Envelope {
 		return out
 	case errors.Is(err, memory.ErrIdentityChanged):
 		return Failure("binding.invalid", "The signet identity changed; inspect and explicitly rebind.", false)
+	case errors.Is(err, memory.ErrInvalidInput):
+		return Failure("input.invalid", err.Error(), false)
+	case errors.Is(err, memory.ErrStaleHeads):
+		return Failure("memory.stale_heads", memory.ErrStaleHeads.Error(), false)
 	case errors.Is(err, strictjson.ErrInvalid):
 		return Failure("input.invalid", strictjson.ErrInvalid.Error(), false)
 	}

@@ -75,7 +75,8 @@ Both documents must fit the serialized file limit before either is published;
 an oversized revision is invalid input, not an allowable orphan-evidence case.
 
 Service writes require summary 1–256 bytes, body 1–8192 bytes, reason 1–1024
-bytes and at most 32 predecessors. Default sensitivity is private, volatility
+bytes and at most 32 predecessors, and refuse input outside them as `input.invalid`
+before writing. Default sensitivity is private, volatility
 drift-prone and confidence medium; basis is explicitly supplied. The low-level
 schema and 4 MiB file bound remain distinct from service input budgets.
 

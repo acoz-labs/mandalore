@@ -1,0 +1,226 @@
+# Plan: memory_remember reports input-limit failures as input.invalid
+
+## Issue
+
+Refs #243 (https://github.com/acoz-labs/mandalore/issues/243). Outcome:
+`memory_remember` tells the caller which input it must fix, with
+`write_may_have_occurred: false`, instead of a `save.incomplete` that invites
+retrying input that can never succeed. Ships as patch 2.1.2.
+
+### Decisions the plan review asked for
+
+- **Characters versus bytes.** JSON Schema `maxLength` counts characters,
+  meaning Unicode code points (2020-12 validation, section 6.3.1, which defers
+  to RFC 8259). The server counts UTF-8 bytes, and a code point is 1 to 4 bytes.
+  The schema sets `maxLength` to the byte limit (256, 8192, 1024). Every string
+  within the byte limit is therefore within `maxLength`, so a validating client
+  never refuses input the server would accept; the reverse gap (non-ASCII text
+  under `maxLength` but over the byte limit) is closed by the server's
+  `input.invalid`. Each field description says so, for example the summary:
+  "1–256 UTF-8 bytes, not blank. The server counts bytes; maxLength counts
+  characters, so non-ASCII text can be refused below it." Body and reason say
+  the same with 8192 and 1024. The MCP SDK's low-level `Server.AddTool`, which
+  the server uses, does not validate arguments against the schema, so an
+  over-limit call still reaches the handler and gets the envelope below; a
+  test proves it.
+- **Existing clients.** The envelope shape doesn't change: the same `error`
+  object with `code`, `message`, `retryable`, `write_may_have_occurred` and
+  `inspect_before_retry`. `memory_remember` already returns `input.invalid`
+  (malformed arguments, bad `request_id`), so every client already handles the
+  code. For the refused inputs, `retryable` stays false and
+  `write_may_have_occurred` and `inspect_before_retry` go from true to false. A
+  client that inspected before retrying just skips the inspection; a client
+  that retried on `save.incomplete` now stops, which is the point. Nothing was
+  ever stored for these inputs (validation runs before the request's intent
+  file is written), so a client that retried under an older server finds no
+  leftover state, and a later corrected save with the same `request_id`
+  succeeds. `save.incomplete` keeps its exact text and fields for every
+  failure that can follow a write.
+- **Claude plugin.** No plugin change. The plugin's skills and README name
+  neither the limits nor `save.incomplete`; the limits reach Claude through the
+  server's tool schema, so the guidance stays correct for 2.1.1 and 2.1.2
+  servers alike. `plugins/claude/.claude-plugin/plugin.json` stays at 2.1.1, so
+  merging rolls nothing out to installs and #229's owner-confirmation rule
+  doesn't apply. If `bin/ci` turns out to require `plugin.json` to match
+  `VERSION`, I stop and tell the lead before bumping it.
+
+## Files that change
+
+- **Input errors in the memory service** (`internal/memory/service.go`, a new
+  small `internal/memory/input_error.go`). A sentinel `ErrInvalidInput`, and
+  errors that wrap it with a safe message that never echoes input text. The
+  remember checks in `prepareRemember` split into one check per field. A field
+  over its limit says, for example, "summary is 363 bytes; the limit is 256
+  UTF-8 bytes". A blank field or one containing NUL says "summary is required:
+  1–256 UTF-8 bytes, not blank, no NUL". Each of these wraps the sentinel:
+  `validateScope` when it runs for a write, more than 32 `supersedes`, and the
+  `record_id`/`supersedes` pairing rule. `prepareRemember` also checks that
+  `basis` is not blank, because the source record is built from it and
+  `validateSource`, the first check in `putSourcedLocked`, would otherwise
+  refuse a blank `basis` as a store error. The journal's kind (64) and summary
+  (4096) checks in `AppendJournalIdempotent` wrap it too, because both tools
+  share the same failure mapping.
+- **The pre-write graph checks** (`internal/memory/service.go`,
+  `internal/memory/sourced.go`). At the end of `prepareRemember`, so before
+  `validateSource` and every other check in `putSourcedLocked`, the new
+  revision alone is checked against the revision schema. A failure there is the caller's (bad `kind`, `basis`,
+  `sensitivity`, `volatility`, `confidence` or an ID pattern), and the message
+  names the field from the schema error's location, not its value. When the
+  whole-graph check fails, the existing graph is checked on its own, only on
+  that failure path, as the CLI classifier already does. If the existing graph
+  is valid, the new revision caused the failure (a correction whose `kind` or
+  `scope` differs from the original, or that supersedes a revision that isn't
+  there), and it becomes an input error with a fixed message pointing to
+  `memory_history`. If the existing graph is invalid, the error stays what it
+  is today. Successful writes do no extra work. A save resumed from its intent
+  file has already written that intent, so its errors are never classified as
+  input or stale heads; they stay `save.incomplete`
+  (`internal/memory/idempotency.go`).
+
+  Which code a bad correction gets depends on the signet format, because on
+  format 2 `prepareContentWrite` compares `supersedes` with the record's
+  current heads before the whole-graph check:
+
+  | Correction | Format 1 | Format 2 |
+  | --- | --- | --- |
+  | Supersedes a revision that doesn't exist, or names an unknown `record_id` | `input.invalid` | `memory.stale_heads` |
+  | Supersedes a revision of a different record | `input.invalid` | `memory.stale_heads` |
+  | Supersedes revisions that are no longer the current heads | accepted, as today (format 1 keeps the fork visible) | `memory.stale_heads` |
+  | Changes the original `kind` or `scope` | `input.invalid` | `input.invalid` |
+
+  Format 1 is the default for new signets. Neither format writes anything in
+  these cases.
+- **The MCP failure mapping** (`internal/server/tools.go`, `saveFailure`).
+  `ErrInvalidInput` maps to `input.invalid` with the error's message and
+  `write_may_have_occurred: false`. `memory.ErrStaleHeads` (a correction's
+  `supersedes` no longer matches the record's current heads, checked before any
+  write) maps to `memory.stale_heads`, the code the visibility tools already
+  return for the same condition, also with `write_may_have_occurred: false`.
+  That code isn't literally `input.invalid`, but it tells the caller to reread
+  history rather than to change its input, and it matches the visibility
+  tools. Everything else, including I/O and store failures, stays
+  `save.incomplete`, unchanged.
+- **The served tool schema** (`internal/server/tools.go`). After
+  `memory_remember`'s schema is generated, `minLength` 1 and `maxLength` are set
+  on `record.summary`, `record.body` and `record.reason`, and the descriptions
+  above are added. `memory_journal_append`'s `entry.kind` and `entry.summary`
+  get the same treatment (64 and 4096), since they have the same error and the
+  same gap. The tags in `memory.Write` stay description-only;
+  `jsonschema-go` has no tag for limits.
+- **The CLI classifier** (`internal/api/api.go`). `ErrInvalidInput` maps to
+  `input.invalid` with its message. The CLI already returns `input.invalid` for
+  these inputs, but with a generic message; this gives it the field, limit and
+  size. `ErrStaleHeads` maps to `memory.stale_heads`, as on MCP and the
+  visibility tools, instead of the generic `input.invalid`.
+- **Tests** in `internal/memory`, `internal/server` and `internal/api` (see
+  Proof).
+- **Docs.** `docs/server.md`, next to the `request_id` paragraph, gains the
+  remember and journal limits (bytes, with the `maxLength` note) and what each
+  save error means: `input.invalid` and `memory.stale_heads` (nothing written;
+  fix the input or reread history, with the format table above for
+  corrections), `request.conflict`, `store.busy`, and
+  `save.incomplete` (a write may have happened; retry only identical input with
+  the same `request_id`). `docs/interface.md`'s failure table gains rows for
+  `save.incomplete`, `request.conflict` and `memory.stale_heads`, which it
+  doesn't list today. `docs/signet-format.md` keeps its limits and adds that
+  over-limit service writes are refused as `input.invalid`.
+- **Release preparation.** `VERSION` goes to 2.1.2 and
+  `docs/releases/2.1.2.md` follows the 2.1.1 notes: what changed, rollout and
+  rollback. It says outright that the Claude plugin stays at 2.1.1 on purpose,
+  because nothing in it changes, so a 2.1.2 server beside a 2.1.1 plugin isn't
+  a missed bump. README, deployment and install pointers move to 2.1.2 in the
+  post-publication contributor PR, as `docs/repository.md` requires; that PR
+  leaves `plugin.json` and the plugin README's "2.1.0 or later" line alone.
+
+## Order of work
+
+1. This plan, alone, as the first commit; draft PR; plan review.
+2. Failing tests first: a 257-byte summary through `memory_remember` expects
+   `input.invalid`, and today gets `save.incomplete`.
+3. The memory-service input errors and per-field checks, and the
+   `saveFailure` and CLI mappings. The tests from step 2 pass.
+4. The single-revision schema check and the failure-path graph recheck, with
+   their tests, including the broken-store case that must not be blamed on
+   the caller.
+5. Schema limits and descriptions, with a `tools/list` test.
+6. Docs, `VERSION` and release notes; `bin/ci`, `bin/sdlc check` and
+   `govulncheck`; simplify pass; mark the PR ready.
+
+## Risks
+
+- **Blaming the caller for a broken store.** A whole-graph failure is an input
+  error only when the existing graph has just passed on its own and no file
+  failed to read (a wrapped `fs.PathError` or `syscall.Errno` keeps the
+  original error). A test with a removed stored source, on each format,
+  proves a valid save still gets `save.incomplete`, not `input.invalid`.
+- **Echoing private text.** Input-error messages carry field names, limits and
+  sizes, never values; the schema check reports the field location only. A
+  test asserts that a refused body's text doesn't appear in the response.
+- **Clients that branch on `save.incomplete`.** Covered above: same envelope,
+  a code they already handle, and no state left behind.
+- **Schema drift.** The limits live in the service checks and in the schema
+  patch. A test reads both from the served `tools/list` and from the service
+  (accept at the limit, refuse one byte over), so a change to one without the
+  other fails `bin/ci`.
+- **Mixed versions.** No state-file fields and no plugin change; a 2.1.1
+  server keeps its old behaviour for the same inputs.
+
+## Proof
+
+Tests, run with `GOFLAGS=-count=1`:
+
+- For each of summary (256), body (8192) and reason (1024) through
+  `memory_remember` over MCP: exactly the limit is accepted, and one byte over
+  returns `input.invalid` with `retryable` false, `write_may_have_occurred`
+  false, and a message naming the field, the limit and the size received. No
+  revision, source or intent file is created, and a corrected save with the
+  same `request_id` then succeeds.
+- A multibyte summary: 128 two-byte characters (256 bytes) is accepted; 129
+  (258 bytes, still under `maxLength` 256) is refused, which shows the bytes
+  versus characters gap the description states.
+- Blank and NUL-containing fields, a blank or whitespace `basis`, more than
+  32 `supersedes`, `record_id` without `supersedes`, a bad scope and a bad
+  `kind` return `input.invalid` with no write.
+- Corrections, each on the format named and with no write:
+  - format 1: superseding a revision that doesn't exist, or a revision of a
+    different record, and naming an unknown `record_id` return
+    `input.invalid`; superseding a non-current revision is saved;
+  - format 2: the same three cases and stale heads return
+    `memory.stale_heads`;
+  - both formats: changing the original `kind` or `scope` returns
+    `input.invalid`.
+- A save resumed from its intent file (written before a mid-write failure)
+  never reports `input.invalid` or `memory.stale_heads`, even after the heads
+  have moved, because its intent is already on disk.
+- The CLI returns `memory.stale_heads` for a stale-heads correction on a
+  format 2 signet.
+- A removed stored source plus a valid save still returns `save.incomplete`,
+  on format 1 and format 2. A read failure during the second graph check
+  (a wrapped `fs.PathError` or `syscall.Errno`) keeps its original error.
+- A real mid-write failure (the sources directory made read-only after the
+  intent is written) still returns `save.incomplete` with
+  `write_may_have_occurred` true, and the same `request_id` succeeds after the
+  directory is restored.
+- The journal's kind and summary limits return `input.invalid`.
+- `tools/list` shows `maxLength` and `minLength` on the five fields and the
+  byte note in each description.
+- The CLI `memory remember` with a 257-byte summary exits 2 with the field
+  message.
+
+Repository checks: `bin/container bin/ci` (or `bin/ci`), `bin/sdlc check`, and
+`go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...`.
+
+For the independent verifier, on the built 2.1.2 binary: start `mandalore
+serve` on a scratch signet, call `memory_remember` over MCP with the issue's
+363-byte summary and see `input.invalid` naming summary, 256 and 363 with no
+new files in the signet; save the same record with a 256-byte summary and see
+a durable receipt; check `tools/list` for the limits; and repeat the 363-byte
+call against a 2.1.1 binary to confirm the old `save.incomplete` it replaces.
+
+## Rollback
+
+Reinstall 2.1.1 (`sh install.sh 2.1.1`, or the bare-binary atomic swap). No
+data, state-file or signet-format change is made, so rolling back needs no
+migration, and records saved by 2.1.2 read the same under 2.1.1. Clients go
+back to seeing `save.incomplete` for over-limit input. No plugin update is
+involved either way.

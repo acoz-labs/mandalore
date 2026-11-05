@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -73,7 +74,12 @@ func (s *Service) RememberIdempotent(key string, input Write) (Revision, error) 
 			if !errors.Is(err, os.ErrNotExist) {
 				return err
 			}
-			return s.store.putSourcedLocked(&result, *intent.Source, nil, true)
+			// The intent is already written, so a resumed save never reports
+			// invalid input or stale heads; break the error chain.
+			if err := s.store.putSourcedLocked(&result, *intent.Source, nil, true); err != nil {
+				return fmt.Errorf("resume save: %v", err)
+			}
+			return nil
 		}
 		if !errors.Is(err, os.ErrNotExist) {
 			return err
@@ -95,8 +101,8 @@ func (s *Service) RememberIdempotent(key string, input Write) (Revision, error) 
 
 func (s *Service) AppendJournalIdempotent(key, kind, summary string) (JournalEntry, error) {
 	var entry JournalEntry
-	if !textWithin(kind, 64) || !textWithin(summary, 4096) {
-		return entry, errors.New("journal requires kind (1–64 bytes) and summary (1–4096 bytes)")
+	if err := checkJournal(kind, summary); err != nil {
+		return entry, err
 	}
 	err := s.store.withLock(func() error {
 		path, digest, err := s.intent(key, "journal", []string{kind, summary})

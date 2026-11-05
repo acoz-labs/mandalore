@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"slices"
 	"strings"
@@ -14,6 +15,7 @@ import (
 	"github.com/acoz-labs/mandalore/internal/foundlings"
 	"github.com/acoz-labs/mandalore/internal/memory"
 	"github.com/acoz-labs/mandalore/internal/strictjson"
+	"github.com/google/jsonschema-go/jsonschema"
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -155,8 +157,8 @@ func (s *signet) mcpServer(c Client) *sdk.Server {
 	for _, name := range slices.Concat(writeTools, s.foundlingTools(true)) {
 		add(name, ops[name].InputSchema, false)
 	}
-	add("memory_remember", schema(new(RememberInput)), false)
-	add("memory_journal_append", schema(new(JournalInput)), false)
+	add("memory_remember", limit(schema(new(RememberInput)), "record", map[string]int{"summary": memory.MaxSummaryBytes, "body": memory.MaxBodyBytes, "reason": memory.MaxReasonBytes}), false)
+	add("memory_journal_append", limit(schema(new(JournalInput)), "entry", map[string]int{"kind": memory.MaxJournalKindBytes, "summary": memory.MaxJournalSummaryBytes}), false)
 	return server
 }
 
@@ -255,6 +257,21 @@ func (s *signet) journal(c Client, m *memory.Service, raw []byte) api.Envelope {
 	return api.Success(Receipt{SignetID: m.ID(), ID: e.ID, Durable: true, Backup: s.wrote()})
 }
 
+// limit states the server's byte limits on an object's text fields. JSON
+// Schema maxLength counts characters (code points), each 1–4 UTF-8 bytes, so
+// setting it to the byte limit never refuses input the server accepts.
+// It works on a copy: strictjson's schemas are cached and shared.
+func limit(shared any, object string, bytes map[string]int) any {
+	schema := shared.(*jsonschema.Schema).CloneSchemas()
+	properties := schema.Properties[object].Properties
+	for field, n := range bytes {
+		p := properties[field]
+		p.MinLength, p.MaxLength = jsonschema.Ptr(1), jsonschema.Ptr(n)
+		p.Description = fmt.Sprintf("1–%d UTF-8 bytes, not blank. The server counts bytes; maxLength counts characters, so non-ASCII text can be refused below it.", n)
+	}
+	return schema
+}
+
 func saveFailure(err error) api.Envelope {
 	if errors.Is(err, memory.ErrWriterBusy) {
 		out := api.Failure("store.busy", "Another writer holds the signet lock; nothing was saved. Retry with the same request_id.", false)
@@ -263,6 +280,12 @@ func saveFailure(err error) api.Envelope {
 	}
 	if errors.Is(err, memory.ErrRequestMismatch) {
 		return api.Failure("request.conflict", "This request_id was already used with different input; nothing new was saved.", false)
+	}
+	if errors.Is(err, memory.ErrInvalidInput) {
+		return api.Failure("input.invalid", err.Error()+"; nothing was saved.", false)
+	}
+	if errors.Is(err, memory.ErrStaleHeads) {
+		return api.Failure("memory.stale_heads", memory.ErrStaleHeads.Error()+"; nothing was saved.", false)
 	}
 	return api.Failure("save.incomplete", "Save failed or is incomplete; retry only identical input with the same request_id.", true)
 }

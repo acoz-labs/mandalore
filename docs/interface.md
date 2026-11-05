@@ -429,6 +429,9 @@ signet does **not** initialize Git in this slice; its receipt says so explicitly
 | Code | CLI exit | Meaning |
 | --- | --- | --- |
 | `input.invalid`, `operation.unknown`, `operation.read_only` | 2 | Correct input/selection or honor the read-only boundary |
+| `memory.stale_heads` | 1 | Nothing was written; reread history and submit the current heads |
+| `request.conflict` | 1 | Server only: the `request_id` was used with different input; nothing new was written |
+| `save.incomplete` | 1 | Server only: a save may have been written; retry only identical input with the same `request_id` |
 | `store.busy` | 3 | Another writer owns the lock; retry after it finishes |
 | `operation.cancelled` | 130 | Cancelled before execution, or an interrupted read/server |
 | `binding.invalid`, `store.invalid` | 1 | Inspect selected configuration/data; no automatic repair |
