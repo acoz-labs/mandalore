@@ -2,9 +2,12 @@ package memory
 
 import (
 	"errors"
+	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"testing"
 )
 
@@ -190,17 +193,42 @@ func TestCorrectionErrorsByFormat(t *testing.T) {
 	}
 }
 
+// A removed stored source breaks the store, on either format.
 func TestBrokenStoreIsNotAnInputError(t *testing.T) {
-	s := fixture(t)
-	r, err := s.RememberIdempotent("first", validWrite())
-	if err != nil {
-		t.Fatal(err)
+	for name, service := range map[string]func(*testing.T) *Service{"format 1": fixture, "format 2": formatTwoService} {
+		t.Run(name, func(t *testing.T) {
+			s := service(t)
+			r, err := s.RememberIdempotent("first", validWrite())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Remove(filepath.Join(s.Root(), "memory/sources", r.Evidence.SourceRefs[0]+".json")); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := s.RememberIdempotent("second", validWrite()); err == nil || errors.Is(err, ErrInvalidInput) || errors.Is(err, ErrStaleHeads) {
+				t.Fatalf("a broken store was blamed on the caller: %v", err)
+			}
+		})
 	}
-	if err := os.Remove(filepath.Join(s.Root(), "memory/sources", r.Evidence.SourceRefs[0]+".json")); err != nil {
-		t.Fatal(err)
+}
+
+// On format 2 the existing graph passed before the new revision was added, so
+// only a read failure during the second check can be the store's.
+func TestGraphReadFailureIsNotAnInputError(t *testing.T) {
+	s := formatTwoService(t).store
+	for name, err := range map[string]error{
+		"path error": fmt.Errorf("source source-example: %w", &fs.PathError{Op: "open", Path: "source-example.json", Err: syscall.EMFILE}),
+		"errno":      fmt.Errorf("read: %w", syscall.EIO),
+	} {
+		if got := s.newRevisionFailure(err, nil, false); got != err {
+			t.Fatalf("%s: got %v", name, got)
+		}
 	}
-	if _, err := s.RememberIdempotent("second", validWrite()); err == nil || errors.Is(err, ErrInvalidInput) || errors.Is(err, ErrStaleHeads) {
-		t.Fatalf("a broken store was blamed on the caller: %v", err)
+	if got := s.newRevisionFailure(errors.New("missing predecessor revision-example"), nil, false); !errors.Is(got, ErrInvalidInput) {
+		t.Fatalf("graph failure: got %v", got)
+	}
+	if err := errors.New("missing predecessor revision-example"); s.newRevisionFailure(err, nil, true) != err {
+		t.Fatal("a resumed save was classified")
 	}
 }
 

@@ -140,7 +140,7 @@ retrying input that can never succeed. Ships as patch 2.1.2.
 3. The memory-service input errors and per-field checks, and the
    `saveFailure` and CLI mappings. The tests from step 2 pass.
 4. The single-revision schema check and the failure-path graph recheck, with
-   their tests, including the corrupt-store case that must not be blamed on
+   their tests, including the broken-store case that must not be blamed on
    the caller.
 5. Schema limits and descriptions, with a `tools/list` test.
 6. Docs, `VERSION` and release notes; `bin/ci`, `bin/sdlc check` and
@@ -149,9 +149,10 @@ retrying input that can never succeed. Ships as patch 2.1.2.
 ## Risks
 
 - **Blaming the caller for a broken store.** A whole-graph failure is an input
-  error only when the existing graph has just passed on its own, and a test
-  with a corrupt stored revision proves a valid save still gets
-  `save.incomplete`, not `input.invalid`.
+  error only when the existing graph has just passed on its own and no file
+  failed to read (a wrapped `fs.PathError` or `syscall.Errno` keeps the
+  original error). A test with a removed stored source, on each format,
+  proves a valid save still gets `save.incomplete`, not `input.invalid`.
 - **Echoing private text.** Input-error messages carry field names, limits and
   sizes, never values; the schema check reports the field location only. A
   test asserts that a refused body's text doesn't appear in the response.
@@ -193,7 +194,9 @@ Tests, run with `GOFLAGS=-count=1`:
   have moved, because its intent is already on disk.
 - The CLI returns `memory.stale_heads` for a stale-heads correction on a
   format 2 signet.
-- A corrupt stored revision plus a valid save still returns `save.incomplete`.
+- A removed stored source plus a valid save still returns `save.incomplete`,
+  on format 1 and format 2. A read failure during the second graph check
+  (a wrapped `fs.PathError` or `syscall.Errno`) keeps its original error.
 - A real mid-write failure (the sources directory made read-only after the
   intent is written) still returns `save.incomplete` with
   `write_may_have_occurred` true, and the same `request_id` succeeds after the

@@ -3,10 +3,12 @@ package memory
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
+	"syscall"
 )
 
 // PutSourced validates the entire proposed graph before writing either file,
@@ -43,12 +45,7 @@ func (s *Store) putSourcedLocked(r *Revision, source Source, verify func() error
 		return err
 	}
 	if err := s.validateGraphWithSources(append(records, *r), map[string]Source{source.ID: source}); err != nil {
-		// Format 2 validated the existing graph above; recheck format 1 only
-		// on failure, so a broken store is never blamed on the caller.
-		if !resume && (s.Signet.Version == 2 || s.validateGraphWithSources(records, nil) == nil) {
-			return invalidInput("record does not fit its history: a correction keeps the original record_id, kind and scope and supersedes existing revisions of that record; check memory_history")
-		}
-		return err
+		return s.newRevisionFailure(err, records, resume)
 	}
 	// Size/encoding failures are invalid input, not ambiguous partial I/O.
 	// Check both documents before publishing either one.
@@ -84,6 +81,22 @@ func (s *Store) putSourcedLocked(r *Revision, source Source, verify func() error
 		}
 	}
 	return writeNewJSON(filepath.Join(dir, r.ID+".json"), r)
+}
+
+// newRevisionFailure blames the caller for a failed whole-graph check only when
+// the existing graph is valid on its own and nothing failed to read. Format 2
+// validated the existing graph before the new revision; format 1 rechecks it
+// here, only on failure, so a broken store is never blamed on the caller.
+func (s *Store) newRevisionFailure(err error, records []Revision, resume bool) error {
+	var path *fs.PathError
+	var errno syscall.Errno
+	if resume || errors.As(err, &path) || errors.As(err, &errno) {
+		return err
+	}
+	if s.Signet.Version == 2 || s.validateGraphWithSources(records, nil) == nil {
+		return invalidInput("record does not fit its history: a correction keeps the original record_id, kind and scope and supersedes existing revisions of that record; check memory_history")
+	}
+	return err
 }
 
 func (s *Store) validateRootFiles() error {
