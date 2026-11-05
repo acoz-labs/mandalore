@@ -54,12 +54,16 @@ retrying input that can never succeed. Ships as patch 2.1.2.
   UTF-8 bytes". A blank field or one containing NUL says "summary is required:
   1–256 UTF-8 bytes, not blank, no NUL". Each of these wraps the sentinel:
   `validateScope` when it runs for a write, more than 32 `supersedes`, and the
-  `record_id`/`supersedes` pairing rule. The journal's kind (64) and summary
+  `record_id`/`supersedes` pairing rule. `prepareRemember` also checks that
+  `basis` is not blank, because the source record is built from it and
+  `validateSource`, the first check in `putSourcedLocked`, would otherwise
+  refuse a blank `basis` as a store error. The journal's kind (64) and summary
   (4096) checks in `AppendJournalIdempotent` wrap it too, because both tools
   share the same failure mapping.
-- **The pre-write graph checks** (`internal/memory/sourced.go`). Before
-  validating the whole graph, the new revision alone is checked against the
-  revision schema. A failure there is the caller's (bad `kind`, `basis`,
+- **The pre-write graph checks** (`internal/memory/service.go`,
+  `internal/memory/sourced.go`). At the end of `prepareRemember`, so before
+  `validateSource` and every other check in `putSourcedLocked`, the new
+  revision alone is checked against the revision schema. A failure there is the caller's (bad `kind`, `basis`,
   `sensitivity`, `volatility`, `confidence` or an ID pattern), and the message
   names the field from the schema error's location, not its value. When the
   whole-graph check fails, the existing graph is checked on its own, only on
@@ -69,6 +73,20 @@ retrying input that can never succeed. Ships as patch 2.1.2.
   there), and it becomes an input error with a fixed message pointing to
   `memory_history`. If the existing graph is invalid, the error stays what it
   is today. Successful writes do no extra work.
+
+  Which code a bad correction gets depends on the signet format, because on
+  format 2 `prepareContentWrite` compares `supersedes` with the record's
+  current heads before the whole-graph check:
+
+  | Correction | Format 1 | Format 2 |
+  | --- | --- | --- |
+  | Supersedes a revision that doesn't exist, or names an unknown `record_id` | `input.invalid` | `memory.stale_heads` |
+  | Supersedes a revision of a different record | `input.invalid` | `memory.stale_heads` |
+  | Supersedes revisions that are no longer the current heads | accepted, as today (format 1 keeps the fork visible) | `memory.stale_heads` |
+  | Changes the original `kind` or `scope` | `input.invalid` | `input.invalid` |
+
+  Format 1 is the default for new signets. Neither format writes anything in
+  these cases.
 - **The MCP failure mapping** (`internal/server/tools.go`, `saveFailure`).
   `ErrInvalidInput` maps to `input.invalid` with the error's message and
   `write_may_have_occurred: false`. `memory.ErrStaleHeads` (a correction's
@@ -89,23 +107,27 @@ retrying input that can never succeed. Ships as patch 2.1.2.
 - **The CLI classifier** (`internal/api/api.go`). `ErrInvalidInput` maps to
   `input.invalid` with its message. The CLI already returns `input.invalid` for
   these inputs, but with a generic message; this gives it the field, limit and
-  size.
+  size. `ErrStaleHeads` maps to `memory.stale_heads`, as on MCP and the
+  visibility tools, instead of the generic `input.invalid`.
 - **Tests** in `internal/memory`, `internal/server` and `internal/api` (see
   Proof).
 - **Docs.** `docs/server.md`, next to the `request_id` paragraph, gains the
   remember and journal limits (bytes, with the `maxLength` note) and what each
   save error means: `input.invalid` and `memory.stale_heads` (nothing written;
-  fix the input or reread history), `request.conflict`, `store.busy`, and
+  fix the input or reread history, with the format table above for
+  corrections), `request.conflict`, `store.busy`, and
   `save.incomplete` (a write may have happened; retry only identical input with
   the same `request_id`). `docs/interface.md`'s failure table gains rows for
   `save.incomplete`, `request.conflict` and `memory.stale_heads`, which it
   doesn't list today. `docs/signet-format.md` keeps its limits and adds that
   over-limit service writes are refused as `input.invalid`.
 - **Release preparation.** `VERSION` goes to 2.1.2 and
-  `docs/releases/2.1.2.md` follows the 2.1.1 notes: what changed, that no
-  plugin update is needed, rollout and rollback. README, deployment and install
-  pointers move to 2.1.2 in the post-publication contributor PR, as
-  `docs/repository.md` requires.
+  `docs/releases/2.1.2.md` follows the 2.1.1 notes: what changed, rollout and
+  rollback. It says outright that the Claude plugin stays at 2.1.1 on purpose,
+  because nothing in it changes, so a 2.1.2 server beside a 2.1.1 plugin isn't
+  a missed bump. README, deployment and install pointers move to 2.1.2 in the
+  post-publication contributor PR, as `docs/repository.md` requires; that PR
+  leaves `plugin.json` and the plugin README's "2.1.0 or later" line alone.
 
 ## Order of work
 
@@ -152,12 +174,17 @@ Tests, run with `GOFLAGS=-count=1`:
 - A multibyte summary: 128 two-byte characters (256 bytes) is accepted; 129
   (258 bytes, still under `maxLength` 256) is refused, which shows the bytes
   versus characters gap the description states.
-- Blank and NUL-containing fields, more than 32 `supersedes`, `record_id`
-  without `supersedes`, a bad scope and a bad `kind` return `input.invalid`
-  with no write.
-- A correction that changes `kind`, or supersedes a revision that doesn't
-  exist, returns `input.invalid`; a correction against stale heads on a
-  format 2 signet returns `memory.stale_heads`; neither writes.
+- Blank and NUL-containing fields, a blank or whitespace `basis`, more than
+  32 `supersedes`, `record_id` without `supersedes`, a bad scope and a bad
+  `kind` return `input.invalid` with no write.
+- Corrections, each on the format named and with no write:
+  - format 1: superseding a revision that doesn't exist, or a revision of a
+    different record, returns `input.invalid`;
+  - format 2: the same two cases, an unknown `record_id`, and stale heads
+    return `memory.stale_heads`;
+  - both formats: changing the original `kind` returns `input.invalid`.
+- The CLI returns `memory.stale_heads` for a stale-heads correction on a
+  format 2 signet.
 - A corrupt stored revision plus a valid save still returns `save.incomplete`.
 - A real mid-write failure (the sources directory made read-only after the
   intent is written) still returns `save.incomplete` with
