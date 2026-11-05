@@ -151,13 +151,26 @@ func (s *Service) remember(input Write, verify func() error) (Revision, error) {
 
 func (s *Service) prepareRemember(input Write) (Revision, Source, error) {
 	if err := s.validateScope(s.scope(input.Scope)); err != nil {
-		return Revision{}, Source{}, err
+		return Revision{}, Source{}, inputError(err.Error())
 	}
-	if !textWithin(input.Summary, 256) || !textWithin(input.Body, 8192) || !textWithin(input.Reason, 1024) || len(input.Supersedes) > 32 {
-		return Revision{}, Source{}, errors.New("require summary (1–256 bytes), body (1–8192 bytes), reason (1–1024 bytes), and at most 32 predecessors")
+	for _, field := range []struct {
+		name, value string
+		limit       int
+	}{{"summary", input.Summary, MaxSummaryBytes}, {"body", input.Body, MaxBodyBytes}, {"reason", input.Reason, MaxReasonBytes}} {
+		if err := checkText(field.name, field.value, field.limit); err != nil {
+			return Revision{}, Source{}, err
+		}
+	}
+	// The source is built from basis, and validateSource would refuse a
+	// blank one as a store failure.
+	if strings.TrimSpace(input.Basis) == "" {
+		return Revision{}, Source{}, invalidInput("basis is required; allowed values are in the tool schema")
+	}
+	if len(input.Supersedes) > 32 {
+		return Revision{}, Source{}, invalidInput("supersedes lists %d revisions; the limit is 32", len(input.Supersedes))
 	}
 	if (input.RecordID == "") != (len(input.Supersedes) == 0) {
-		return Revision{}, Source{}, errors.New("correction requires both record_id and supersedes; a new record requires neither")
+		return Revision{}, Source{}, invalidInput("correction requires both record_id and supersedes; a new record requires neither")
 	}
 	if input.RecordID == "" {
 		input.RecordID = NewID("record")
@@ -184,6 +197,9 @@ func (s *Service) prepareRemember(input Write) (Revision, Source, error) {
 		RecordedAt: at, EffectiveFrom: at, Authorship: s.author,
 		Evidence:   Evidence{Basis: input.Basis, Confidence: input.Confidence, SourceRefs: []string{source.ID}},
 		Supersedes: input.Supersedes, ChangeReason: input.Reason,
+	}
+	if err := checkRevisionInput(r); err != nil {
+		return Revision{}, Source{}, err
 	}
 	return r, source, nil
 }
@@ -294,8 +310,8 @@ func (s *Service) History(recordID string) ([]Revision, error) {
 	return s.store.History(recordID)
 }
 func (s *Service) AppendJournal(kind, summary string) (JournalEntry, error) {
-	if !textWithin(kind, 64) || !textWithin(summary, 4096) {
-		return JournalEntry{}, errors.New("journal requires kind (1–64 bytes) and summary (1–4096 bytes)")
+	if err := checkJournal(kind, summary); err != nil {
+		return JournalEntry{}, err
 	}
 	return s.store.RecordEvent(kind, summary, s.author)
 }

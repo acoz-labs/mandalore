@@ -43,6 +43,11 @@ func (s *Store) putSourcedLocked(r *Revision, source Source, verify func() error
 		return err
 	}
 	if err := s.validateGraphWithSources(append(records, *r), map[string]Source{source.ID: source}); err != nil {
+		// Format 2 validated the existing graph above; recheck format 1 only
+		// on failure, so a broken store is never blamed on the caller.
+		if !resume && (s.Signet.Version == 2 || s.validateGraphWithSources(records, nil) == nil) {
+			return invalidInput("record does not fit its history: a correction keeps the original record_id, kind and scope and supersedes existing revisions of that record; check memory_history")
+		}
 		return err
 	}
 	// Size/encoding failures are invalid input, not ambiguous partial I/O.

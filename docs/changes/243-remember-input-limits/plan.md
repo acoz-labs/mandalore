@@ -72,7 +72,10 @@ retrying input that can never succeed. Ships as patch 2.1.2.
   `scope` differs from the original, or that supersedes a revision that isn't
   there), and it becomes an input error with a fixed message pointing to
   `memory_history`. If the existing graph is invalid, the error stays what it
-  is today. Successful writes do no extra work.
+  is today. Successful writes do no extra work. A save resumed from its intent
+  file has already written that intent, so its errors are never classified as
+  input or stale heads; they stay `save.incomplete`
+  (`internal/memory/idempotency.go`).
 
   Which code a bad correction gets depends on the signet format, because on
   format 2 `prepareContentWrite` compares `supersedes` with the record's
@@ -179,10 +182,15 @@ Tests, run with `GOFLAGS=-count=1`:
   `kind` return `input.invalid` with no write.
 - Corrections, each on the format named and with no write:
   - format 1: superseding a revision that doesn't exist, or a revision of a
-    different record, returns `input.invalid`;
-  - format 2: the same two cases, an unknown `record_id`, and stale heads
-    return `memory.stale_heads`;
-  - both formats: changing the original `kind` returns `input.invalid`.
+    different record, and naming an unknown `record_id` return
+    `input.invalid`; superseding a non-current revision is saved;
+  - format 2: the same three cases and stale heads return
+    `memory.stale_heads`;
+  - both formats: changing the original `kind` or `scope` returns
+    `input.invalid`.
+- A save resumed from its intent file (written before a mid-write failure)
+  never reports `input.invalid` or `memory.stale_heads`, even after the heads
+  have moved, because its intent is already on disk.
 - The CLI returns `memory.stale_heads` for a stale-heads correction on a
   format 2 signet.
 - A corrupt stored revision plus a valid save still returns `save.incomplete`.

@@ -225,6 +225,28 @@ read and read-write clients.
 the same key with different input is refused with `request.conflict`. Keys are
 namespaced by client.
 
+Text limits are in UTF-8 bytes: `memory_remember`'s summary 1–256, body
+1–8192 and reason 1–1024; `memory_journal_append`'s kind 1–64 and summary
+1–4096. The tool schemas state them as `maxLength`, which counts characters,
+so non-ASCII text can be refused below it. The save errors:
+
+| Code | Written? | What to do |
+| --- | --- | --- |
+| `input.invalid` | No | Fix the input; the message names the field, its limit and the size received. A retry with the same `request_id` and corrected input saves. |
+| `memory.stale_heads` | No | The correction's `supersedes` aren't the record's current heads; reread `memory_history` and supersede those. |
+| `request.conflict` | No | Use a new `request_id` for different input. |
+| `store.busy` | No | Retry with the same `request_id`. |
+| `save.incomplete` | Maybe | Retry only identical input with the same `request_id`; it completes or returns the original receipt. |
+
+A bad correction's code depends on the signet format, because format 2 checks
+the record's current heads first:
+
+| Correction | Format 1 | Format 2 |
+| --- | --- | --- |
+| Supersedes a revision that doesn't exist, or one of another record, or names an unknown `record_id` | `input.invalid` | `memory.stale_heads` |
+| Supersedes revisions that are no longer current | Saved, keeping the fork visible | `memory.stale_heads` |
+| Changes the original `kind` or `scope` | `input.invalid` | `input.invalid` |
+
 `memory_context` (`event`: `start` or `prompt`, optional `prompt`, optional
 `budget_bytes` 256–4096, default 2048, optional `session`) answers the Claude
 plugin's hook. It returns Claude Code hook output JSON,
