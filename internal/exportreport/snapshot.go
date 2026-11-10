@@ -11,7 +11,6 @@ import (
 	"os"
 	"path"
 	"strings"
-	"time"
 
 	"github.com/acoz-labs/mandalore/internal/memory"
 	"github.com/acoz-labs/mandalore/internal/strictjson"
@@ -137,17 +136,23 @@ func readReportSnapshot(ctx context.Context, directory string, limit int64) (res
 				}
 				canonical = path.Join("memory/sources", v.ID+".json")
 				result.Sources = append(result.Sources, v)
-			case strings.HasPrefix(name, "memory/events/"):
+			case strings.HasPrefix(name, "memory/events/"), scopedEvent(name):
 				var v memory.JournalEntry
 				if e := read(name, &v); e != nil {
 					return e
 				}
-				at, e := time.Parse(time.RFC3339Nano, v.RecordedAt)
-				if e != nil {
+				var e error
+				if canonical, e = memory.CanonicalJournalPath(v); e != nil {
 					return e
 				}
-				canonical = path.Join("memory/events", at.UTC().Format("2006/01"), v.ID+".json")
 				result.Journal = append(result.Journal, v)
+			case strings.HasPrefix(name, "memory/scopes/"):
+				var v memory.ScopeLabel
+				if e := read(name, &v); e != nil {
+					return e
+				}
+				canonical = memory.CanonicalLabelPath(v)
+				result.Labels = append(result.Labels, v)
 			case strings.HasPrefix(name, "provenance/devices/"):
 				var v memory.Device
 				if e := read(name, &v); e != nil {
@@ -189,4 +194,10 @@ func readReportSnapshot(ctx context.Context, directory string, limit int64) (res
 	}
 	result.Digest = hex.EncodeToString(h.Sum(nil))
 	return result, nil
+}
+
+// scopedEvent reports a path under memory/scopes/<kind>/<id>/events/.
+func scopedEvent(name string) bool {
+	parts := strings.Split(name, "/")
+	return len(parts) > 5 && parts[0] == "memory" && parts[1] == "scopes" && parts[4] == "events"
 }

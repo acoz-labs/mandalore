@@ -85,7 +85,7 @@ func TestApplyRejectsTamperedAndStalePlanBeforeWrites(t *testing.T) {
 			case "notice":
 				p.Notice = "invented"
 			case "source":
-				if _, err := s.AppendJournal("test", "changed"); err != nil {
+				if _, err := s.AppendJournal("test", "changed", nil); err != nil {
 					t.Fatal(err)
 				}
 			case "parent":
@@ -124,7 +124,7 @@ func TestApplyRetainsUnconfirmedOutputOnCancellationAndDrift(t *testing.T) {
 				case "cancel":
 					cancel()
 				case "source":
-					_, e := s.AppendJournal("test", "changed")
+					_, e := s.AppendJournal("test", "changed", nil)
 					return e
 				case "destination":
 					return os.Mkdir(in.Destination, 0700)

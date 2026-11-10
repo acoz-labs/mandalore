@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"time"
 )
 
 // Idempotency intents are machine-local durable state. The signet volume,
@@ -20,6 +19,7 @@ type writeIntent struct {
 	Revision *Revision     `json:"revision,omitempty"`
 	Source   *Source       `json:"source,omitempty"`
 	Journal  *JournalEntry `json:"journal,omitempty"`
+	Label    *ScopeLabel   `json:"label,omitempty"`
 }
 
 // ErrRequestMismatch means a key was reused with different input or author.
@@ -51,7 +51,7 @@ func (s *Service) RememberIdempotent(key string, input Write) (Revision, error) 
 		var intent writeIntent
 		err = readJSON(path, &intent)
 		if err == nil {
-			if intent.Digest != digest || intent.Revision == nil || intent.Source == nil || intent.Journal != nil {
+			if intent.Digest != digest || intent.Revision == nil || intent.Source == nil || intent.Journal != nil || intent.Label != nil {
 				return ErrRequestMismatch
 			}
 			result = *intent.Revision
@@ -99,20 +99,25 @@ func (s *Service) RememberIdempotent(key string, input Write) (Revision, error) 
 	return result, err
 }
 
-func (s *Service) AppendJournalIdempotent(key, kind, summary string) (JournalEntry, error) {
+func (s *Service) AppendJournalIdempotent(key, kind, summary string, scope *Scope) (JournalEntry, error) {
 	var entry JournalEntry
-	if err := checkJournal(kind, summary); err != nil {
+	if err := checkJournal(kind, summary, scope); err != nil {
 		return entry, err
 	}
+	// An unscoped entry keeps the 2.1 digest input, so its retries still match.
+	var payload any = []string{kind, summary}
+	if scope != nil {
+		payload = []any{kind, summary, *scope}
+	}
 	err := s.store.withLock(func() error {
-		path, digest, err := s.intent(key, "journal", []string{kind, summary})
+		path, digest, err := s.intent(key, "journal", payload)
 		if err != nil {
 			return err
 		}
 		var intent writeIntent
 		err = readJSON(path, &intent)
 		if err == nil {
-			if intent.Digest != digest || intent.Journal == nil || intent.Revision != nil || intent.Source != nil {
+			if intent.Digest != digest || intent.Journal == nil || intent.Revision != nil || intent.Source != nil || intent.Label != nil {
 				return ErrRequestMismatch
 			}
 			entry = *intent.Journal
@@ -120,7 +125,7 @@ func (s *Service) AppendJournalIdempotent(key, kind, summary string) (JournalEnt
 			if !errors.Is(err, os.ErrNotExist) {
 				return err
 			}
-			entry = JournalEntry{Version: 1, ID: NewID("event"), Kind: kind, Summary: summary, RecordedAt: time.Now().UTC().Format(time.RFC3339Nano), Authorship: s.author}
+			entry = newJournalEntry(kind, summary, scope, s.author)
 			if err = validateJournalEntry(entry, s.store.deviceExists); err != nil {
 				return err
 			}
@@ -128,29 +133,66 @@ func (s *Service) AppendJournalIdempotent(key, kind, summary string) (JournalEnt
 				return err
 			}
 		}
-		at, err := time.Parse(time.RFC3339Nano, entry.RecordedAt)
+		rel, err := journalPath(entry)
 		if err != nil {
 			return err
 		}
-		dir := filepath.Join(s.Root(), "memory/events", at.UTC().Format("2006/01"))
-		if err = os.MkdirAll(dir, 0700); err != nil {
-			return err
-		}
-		dest := filepath.Join(dir, entry.ID+".json")
-		var existing JournalEntry
-		err = readJSON(dest, &existing)
-		if err == nil {
-			if !reflect.DeepEqual(existing, entry) {
-				return errors.New("idempotency journal mismatch")
-			}
-			return nil
-		}
-		if !errors.Is(err, os.ErrNotExist) {
-			return err
-		}
-		return writeNewJSON(dest, entry)
+		return publishOnce(s.store, rel, entry, s.store.publishJournal)
 	})
 	return entry, err
+}
+
+// NameScopeIdempotent publishes at most one label for a principal-namespaced
+// key, like RememberIdempotent.
+func (s *Service) NameScopeIdempotent(key string, in ScopeLabelWrite) (ScopeLabel, error) {
+	var label ScopeLabel
+	err := s.store.withLock(func() error {
+		path, digest, err := s.intent(key, "scope-label", in)
+		if err != nil {
+			return err
+		}
+		var intent writeIntent
+		err = readJSON(path, &intent)
+		if err == nil {
+			if intent.Digest != digest || intent.Label == nil || intent.Revision != nil || intent.Source != nil || intent.Journal != nil {
+				return ErrRequestMismatch
+			}
+			label = *intent.Label
+		} else {
+			if !errors.Is(err, os.ErrNotExist) {
+				return err
+			}
+			existing, err := s.store.ScopeLabels()
+			if err != nil {
+				return err
+			}
+			if label, err = s.prepareLabel(in, existing); err != nil {
+				return err
+			}
+			if err = writeNewJSON(path, writeIntent{Digest: digest, Label: &label}); err != nil {
+				return err
+			}
+		}
+		return publishOnce(s.store, labelPath(label), label, s.store.publishLabel)
+	})
+	return label, err
+}
+
+// publishOnce publishes an intent's document unless an identical one is
+// already at its relative path. The caller holds the writer lock.
+func publishOnce[T any](s *Store, rel string, doc T, publish func(T) error) error {
+	var existing T
+	err := readJSON(filepath.Join(s.Root, rel), &existing)
+	if err == nil {
+		if !reflect.DeepEqual(existing, doc) {
+			return errors.New("idempotency document mismatch")
+		}
+		return nil
+	}
+	if !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	return publish(doc)
 }
 
 // PendingIntents names the machine-local write intents whose publication has
@@ -179,11 +221,14 @@ func (s *Store) PendingIntents() ([]string, error) {
 			targets = append(targets, filepath.Join("memory/sources", intent.Source.ID+".json"))
 		}
 		if intent.Journal != nil {
-			at, err := time.Parse(time.RFC3339Nano, intent.Journal.RecordedAt)
+			target, err := journalPath(*intent.Journal)
 			if err != nil {
 				return nil, err
 			}
-			targets = append(targets, filepath.Join("memory/events", at.UTC().Format("2006/01"), intent.Journal.ID+".json"))
+			targets = append(targets, target)
+		}
+		if intent.Label != nil {
+			targets = append(targets, labelPath(*intent.Label))
 		}
 		if len(targets) == 0 {
 			pending = append(pending, filepath.Base(path))

@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Builds the released 2.1.2 binary (commit 79b378e) in a temporary worktree
+# and runs it against signets this tree writes topic files into
+# (TestOldReaderOnTopicSignet). It needs this repository's full history, so
+# bin/ci doesn't run it; reviewers do, for any change to the signet layout.
+set -euo pipefail
+
+base=79b378e
+root=$(git rev-parse --show-toplevel)
+work=$(mktemp -d)
+cleanup() {
+  git -C "$root" worktree remove --force "$work/source" 2>/dev/null || true
+  rm -rf "$work"
+}
+trap cleanup EXIT
+
+git -C "$root" worktree add --quiet --detach "$work/source" "$base"
+(cd "$work/source" && go build -trimpath -o "$work/mandalore-2.1.2" ./cmd/mandalore)
+cd "$root"
+MANDALORE_OLD_BINARY="$work/mandalore-2.1.2" GOFLAGS=-count=1 \
+  go test ./cmd/mandalore/ -run '^TestOldReaderOnTopicSignet$' -v "$@"

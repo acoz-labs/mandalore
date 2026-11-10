@@ -26,7 +26,7 @@ func TestPrivacyCorrectionPreservesHistoryAndJournal(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	entry, err := s.AppendJournal("fixture", original)
+	entry, err := s.AppendJournal("fixture", original, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,7 +51,7 @@ func TestPrivacyCorrectionPreservesHistoryAndJournal(t *testing.T) {
 	if !found {
 		t.Fatal("correction erased predecessor")
 	}
-	entries, err := s.Journal(original, 5)
+	entries, err := s.Journal(original, nil, 5)
 	if err != nil || len(entries) != 1 || entries[0].ID != entry.ID || entries[0].Summary != original {
 		t.Fatal("correction changed independent journal evidence", err)
 	}

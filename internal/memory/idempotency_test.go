@@ -56,7 +56,7 @@ func TestRememberIdempotentCrashRecovery(t *testing.T) {
 
 func TestJournalIdempotentCrashRecoveryAndOperationBinding(t *testing.T) {
 	s := fixture(t)
-	first, err := s.AppendJournalIdempotent("principal/request", "outcome", "Completed useful work")
+	first, err := s.AppendJournalIdempotent("principal/request", "outcome", "Completed useful work", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,12 +70,12 @@ func TestJournalIdempotentCrashRecoveryAndOperationBinding(t *testing.T) {
 		t.Fatal(err)
 	}
 	for range 2 {
-		second, err := reopened.AppendJournalIdempotent("principal/request", "outcome", "Completed useful work")
+		second, err := reopened.AppendJournalIdempotent("principal/request", "outcome", "Completed useful work", nil)
 		if err != nil || !reflect.DeepEqual(first, second) {
 			t.Fatalf("retry mismatch: %v %v", second, err)
 		}
 	}
-	if _, err := s.AppendJournalIdempotent("principal/request", "outcome", "Changed"); err == nil {
+	if _, err := s.AppendJournalIdempotent("principal/request", "outcome", "Changed", nil); err == nil {
 		t.Fatal("payload collision accepted")
 	}
 	if _, err := s.RememberIdempotent("principal/request", Write{}); err == nil {
@@ -83,10 +83,10 @@ func TestJournalIdempotentCrashRecoveryAndOperationBinding(t *testing.T) {
 	}
 	other := *s
 	other.author.Actor = "Other identity"
-	if _, err := other.AppendJournalIdempotent("principal/request", "outcome", "Completed useful work"); err == nil {
+	if _, err := other.AppendJournalIdempotent("principal/request", "outcome", "Completed useful work", nil); err == nil {
 		t.Fatal("authorship collision accepted")
 	}
-	entries, err := s.Journal("", 100)
+	entries, err := s.Journal("", nil, 100)
 	if err != nil || len(entries) != 1 {
 		t.Fatalf("duplicate journal: %v %v", entries, err)
 	}

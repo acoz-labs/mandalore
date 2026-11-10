@@ -14,7 +14,7 @@ func TestReadReportSnapshotClosedDataAndDigest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	j, err := s.AppendJournal("test", "Synthetic journal")
+	j, err := s.AppendJournal("test", "Synthetic journal", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

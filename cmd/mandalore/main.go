@@ -68,6 +68,7 @@ const help = `Mandalore — durable memory across tools
   mandalore call signet_upgrade_preview|signet_upgrade_apply|signet_upgrade_recover < input.json
   mandalore call retention_preview --read-only < explicit-policy-selection.json
   mandalore memory remember|journal-append --binding FILE < input.json
+  mandalore memory prime|name-scope --binding FILE < input.json
   mandalore memory git-init|checkpoint --binding FILE
   mandalore foundling list|inspect|history|search|read --binding FILE [options]
   mandalore foundling preview|register|connect|disconnect|promote --binding FILE < input.json
@@ -225,11 +226,16 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 		case "memory_scopes", "memory_history", "memory_visibility_history":
 			f.IntVar(&limit, "limit", 5, "Page limit")
 			f.IntVar(&offset, "offset", 0, "Page offset")
+			if name == "memory_scopes" {
+				f.StringVar(&query, "query", "", "Scope ID, name or description words")
+			}
 			if name == "memory_history" || name == "memory_visibility_history" {
 				f.StringVar(&recordID, "record-id", "", "Stable record ID")
 			}
 		case "memory_journal":
 			f.StringVar(&query, "query", "", "Query")
+			f.StringVar(&kind, "scope-kind", "", "Scope kind")
+			f.StringVar(&scopeID, "scope-id", "", "Stable scope ID")
 			f.IntVar(&limit, "limit", 5, "Result limit")
 		case "memory_withheld":
 			f.StringVar(&query, "query", "", "Current-head summary/ID query for explicit historical inspection")
@@ -337,7 +343,7 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 			}
 			value = v
 		case "memory_scopes":
-			value = api.PageInput{Offset: offset, Limit: &limit}
+			value = api.ScopesInput{Query: query, Offset: offset, Limit: &limit}
 		case "memory_withheld":
 			v := api.WithheldInput{Query: query, Offset: offset, Limit: &limit}
 			if kind != "" {
@@ -347,7 +353,11 @@ func run(ctx context.Context, args []string, input io.Reader, out, errout io.Wri
 		case "memory_history", "memory_visibility_history":
 			value = api.HistoryInput{RecordID: recordID, Offset: offset, Limit: &limit}
 		case "memory_journal":
-			value = api.JournalInput{Query: query, Limit: &limit}
+			v := api.JournalInput{Query: query, Limit: &limit}
+			if kind != "" {
+				v.Scope = &memory.Scope{Kind: kind, ID: scopeID}
+			}
+			value = v
 		case "memory_inspect", "memory_git_init", "memory_checkpoint":
 			value = struct{}{}
 		case "foundling_list":

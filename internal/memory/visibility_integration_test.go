@@ -122,10 +122,10 @@ func TestVisibilityServiceReceiptAndIndependentJournal(t *testing.T) {
 	if err != nil || saved.Version != 2 || saved.VisibilityRefs == nil || len(*saved.VisibilityRefs) != 1 || (*saved.VisibilityRefs)[0] != "visibility-withdraw" {
 		t.Fatal("receipt omitted actual causal context", saved, err)
 	}
-	if _, err := service.AppendJournal("test", "Independent synthetic journal evidence"); err != nil {
+	if _, err := service.AppendJournal("test", "Independent synthetic journal evidence", nil); err != nil {
 		t.Fatal(err)
 	}
-	entries, err := service.Journal("Independent", 10)
+	entries, err := service.Journal("Independent", nil, 10)
 	if err != nil || len(entries) != 1 {
 		t.Fatal("record withdrawal suppressed independent journal", entries, err)
 	}

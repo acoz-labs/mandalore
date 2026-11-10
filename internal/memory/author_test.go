@@ -28,7 +28,7 @@ func TestPerCallAuthorshipRecordsEnrolledClientDevice(t *testing.T) {
 	if err := readJSON(filepath.Join(s.Root(), "memory/sources", r.Evidence.SourceRefs[0]+".json"), &source); err != nil || source.DeviceID != device {
 		t.Fatalf("source device %q: %v", source.DeviceID, err)
 	}
-	j, err := view.AppendJournalIdempotent("client-c1\x00journal", "outcome", "Synthetic outcome.")
+	j, err := view.AppendJournalIdempotent("client-c1\x00journal", "outcome", "Synthetic outcome.", nil)
 	if err != nil || j.Authorship != client {
 		t.Fatalf("journal authorship %+v: %v", j.Authorship, err)
 	}

@@ -488,6 +488,9 @@ func (s *Store) Validate() error {
 	if _, err := s.FoundlingRegistrations(); err != nil {
 		return err
 	}
-	_, err = s.Journal("", 1)
+	if _, err := s.ScopeLabels(); err != nil {
+		return err
+	}
+	_, err = s.Journal("", nil, 1)
 	return err
 }

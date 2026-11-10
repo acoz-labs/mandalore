@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+// JournalEntry is schema 1 without a scope (under memory/events) or schema 2
+// with one (under memory/scopes).
 type JournalEntry struct {
 	Version    int        `json:"schema_version"`
 	ID         string     `json:"id"`
@@ -17,50 +19,79 @@ type JournalEntry struct {
 	Summary    string     `json:"summary"`
 	RecordedAt string     `json:"recorded_at"`
 	Authorship Authorship `json:"authorship"`
+	Scope      *Scope     `json:"scope,omitempty"`
 }
 
 func validateJournalEntry(entry JournalEntry, device func(string) error) error {
 	_, err := time.Parse(time.RFC3339Nano, entry.RecordedAt)
-	if err != nil || entry.Version != 1 || !identifier.MatchString(entry.ID) || strings.TrimSpace(entry.Kind) == "" || strings.TrimSpace(entry.Summary) == "" {
+	scoped := entry.Version == 2 && entry.Scope != nil && topicScope(*entry.Scope)
+	if err != nil || !(entry.Version == 1 && entry.Scope == nil || scoped) || !identifier.MatchString(entry.ID) || strings.TrimSpace(entry.Kind) == "" || strings.TrimSpace(entry.Summary) == "" {
 		return errors.New("invalid journal entry")
 	}
 	return validateAuthorship(entry.Authorship, device)
 }
 
-func (s *Store) RecordEvent(kind, summary string, author Authorship) (JournalEntry, error) {
+func newJournalEntry(kind, summary string, scope *Scope, author Authorship) JournalEntry {
 	entry := JournalEntry{Version: 1, ID: NewID("event"), Kind: kind, Summary: summary, RecordedAt: time.Now().UTC().Format(time.RFC3339Nano), Authorship: author}
+	if scope != nil {
+		selected := *scope
+		entry.Version, entry.Scope = 2, &selected
+	}
+	return entry
+}
+
+// publishJournal writes an entry at its canonical path. The caller holds the
+// writer lock.
+func (s *Store) publishJournal(entry JournalEntry) error {
+	rel, err := journalPath(entry)
+	if err != nil {
+		return err
+	}
+	path := filepath.Join(s.Root, rel)
+	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+		return err
+	}
+	return writeNewJSON(path, entry)
+}
+
+// RecordEvent appends a journal entry, scoped when scope is set.
+func (s *Store) RecordEvent(kind, summary string, scope *Scope, author Authorship) (JournalEntry, error) {
+	entry := newJournalEntry(kind, summary, scope, author)
 	if strings.TrimSpace(kind) == "" || strings.TrimSpace(summary) == "" {
 		return entry, errors.New("event kind and concise summary required")
 	}
-	if err := s.deviceExists(author.DeviceID); err != nil {
+	if err := validateJournalEntry(entry, s.deviceExists); err != nil {
 		return entry, err
 	}
-	if err := s.ValidateAuthorship(author); err != nil {
-		return entry, err
-	}
-	err := s.withLock(func() error {
-		at, _ := time.Parse(time.RFC3339Nano, entry.RecordedAt)
-		dir := filepath.Join(s.Root, "memory/events", at.Format("2006/01"))
-		if err := os.MkdirAll(dir, 0700); err != nil {
-			return err
-		}
-		return writeNewJSON(filepath.Join(dir, entry.ID+".json"), entry)
-	})
+	err := s.withLock(func() error { return s.publishJournal(entry) })
 	return entry, err
 }
 
 // Journal returns recent matching semantic journal entries, never raw harness
 // transcripts. Validation covers all entries even when the result is limited.
-func (s *Store) Journal(query string, limit int) ([]JournalEntry, error) {
+// A nil scope returns unscoped and scoped entries together.
+func (s *Store) Journal(query string, scope *Scope, limit int) ([]JournalEntry, error) {
 	if limit < 1 || limit > 100 {
 		return nil, errors.New("journal limit must be between 1 and 100")
 	}
+	entries, err := s.journalEntries(query, scope)
+	if len(entries) > limit {
+		entries = entries[:limit]
+	}
+	return entries, err
+}
+
+// journalEntries returns every matching entry, newest first.
+func (s *Store) journalEntries(query string, scope *Scope) ([]JournalEntry, error) {
 	if err := s.checkDirectories(); err != nil {
 		return nil, err
 	}
-	entries := []JournalEntry{}
-	seen := map[string]bool{}
-	err := filepath.WalkDir(filepath.Join(s.Root, "memory/events"), func(path string, info fs.DirEntry, err error) error {
+	tree, err := s.readScopeTree()
+	if err != nil {
+		return nil, err
+	}
+	all := []JournalEntry{}
+	err = filepath.WalkDir(filepath.Join(s.Root, "memory/events"), func(path string, info fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -74,35 +105,35 @@ func (s *Store) Journal(query string, limit int) ([]JournalEntry, error) {
 		if err := readJSON(path, &entry); err != nil {
 			return err
 		}
-		if err := validateJournalEntry(entry, s.deviceExists); err != nil {
-			return err
-		}
-		if seen[entry.ID] {
-			return errors.New("duplicate journal entry")
-		}
-		at, _ := time.Parse(time.RFC3339Nano, entry.RecordedAt)
-		if path != filepath.Join(s.Root, "memory/events", at.UTC().Format("2006/01"), entry.ID+".json") {
+		if want, err := journalPath(entry); err != nil || entry.Scope != nil || path != filepath.Join(s.Root, want) {
 			return errors.New("journal ID/date/path mismatch")
 		}
-		seen[entry.ID] = true
-		if strings.TrimSpace(query) == "" || relevance(Revision{Summary: entry.Summary, Body: entry.Kind}, query) > 0 {
-			entries = append(entries, entry)
-		}
+		all = append(all, entry)
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
-	sort.Slice(entries, func(i, j int) bool {
-		a, _ := time.Parse(time.RFC3339Nano, entries[i].RecordedAt)
-		b, _ := time.Parse(time.RFC3339Nano, entries[j].RecordedAt)
-		if a.Equal(b) {
-			return entries[i].ID < entries[j].ID
+	all = append(all, tree.journal...)
+	entries := []JournalEntry{}
+	seen := map[string]bool{}
+	for _, entry := range all {
+		if err := validateJournalEntry(entry, s.deviceExists); err != nil {
+			return nil, err
 		}
-		return a.After(b)
-	})
-	if len(entries) > limit {
-		entries = entries[:limit]
+		if seen[entry.ID] {
+			return nil, errors.New("duplicate journal entry")
+		}
+		seen[entry.ID] = true
+		if scope != nil && (entry.Scope == nil || *entry.Scope != *scope) {
+			continue
+		}
+		if strings.TrimSpace(query) == "" || relevance(Revision{Summary: entry.Summary, Body: entry.Kind}, query) > 0 {
+			entries = append(entries, entry)
+		}
 	}
+	sort.Slice(entries, func(i, j int) bool {
+		return newestFirst(entries[i].RecordedAt, entries[j].RecordedAt, entries[i].ID, entries[j].ID)
+	})
 	return entries, nil
 }

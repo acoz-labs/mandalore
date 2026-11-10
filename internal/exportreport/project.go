@@ -32,6 +32,7 @@ type Projection struct {
 	RecordIDs        []string         `json:"record_ids"`
 	RevisionIDs      []string         `json:"revision_ids"`
 	JournalIDs       []string         `json:"journal_ids"`
+	LabelIDs         []string         `json:"label_ids,omitempty"`
 	Conflicts        []Conflict       `json:"conflicts"`
 	OmittedFields    []string         `json:"omitted_fields"`
 	OmittedRecords   int              `json:"omitted_records"`
@@ -76,6 +77,15 @@ func project(s memory.ReportSnapshot, in Selection) (Projection, []byte, error) 
 		byRecord[r.RecordID] = append(byRecord[r.RecordID], r)
 		scopes[r.Scope] = true
 	}
+	// A topic can be selected by scope before it has records.
+	for _, l := range s.Labels {
+		scopes[l.Scope] = true
+	}
+	for _, j := range s.Journal {
+		if j.Scope != nil {
+			scopes[*j.Scope] = true
+		}
+	}
 	selected := map[string]bool{}
 	for _, id := range in.RecordIDs {
 		if len(byRecord[id]) == 0 {
@@ -117,6 +127,19 @@ func project(s memory.ReportSnapshot, in Selection) (Projection, []byte, error) 
 			return bad()
 		}
 		selectedJournals[id] = true
+	}
+	// Selecting a scope selects its scoped journal entries and labels too.
+	selectedScopes := map[memory.Scope]bool{}
+	for _, scope := range in.Scopes {
+		selectedScopes[scope] = true
+	}
+	for _, j := range s.Journal {
+		if j.Scope != nil && selectedScopes[*j.Scope] {
+			selectedJournals[j.ID] = true
+		}
+	}
+	if len(selectedJournals) > 128 {
+		return bad()
 	}
 	omitJournals := map[string]bool{}
 	for _, id := range in.OmitJournalIDs {
@@ -287,7 +310,11 @@ func project(s memory.ReportSnapshot, in Selection) (Projection, []byte, error) 
 			item["content"] = map[string]any{"summary": j.Summary}
 		}
 		if !omit["classification"] {
-			item["classification"] = map[string]any{"kind": j.Kind}
+			classification := map[string]any{"kind": j.Kind}
+			if j.Scope != nil {
+				classification["scope"] = *j.Scope
+			}
+			item["classification"] = classification
 		}
 		if !omit["timestamps"] {
 			item["timestamps"] = map[string]any{"recorded_at": j.RecordedAt}
@@ -296,6 +323,49 @@ func project(s memory.ReportSnapshot, in Selection) (Projection, []byte, error) 
 			item["authorship"] = map[string]any{"author": j.Authorship, "device": devices[j.Authorship.DeviceID]}
 		}
 		p.JournalIDs = append(p.JournalIDs, id)
+		add(item)
+	}
+	labels := slices.Clone(s.Labels)
+	sort.Slice(labels, func(i, j int) bool { return labels[i].ID < labels[j].ID })
+	superseded := map[string]bool{}
+	labelHeads := map[memory.Scope]int{}
+	for _, l := range labels {
+		for _, id := range l.Supersedes {
+			superseded[id] = true
+		}
+	}
+	for _, l := range labels {
+		if !superseded[l.ID] {
+			labelHeads[l.Scope]++
+		}
+	}
+	for _, l := range labels {
+		if !selectedScopes[l.Scope] || (!in.IncludeHistory && superseded[l.ID]) {
+			continue
+		}
+		status := "current"
+		if superseded[l.ID] {
+			status = "historical"
+		} else if labelHeads[l.Scope] > 1 {
+			status = "conflicted"
+		}
+		item := map[string]any{"type": "scope_label", "status": status}
+		if !omit["identity"] {
+			item["identity"] = map[string]any{"label_id": l.ID, "scope": l.Scope}
+		}
+		if !omit["content"] {
+			item["content"] = map[string]any{"name": l.Name, "description": l.Description}
+		}
+		if !omit["timestamps"] {
+			item["timestamps"] = map[string]any{"recorded_at": l.RecordedAt}
+		}
+		if !omit["authorship"] {
+			item["authorship"] = map[string]any{"author": l.Authorship, "device": devices[l.Authorship.DeviceID]}
+		}
+		if !omit["change_history"] {
+			item["change_history"] = map[string]any{"supersedes": l.Supersedes, "reason": l.ChangeReason}
+		}
+		p.LabelIDs = append(p.LabelIDs, l.ID)
 		add(item)
 	}
 	if len(output.Items) > 128 {

@@ -46,7 +46,7 @@ func remoteFixture(t *testing.T) (*Synchronizer, *memory.Service, *Synchronizer,
 func TestTwoClonesReconcileAndPreserveOrigin(t *testing.T) {
 	a, first, b, second, _ := remoteFixture(t)
 	for _, service := range []*memory.Service{first, second} {
-		if _, err := service.AppendJournal("session", "Synthetic device work completed"); err != nil {
+		if _, err := service.AppendJournal("session", "Synthetic device work completed", nil); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -67,7 +67,7 @@ func TestTwoClonesReconcileAndPreserveOrigin(t *testing.T) {
 	if err != nil || len(p.Current) != 2 {
 		t.Fatal(p, err)
 	}
-	journal, err := first.Journal("", 10)
+	journal, err := first.Journal("", nil, 10)
 	if err != nil || len(journal) != 2 || journal[0].Authorship.DeviceID == journal[1].Authorship.DeviceID {
 		t.Fatal("journal provenance lost", journal, err)
 	}

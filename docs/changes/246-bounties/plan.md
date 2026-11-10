@@ -58,15 +58,18 @@ compatibility cost, and the release notes say it):
 | 2.1.2 or older | Behaviour |
 | --- | --- |
 | Recall, remember, history, journal, context, inspect | Work; names and scoped journal entries are invisible |
-| Sync, fetching a remote with the new paths (`candidateFiles`) | Refuses with "unsafe or partially staged work" before any merge, keeping the worktree, the index and unpushed local commits |
-| Checkpoint with the new files in its own worktree (`validateWorktree`) | Refuses the same way; nothing is lost |
-| Export report (`internal/exportreport`) | Refuses "unknown portable data" |
+| `server reconcile` with no local commits, remote has the new paths | Refuses: "unsafe or partially staged work requires explicit reconciliation; files and index preserved" |
+| `server reconcile` with an unpushed local commit | Refuses as diverged ("local and remote both have commits"), before the path check; the commit is kept |
+| Menu sync (merge) with an unpushed local commit | Refuses at validate: "Remote candidate could not be safely reconciled… Local work was not discarded"; HEAD, index and the unpushed commit are unchanged |
+| Checkpoint with the new files in its own worktree (`validateWorktree`) | Refuses (`sync.failed`); nothing changes |
+| Export report (`internal/exportreport`) | Refuses (`export.failed`, sanitized from "unknown portable data") |
+| Cutover preflight (`server migrate preflight`) | Refuses: "pending write intents are unreadable" |
 | Canon refresh of a source that has the new paths (`internal/foundlings/canon.go`) | Serves it: the snapshot copies every `memory/` file and validation never walks `memory/scopes/`, so records are served and names aren't |
 | `memory_journal_append` with `entry.scope` | Strict decoding refuses it as `input.invalid` before any intent or write |
 | `memory_name_scope`, `memory_prime` | Not served |
 
-The Proof section runs the 2.1.2 binary built from 79b378e against a
-2.2.0-written signet to show each row.
+`bin/check-old-reader` runs the 2.1.2 binary built from 79b378e against a
+signet this build wrote, on format 1 and format 2, and asserts each row.
 
 This follows the canon-registration precedent in `docs/signet-format.md`: a
 new document type that needs compatible readers on every clone that syncs,
@@ -425,13 +428,16 @@ Tests, run with `GOFLAGS=-count=1`:
   their intents, on format 1 and format 2:
   - recall, journal, history, inspect and `memory_context` succeed and show
     no names or scoped entries;
-  - a 2.1.2 clone with an unpushed local commit, syncing against a remote
-    that has the new paths, refuses with "unsafe or partially staged work",
-    and afterwards its worktree, its index and the unpushed commit are
-    unchanged;
-  - a 2.1.2 checkpoint with the new files in its worktree refuses the same
-    way;
-  - export preview refuses with "unknown portable data";
+  - 2.2.0 has no client-side sync command; a server reconciles with
+    `server reconcile` (fast-forward only) and a 1.x-style clone with the
+    menu's sync (merge). 2.1.2 reconcile behind the remote refuses with
+    "unsafe or partially staged work"; with an unpushed local commit it
+    refuses as diverged; the menu sync with an unpushed local commit refuses
+    at validate. In every case HEAD, the index, the files and the unpushed
+    commit are unchanged;
+  - a 2.1.2 checkpoint with the new files in its worktree refuses;
+  - export preview refuses (its message is sanitized), and the same
+    selection previews under this build;
   - `memory_journal_append` with `entry.scope` returns `input.invalid` and
     no file appears in the signet or `.mandalore/`;
   - the same `request_id` without `entry.scope` returns `save.incomplete`

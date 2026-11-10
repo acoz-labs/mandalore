@@ -93,7 +93,7 @@ func TestPreviewPinsSourceAndBindingChanges(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.AppendJournal("test", "Unselected source change"); err != nil {
+	if _, err := s.AppendJournal("test", "Unselected source change", nil); err != nil {
 		t.Fatal(err)
 	}
 	b, err := Preview(context.Background(), in)

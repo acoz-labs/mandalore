@@ -133,16 +133,16 @@ func TestRememberValidationErrorsAreInputErrors(t *testing.T) {
 
 func TestJournalLimitsAreInputErrors(t *testing.T) {
 	s := fixture(t)
-	if _, err := s.AppendJournalIdempotent("journal-kind", strings.Repeat("k", 65), "Outcome"); !errors.Is(err, ErrInvalidInput) || !strings.Contains(err.Error(), "kind is 65 bytes; the limit is 64") {
+	if _, err := s.AppendJournalIdempotent("journal-kind", strings.Repeat("k", 65), "Outcome", nil); !errors.Is(err, ErrInvalidInput) || !strings.Contains(err.Error(), "kind is 65 bytes; the limit is 64") {
 		t.Fatal(err)
 	}
-	if _, err := s.AppendJournalIdempotent("journal-summary", "outcome", strings.Repeat("s", 4097)); !errors.Is(err, ErrInvalidInput) || !strings.Contains(err.Error(), "summary is 4097 bytes; the limit is 4096") {
+	if _, err := s.AppendJournalIdempotent("journal-summary", "outcome", strings.Repeat("s", 4097), nil); !errors.Is(err, ErrInvalidInput) || !strings.Contains(err.Error(), "summary is 4097 bytes; the limit is 4096") {
 		t.Fatal(err)
 	}
-	if _, err := s.AppendJournalIdempotent("journal-summary", "outcome", strings.Repeat("s", 4096)); err != nil {
+	if _, err := s.AppendJournalIdempotent("journal-summary", "outcome", strings.Repeat("s", 4096), nil); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.AppendJournal(strings.Repeat("k", 65), "Outcome"); !errors.Is(err, ErrInvalidInput) {
+	if _, err := s.AppendJournal(strings.Repeat("k", 65), "Outcome", nil); !errors.Is(err, ErrInvalidInput) {
 		t.Fatal(err)
 	}
 }

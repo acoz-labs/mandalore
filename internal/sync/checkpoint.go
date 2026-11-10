@@ -145,6 +145,9 @@ var portablePaths = []*regexp.Regexp{
 	regexp.MustCompile(`^(memory/(records|visibility)|foundlings/registrations)/[a-z][a-z0-9-]{2,127}/([a-z][a-z0-9-]{2,127}\.json|\.gitkeep)$`),
 	regexp.MustCompile(`^(memory/sources|provenance/(devices|upgrades))/[a-z][a-z0-9-]{2,127}\.json$`),
 	regexp.MustCompile(`^memory/events/[0-9]{4}/[0-9]{2}/[a-z][a-z0-9-]{2,127}\.json$`),
+	// Scope labels and scoped journal entries, added in 2.2.0.
+	regexp.MustCompile(`^memory/scopes/(project|account|task)/[a-z][a-z0-9-]{2,127}/labels/[a-z][a-z0-9-]{2,127}\.json$`),
+	regexp.MustCompile(`^memory/scopes/(project|account|task)/[a-z][a-z0-9-]{2,127}/events/[0-9]{4}/[0-9]{2}/[a-z][a-z0-9-]{2,127}\.json$`),
 }
 
 // The engine validates semantic documents; this boundary also refuses material

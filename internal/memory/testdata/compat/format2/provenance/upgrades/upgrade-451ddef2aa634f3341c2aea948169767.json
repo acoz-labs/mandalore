@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "id": "upgrade-451ddef2aa634f3341c2aea948169767",
+  "signet_id": "signet-1ff687cbf71cb5abe439d21f0050eb5d",
+  "from_version": 1,
+  "to_version": 2,
+  "original_manifest_sha256": "43e6b7a5fa134953cc83cffb6b0fe9e6b0107d7e93da3729ed93db8bde31cf56",
+  "base_head": "451c5545c9876608300a3c57ad10769a3a371695",
+  "portable_sha256": "569958f1a09549fa9c35f2a5befdf19dec149fd5381bf1c3a6381d57d54ac759",
+  "recorded_at": "2026-11-10T20:05:55.240561Z",
+  "authorship": {
+    "device_id": "device-ee75513f454ef35fd12cacc5e2259c0b",
+    "actor": "Synthetic actor",
+    "harness": "format-upgrade",
+    "model": null,
+    "session_id": null
+  }
+}

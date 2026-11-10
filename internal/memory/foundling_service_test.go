@@ -36,7 +36,7 @@ func TestFoundlingServiceRegistersAndListsWithoutLearningReferenceMetadata(t *te
 	if err != nil || current.MatchingCount != 0 {
 		t.Fatal("registration became current memory", current, err)
 	}
-	journal, err := s.Journal("", 10)
+	journal, err := s.Journal("", nil, 10)
 	if err != nil || len(journal) != 0 {
 		t.Fatal("registration invented semantic journal", journal, err)
 	}
