@@ -62,6 +62,10 @@ Document any required deviation in `docs/development.md`.
 - The publisher needs `RELEASE_POLICY_READ_TOKEN` (`docs/deployment.md`).
   Without it, it refuses before any write: check that no draft or tag
   exists, then rerun with the token.
+- A release wrapper around `batvault exec` writes the publisher's receipt to a
+  file, because `batvault exec` swallows the wrapped command's stdout. On
+  2.1.2 the receipt was lost that way and had to be regenerated with
+  `bin/release-publication verify`.
 
 ## Conventions
 
