@@ -61,6 +61,7 @@ compatibility cost, and the release notes say it):
 | Sync, fetching a remote with the new paths (`candidateFiles`) | Refuses with "unsafe or partially staged work" before any merge, keeping the worktree, the index and unpushed local commits |
 | Checkpoint with the new files in its own worktree (`validateWorktree`) | Refuses the same way; nothing is lost |
 | Export report (`internal/exportreport`) | Refuses "unknown portable data" |
+| Canon refresh of a source that has the new paths (`internal/foundlings/canon.go`) | Serves it: the snapshot copies every `memory/` file and validation never walks `memory/scopes/`, so records are served and names aren't |
 | `memory_journal_append` with `entry.scope` | Strict decoding refuses it as `input.invalid` before any intent or write |
 | `memory_name_scope`, `memory_prime` | Not served |
 
@@ -126,8 +127,9 @@ files are kept after completion, as today.
 **`memory_scopes`.** Each item keeps `scope`, `record_count` and
 `visibility_counts`, and gains `labels`: the current label heads as
 `{id, name, description}`, absent when the scope is unnamed, more than one
-entry when they conflict. Named scopes with no records are listed with
-`record_count` 0. With `query`, items whose ID, name or description match
+entry when they conflict. Scopes with no records but a name or scoped journal
+entries are listed with `record_count` 0, so every scope that export can
+select is also findable. With `query`, items whose ID, name or description match
 (the journal's lexical matcher: exact tokens, then the limited inflection
 fallback) are ranked by score, then by kind and ID; without it, order is as
 today. Paging keeps its limit (1–50) and its 32 KiB page budget, so output
@@ -161,6 +163,13 @@ report selection:
   The report keeps `version: 1`; the additions are new optional content in
   the same shape.
 
+**Canon sources.** A signet with files under `memory/scopes/` can be another
+server's canon source. A 2.2.0 server fetches, verifies, refreshes and serves
+it: canon fetch already copies every file under `memory/`, and 2.2.0's
+validation of the snapshot checks the labels and scoped journal entries like
+any other evidence. Canon tools don't expose names; `foundling_canon_scopes`
+is unchanged.
+
 **`memory_prime`.** One read that returns, in this order:
 
 1. `labels`: the scope's current name and description heads.
@@ -180,13 +189,22 @@ journal entries sort the same way by their own `recorded_at` and ID. Records
 with several heads are listed in `conflicts` (record ID and head IDs) instead
 of being picked. Ranking and `memory_context` code are not touched.
 
+Item shapes: `state` items are whole recall hits, body included. `current`
+items are compact so a large topic still fits: revision `id`, `record_id`,
+`kind`, `summary`, `recorded_at`, `basis` and `confidence`, with no body. The
+tool description says to fetch bodies with `memory_recall` in the scope or
+with `memory_history`.
+
 Packing follows recall: the budget covers the whole JSON response; whole items
 are omitted rather than clipped; the response carries `matching_counts` per
-section, `truncated` and recall's evidence notice. The fill order is label
-names (each label is `{id, name}` first), then each label's `description`,
-then `state`, `conflicts`, `current` and `journal`. So at the minimum budget
-the topic is still identified by name when its description doesn't fit, and
-`truncated` says what was left out. A label whose name alone doesn't fit
+section, `truncated` and recall's evidence notice. Packing priority, which is
+separate from the response's section order: label names (each label is
+`{id, name}` first), then each label's `description`, then `state`,
+`conflicts`, the newest three journal entries, `current`, then the remaining
+journal entries. Sections keep the order above and newest first within each
+section. So at the minimum budget the topic is still identified by name when
+its description doesn't fit, the latest journal survives a crowded `current`,
+and `truncated` and the counts say what was left out. A label whose name alone doesn't fit
 (JSON escaping can grow a 256-byte name past 1024 bytes) is omitted and
 counted. Read clients get it.
 
@@ -213,7 +231,11 @@ only when the server lists `memory_prime`; otherwise use scopes and recall as
 before. It then gives the steps: find the topic with a `memory_scopes` query,
 prime on it, name it with `memory_name_scope` if the user named it and it has
 no name, save into its scope, correct its `project-state` record rather than
-adding one, and journal with `entry.scope`. On a 2.1.2 server the condition is
+adding one, and journal with `entry.scope`. One sentence covers a new topic:
+when no topic matches and the user has named one, use a `project` scope with a
+short lowercase ID derived from the name, unless it is clearly an account or a
+bounded task, then name it with `memory_name_scope`. This sentence is in the
+skill only; the server instructions have no room for it. On a 2.1.2 server the condition is
 false, and if an agent sends `entry.scope` anyway, 2.1.2 refuses it as
 `input.invalid` with nothing written (proved below). The plugin README says
 the same. `references/memory.md` gains the label rules. The plugin bump ships
@@ -258,11 +280,13 @@ in this PR; there is no follow-up plugin PR.
   `plugins/claude/.claude-plugin/plugin.json` to 2.2.0, and
   `docs/releases/2.2.0.md` with what changed, the upgrade-every-syncing-clone
   note, the #229 step (the plugin text is written to be harmless on a 2.1.2
-  server, so the PR merges once the owner confirms that, and the live server
-  upgrade follows the release), rollout and rollback. No new HTTP or OAuth path, so no Cloudflare allowlist change.
+  server; the reviewer verifies that on 2.1.2 with posted evidence before
+  merge, and the live server upgrade follows the release), rollout and
+  rollback. No new HTTP or OAuth path, so no Cloudflare allowlist change.
   No new secret.
 - **Tests and fixtures** in `internal/memory`, `internal/api`,
-  `internal/server`, `internal/sync`, `internal/exportreport`, with small
+  `internal/server`, `internal/sync`, `internal/exportreport` and
+  `internal/foundlings` (a canon source with the new paths), with small
   synthetic format 1 and format 2 signets written by 2.1.2 under
   `internal/memory/testdata/compat/`, and their committed generator.
 - **Old-reader check** (new `bin/check-old-reader` and a test in
@@ -329,8 +353,11 @@ in this PR; there is no follow-up plugin PR.
 - **Plugin rollout (#229).** Installs follow main, so merging the plugin bump
   rolls the new skill text out before the live server runs 2.2.0. The text is
   conditional on the server listing `memory_prime`, and 2.1.2 refuses a stray
-  `entry.scope` without writing, so it is harmless there. The PR merges once
-  the owner confirms that.
+  `entry.scope` without writing, so it is harmless there. The merge condition
+  is the reviewer's verification of that on 2.1.2, with the evidence posted on
+  the PR (the old-reader check's output, `tools/list` without `memory_prime`,
+  and the skill diff), not an owner confirmation: the text degrades safely
+  whatever the live server runs.
 - **Tight instructions budget.** Read-write instructions reach 595 of 599
   allowed bytes, so later additions must shorten something first. The
   existing test catches it.
@@ -365,6 +392,15 @@ Tests, run with `GOFLAGS=-count=1`:
   clipped. At 1024 bytes with a 1024-byte description: the name is returned
   without the description, `truncated` is true and the counts say what was
   left out; with a short description, the description and state both fit.
+- Large topic: a scope with 40 records with 4 KiB bodies and 5 journal
+  entries, at the default budget, returns all 40 summaries in `current` or
+  discloses truncation, and returns at least the newest 3 journal entries.
+  `current` items carry no body; `state` items do.
+- Scopes: a scope with only scoped journal entries is listed with
+  `record_count` 0.
+- Canon: a 2.2.0 server fetches, verifies, refreshes and serves a canon
+  source whose commit contains labels and scoped journal entries; a source
+  with a malformed label is withheld like any invalid snapshot.
 - Export: selecting a scope selects its records, scoped journal entries and
   labels; `journal_ids` and `omit_journal_ids` reach both directories;
   `omit_fields` content removes names and descriptions; a label-only scope is
@@ -400,7 +436,8 @@ Tests, run with `GOFLAGS=-count=1`:
     no file appears in the signet or `.mandalore/`;
   - the same `request_id` without `entry.scope` returns `save.incomplete`
     with nothing written;
-  - cutover preflight reports the intent decode error.
+  - cutover preflight reports the intent decode error;
+  - canon refresh of a source with the new paths serves it, without names.
 
 Repository checks: `bin/container bin/ci` needs a TTY, so where it can't get
 one I run host `bin/ci` in a Herdr tab and say so in the PR; `bin/sdlc
