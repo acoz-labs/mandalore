@@ -6,8 +6,10 @@ workflow runner configuration, formatting, module integrity, race-enabled tests,
 vet, and engine/CLI builds for macOS/Linux on amd64/arm64. Native execution is only
 established on the host running tests; a cross-build is not runtime acceptance.
 
-`bin/container bin/ci` is the container entrypoint. If Docker is unavailable,
-use the supported host fallback `bin/ci` and report the route actually verified.
+`bin/container bin/ci` is the container entrypoint. It needs a terminal: without
+one it stops with "cannot attach stdin to a TTY-enabled container". If Docker or
+a terminal is unavailable, use the supported host fallback `bin/ci` and report
+the route actually verified.
 Go is pinned to 1.26.10 in mise, the module toolchain, CI and the development
 container. The module language baseline is Go 1.26.0. CI rejects a different
 active toolchain; do not install or use an unrecorded latest runtime.

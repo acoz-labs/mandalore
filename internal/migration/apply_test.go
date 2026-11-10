@@ -78,7 +78,7 @@ func TestApplyPreservesHistoryOriginalBytesAndSeparateConversionOrigin(t *testin
 	if err != nil || len(packet.Conflicts) != 1 || len(packet.Current) != 0 {
 		t.Fatal(packet, err)
 	}
-	journal, err := s.Journal("", 100)
+	journal, err := s.Journal("", nil, 100)
 	if err != nil || len(journal) != 2 {
 		t.Fatal(journal, err)
 	}

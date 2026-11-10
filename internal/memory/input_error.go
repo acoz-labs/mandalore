@@ -90,9 +90,15 @@ const (
 	MaxJournalSummaryBytes = 4096
 )
 
-func checkJournal(kind, summary string) error {
+func checkJournal(kind, summary string, scope *Scope) error {
 	if err := checkText("kind", kind, MaxJournalKindBytes); err != nil {
 		return err
 	}
-	return checkText("summary", summary, MaxJournalSummaryBytes)
+	if err := checkText("summary", summary, MaxJournalSummaryBytes); err != nil {
+		return err
+	}
+	if scope != nil && !topicScope(*scope) {
+		return invalidInput("entry scope must be a project, account or task scope with an ID matching ^[a-z][a-z0-9-]{2,127}$; omit it for signet-wide work")
+	}
+	return nil
 }

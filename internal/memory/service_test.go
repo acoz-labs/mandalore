@@ -106,10 +106,10 @@ func TestRememberRecallCorrectAndJournal(t *testing.T) {
 	if err != nil || len(history) != 2 {
 		t.Fatalf("history: %+v %v", history, err)
 	}
-	if _, err := s.AppendJournal("decision", "Renamed the project to Silver Heron."); err != nil {
+	if _, err := s.AppendJournal("decision", "Renamed the project to Silver Heron.", nil); err != nil {
 		t.Fatal(err)
 	}
-	entries, err := s.Journal("renamed", 5)
+	entries, err := s.Journal("renamed", nil, 5)
 	if err != nil || len(entries) != 1 {
 		t.Fatalf("journal: %+v %v", entries, err)
 	}

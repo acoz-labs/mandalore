@@ -33,7 +33,7 @@ func fixture(t *testing.T) (Request, *memory.Service, memory.Revision, memory.Jo
 	if err != nil {
 		t.Fatal(err)
 	}
-	j, err := service.AppendJournal("test", "PRIVATE_JOURNAL")
+	j, err := service.AppendJournal("test", "PRIVATE_JOURNAL", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

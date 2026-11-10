@@ -15,6 +15,8 @@ memory/records/<record-id>/<revision-id>.json
 memory/sources/<source-id>.json
 memory/events/<UTC-year>/<UTC-month>/<event-id>.json
 memory/visibility/<record-id>/<event-id>.json  # format 2 only
+memory/scopes/<kind>/<scope-id>/labels/<label-id>.json                       # 2.2.0
+memory/scopes/<kind>/<scope-id>/events/<UTC-year>/<UTC-month>/<event-id>.json  # 2.2.0
 provenance/devices/<device-id>.json
 provenance/upgrades/<upgrade-id>.json         # explicit transition evidence
 foundlings/registrations/<foundling-id>/<revision-id>.json
@@ -56,7 +58,8 @@ preference, decision, procedure, project-state, entity, commitment and research-
 
 Scopes are `signet`, `project`, `account`, or `task`. Signet-wide scope must use
 this signet's ID. Service operations default to that exact scope, not all scopes.
-Scope discovery lists stable IDs/counts without promoting unrelated guidance.
+Scope discovery lists stable IDs/counts without promoting unrelated guidance;
+a scope's [label](#scope-labels-and-scoped-journals) adds its name and description.
 New records get one root. Corrections preserve record identity/kind/scope and
 name predecessors; roots, cycles, missing predecessors, unknown devices and
 missing/invalid evidence are rejected. A correction cannot take effect before
@@ -144,7 +147,8 @@ upgrade operations and the released 1.1.0 updater compatibility limitation.
 
 ## Journals and retrieval
 
-Journals contain version, ID, kind, summary, UTC recorded time and authorship.
+Journals contain version, ID, kind, summary, UTC recorded time and authorship;
+a scoped entry (schema 2) also has its `scope`.
 They are semantic summaries, not native transcripts or authoritative current
 facts. Service journal kinds are 1–64 bytes, summaries 1–4096 bytes. Journal
 queries return newest-first matches with explicit truncation, not a stable cursor.
@@ -160,6 +164,55 @@ fuzzy-matched. No embedding service or index is used. Query size is at most
 counts, conflict counts and truncation disclosed. Empty results do not prove
 absence. History/scope pages are bounded to 32 KiB; concurrent mutations can
 change offsets, so these are not snapshot cursors.
+
+## Scope labels and scoped journals
+
+Added in 2.2.0 as new files in the new `memory/scopes/` directory, on both
+formats, with no manifest change. Existing files, schemas and directories are
+unchanged, and the directory is created only by the first label or scoped
+entry. `<kind>` is `project`, `account` or `task`; the signet-wide scope has
+no label and its journal is the unscoped one. Every file under
+`memory/scopes/` must be a label or a scoped entry at the canonical path its
+own scope and ID give; anything else refuses validation.
+
+A label names a scope as a topic (a bounty). Fields: `schema_version` 1, `id`
+(`label-…`), `scope`, `name` (1–256 bytes, one line), `description`
+(1–1024), `recorded_at`, `authorship`, `supersedes` (at most 32) and
+`change_reason` (1–1024). Predecessors must exist and belong to the same
+scope, with no cycles and known devices only. A scope may have several roots:
+two clones can each name it before they sync, and both writes stay valid.
+Every unsuperseded label, root or revision, is a current head; two or more
+are a visible conflict, never resolved by time, and a revision that
+supersedes them all settles it. A single writer refuses a second root
+locally, so concurrent first names only arise across clones. Labels can't be withdrawn; a wrong
+name is revised and the old text stays in history.
+
+A scoped journal entry is journal schema 2: schema 1 plus a required `scope`.
+Unscoped entries stay schema 1 under `memory/events/`; schema 2 there, or
+schema 1 under `memory/scopes/`, refuses. IDs are unique across both places.
+
+Sync admits the two new path shapes; the format upgrade proof protects them
+as append-only evidence like everything under `memory/`. Report export reads
+them: selecting a scope selects its records, scoped entries and labels.
+
+Releases before 2.2.0 never open `memory/scopes/`. What 2.1.2 does with a
+signet that has these files (`bin/check-old-reader` asserts each):
+
+| 2.1.2 | Behaviour |
+| --- | --- |
+| Recall, remember, history, journal, context, inspect | Work; names and scoped entries are invisible |
+| `server reconcile` behind a remote with the new paths | Refuses: "unsafe or partially staged work"; files and index preserved |
+| `server reconcile` with an unpushed local commit | Refuses as diverged; the commit is kept |
+| Menu sync with an unpushed local commit | Refuses at validate; HEAD, index and the commit are unchanged |
+| Checkpoint with the new files in its worktree | Refuses; nothing changes |
+| Export preview | Refuses |
+| Canon refresh of a source with the new paths | Serves its records; names aren't read |
+| `memory_journal_append` with `entry.scope` | `input.invalid`, nothing written |
+| A retry reusing a scoped entry's `request_id` without the scope | `save.incomplete`, nothing written |
+| Cutover preflight with a 2.2.0 naming or scoped intent in `.mandalore/` | Refuses: "pending write intents are unreadable" |
+
+So every clone that syncs must run 2.2.0 or later before the first label or
+scoped entry, as with canon registrations below.
 
 ## Foundling registrations and citations
 

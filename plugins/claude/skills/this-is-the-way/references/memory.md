@@ -1,4 +1,4 @@
-# Corrections, withdrawal and foundlings
+# Corrections, withdrawal, topics and foundlings
 
 ## Correct a record
 
@@ -16,6 +16,22 @@ A changed fact gets a new revision of the same record, not a new record.
 Unresolved competing revisions are a conflict to show the user, not something to
 settle by date. The server records which client wrote each revision; don't
 invent provenance.
+
+## Name or rename a topic
+
+A topic's name and description are a label on its scope, saved with
+`memory_name_scope`. Only servers that list `memory_prime` have it.
+
+1. Find the scope with a `memory_scopes` query; its `labels` are the current
+   names.
+2. Name an unnamed scope without `supersedes`. To rename one, set
+   `supersedes` to all its current label IDs (`label-...`).
+3. Several labels on one scope are concurrent names: show them and settle
+   them with the user by superseding both. Labels can't be withdrawn, and the
+   old text stays in history, so never put secrets in a name or description.
+
+`memory_prime` gives full `project-state` records but only summaries of other
+records; recall the scope or read `memory_history` for a body.
 
 ## Withdraw or restore
 

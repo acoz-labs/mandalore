@@ -309,15 +309,22 @@ func (s *Service) Scopes() ([]ScopeInfo, error) { return s.store.Scopes() }
 func (s *Service) History(recordID string) ([]Revision, error) {
 	return s.store.History(recordID)
 }
-func (s *Service) AppendJournal(kind, summary string) (JournalEntry, error) {
-	if err := checkJournal(kind, summary); err != nil {
+
+// AppendJournal records an entry; a scope must be a project, account or task.
+func (s *Service) AppendJournal(kind, summary string, scope *Scope) (JournalEntry, error) {
+	if err := checkJournal(kind, summary, scope); err != nil {
 		return JournalEntry{}, err
 	}
-	return s.store.RecordEvent(kind, summary, s.author)
+	return s.store.RecordEvent(kind, summary, scope, s.author)
 }
-func (s *Service) Journal(query string, limit int) ([]JournalEntry, error) {
+
+// Journal searches entries; a scope keeps only that scope's entries.
+func (s *Service) Journal(query string, scope *Scope, limit int) ([]JournalEntry, error) {
 	if len(query) > 2048 {
-		return nil, errors.New("journal query exceeds 2048 bytes")
+		return nil, invalidInput("journal query is %d bytes; the limit is 2048", len(query))
 	}
-	return s.store.Journal(query, limit)
+	if scope != nil && !topicScope(*scope) {
+		return nil, invalidInput("journal scope must be a project, account or task scope; omit it for the whole journal")
+	}
+	return s.store.Journal(query, scope, limit)
 }

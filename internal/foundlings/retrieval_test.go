@@ -109,7 +109,7 @@ func TestPromotionAdaptsTextAndSeparatesOriginalFromIncorporation(t *testing.T) 
 	if !reflect.DeepEqual(before, fileTree(t, root)) {
 		t.Fatal("promotion changed reference")
 	}
-	journal, err := m.memory.Journal("", 10)
+	journal, err := m.memory.Journal("", nil, 10)
 	if err != nil || len(journal) != 0 {
 		t.Fatal("promotion fabricated journal", journal, err)
 	}

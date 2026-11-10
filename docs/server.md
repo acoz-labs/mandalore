@@ -210,30 +210,31 @@ Browsers treat `http://localhost` as a secure context, so passkeys and the
 
 ## Tools
 
-Read scope gets `memory_scopes`, `memory_recall`, `memory_history`,
-`memory_journal`, `memory_visibility_history` and `memory_context`. Read-write
-adds `memory_remember`, `memory_journal_append`, `memory_withdraw` and
-`memory_restore`. Read clients never see write tools, and the call path refuses
+Read scope gets `memory_scopes`, `memory_prime`, `memory_recall`,
+`memory_history`, `memory_journal`, `memory_visibility_history` and
+`memory_context`. Read-write adds `memory_remember`, `memory_journal_append`,
+`memory_name_scope`, `memory_withdraw` and `memory_restore`. Read clients never see write tools, and the call path refuses
 writes by scope as well. A signet with foundlings configured adds their tools
 (see [Foundlings](#foundlings)); one without them offers none.
 
 Server instructions are under 600 bytes and differ for
 read and read-write clients.
 
-`memory_remember` and `memory_journal_append` take a required `request_id`
+`memory_remember`, `memory_journal_append` and `memory_name_scope` take a required `request_id`
 (16–128 characters). A retry with identical input returns the original receipt;
 the same key with different input is refused with `request.conflict`. Keys are
 namespaced by client.
 
 Text limits are in UTF-8 bytes: `memory_remember`'s summary 1–256, body
 1–8192 and reason 1–1024; `memory_journal_append`'s kind 1–64 and summary
-1–4096. The tool schemas state them as `maxLength`, which counts characters,
+1–4096; `memory_name_scope`'s name 1–256, description 1–1024 and reason
+1–1024. The tool schemas state them as `maxLength`, which counts characters,
 so non-ASCII text can be refused below it. The save errors:
 
 | Code | Written? | What to do |
 | --- | --- | --- |
 | `input.invalid` | No | Fix the input; the message names the field, its limit and the size received. A retry with the same `request_id` and corrected input saves. |
-| `memory.stale_heads` | No | The correction's `supersedes` aren't the record's current heads; reread `memory_history` and supersede those. |
+| `memory.stale_heads` | No | The correction's `supersedes` aren't the record's current heads; reread `memory_history` and supersede those. For `memory_name_scope`, reread `memory_scopes`. |
 | `request.conflict` | No | Use a new `request_id` for different input. |
 | `store.busy` | No | Retry with the same `request_id`. |
 | `save.incomplete` | Maybe | Retry only identical input with the same `request_id`; it completes or returns the original receipt. |
@@ -290,6 +291,48 @@ plugin's hook. It returns Claude Code hook output JSON,
   same across `--resume`.
 
 A result with nothing to inject is empty, and the hook adds nothing.
+
+### Topics (bounties)
+
+A topic is a `project`, `account` or `task` scope with a name and description;
+users may call it a bounty. It isn't a new scope kind, and the signet-wide
+scope can't be named. Topics never open or close: they collect knowledge and
+are corrected as things change.
+
+- `memory_scopes` takes an optional `query` (at most 2048 bytes) matched
+  against each scope's ID, name and description, best match first; without
+  one, scopes are listed by kind and ID as before. Each item gains `labels`,
+  the scope's current names as `{id, name, description}`: absent when
+  unnamed, several when concurrent names conflict. Scopes with a name or
+  scoped journal entries but no records are listed with `record_count` 0.
+  Pages keep their 1–50 limit and 32 KiB budget.
+- `memory_name_scope` (read-write) takes `request_id` and a `label` with
+  `scope`, `name` (1–256 bytes, one line), `description` (1–1024), `reason`
+  (1–1024) and, to revise, `supersedes`: the current label IDs from
+  `memory_scopes`. On one server a scope gets one first name and later
+  revisions supersede it; two clones that each name a scope before syncing
+  leave two current names, shown as a conflict until a revision supersedes
+  both. On format 2 a `supersedes` that isn't exactly the current heads is
+  `memory.stale_heads`; on format 1 a revision of an older label is saved and
+  the fork stays visible, as for records.
+- `memory_journal_append`'s `entry` takes an optional `scope`, and
+  `memory_journal` an optional `scope` filter; both take only project,
+  account or task scopes. Without the filter the journal returns scoped and
+  unscoped entries together; `query` applies alongside `scope`.
+- `memory_prime` (read) takes a `scope` and `budget_bytes` (1024–32768,
+  default 8192) and returns, in order: `labels`; `state`, the current
+  `project-state` records in full; `conflicts`, records with several heads,
+  as record and head IDs; `current`, every other current record as a summary
+  without its body (`id`, `record_id`, `kind`, `summary`, `recorded_at`,
+  `basis`, `confidence`); and `journal`, the scope's entries. Each section is
+  newest first by `recorded_at`. It is exact-scope: signet-wide records and
+  withdrawn records are left out. The budget covers the whole response and
+  whole items are dropped, never clipped, in this order of priority: names,
+  descriptions, state, conflicts, the newest three journal entries, current,
+  the rest of the journal. `matching_counts` and `truncated` say what was left
+  out. Fetch a body with `memory_recall` in the scope or `memory_history`.
+
+`memory_context` doesn't use names or scoped journal entries.
 
 ## Foundlings
 

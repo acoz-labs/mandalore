@@ -18,6 +18,7 @@ type Snapshot struct {
 	Sources    []Source
 	Revisions  []Revision
 	Journal    []JournalEntry
+	Labels     []ScopeLabel
 	Visibility []VisibilityEvent
 	Upgrades   []UpgradeRecord
 }
@@ -99,10 +100,18 @@ func validateSnapshot(snapshot Snapshot, registrations []FoundlingRegistration, 
 	if _, err := ResolveVisibility(snapshot.Revisions, snapshot.Visibility, device); err != nil {
 		return err
 	}
+	// Labels and scoped journal entries came with 2.2.0, after the legacy
+	// import format; only the report path accepts them.
+	if !origins && len(snapshot.Labels) != 0 {
+		return errors.New("scope labels are outside the legacy import format")
+	}
+	if err := validateLabelGraph(snapshot.Labels, device); err != nil {
+		return err
+	}
 	entries := map[string]bool{}
 	for _, entry := range snapshot.Journal {
-		if entries[entry.ID] {
-			return errors.New("duplicate snapshot journal entry")
+		if entries[entry.ID] || (!origins && entry.Scope != nil) {
+			return errors.New("duplicate or unsupported snapshot journal entry")
 		}
 		if err := validateJournalEntry(entry, device); err != nil {
 			return err

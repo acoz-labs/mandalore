@@ -69,7 +69,7 @@ func TestPrivacyReadOnlyDeniesMutationNotDisclosure(t *testing.T) {
 			if _, err := a.service.Remember(memory.Write{Kind: "fact", Summary: "Privacy example", Body: marker, Basis: "observation", Reason: "Fixture", Sensitivity: "restricted"}); err != nil {
 				t.Fatal(err)
 			}
-			if _, err := a.service.AppendJournal("fixture", marker); err != nil {
+			if _, err := a.service.AppendJournal("fixture", marker, nil); err != nil {
 				t.Fatal(err)
 			}
 			if initialized {

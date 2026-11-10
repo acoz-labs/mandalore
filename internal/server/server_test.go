@@ -335,12 +335,12 @@ func TestReadScopeHasNoWriteTools(t *testing.T) {
 			t.Fatalf("read tool %s missing", name)
 		}
 	}
-	for _, name := range append([]string{"memory_remember", "memory_journal_append"}, writeTools...) {
+	for _, name := range append([]string{"memory_remember", "memory_journal_append", "memory_name_scope"}, writeTools...) {
 		if read[name] || !write[name] {
 			t.Fatalf("write tool %s: read=%v write=%v", name, read[name], write[name])
 		}
 	}
-	if len(read) != len(readTools)+1 || len(write) != len(readTools)+len(writeTools)+3 {
+	if len(read) != len(readTools)+1 || len(write) != len(readTools)+len(writeTools)+4 {
 		t.Fatalf("unexpected tools: %v", write)
 	}
 	r, err := connect(t, h, "/mcp", readToken).CallTool(context.Background(), &sdk.CallToolParams{Name: "memory_remember", Arguments: rememberArgs("read-only-request-01", "Must not save")})

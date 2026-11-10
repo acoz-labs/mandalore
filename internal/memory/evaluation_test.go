@@ -96,7 +96,7 @@ func TestRetrievalQualityMatrix(t *testing.T) {
 	// not treat names or the current working directory as stored scope IDs.
 	var scopes []Scope
 	for offset := 0; ; {
-		p, err := s.ScopePage(offset, 1)
+		p, err := s.ScopePage("", offset, 1)
 		if err != nil {
 			t.Fatal(err)
 		}

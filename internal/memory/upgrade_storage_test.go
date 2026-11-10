@@ -25,7 +25,7 @@ func TestPreparedUpgradeStopsNormalWriters(t *testing.T) {
 	if err := s.WithExclusiveLock(func() error { called = true; return nil }); !errors.Is(err, ErrUpgradePending) || called {
 		t.Fatalf("ordinary callback ran through pending upgrade: %v %v", called, err)
 	}
-	if _, err := s.RecordEvent("test", "Must not be written", u.Authorship); !errors.Is(err, ErrUpgradePending) {
+	if _, err := s.RecordEvent("test", "Must not be written", nil, u.Authorship); !errors.Is(err, ErrUpgradePending) {
 		t.Fatal("journal write was not blocked", err)
 	}
 	if err := s.WithFormatUpgradeLock(func() error { called = true; return nil }); err != nil || !called {

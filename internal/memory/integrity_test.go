@@ -55,7 +55,7 @@ func TestReadWithoutLocalStateAndWithoutMutation(t *testing.T) {
 	if _, err := s.History(r.RecordID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.Journal("", 5); err != nil {
+	if _, err := s.Journal("", nil, 5); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := s.Scopes(); err != nil {
@@ -67,7 +67,7 @@ func TestReadWithoutLocalStateAndWithoutMutation(t *testing.T) {
 	if !reflect.DeepEqual(before, snapshot(t, s.Root())) {
 		t.Fatal("read wrote state")
 	}
-	if _, err := s.AppendJournal("test", "First write after clone"); err != nil {
+	if _, err := s.AppendJournal("test", "First write after clone", nil); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -109,7 +109,7 @@ func TestNestedJournalSymlinkDoesNotWriteOutside(t *testing.T) {
 	if err := os.Symlink(outside, filepath.Join(s.Root(), "memory/events", time.Now().UTC().Format("2006"))); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.AppendJournal("test", "Do not follow the symlink"); err == nil {
+	if _, err := s.AppendJournal("test", "Do not follow the symlink", nil); err == nil {
 		t.Fatal("accepted a symlink journal tree")
 	}
 	entries, err := os.ReadDir(outside)
@@ -164,7 +164,7 @@ func TestJournalOrdersInstantsNotTimestampStrings(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	items, err := s.Journal("", 5)
+	items, err := s.Journal("", nil, 5)
 	if err != nil || len(items) != 2 || items[0].ID != "event-newer" {
 		t.Fatal("wrong instant ordering", items, err)
 	}

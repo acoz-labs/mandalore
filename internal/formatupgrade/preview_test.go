@@ -87,7 +87,7 @@ func TestPreviewRequiresExplicitBindingAndCleanSource(t *testing.T) {
 	if _, err := Preview(context.Background(), Request{BindingPath: alias}); err == nil {
 		t.Fatal("symlink binding accepted")
 	}
-	if _, err := service.AppendJournal("test", "Uncheckpointed evidence"); err != nil {
+	if _, err := service.AppendJournal("test", "Uncheckpointed evidence", nil); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := Preview(context.Background(), in); err == nil {

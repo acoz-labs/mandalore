@@ -24,6 +24,8 @@ type ScopeInfo struct {
 	Scope       Scope            `json:"scope"`
 	RecordCount int              `json:"record_count"`
 	Visibility  *ScopeVisibility `json:"visibility_counts,omitempty"`
+	// Labels are the scope's current names, set only by the scopes page.
+	Labels []LabelHead `json:"labels,omitempty"`
 }
 
 type ScopeVisibility struct {

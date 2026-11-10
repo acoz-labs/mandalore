@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "id": "visibility-ec7ebcd24478308377d6193c5408d590",
+  "record_id": "record-3eabd2b31428deea842a4565d0d83ac7",
+  "action": "withdraw",
+  "observed_content_heads": [
+    "revision-0c88a765ae6f5f0e088a586279d34d6a"
+  ],
+  "parent_visibility_heads": [],
+  "reason": "Synthetic withdrawal",
+  "recorded_at": "2026-11-10T20:05:56.106396Z",
+  "authorship": {
+    "device_id": "device-ee75513f454ef35fd12cacc5e2259c0b",
+    "actor": "Synthetic actor",
+    "harness": "cli",
+    "model": null,
+    "session_id": null
+  }
+}

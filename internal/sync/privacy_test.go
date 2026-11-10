@@ -53,7 +53,7 @@ func TestPrivacyValidJournalDeletionIsRefusedByAppendOnlyGuard(t *testing.T) {
 	s, a := fixture(t)
 	ctx := context.Background()
 	const marker = "SYNTHETIC-JOURNAL-NOT-A-SECRET"
-	event, err := a.AppendJournal("fixture", marker)
+	event, err := a.AppendJournal("fixture", marker, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

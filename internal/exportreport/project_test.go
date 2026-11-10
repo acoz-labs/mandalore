@@ -34,7 +34,7 @@ func reportFixture(t *testing.T) (memory.ReportSnapshot, memory.Revision, memory
 	if _, err = s.Remember(memory.Write{Kind: "fact", Summary: "Unrelated", Body: "UNSELECTED_MARKER", Basis: "observation", Reason: "Unrelated reason"}); err != nil {
 		t.Fatal(err)
 	}
-	j, err := s.AppendJournal("test", "JOURNAL_MARKER")
+	j, err := s.AppendJournal("test", "JOURNAL_MARKER", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

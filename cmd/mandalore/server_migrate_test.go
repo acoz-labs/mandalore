@@ -364,7 +364,7 @@ func TestMigratePreflightBlocksPendingIntents(t *testing.T) {
 	}
 	// B writes an intent; copying it to A without its event leaves A with an
 	// intent whose publication never happened.
-	if _, err := b.Service(t).AppendJournalIdempotent("request-synthetic", "note", "Interrupted write"); err != nil {
+	if _, err := b.Service(t).AppendJournalIdempotent("request-synthetic", "note", "Interrupted write", nil); err != nil {
 		t.Fatal(err)
 	}
 	intents, _ := filepath.Glob(filepath.Join(b.Root, ".mandalore", "operation-*.json"))

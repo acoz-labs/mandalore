@@ -96,13 +96,24 @@ type HistoryInput struct {
 	Offset   int    `json:"offset,omitempty"`
 	Limit    *int   `json:"limit,omitempty" jsonschema:"Default 5; range 1–50."`
 }
+type ScopesInput struct {
+	Query  string `json:"query,omitempty" jsonschema:"Words matched against scope IDs, names and descriptions, best match first; empty lists every scope (maximum 2048 bytes)."`
+	Offset int    `json:"offset,omitempty"`
+	Limit  *int   `json:"limit,omitempty" jsonschema:"Default 5; range 1–50."`
+}
 type JournalInput struct {
-	Query string `json:"query,omitempty"`
-	Limit *int   `json:"limit,omitempty"`
+	Query string        `json:"query,omitempty"`
+	Scope *memory.Scope `json:"scope,omitempty" jsonschema:"A project, account or task scope: only its journal entries. Omitted returns the whole journal, scoped and unscoped."`
+	Limit *int          `json:"limit,omitempty"`
 }
 type JournalWrite struct {
-	Kind    string `json:"kind"`
-	Summary string `json:"summary"`
+	Kind    string        `json:"kind"`
+	Summary string        `json:"summary"`
+	Scope   *memory.Scope `json:"scope,omitempty" jsonschema:"The project, account or task scope (topic) this work belongs to. Omit for signet-wide work."`
+}
+type PrimeInput struct {
+	Scope       memory.Scope `json:"scope" jsonschema:"The project, account or task scope (topic) to load; find it with memory_scopes."`
+	BudgetBytes *int         `json:"budget_bytes,omitempty" jsonschema:"Default 8192; range 1024–32768 for the whole result."`
 }
 type Inspection struct {
 	SignetID string `json:"signet_id"`
@@ -159,16 +170,20 @@ var operations = []Operation{
 	operation("memory_recall", "Recall scoped current evidence from the selected signet. Conflicting heads are not guidance; empty/truncated results do not prove absence.", true, func(_ context.Context, s *memory.Service, in RecallInput) (memory.RecallPacket, error) {
 		return s.Recall(in.Query, in.Scope, number(in.Limit, 5), number(in.BudgetBytes, 8192))
 	}),
-	operation("memory_scopes", "List stable routing scopes without promoting their content into guidance.", true, func(_ context.Context, s *memory.Service, in PageInput) (memory.Page[memory.ScopeInfo], error) {
-		return s.ScopePage(in.Offset, number(in.Limit, 5))
+	operation("memory_scopes", "List stable routing scopes, with each named scope's current name and description, without promoting their content into guidance. A query finds a topic by ID, name or description.", true, func(_ context.Context, s *memory.Service, in ScopesInput) (memory.Page[memory.ScopeInfo], error) {
+		return s.ScopePage(in.Query, in.Offset, number(in.Limit, 5))
+	}),
+	operation("memory_prime", primeDescription, true, func(_ context.Context, s *memory.Service, in PrimeInput) (memory.PrimePacket, error) {
+		return s.Prime(in.Scope, number(in.BudgetBytes, 8192))
 	}),
 	operation("memory_history", "Inspect provenance, correction reasons and all competing revisions, including withdrawn evidence. History is not current guidance; inspect memory_visibility_history for visibility decisions. Page offsets may shift after concurrent writes.", true, func(_ context.Context, s *memory.Service, in HistoryInput) (memory.Page[memory.Revision], error) {
 		return s.HistoryPage(in.RecordID, in.Offset, number(in.Limit, 5))
 	}),
 	operation("memory_journal", "Search recent semantic journal entries, not authoritative current facts or raw transcripts.", true, func(_ context.Context, s *memory.Service, in JournalInput) (memory.Page[memory.JournalEntry], error) {
-		return s.JournalPage(in.Query, number(in.Limit, 5))
+		return s.JournalPage(in.Query, in.Scope, number(in.Limit, 5))
 	}),
 	operation("memory_remember", "Save to the selected signet; does not attempt Git delivery. Store a confirmed fact, preference, decision, procedure, project-state, entity, commitment or research-claim. Basis: user-direction, observation, inference or import. Recall before adding duplicates. Never store secrets."+correctionGuidance, false, remember),
+	operation("memory_name_scope", nameScopeDescription, false, nameScope),
 	operation("memory_journal_append", "Journal to the selected signet; does not attempt Git delivery. Append a concise account of actual work and decisions, not transcripts or secrets. Do not journal a read-only task.", false, appendJournal),
 	operation("memory_inspect", "Read-only signet structure validation; no remote, credentials, native plugin or model-behavior checks.", true, func(_ context.Context, s *memory.Service, _ struct{}) (Inspection, error) {
 		err := s.Validate()
@@ -325,6 +340,8 @@ func (a *API) failure(op Operation, err error) Envelope {
 		return Failure("binding.invalid", "The signet identity changed; inspect and explicitly rebind.", false)
 	case errors.Is(err, memory.ErrInvalidInput):
 		return Failure("input.invalid", err.Error(), false)
+	case errors.Is(err, memory.ErrStaleLabels):
+		return Failure("memory.stale_heads", memory.ErrStaleLabels.Error(), false)
 	case errors.Is(err, memory.ErrStaleHeads):
 		return Failure("memory.stale_heads", memory.ErrStaleHeads.Error(), false)
 	case errors.Is(err, strictjson.ErrInvalid):

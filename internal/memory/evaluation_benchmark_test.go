@@ -43,7 +43,7 @@ func BenchmarkRetrieval(b *testing.B) {
 			})
 			b.Run("scopes", func(b *testing.B) {
 				testfixture.Measure(b, func() ([]byte, error) {
-					p, err := f.Service.ScopePage(0, 5)
+					p, err := f.Service.ScopePage("", 0, 5)
 					if err != nil {
 						return nil, err
 					}

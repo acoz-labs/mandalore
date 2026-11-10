@@ -51,26 +51,26 @@ func TestServicePagesAndJournalTruncation(t *testing.T) {
 	if err != nil || len(h.Items) != 1 || !h.Truncated || h.NextOffset == nil {
 		t.Fatal(h, err)
 	}
-	sc, err := s.ScopePage(0, 1)
+	sc, err := s.ScopePage("", 0, 1)
 	if err != nil || len(sc.Items) != 1 || sc.Truncated {
 		t.Fatal(sc, err)
 	}
 	for n := 0; n < 3; n++ {
-		if _, err := s.AppendJournal("test", "Recorded an observation"); err != nil {
+		if _, err := s.AppendJournal("test", "Recorded an observation", nil); err != nil {
 			t.Fatal(err)
 		}
 	}
-	j, err := s.JournalPage("", 2)
+	j, err := s.JournalPage("", nil, 2)
 	if err != nil || len(j.Items) != 2 || !j.Truncated || j.NextOffset != nil {
 		t.Fatal(j, err)
 	}
-	if _, err := s.JournalPage("", 0); err == nil {
+	if _, err := s.JournalPage("", nil, 0); err == nil {
 		t.Fatal("invalid journal limit")
 	}
 	if _, err := s.HistoryPage("../bad", 0, 1); err == nil {
 		t.Fatal("invalid history ID")
 	}
-	if _, err := s.Journal(strings.Repeat("x", 2049), 5); err == nil {
+	if _, err := s.Journal(strings.Repeat("x", 2049), nil, 5); err == nil {
 		t.Fatal("unbounded journal query")
 	}
 }

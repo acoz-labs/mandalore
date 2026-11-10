@@ -390,6 +390,22 @@ a fresh recall, not a cached answer. Recall defaults to five hits and an 8192-by
 result budget; increase these only when needed. See [retrieval](retrieval.md) for
 lexical limits, completeness/conflict semantics and measured scale behavior.
 
+Topics (bounties) are named project, account or task scopes; the
+[server guide](server.md#topics-bounties) describes them. The CLI reaches the
+same operations: `memory scopes --query TEXT`, `memory journal --scope-kind
+KIND --scope-id ID`, and `memory prime` and `memory name-scope` with JSON on
+stdin, for example:
+
+```sh
+./mandalore memory name-scope --binding /example/local/binding.json < topic.json
+./mandalore memory prime --binding /example/local/binding.json <<<'{"scope":{"kind":"project","id":"copper-finch"}}'
+```
+
+where `topic.json` is
+`{"scope":{"kind":"project","id":"copper-finch"},"name":"Copper Finch","description":"The fictional Copper Finch project.","reason":"The user named this topic."}`.
+A journal entry joins a topic with `"scope"` in its `memory journal-append`
+input. The CLI forms have no `request_id`; only the server's tools do.
+
 ## Binding and provenance
 
 Selection is explicit `--binding`, then absolute `MANDALORE_BINDING`, then
@@ -429,7 +445,7 @@ signet does **not** initialize Git in this slice; its receipt says so explicitly
 | Code | CLI exit | Meaning |
 | --- | --- | --- |
 | `input.invalid`, `operation.unknown`, `operation.read_only` | 2 | Correct input/selection or honor the read-only boundary |
-| `memory.stale_heads` | 1 | Nothing was written; reread history and submit the current heads |
+| `memory.stale_heads` | 1 | Nothing was written; reread history (or, for a topic name, `memory scopes`) and submit the current heads |
 | `request.conflict` | 1 | Server only: the `request_id` was used with different input; nothing new was written |
 | `save.incomplete` | 1 | Server only: a save may have been written; retry only identical input with the same `request_id` |
 | `store.busy` | 3 | Another writer owns the lock; retry after it finishes |
@@ -496,7 +512,13 @@ The preview request has `binding_path`, `destination` and `selection`, for examp
 Use actual discovered IDs and an explicit binding; the example is not executable
 setup. At least one `record_ids`, `scopes` or `journal_ids` selection is required.
 Scopes are `{ "kind": "project", "id": "example" }` objects. Record/scope
-selection is a union; journals require exact IDs. `include_history` and
+selection is a union. A scope also selects its scoped journal entries and its
+current labels (with `include_history`, every label revision), and can be
+selected when it holds only labels or scoped entries; other journal entries
+require exact IDs, which reach scoped and unscoped entries alike. A label is a
+`scope_label` report item in the existing field categories: `identity` (label
+ID and scope), `content` (name and description), `timestamps`, `authorship`
+and `change_history`. A scoped entry's `classification` carries its scope. `include_history` and
 `include_details` default false. `omit_record_ids`, `omit_journal_ids` and
 `omit_fields` further restrict disclosure. See [privacy](privacy.md) for field
 dependency rules. History labels future-effective and conflicting revisions;
@@ -512,7 +534,8 @@ selection or destination from the reviewed plan.
 Preview pins source/binding/connection digests, canonical paths and directory
 identities, exact selected IDs/conflicts, effective omissions, report size/hash
 and filesystem effects. It never returns bodies, reasons or citation contents.
-Limits: 128 record IDs, 16 scopes, 128 journal IDs; 128 total report items;
+Limits: 128 record IDs, 16 scopes, 128 journal entries (scope-selected ones
+included); 128 total report items;
 128 MiB portable-source reads, 4 MiB per source file/report, 24 KiB plan.
 Configured reference inspection allows 256 files of at most 16 KiB each.
 Oversized input is refused, not silently truncated. Common API input remains
