@@ -72,6 +72,8 @@ func TestScopeLabelsAreRevisableEvidenceWithVisibleConflicts(t *testing.T) {
 		"bad scope id":    {Scope: Scope{Kind: "project", ID: "No"}, Name: "n", Description: "d", Reason: "r"},
 		"name too long":   {Scope: atlas, Name: strings.Repeat("n", 257), Description: "d", Reason: "r", Supersedes: []string{a.ID}},
 		"newline in name": {Scope: atlas, Name: "two\nlines", Description: "d", Reason: "r", Supersedes: []string{a.ID}},
+		"U+2028 in name":  {Scope: atlas, Name: "two\u2028lines", Description: "d", Reason: "r", Supersedes: []string{a.ID}},
+		"U+2029 in name":  {Scope: atlas, Name: "two\u2029paragraphs", Description: "d", Reason: "r", Supersedes: []string{a.ID}},
 		"blank desc":      {Scope: atlas, Name: "n", Description: " ", Reason: "r", Supersedes: []string{a.ID}},
 		"desc too long":   {Scope: atlas, Name: "n", Description: strings.Repeat("d", 1025), Reason: "r", Supersedes: []string{a.ID}},
 		"NUL reason":      {Scope: atlas, Name: "n", Description: "d", Reason: "r\x00", Supersedes: []string{a.ID}},

@@ -56,14 +56,11 @@ func (s *Service) ScopePage(query string, offset, limit int) (Page[ScopeInfo], e
 	if err != nil {
 		return Page[ScopeInfo]{}, err
 	}
-	labels, err := s.store.ScopeLabels()
+	tree, err := s.store.topicTree()
 	if err != nil {
 		return Page[ScopeInfo]{}, err
 	}
-	journal, err := s.store.journalEntries("", nil)
-	if err != nil {
-		return Page[ScopeInfo]{}, err
-	}
+	labels := tree.labels
 	listed := map[Scope]bool{}
 	for _, item := range items {
 		listed[item.Scope] = true
@@ -72,10 +69,8 @@ func (s *Service) ScopePage(query string, offset, limit int) (Page[ScopeInfo], e
 	for _, l := range labels {
 		extra = append(extra, l.Scope)
 	}
-	for _, e := range journal {
-		if e.Scope != nil {
-			extra = append(extra, *e.Scope)
-		}
+	for _, e := range tree.journal {
+		extra = append(extra, *e.Scope)
 	}
 	for _, scope := range extra {
 		if !listed[scope] {

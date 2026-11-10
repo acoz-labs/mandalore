@@ -178,10 +178,13 @@ own scope and ID give; anything else refuses validation.
 A label names a scope as a topic (a bounty). Fields: `schema_version` 1, `id`
 (`label-…`), `scope`, `name` (1–256 bytes, one line), `description`
 (1–1024), `recorded_at`, `authorship`, `supersedes` (at most 32) and
-`change_reason` (1–1024). Labels follow the registration rules: one root per
-scope, predecessors from the same scope, no cycles or missing predecessors,
-known devices only. Unsuperseded labels are the current heads; two are a
-visible conflict, never resolved by time. Labels can't be withdrawn; a wrong
+`change_reason` (1–1024). Predecessors must exist and belong to the same
+scope, with no cycles and known devices only. A scope may have several roots:
+two clones can each name it before they sync, and both writes stay valid.
+Every unsuperseded label, root or revision, is a current head; two or more
+are a visible conflict, never resolved by time, and a revision that
+supersedes them all settles it. A single writer refuses a second root
+locally, so concurrent first names only arise across clones. Labels can't be withdrawn; a wrong
 name is revised and the old text stays in history.
 
 A scoped journal entry is journal schema 2: schema 1 plus a required `scope`.

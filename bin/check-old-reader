@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
-# Builds the released 2.1.2 binary (commit 79b378e) in a temporary worktree
-# and runs it against signets this tree writes topic files into
-# (TestOldReaderOnTopicSignet). It needs this repository's full history, so
-# bin/ci doesn't run it; reviewers do, for any change to the signet layout.
+# Builds 2.1.2 from source (commit 79b378e) in a temporary worktree and runs
+# it against signets this tree writes topic files into
+# (TestOldReaderOnTopicSignet). The build reports version 0.0.0-dev, so it
+# isn't byte-identical to the release; for the stricter run, set
+# MANDALORE_OLD_BINARY to the checksum-verified release asset and run that
+# test directly. It needs this repository's full history, so bin/ci doesn't
+# run it; reviewers do, for any change to the signet layout.
 set -euo pipefail
 
 base=79b378e

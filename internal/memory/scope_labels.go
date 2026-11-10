@@ -14,8 +14,10 @@ import (
 )
 
 // ScopeLabel names a project, account or task scope: the topic a user calls a
-// bounty. Labels are append-only evidence with one root per scope; concurrent
-// revisions stay visible as several heads.
+// bounty. Labels are append-only evidence. Every unsuperseded label is a
+// current head, so two clones that name the same scope before syncing, or
+// rename it concurrently, leave several heads visible until a revision
+// supersedes them all.
 type ScopeLabel struct {
 	Version      int        `json:"schema_version"`
 	ID           string     `json:"id"`
@@ -79,13 +81,14 @@ func journalPath(e JournalEntry) (string, error) {
 	return filepath.Join(scopePath(*e.Scope), "events", month, e.ID+".json"), nil
 }
 
+// oneLine refuses control characters and the Unicode line and paragraph
+// separators, which clients may render as line breaks.
 func oneLine(value string) bool {
-	return !strings.ContainsFunc(value, unicode.IsControl)
+	return !strings.ContainsFunc(value, func(r rune) bool { return unicode.IsControl(r) || r == '\u2028' || r == '\u2029' })
 }
 
 func validateLabelGraph(items []ScopeLabel, device func(string) error) error {
 	byID := map[string]ScopeLabel{}
-	roots := map[Scope]int{}
 	for _, l := range items {
 		if l.Version != 1 || !identifier.MatchString(l.ID) || !topicScope(l.Scope) || !textWithin(l.Name, MaxScopeNameBytes) || !oneLine(l.Name) || !textWithin(l.Description, MaxScopeDescriptionBytes) || !textWithin(l.ChangeReason, MaxReasonBytes) || l.Supersedes == nil || len(l.Supersedes) > maxLabelSupersedes {
 			return errors.New("invalid scope label")
@@ -100,14 +103,8 @@ func validateLabelGraph(items []ScopeLabel, device func(string) error) error {
 			return errors.New("duplicate scope label")
 		}
 		byID[l.ID] = l
-		if len(l.Supersedes) == 0 {
-			roots[l.Scope]++
-		}
 	}
 	for _, l := range items {
-		if roots[l.Scope] != 1 {
-			return errors.New("a named scope must have exactly one label root")
-		}
 		seen := map[string]bool{}
 		for _, id := range l.Supersedes {
 			parent, exists := byID[id]
@@ -252,18 +249,30 @@ func (s *Store) readScopeTree() (scopeTree, error) {
 
 // ScopeLabels returns every validated label revision, sorted by ID.
 func (s *Store) ScopeLabels() ([]ScopeLabel, error) {
+	tree, err := s.topicTree()
+	return tree.labels, err
+}
+
+// topicTree reads memory/scopes and validates its labels and scoped journal
+// entries, without walking the unscoped journal.
+func (s *Store) topicTree() (scopeTree, error) {
 	if err := s.checkDirectories(); err != nil {
-		return nil, err
+		return scopeTree{}, err
 	}
 	tree, err := s.readScopeTree()
 	if err != nil {
-		return nil, err
+		return scopeTree{}, err
 	}
 	if err := validateLabelGraph(tree.labels, s.deviceExists); err != nil {
-		return nil, err
+		return scopeTree{}, err
+	}
+	for _, e := range tree.journal {
+		if err := validateJournalEntry(e, s.deviceExists); err != nil {
+			return scopeTree{}, err
+		}
 	}
 	sort.Slice(tree.labels, func(i, j int) bool { return tree.labels[i].ID < tree.labels[j].ID })
-	return tree.labels, nil
+	return tree, nil
 }
 
 // ScopeLabelWrite names a scope or revises its name and description.

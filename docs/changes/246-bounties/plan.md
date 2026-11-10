@@ -99,13 +99,18 @@ a named scope is a topic, or bounty.
 
 **Names and descriptions are labels.** A label document (schema 1) holds
 `schema_version`, `id` (`label-…`), `scope`, `name`, `description`,
-`recorded_at`, `authorship`, `supersedes` and `change_reason`, the same shape
-and rules as foundling registrations: one root per scope, predecessors from the
-same scope, no cycles, no missing predecessors, unknown devices refused. The
-first label of a scope has empty `supersedes`; a revision supersedes the
-current label heads. Two concurrent revisions leave two heads, both shown.
+`recorded_at`, `authorship`, `supersedes` and `change_reason`, in the shape of
+foundling registrations: predecessors from the same scope, no cycles, no
+missing predecessors, unknown devices refused. A first label has empty
+`supersedes`; a revision supersedes the current label heads. Unlike
+registrations, a scope may have several roots, because the scope is the key
+the user chose: two clones that name the same scope before syncing must both
+stay valid, or the second could never sync (code review round 1). Every
+unsuperseded label is a current head, so concurrent first names and
+concurrent renames both show as conflicting labels until a revision
+supersedes them all. A single writer still refuses a second root locally.
 Name and description are checked like record summaries (not blank, no NUL),
-and the name also refuses newlines. Labels can't be withdrawn;
+and the name also refuses control characters and U+2028/U+2029. Labels can't be withdrawn;
 withdrawal is out of scope, and a wrong description is corrected by a new
 revision (the old text stays in history, as for records). The tool description
 says never to put secrets in a name or description.
@@ -374,8 +379,12 @@ Tests, run with `GOFLAGS=-count=1`:
   stale `supersedes` returns `memory.stale_heads`; field limits at and one
   byte over, blank, NUL and newline; signet scope refused; idempotent retry
   returns the same receipt and different input returns `request.conflict`.
-- Read-only clients don't list `memory_name_scope`, and calling it or a
-  scoped `memory_journal_append` returns `access.denied`.
+- Read-only clients aren't served `memory_name_scope` or
+  `memory_journal_append`, so calling either fails with `unknown tool`; the
+  catalog's read-only path returns `operation.read_only`.
+- Two clones that name the same scope before syncing both stay
+  synchronized, show both names as a conflict, and a rename that supersedes
+  both settles it on both.
 - Journal: unscoped entries keep schema 1, their bytes and their place in an
   unfiltered query; scoped entries come back with and without the filter, and
   `query` narrows a scoped query; `scope: {kind: "signet"}` is refused as

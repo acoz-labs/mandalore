@@ -303,14 +303,16 @@ are corrected as things change.
   against each scope's ID, name and description, best match first; without
   one, scopes are listed by kind and ID as before. Each item gains `labels`,
   the scope's current names as `{id, name, description}`: absent when
-  unnamed, several when concurrent renames conflict. Scopes with a name or
+  unnamed, several when concurrent names conflict. Scopes with a name or
   scoped journal entries but no records are listed with `record_count` 0.
   Pages keep their 1–50 limit and 32 KiB budget.
 - `memory_name_scope` (read-write) takes `request_id` and a `label` with
   `scope`, `name` (1–256 bytes, one line), `description` (1–1024), `reason`
   (1–1024) and, to revise, `supersedes`: the current label IDs from
-  `memory_scopes`. A scope has one first name; later revisions supersede it.
-  On format 2 a `supersedes` that isn't exactly the current heads is
+  `memory_scopes`. On one server a scope gets one first name and later
+  revisions supersede it; two clones that each name a scope before syncing
+  leave two current names, shown as a conflict until a revision supersedes
+  both. On format 2 a `supersedes` that isn't exactly the current heads is
   `memory.stale_heads`; on format 1 a revision of an older label is saved and
   the fork stays visible, as for records.
 - `memory_journal_append`'s `entry` takes an optional `scope`, and

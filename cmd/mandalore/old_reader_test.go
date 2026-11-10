@@ -19,10 +19,10 @@ import (
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-// TestOldReaderOnTopicSignet runs a released 2.1.2 binary (MANDALORE_OLD_BINARY,
-// built from 79b378e by bin/check-old-reader) against signets that this
-// build has written names, scoped journal entries and their intents into, on
-// format 1 and format 2. It records what the old binary actually does.
+// TestOldReaderOnTopicSignet runs a 2.1.2 binary (MANDALORE_OLD_BINARY: the
+// release asset, or bin/check-old-reader's build of 79b378e) against signets
+// that this build has written names, scoped journal entries and their intents
+// into, on format 1 and format 2. It records what the old binary actually does.
 func TestOldReaderOnTopicSignet(t *testing.T) {
 	old := os.Getenv("MANDALORE_OLD_BINARY")
 	if old == "" {

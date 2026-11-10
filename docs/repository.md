@@ -35,9 +35,11 @@ Document any required deviation in `docs/development.md`.
   checks and target builds passed; cross-builds are not native acceptance.`
   It skips strict plugin validation when `claude` isn't on `PATH`, so review
   plugin changes where `claude` is installed.
-- `bin/check-old-reader` builds the released 2.1.2 binary (79b378e) in a
-  temporary worktree and runs it against signets this tree writes topic files
-  into, on both formats. It needs full history, so `bin/ci` doesn't run it;
+- `bin/check-old-reader` builds 2.1.2 from source (79b378e) in a temporary
+  worktree and runs it against signets this tree writes topic files into, on
+  both formats. That build isn't byte-identical to the release; the stricter
+  run sets `MANDALORE_OLD_BINARY` to the checksum-verified release asset and
+  runs `TestOldReaderOnTopicSignet` in `cmd/mandalore` directly. It needs full history, so `bin/ci` doesn't run it;
   run it for any change to the signet layout, intents or sync paths. Healthy:
   exits 0 with `--- PASS: TestOldReaderOnTopicSignet`.
 - `bin/sdlc check`. Healthy: exits 0 and prints

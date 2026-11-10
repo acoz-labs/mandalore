@@ -26,7 +26,7 @@ A topic's name and description are a label on its scope, saved with
    names.
 2. Name an unnamed scope without `supersedes`. To rename one, set
    `supersedes` to all its current label IDs (`label-...`).
-3. Several labels on one scope are concurrent renames: show them and settle
+3. Several labels on one scope are concurrent names: show them and settle
    them with the user by superseding both. Labels can't be withdrawn, and the
    old text stays in history, so never put secrets in a name or description.
 
