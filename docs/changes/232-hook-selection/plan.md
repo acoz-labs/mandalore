@@ -26,7 +26,7 @@ is computed once per review round, after the code is frozen, with
 | 1c | Name collisions through the coverage, evidence and summary paths: at most 3 of 24 | 7 of 24 | existing `collisions.tune`; the tripwire moves from 7 to 3 |
 | 2a | Filler-wrapped short questions: at least 16 of 18 answered in the hook's top 3 | 7 of 18 in the 2.1.0 review | new `filler_short` fixture (18 prompts); asserted ≥ 16 |
 | 2b | Plain short questions stay at 35 of 38 or better | 35 of 38 | existing `short.tune`; the floor moves from 90% to 35 of 38 |
-| 3 | Generic single-word matches: 0 injections on at least 10 two-word prompts sharing one generic body word | not measured | new `generic_two_word` fixture (12 prompts, chosen as [below](#how-generic_two_word-is-chosen)); asserted 0 |
+| 3 | Generic single-word matches: 0 injections on at least 10 two-word prompts sharing one generic body word | not measured | new `generic_two_word` fixture (12 prompts whose sole match with any record is a list word, chosen as [below](#how-generic_two_word-is-chosen)); asserted 0; plus a `generic_guard` set (6) that must keep injecting |
 | 4a | `memory_context` top-1/top-3 at least 78%/86% tuning | 78.9% / 87.4% | `rates` over the tuning split; floors move from 75/85 to 78/86 |
 | 4b | … and at least 75%/84% held out | 77.3% / 84.6% | held-out split; floors move from 65/80 to 75/84 |
 | 4c | `memory_recall` top-1/top-3 at least 75%/90% tuning | 77.3% / 93.2% | floors move from 72/88 to 75/90 |
@@ -117,6 +117,19 @@ at code review. This plan doesn't use or look for them.
       case, example, fact, idea, point, place, name, word, list, form.
 
     ("way" is a function word already, and "today" a hook stop word.)
+
+    *Held-out exposure, for `docs/retrieval.md`'s note.* While the list
+    was drafted, one rough lexical check read the 44 held-out variant
+    phrasings alongside the tuning ones, with no recall or hook run, and
+    found no expected record dropped. Afterwards, one word changed: "way"
+    was removed, because the plan's own rule excludes function words and
+    "way" is one. No word was added. The read can reach at most one variant:
+    the rule changes only two-term prompts, and just 1 of the 44 variants
+    has two terms or fewer when bare (the reviewer's count at plan
+    confirmation). That variant keeps its answer under
+    the list, so the read could have moved about 16 of the 1232 held-out
+    prompts at most, and only towards keeping an answer. The reviewer's
+    sealed batches are unaffected.
   - *How 35 of 38 plain short questions holds (triage 2b).* The rule only
     reaches a two-term prompt whose record matches one body word on the
     list. A rough check of all 38 plain short questions against this list,
@@ -130,22 +143,34 @@ at code review. This plan doesn't use or look for them.
     barred from coming back. The same check over the 88 bare tuning case
     phrasings finds no expected record dropped. (The rough check also read
     the 44 held-out variant phrasings, lexically only, with no recall or
-    hook run; `docs/retrieval.md`'s exposure note will say so.) Step 1
+    hook run; see the exposure note below.) Step 1
     repeats the check in Go against the real tokenizer for all 38 short
     questions and all 88 tuning case phrasings, and posts the result in the
     PR before the rule is written. If it finds one, the rule as written fails 2b. Step 1 then stops and
     reports to the lead, without editing the list.
-  - *How the triage 3 fixture gets 0 injections.* Each `generic_two_word`
-    prompt's shared word is on the list (see [below](#how-generic_two_word-is-chosen)),
-    so its record's lone body match is incidental by construction, in both
-    halves of the fixture. "Is 17 a prime number?" ("17" has under three
-    characters, so its terms are "prime" and "number") matches only the
-    mail signature's body on "number", which is on the list; the check
-    finds that record dropped and no other record matching. The fixture's
-    assertion is 0 of 12. A prompt where one record matches both words isn't
-    a single generic-word match. "How many days are in 30 weeks?" is
-    such a prompt (the retention and token-lifetime notes match both), so
-    it stays in `no_memory`, not in this fixture, and is a stated limit.
+  - *How the triage 3 fixture gets 0 injections.* The fixture holds only
+    prompts whose sole match with any record is a list word: every record
+    that matches either of the prompt's two terms matches just one of them,
+    in its body, and that term is on the list (see
+    [below](#how-generic_two_word-is-chosen)). Each such record is then a
+    lone generic body match, which the rule makes incidental, so the prompt
+    injects nothing by construction. "Is 17 a prime number?" ("17" has under
+    three characters, so its terms are "prime" and "number") is in it: only
+    the mail signature's body matches, on "number". The assertion is 0
+    injections over the whole fixture.
+  - *What the rule does to "How many days are in 30 weeks?"* No record
+    holds both words. Today it injects 6 records, 3 matching only "days"
+    and 3 only "weeks", each in the body. Both words are on the list, so
+    all six become incidental and the prompt should inject nothing. It's a
+    `no_memory.tune` prompt, so it counts towards 1a (at most 6 of 62).
+    Step 1's check reports the rule's effect on it.
+  - *Guard against over-suppression.* A prompt that shares a list word
+    with a record and also a distinctive term with its answer ("What year
+    is Postgres?" for the Tidepool database decision, "How many hours of
+    Helix?" for the editor preference) should inject, because the
+    distinctive term is a real match. Such prompts go in a separate guard
+    set, `generic_guard`, never in the 0-injection fixture. Each guard
+    prompt must keep its expected record in the hook's top 3.
   - *Lone summary word (item 1).* A record that matches just one of the
     prompt's content terms, in its summary or identifiers but not as a name
     the prompt capitalizes, is incidental when two or more of the prompt's
@@ -186,7 +211,8 @@ at code review. This plan doesn't use or look for them.
 - **Evaluation** (`internal/server/testdata/context-eval.json`,
   `internal/testfixture/evaluation.go`, `internal/server/context_eval_test.go`,
   `internal/server/context_calibration_test.go`):
-  - new tuning sets `filler_short` (18), `generic_two_word` (12) and
+  - new tuning sets `filler_short` (18), `generic_two_word` (12),
+    `generic_guard` (6) and
     `newer_decisions` (2 pairs of same-scope decision records, 4 records
     added to the signet, with 6 queries that match both records of a pair,
     plus 2 queries that match only the older record, which must still find
@@ -216,22 +242,31 @@ at code review. This plan doesn't use or look for them.
 
 ### How `generic_two_word` is chosen
 
-The 12 prompts are written before any rule runs on them, and none is
-answered by a record. Each has two content terms after stop words. One of
-them is a word on the generic-word list that occurs in some record's body
-but not its summary, and no record matches both terms. List words that
-qualify on today's signet include "time", "point", "minute", "week",
-"month", "list", "day" and "year". The prompts come in two halves:
+The fixture has 12 prompts, at least the triage's 10. They are written
+before any rule runs on them, and none is answered by a record. Each has
+two content terms after stop words. Every record that matches either term
+matches just one of them, in its body and not its summary or identifiers,
+and that term is on the generic-word list. So no prompt in it shares a
+non-list word with any record. List words in record bodies on today's
+signet include "time", "point", "minute", "week", "month", "list", "day"
+and "year". The prompts come in two halves:
 
 - 6 whose other term is absent from the signet ("Is 17 a prime number?"
   shape);
-- 6 whose other term is in the signet, but not in the record the generic
-  word matches.
+- 6 whose other term is also a list word, matched by a different record
+  ("How many minutes are in a month?" shape).
 
 The matched words come from at least 4 different records, and no prompt
-reuses a word from `no_memory` or `collisions`. A shape the rule can't
-reach, such as a generic word that is also in a summary, is a limit stated
-in `docs/retrieval.md`, not left out of the fixture.
+reuses a word from `no_memory` or `collisions`. Step 1 posts, for each
+prompt, every record that matches it and on which word, so the reviewer
+can check the construction before any rule runs. A prompt that fails it is
+replaced by one that meets it, before the rule is written, never after.
+
+`generic_guard` has 6 prompts, each answered by a record. Each prompt
+shares a list word with its record or another record, and a distinctive
+non-list term with its answer, as in "What year is Postgres?". Each must
+keep its expected record in the hook's top 3; a guard prompt that loses it
+fails the evaluation.
 
 ### Plugin changes, by kind
 
@@ -380,7 +415,8 @@ only after they report back.
 
 ## Order of work
 
-1. **Fixtures first, failing.** Add `filler_short`, `generic_two_word` and
+1. **Fixtures first, failing.** Add `filler_short`, `generic_two_word`,
+   `generic_guard` and
    `newer_decisions` to the evaluation set and raise `assertEvaluation` to
    the triage numbers. Record every count on unchanged 2.4.0 code in the PR
    (the before column), and save a per-case report with
@@ -459,7 +495,8 @@ Each step leaves `bin/ci` passing and the branch reviewable.
     wedding?"); a clause can raise a record but not drop one the whole
     prompt found relevant; a fourth clause is ignored; a prompt with no `?`
     behaves as today;
-  - generic word: both `generic_two_word` shapes inject nothing; a two-word
+  - generic word: both `generic_two_word` shapes inject nothing; a
+    `generic_guard`-shaped prompt keeps its answer; a two-word
     question on a distinctive body word ("Are we growing Sungold?") still
     injects; a bare-number match stays incidental;
   - lone summary word: a three-term collision injects nothing; a one-term
