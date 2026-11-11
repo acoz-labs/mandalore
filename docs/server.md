@@ -541,7 +541,7 @@ so build it from a checkout of the release tag. The build compiles `mandalore`
 from that source; `VERSION` stamps its version.
 
 ```sh
-git clone --branch v2.3.0 https://github.com/acoz-labs/mandalore.git
+git clone --branch v2.4.0 https://github.com/acoz-labs/mandalore.git
 cd mandalore
 docker build -f packaging/server/Dockerfile --build-arg VERSION="$(cat VERSION)" -t mandalore-server .
 docker run -d --name mandalore --restart unless-stopped --read-only --tmpfs /tmp \
