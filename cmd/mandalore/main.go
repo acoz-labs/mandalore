@@ -68,7 +68,7 @@ const help = `Mandalore — durable memory across tools
   mandalore call signet_upgrade_preview|signet_upgrade_apply|signet_upgrade_recover < input.json
   mandalore call retention_preview --read-only < explicit-policy-selection.json
   mandalore memory remember|journal-append --binding FILE < input.json
-  mandalore memory prime|name-scope --binding FILE < input.json
+  mandalore memory prime|name-scope|move --binding FILE < input.json
   mandalore memory git-init|checkpoint --binding FILE
   mandalore foundling list|inspect|history|search|read --binding FILE [options]
   mandalore foundling preview|register|connect|disconnect|promote --binding FILE < input.json

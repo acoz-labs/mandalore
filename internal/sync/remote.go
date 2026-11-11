@@ -263,5 +263,11 @@ func (s *Synchronizer) semanticConflicts(ctx context.Context) (int, error) {
 		}
 		count += len(packet.Conflicts)
 	}
-	return count, nil
+	// A record whose moves conflict is counted in each scope they name;
+	// count it once.
+	records, listings, err := s.store.MoveConflicts()
+	if err != nil {
+		return 0, err
+	}
+	return count - (listings - records), nil
 }

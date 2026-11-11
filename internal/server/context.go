@@ -234,6 +234,9 @@ func memoryContext(m *memory.Service, in ContextInput, session *contextSession) 
 		reserved := 0
 		for _, c := range p.Conflicts {
 			line := fmt.Sprintf("- Conflict: %s has %d competing revisions; inspect memory_history before relying on it.", c.RecordID, len(c.Revisions))
+			if len(c.MoveScopes) > 0 {
+				line = fmt.Sprintf("- Conflict: %s has moves to %d different scopes; inspect memory_history before relying on it.", c.RecordID, len(c.MoveScopes))
+			}
 			if reserved+1+len(line) <= (budget-len(out))/4 {
 				conflicts = append(conflicts, line)
 				reserved += 1 + len(line)

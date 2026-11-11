@@ -34,6 +34,12 @@ func (s *Store) putSourcedLocked(r *Revision, source Source, verify func() error
 	if err != nil {
 		return err
 	}
+	// A resumed save already holds the scope it was stored with.
+	if !resume {
+		if err := s.placeCorrection(r, records); err != nil {
+			return err
+		}
+	}
 	var states map[string]VisibilityState
 	if s.Signet.Version == 2 {
 		states, err = s.validateGraphState(records, nil)

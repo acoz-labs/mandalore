@@ -24,6 +24,8 @@ type ScopeInfo struct {
 	Scope       Scope            `json:"scope"`
 	RecordCount int              `json:"record_count"`
 	Visibility  *ScopeVisibility `json:"visibility_counts,omitempty"`
+	// MoveConflicts counts the scope's records whose moves disagree (2.3.0).
+	MoveConflicts int `json:"move_conflicts,omitempty"`
 	// Labels are the scope's current names, set only by the scopes page.
 	Labels []LabelHead `json:"labels,omitempty"`
 }
@@ -41,18 +43,29 @@ func (s *Store) Scopes() ([]ScopeInfo, error) {
 	}
 	byScope := map[Scope]map[string]bool{}
 	for _, r := range records {
-		if byScope[r.Scope] == nil {
-			byScope[r.Scope] = map[string]bool{}
+		for _, scope := range states[r.RecordID].Placement.Scopes() {
+			if byScope[scope] == nil {
+				byScope[scope] = map[string]bool{}
+			}
+			byScope[scope][r.RecordID] = true
 		}
-		byScope[r.Scope][r.RecordID] = true
 	}
 	result := []ScopeInfo{}
 	for scope, records := range byScope {
 		info := ScopeInfo{Scope: scope, RecordCount: len(records)}
+		for id := range records {
+			if states[id].Placement.Conflicted() {
+				info.MoveConflicts++
+			}
+		}
 		if s.Signet.Version == 2 {
 			counts := &ScopeVisibility{}
 			for id := range records {
-				switch states[id].State {
+				state := states[id].State
+				if state == "visible" && states[id].Placement.Conflicted() {
+					state = "content-conflict"
+				}
+				switch state {
 				case "visible":
 					counts.Visible++
 				case "content-conflict", "visibility-conflict":
@@ -123,6 +136,9 @@ type Query struct {
 type RevisionConflict struct {
 	RecordID  string     `json:"record_id"`
 	Revisions []Revision `json:"revisions"`
+	// MoveScopes are the scopes a record's conflicting moves name (2.3.0);
+	// its revisions then show the scope they were saved in.
+	MoveScopes []Scope `json:"move_scopes,omitempty"`
 }
 type Packet struct {
 	SignetID    string             `json:"signet_id"`
@@ -304,6 +320,9 @@ func (s *Store) Put(r Revision) error {
 	return s.withLock(func() error {
 		records, err := s.revisions()
 		if err != nil {
+			return err
+		}
+		if err := s.placeCorrection(&r, records); err != nil {
 			return err
 		}
 		var states map[string]VisibilityState
@@ -612,7 +631,7 @@ func (s *Store) Recall(q Query, now time.Time) (Packet, error) {
 		return p, err
 	}
 	heads := RecallableHeads(records, states, now)
-	return s.recallHeads(q, p, heads), nil
+	return s.recallHeads(q, p, heads, states), nil
 }
 
 // EffectiveHeads resolves validated revisions at a point in time without
@@ -642,30 +661,38 @@ func EffectiveHeads(records []Revision, now time.Time) map[string][]Revision {
 	return heads
 }
 
-func (s *Store) recallHeads(q Query, p Packet, heads map[string][]Revision) Packet {
+// inQuery reports whether a record in these scopes belongs to the query.
+func (s *Store) inQuery(q Query, scopes []Scope) bool {
+	for _, scoped := range scopes {
+		if scoped.Kind == "signet" && scoped.ID != s.Signet.ID {
+			continue
+		}
+		if q.AllScopes || scoped == q.Scope || !q.ExactScope && scoped.Kind == "signet" {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *Store) recallHeads(q Query, p Packet, heads map[string][]Revision, states map[string]VisibilityState) Packet {
 	// Scores belong to this fresh read, not a persistent index. Tokenizing the
 	// same bodies inside the sort comparator makes broad recalls needlessly
 	// expensive as a bank grows; compute each candidate's relevance only once.
 	query := queryTerms(q.Text)
 	var candidates []termIndex
 	for recordID, revisions := range heads {
-		scoped := revisions[0].Scope
-		if !q.AllScopes && q.ExactScope && scoped != q.Scope {
+		placement := states[recordID].Placement
+		if !s.inQuery(q, placement.Scopes()) {
 			continue
 		}
-		if !q.AllScopes && scoped.Kind != "signet" && scoped != q.Scope {
+		conflicted := len(revisions) > 1 || placement.Conflicted()
+		if conflicted && q.AllScopes && !s.anyRelevant(revisions, query) {
 			continue
 		}
-		if scoped.Kind == "signet" && scoped.ID != s.Signet.ID {
-			continue
-		}
-		if len(revisions) > 1 && q.AllScopes && !s.anyRelevant(revisions, query) {
-			continue
-		}
-		if len(revisions) > 1 {
+		if conflicted {
 			// All relevant scope conflicts are surfaced even if a new wording misses the query.
 			sort.Slice(revisions, func(i, j int) bool { return revisions[i].ID < revisions[j].ID })
-			p.Conflicts = append(p.Conflicts, RevisionConflict{RecordID: recordID, Revisions: revisions})
+			p.Conflicts = append(p.Conflicts, RevisionConflict{RecordID: recordID, Revisions: revisions, MoveScopes: placement.Conflict})
 			continue
 		}
 		p.Current = append(p.Current, revisions[0])

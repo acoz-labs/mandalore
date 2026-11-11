@@ -42,7 +42,7 @@ func (s *Service) WithheldRecords(query string, selected *Scope, offset, limit i
 	matched := map[string]WithheldRecord{}
 	for _, r := range records {
 		state := states[r.RecordID]
-		if r.Scope != scope || !state.Withheld() || !heads[r.ID] {
+		if !state.Placement.In(scope) || !state.Withheld() || !heads[r.ID] {
 			continue
 		}
 		// Only current structural-head summaries and the stable ID are searchable;
@@ -56,7 +56,7 @@ func (s *Service) WithheldRecords(query string, selected *Scope, offset, limit i
 			}
 		}
 		if matches {
-			matched[r.RecordID] = WithheldRecord{RecordID: r.RecordID, Scope: r.Scope, Kind: r.Kind, State: state.State}
+			matched[r.RecordID] = WithheldRecord{RecordID: r.RecordID, Scope: scope, Kind: r.Kind, State: state.State}
 		}
 	}
 	items := make([]WithheldRecord, 0, len(matched))

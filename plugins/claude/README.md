@@ -92,6 +92,9 @@ Topics (bounties) need a 2.2.0 server. The `this-is-the-way` skill uses them
 only when the server lists `memory_prime`, so against an older server it works
 as before.
 
+Moving a misfiled record needs a 2.3.0 server. The skill points at
+`memory_move` only when the server lists it.
+
 The hook sends a `session` input, which servers before 2.1.0 don't know. A
 2.0.x server refuses the call with `input.invalid` on every prompt. The hook
 fails open: each prompt goes through without memory, under a

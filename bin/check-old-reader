@@ -1,24 +1,33 @@
 #!/usr/bin/env bash
-# Builds 2.1.2 from source (commit 79b378e) in a temporary worktree and runs
-# it against signets this tree writes topic files into
-# (TestOldReaderOnTopicSignet). The build reports version 0.0.0-dev, so it
-# isn't byte-identical to the release; for the stricter run, set
-# MANDALORE_OLD_BINARY to the checksum-verified release asset and run that
-# test directly. It needs this repository's full history, so bin/ci doesn't
-# run it; reviewers do, for any change to the signet layout.
+# Builds 2.1.2 (commit 79b378e) and 2.2.0 (commit 0d3c22d) from source in
+# temporary worktrees and runs them against signets this tree writes into:
+# TestOldReaderOnTopicSignet with 2.1.2 (topic files, #246) and
+# TestOldReaderOnMovedRecord with both (record moves, #250). The builds report
+# version 0.0.0-dev, so they aren't byte-identical to the releases; for the
+# stricter run, set MANDALORE_OLD_BINARY to a checksum-verified release asset
+# and run a test directly. It needs this repository's full history, so bin/ci
+# doesn't run it; reviewers do, for any change to the signet layout.
 set -euo pipefail
 
-base=79b378e
 root=$(git rev-parse --show-toplevel)
 work=$(mktemp -d)
 cleanup() {
-  git -C "$root" worktree remove --force "$work/source" 2>/dev/null || true
+  for version in 2.1.2 2.2.0; do
+    git -C "$root" worktree remove --force "$work/source-$version" 2>/dev/null || true
+  done
   rm -rf "$work"
 }
 trap cleanup EXIT
 
-git -C "$root" worktree add --quiet --detach "$work/source" "$base"
-(cd "$work/source" && go build -trimpath -o "$work/mandalore-2.1.2" ./cmd/mandalore)
+build() { # build VERSION COMMIT
+  git -C "$root" worktree add --quiet --detach "$work/source-$1" "$2"
+  (cd "$work/source-$1" && go build -trimpath -o "$work/mandalore-$1" ./cmd/mandalore)
+}
+build 2.1.2 79b378e
+build 2.2.0 0d3c22d
+
 cd "$root"
 MANDALORE_OLD_BINARY="$work/mandalore-2.1.2" GOFLAGS=-count=1 \
-  go test ./cmd/mandalore/ -run '^TestOldReaderOnTopicSignet$' -v "$@"
+  go test ./cmd/mandalore/ -run '^(TestOldReaderOnTopicSignet|TestOldReaderOnMovedRecord)$' -v "$@"
+MANDALORE_OLD_BINARY="$work/mandalore-2.2.0" GOFLAGS=-count=1 \
+  go test ./cmd/mandalore/ -run '^TestOldReaderOnMovedRecord$' -v "$@"

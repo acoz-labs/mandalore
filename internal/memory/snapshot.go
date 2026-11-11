@@ -20,6 +20,7 @@ type Snapshot struct {
 	Journal    []JournalEntry
 	Labels     []ScopeLabel
 	Visibility []VisibilityEvent
+	Moves      []RecordMove
 	Upgrades   []UpgradeRecord
 }
 
@@ -98,6 +99,13 @@ func validateSnapshot(snapshot Snapshot, registrations []FoundlingRegistration, 
 		return err
 	}
 	if _, err := ResolveVisibility(snapshot.Revisions, snapshot.Visibility, device); err != nil {
+		return err
+	}
+	// Moves came with 2.3.0; only the report path accepts them.
+	if !origins && len(snapshot.Moves) != 0 {
+		return errors.New("record moves are outside the legacy import format")
+	}
+	if _, err := ResolvePlacements(snapshot.Revisions, snapshot.Moves, s.ID, device); err != nil {
 		return err
 	}
 	// Labels and scoped journal entries came with 2.2.0, after the legacy

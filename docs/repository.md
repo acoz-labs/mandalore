@@ -35,13 +35,16 @@ Document any required deviation in `docs/development.md`.
   checks and target builds passed; cross-builds are not native acceptance.`
   It skips strict plugin validation when `claude` isn't on `PATH`, so review
   plugin changes where `claude` is installed.
-- `bin/check-old-reader` builds 2.1.2 from source (79b378e) in a temporary
-  worktree and runs it against signets this tree writes topic files into, on
-  both formats. That build isn't byte-identical to the release; the stricter
-  run sets `MANDALORE_OLD_BINARY` to the checksum-verified release asset and
-  runs `TestOldReaderOnTopicSignet` in `cmd/mandalore` directly. It needs full history, so `bin/ci` doesn't run it;
+- `bin/check-old-reader` builds 2.1.2 (79b378e) and 2.2.0 (0d3c22d) from
+  source in temporary worktrees and runs them against signets this tree
+  writes into, on both formats: `TestOldReaderOnTopicSignet` (topic files)
+  with 2.1.2 and `TestOldReaderOnMovedRecord` (record moves) with both. The
+  builds aren't byte-identical to the releases; the stricter run sets
+  `MANDALORE_OLD_BINARY` to a checksum-verified release asset and runs a test
+  in `cmd/mandalore` directly. It needs full history, so `bin/ci` doesn't run it;
   run it for any change to the signet layout, intents or sync paths. Healthy:
-  exits 0 with `--- PASS: TestOldReaderOnTopicSignet`.
+  exits 0 with `--- PASS: TestOldReaderOnTopicSignet` once and
+  `--- PASS: TestOldReaderOnMovedRecord` twice.
 - `bin/sdlc check`. Healthy: exits 0 and prints
   `{"version": "<version>", "conforms": true}`.
 - `go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...` needs no install and
@@ -92,6 +95,13 @@ Document any required deviation in `docs/development.md`.
 - Installed plugins track the marketplace on main (#229), so merging a plugin
   change is its rollout. Until #229 is fixed, a plugin-touching PR merges only
   after the owner confirms the live server supports the change.
+- The exception (the requester's ruling on #250): a wording-only plugin change
+  that applies only when the server lists a tool may merge on the reviewer's
+  posted evidence from the live server's version: `tools/list` without that
+  tool, and the diff. The wording is inert there, so no call fails and nothing
+  changes. A plugin change that alters hooks or `.mcp.json`, or calls a tool
+  unconditionally, still waits for the requester's confirmation after the
+  server upgrade.
 - `bin/sdlc-release` nominates only commits that contain the PR's merge
   commit, so a pre-merge candidate's binary always differs at release in its
   embedded `source_commit`. Builds are reproducible (`-trimpath`,
@@ -156,6 +166,19 @@ Document any required deviation in `docs/development.md`.
 - A per-installation identity change must reach the MCP handler cache key.
   A cached handler holds its client and would give a second installation the
   first one's authorship.
+- A write that two clones can make before they sync must leave both
+  documents valid after the merge: allow several roots or heads and show them
+  as a conflict, never require a single root across clones, or the second
+  clone can never sync (#246 code review round 1). When two kinds of conflict
+  can stand on one record, check that each can be settled while the other
+  stands; on #250 a content conflict and a move conflict each sent the user
+  to the other's tool (plan review round 1).
+- A new portable path is refused by every caller of the sync path check, not
+  just sync. For an old-reader table, sweep every caller of `allowedPath` and
+  `validateWorktree` at the released commits: on #250 that found the
+  post-write backup, the menu's status, the format upgrade, and `server
+  migrate init` and `verify`. Then run each row on the old binary; `server
+  status` doesn't validate the worktree and works.
 - After a format break, check every hardcoded asset count or shape in the
   release wrappers against the new manifest, and sweep the whole repository:
   `bin/` shell and jq, `.github/workflows`, `internal/releaseworkflow` and

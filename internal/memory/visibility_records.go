@@ -8,11 +8,20 @@ import (
 // RecallableHeads filters before scoring or projecting content. The supplied
 // states must come from validation of these exact revisions and visibility events.
 // Missing or unknown states are withheld, never defaulted to visible.
+// Heads of a moved record carry its current scope; heads of a record whose
+// moves conflict keep the scope they were saved in, and callers must route
+// them by states[id].Placement.
 func RecallableHeads(records []Revision, states map[string]VisibilityState, now time.Time) map[string][]Revision {
 	heads := EffectiveHeads(records, now)
-	for id := range heads {
+	for id, hs := range heads {
 		if visibilityWithheld(states[id].State) {
 			delete(heads, id)
+			continue
+		}
+		if p := states[id].Placement; p.Moves > 0 && !p.Conflicted() {
+			for i := range hs {
+				hs[i].Scope = p.Scope
+			}
 		}
 	}
 	return heads
@@ -23,6 +32,9 @@ type VisibilityState struct {
 	State           string   `json:"state"`
 	ContentHeads    []string `json:"content_heads"`
 	VisibilityHeads []string `json:"visibility_heads"`
+	// Placement is the record's current scope from its moves (2.3.0). It is
+	// routing state, not part of visibility history output.
+	Placement Placement `json:"-"`
 }
 
 // Withheld separates visibility policy from ordinary content conflicts. Unknown

@@ -176,7 +176,7 @@ var operations = []Operation{
 	operation("memory_prime", primeDescription, true, func(_ context.Context, s *memory.Service, in PrimeInput) (memory.PrimePacket, error) {
 		return s.Prime(in.Scope, number(in.BudgetBytes, 8192))
 	}),
-	operation("memory_history", "Inspect provenance, correction reasons and all competing revisions, including withdrawn evidence. History is not current guidance; inspect memory_visibility_history for visibility decisions. Page offsets may shift after concurrent writes.", true, func(_ context.Context, s *memory.Service, in HistoryInput) (memory.Page[memory.Revision], error) {
+	operation("memory_history", "Inspect provenance, correction reasons and all competing revisions, including withdrawn evidence. History is not current guidance; inspect memory_visibility_history for visibility decisions. Each revision's scope is where the record was saved; scope at the top is where it is now, and the first page lists its moves, with move_heads for memory_move. Page offsets may shift after concurrent writes.", true, func(_ context.Context, s *memory.Service, in HistoryInput) (memory.RecordHistory, error) {
 		return s.HistoryPage(in.RecordID, in.Offset, number(in.Limit, 5))
 	}),
 	operation("memory_journal", "Search recent semantic journal entries, not authoritative current facts or raw transcripts.", true, func(_ context.Context, s *memory.Service, in JournalInput) (memory.Page[memory.JournalEntry], error) {
@@ -184,6 +184,7 @@ var operations = []Operation{
 	}),
 	operation("memory_remember", "Save to the selected signet; does not attempt Git delivery. Store a confirmed fact, preference, decision, procedure, project-state, entity, commitment or research-claim. Basis: user-direction, observation, inference or import. Recall before adding duplicates. Never store secrets."+correctionGuidance, false, remember),
 	operation("memory_name_scope", nameScopeDescription, false, nameScope),
+	operation("memory_move", moveDescription, false, moveRecord),
 	operation("memory_journal_append", "Journal to the selected signet; does not attempt Git delivery. Append a concise account of actual work and decisions, not transcripts or secrets. Do not journal a read-only task.", false, appendJournal),
 	operation("memory_inspect", "Read-only signet structure validation; no remote, credentials, native plugin or model-behavior checks.", true, func(_ context.Context, s *memory.Service, _ struct{}) (Inspection, error) {
 		err := s.Validate()

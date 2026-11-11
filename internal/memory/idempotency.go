@@ -20,6 +20,7 @@ type writeIntent struct {
 	Source   *Source       `json:"source,omitempty"`
 	Journal  *JournalEntry `json:"journal,omitempty"`
 	Label    *ScopeLabel   `json:"label,omitempty"`
+	Move     *moveIntent   `json:"move,omitempty"`
 }
 
 // ErrRequestMismatch means a key was reused with different input or author.
@@ -51,7 +52,7 @@ func (s *Service) RememberIdempotent(key string, input Write) (Revision, error) 
 		var intent writeIntent
 		err = readJSON(path, &intent)
 		if err == nil {
-			if intent.Digest != digest || intent.Revision == nil || intent.Source == nil || intent.Journal != nil || intent.Label != nil {
+			if intent.Digest != digest || intent.Revision == nil || intent.Source == nil || intent.Journal != nil || intent.Label != nil || intent.Move != nil {
 				return ErrRequestMismatch
 			}
 			result = *intent.Revision
@@ -117,7 +118,7 @@ func (s *Service) AppendJournalIdempotent(key, kind, summary string, scope *Scop
 		var intent writeIntent
 		err = readJSON(path, &intent)
 		if err == nil {
-			if intent.Digest != digest || intent.Journal == nil || intent.Revision != nil || intent.Source != nil || intent.Label != nil {
+			if intent.Digest != digest || intent.Journal == nil || intent.Revision != nil || intent.Source != nil || intent.Label != nil || intent.Move != nil {
 				return ErrRequestMismatch
 			}
 			entry = *intent.Journal
@@ -154,7 +155,7 @@ func (s *Service) NameScopeIdempotent(key string, in ScopeLabelWrite) (ScopeLabe
 		var intent writeIntent
 		err = readJSON(path, &intent)
 		if err == nil {
-			if intent.Digest != digest || intent.Label == nil || intent.Revision != nil || intent.Source != nil || intent.Journal != nil {
+			if intent.Digest != digest || intent.Label == nil || intent.Revision != nil || intent.Source != nil || intent.Journal != nil || intent.Move != nil {
 				return ErrRequestMismatch
 			}
 			label = *intent.Label
@@ -229,6 +230,13 @@ func (s *Store) PendingIntents() ([]string, error) {
 		}
 		if intent.Label != nil {
 			targets = append(targets, labelPath(*intent.Label))
+		}
+		if intent.Move != nil {
+			// A no-op move publishes nothing, so it is never pending.
+			if intent.Move.Move == nil {
+				continue
+			}
+			targets = append(targets, movePath(*intent.Move.Move))
 		}
 		if len(targets) == 0 {
 			pending = append(pending, filepath.Base(path))
