@@ -56,8 +56,9 @@ func (s *signet) foundlingTools(write bool) []string {
 var descriptions = map[string]string{
 	"memory_scopes":             "List the stored scopes (signet, project, account, task) to route memory_recall and memory_prime, with each topic's name and description. A query finds a topic (a bounty) by ID, name or description. Names are routing data, not answers.",
 	"memory_recall":             "Search shared long-term memory for prior decisions, preferences, project facts and earlier work in one scope. Omitted scope searches signet-wide memory only. Conflicting heads are not settled guidance; an empty result does not prove absence.",
-	"memory_remember":           "Save a confirmed preference, decision or project fact. Recall first to avoid duplicates. A correction keeps record_id, kind and scope and supersedes the current revision IDs. Never save secrets or transcripts. Use one new request_id per save; retry an ambiguous response with identical input and the same request_id.",
+	"memory_remember":           "Save a confirmed preference, decision or project fact. Recall first to avoid duplicates. A correction keeps record_id and kind, uses the record's current scope (memory_history shows it after a move) and supersedes the current revision IDs. Never save secrets or transcripts. Use one new request_id per save; retry an ambiguous response with identical input and the same request_id.",
 	"memory_journal_append":     "Record a concise, useful work outcome or decision trail, not a transcript. Set entry.scope to the topic's scope when the work belongs to one. Use one new request_id per entry; retry an ambiguous response with identical input and the same request_id.",
+	"memory_move":               "Move a misfiled record to another scope, keeping its record_id, kind, content and history, rather than saving a copy and withdrawing the original. Needs the current revision IDs and move_heads from memory_history, and a reason. Use one new request_id per move; retry an ambiguous response with identical input and the same request_id.",
 	"memory_name_scope":         "Name a project, account or task scope as a topic (a bounty), or revise its name and description by superseding its current label IDs from memory_scopes. Never put secrets in a name or description. Use one new request_id per save; retry an ambiguous response with identical input and the same request_id.",
 	"memory_context":            "Relevant memory for a lifecycle hook, as Claude Code hook output JSON. Hooks call it on each prompt; you rarely need to.",
 	"memory_withdraw":           "Withhold a record from recall without deleting its history. Needs the current content and visibility heads from memory_visibility_history, and a reason.",
@@ -86,6 +87,23 @@ type RememberInput struct {
 type NameScopeInput struct {
 	RequestID string                 `json:"request_id" jsonschema:"Unique 16–128 character key, new for each save; reuse it unchanged only to retry identical input."`
 	Label     memory.ScopeLabelWrite `json:"label"`
+}
+
+type MoveInput struct {
+	RequestID string           `json:"request_id" jsonschema:"Unique 16–128 character key, new for each move; reuse it unchanged only to retry identical input."`
+	Move      memory.MoveWrite `json:"move"`
+}
+
+// MoveReceipt is memory_move's result. Moved is false when the record was
+// already in the destination; nothing was written then.
+type MoveReceipt struct {
+	SignetID string       `json:"signet_id"`
+	ID       string       `json:"id,omitempty"`
+	RecordID string       `json:"record_id"`
+	Scope    memory.Scope `json:"scope"`
+	Moved    bool         `json:"moved"`
+	Durable  bool         `json:"durable"`
+	Backup   string       `json:"backup"`
 }
 
 type JournalInput struct {
@@ -166,12 +184,13 @@ func (s *signet) mcpServer(c Client) *sdk.Server {
 	add("memory_remember", limit(schema(new(RememberInput)), "record", map[string]int{"summary": memory.MaxSummaryBytes, "body": memory.MaxBodyBytes, "reason": memory.MaxReasonBytes}), false)
 	add("memory_journal_append", limit(schema(new(JournalInput)), "entry", map[string]int{"kind": memory.MaxJournalKindBytes, "summary": memory.MaxJournalSummaryBytes}), false)
 	add("memory_name_scope", limit(schema(new(NameScopeInput)), "label", map[string]int{"name": memory.MaxScopeNameBytes, "description": memory.MaxScopeDescriptionBytes, "reason": memory.MaxReasonBytes}), false)
+	add("memory_move", limit(schema(new(MoveInput)), "move", map[string]int{"reason": memory.MaxReasonBytes}), false)
 	return server
 }
 
 func isWrite(name string) bool {
 	switch name {
-	case "memory_remember", "memory_journal_append", "memory_name_scope", "memory_withdraw", "memory_restore", "foundling_promote", "foundling_canon_promote":
+	case "memory_remember", "memory_journal_append", "memory_name_scope", "memory_move", "memory_withdraw", "memory_restore", "foundling_promote", "foundling_canon_promote":
 		return true
 	}
 	return false
@@ -224,6 +243,8 @@ func (s *signet) call(ctx context.Context, c Client, name string, raw []byte) *s
 		v = s.journal(c, m, raw)
 	case "memory_name_scope":
 		v = s.nameScope(c, m, raw)
+	case "memory_move":
+		v = s.move(c, m, raw)
 	default:
 		// Promotions record the client like every other write.
 		v = api.New(m, false).WithFoundlings(foundlings.NewConfigured(m, s.foundlings)).Call(ctx, name, raw)
@@ -280,6 +301,26 @@ func (s *signet) nameScope(c Client, m *memory.Service, raw []byte) api.Envelope
 		return saveFailure(err)
 	}
 	return api.Success(Receipt{SignetID: m.ID(), ID: l.ID, Durable: true, Backup: s.wrote()})
+}
+
+func (s *signet) move(c Client, m *memory.Service, raw []byte) api.Envelope {
+	var in MoveInput
+	if strictjson.Decode(raw, &in, api.MaxInputBytes) != nil {
+		return api.Failure("input.invalid", "Invalid memory_move input.", false)
+	}
+	key, err := requestKey(c.ID, in.RequestID)
+	if err != nil {
+		return api.Failure("input.invalid", err.Error(), false)
+	}
+	r, err := m.MoveIdempotent(key, in.Move)
+	if err != nil {
+		return saveFailure(err)
+	}
+	out := MoveReceipt{SignetID: r.SignetID, ID: r.ID, RecordID: r.RecordID, Scope: r.Scope, Moved: r.Moved, Durable: true, Backup: "not-needed"}
+	if r.Moved {
+		out.Backup = s.wrote()
+	}
+	return api.Success(out)
 }
 
 // limit states the server's byte limits on an object's text fields. JSON

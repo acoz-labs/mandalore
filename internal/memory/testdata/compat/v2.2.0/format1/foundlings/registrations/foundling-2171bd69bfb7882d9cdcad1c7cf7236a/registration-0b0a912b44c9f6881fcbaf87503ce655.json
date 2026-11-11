@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "id": "registration-0b0a912b44c9f6881fcbaf87503ce655",
+  "foundling_id": "foundling-2171bd69bfb7882d9cdcad1c7cf7236a",
+  "name": "Legacy reference",
+  "description": "Synthetic legacy foundling",
+  "source": {
+    "kind": "git",
+    "locator": "https://github.com/example/legacy.git"
+  },
+  "pin": {
+    "algorithm": "git-sha1",
+    "value": "0000000000000000000000000000000000000001"
+  },
+  "state": "active",
+  "recorded_at": "2026-11-10T20:05:54.229782Z",
+  "authorship": {
+    "device_id": "device-f332d74a52c4cc016942240c356331df",
+    "actor": "Synthetic actor",
+    "harness": "cli",
+    "model": null,
+    "session_id": null
+  },
+  "supersedes": [],
+  "change_reason": "Synthetic fixture"
+}

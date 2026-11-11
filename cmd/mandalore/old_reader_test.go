@@ -393,12 +393,18 @@ func oldReader(ctx context.Context, t *testing.T, old, current, format string) {
 	sameFiles(t, "2.1.2 menu sync", tree, files(t, ahead))
 	t.Logf("2.1.2 menu sync kept the unpushed commit %s and refused at validate: Remote candidate could not be safely reconciled", unpushed[:12])
 
-	oldCanon(e, old, base, manifest.ID, remote)
+	oldCanon(e, old, base, manifest.ID, remote, func(srv served, foundling, head string) {
+		ok, text := srv.call(t, "foundling_canon_recall", map[string]any{"foundling_id": foundling, "query": "codename", "scope": map[string]any{"kind": "project", "id": "copper-finch"}})
+		if !ok || !strings.Contains(text, `"conflict_count":1`) || strings.Contains(text, "Synthetic topic for the old-reader check") {
+			t.Fatalf("2.1.2 canon recall: %s", text)
+		}
+		t.Logf("2.1.2 canon refresh served commit %s with its records and without names", head[:12])
+	})
 }
 
-// oldCanon serves the topic signet's remote over local HTTPS and has a 2.1.2
-// server refresh it as a canon source.
-func oldCanon(e env, old, base, sourceID, remote string) {
+// oldCanon serves a signet's remote over local HTTPS, has the old server
+// refresh it as a canon source, and runs check against that server.
+func oldCanon(e env, old, base, sourceID, remote string, check func(srv served, foundling, head string)) {
 	t := e.t
 	exec_, err := exec.Command("git", "--exec-path").Output()
 	if err != nil {
@@ -461,10 +467,6 @@ func oldCanon(e env, old, base, sourceID, remote string) {
 			t.Fatalf("2.1.2 canon never refreshed: %s", text)
 		}
 	}
-	ok, text := srv.call(t, "foundling_canon_recall", map[string]any{"foundling_id": foundling, "query": "codename", "scope": map[string]any{"kind": "project", "id": "copper-finch"}})
-	if !ok || !strings.Contains(text, `"conflict_count":1`) || strings.Contains(text, "Synthetic topic for the old-reader check") {
-		t.Fatalf("2.1.2 canon recall: %s", text)
-	}
+	check(srv, foundling, head)
 	srv.stop()
-	t.Logf("2.1.2 canon refresh served commit %s with its records and without names", head[:12])
 }

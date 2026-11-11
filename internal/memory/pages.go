@@ -37,12 +37,80 @@ func page[T any](items []T, offset, limit int) (Page[T], error) {
 	return p, nil
 }
 
-func (s *Service) HistoryPage(recordID string, offset, limit int) (Page[Revision], error) {
+// RecordHistory is a page of a record's stored revisions, with where the
+// record is now and, on the first page, its moves (2.3.0). Each revision's
+// scope is the scope the record was saved in; Scope is where it is now.
+type RecordHistory struct {
+	Page[Revision]
+	Scope          *Scope      `json:"scope,omitempty"`
+	MoveHeads      []string    `json:"move_heads"`
+	MoveCount      int         `json:"move_count"`
+	Moves          []MoveEntry `json:"moves"`
+	MovesTruncated bool        `json:"moves_truncated,omitempty"`
+}
+
+// MoveEntry is a stored move with the scope it moved the record from: the
+// root's scope, or its parent moves' scopes.
+type MoveEntry struct {
+	RecordMove
+	From []Scope `json:"from"`
+}
+
+// movesBudget bounds a history page's moves. The revisions keep 2.2.0's
+// 32 KiB page budget on their own, so a page holds the same revisions it
+// did before moves existed; the whole response stays under the 64 KiB
+// output limit.
+const movesBudget = 16384
+
+func (s *Service) HistoryPage(recordID string, offset, limit int) (RecordHistory, error) {
 	items, err := s.History(recordID)
 	if err != nil {
-		return Page[Revision]{}, err
+		return RecordHistory{}, err
 	}
-	return page(items, offset, limit)
+	p, err := page(items, offset, limit)
+	if err != nil {
+		return RecordHistory{}, err
+	}
+	out := RecordHistory{Page: p, Moves: []MoveEntry{}}
+	placement, moves, err := s.store.recordMoves(recordID)
+	if err != nil {
+		return RecordHistory{}, err
+	}
+	if !placement.Conflicted() && placement.Scope != (Scope{}) {
+		out.Scope = &placement.Scope
+	}
+	out.MoveHeads, out.MoveCount = placement.MoveHeads, placement.Moves
+	if offset != 0 {
+		return out, nil
+	}
+	byID := map[string]RecordMove{}
+	for _, m := range moves {
+		byID[m.ID] = m
+	}
+	sort.Slice(moves, func(i, j int) bool {
+		return newestFirst(moves[i].RecordedAt, moves[j].RecordedAt, moves[i].ID, moves[j].ID)
+	})
+	for _, m := range moves {
+		entry := MoveEntry{RecordMove: m, From: []Scope{}}
+		if len(m.Parents) == 0 && len(items) > 0 {
+			entry.From = append(entry.From, items[0].Scope)
+		}
+		seen := map[Scope]bool{}
+		for _, id := range m.Parents {
+			if scope := byID[id].Scope; !seen[scope] {
+				seen[scope] = true
+				entry.From = append(entry.From, scope)
+			}
+		}
+		sortScopes(entry.From)
+		out.Moves = append(out.Moves, entry)
+		if !fits(out.Moves, movesBudget) {
+			out.Moves = out.Moves[:len(out.Moves)-1]
+			out.MovesTruncated = true
+			break
+		}
+	}
+	return out, nil
 }
 
 // ScopePage lists scopes with their current labels. Scopes with only a name

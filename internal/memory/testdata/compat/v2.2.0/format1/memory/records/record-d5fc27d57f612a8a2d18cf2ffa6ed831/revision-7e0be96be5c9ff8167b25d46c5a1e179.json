@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "id": "revision-7e0be96be5c9ff8167b25d46c5a1e179",
+  "record_id": "record-d5fc27d57f612a8a2d18cf2ffa6ed831",
+  "kind": "fact",
+  "scope": {
+    "kind": "signet",
+    "id": "signet-14e1a3d72611b85abe2e31021bc20324"
+  },
+  "summary": "Synthetic signet-wide fact",
+  "body": "Every value in this signet is synthetic.",
+  "sensitivity": "private",
+  "volatility": "drift-prone",
+  "recorded_at": "2026-11-11T13:43:32.631388Z",
+  "effective_from": "2026-11-11T13:43:32.631388Z",
+  "authorship": {
+    "device_id": "device-79ca82776f3b8200769faebde7955856",
+    "actor": "Synthetic actor",
+    "harness": "test",
+    "model": null,
+    "session_id": null
+  },
+  "evidence": {
+    "basis": "user-direction",
+    "confidence": "medium",
+    "source_refs": [
+      "source-9ff892628501c35de0b33e34b7521e22"
+    ]
+  },
+  "supersedes": [],
+  "change_reason": "Synthetic fixture"
+}

@@ -1,4 +1,4 @@
-# Corrections, withdrawal, topics and foundlings
+# Corrections, moves, withdrawal, topics and foundlings
 
 ## Correct a record
 
@@ -6,9 +6,11 @@ A changed fact gets a new revision of the same record, not a new record.
 
 1. Find it with `memory_recall`, or `memory_history` for its revisions and
    provenance.
-2. Call `memory_remember` with the original `record_id`, `kind` and `scope`, and
-   `supersedes` set to the current revision IDs (`revision-...`, not the record
-   ID).
+2. Call `memory_remember` with the original `record_id`, `kind` and `scope`,
+   and `supersedes` set to the current revision IDs (`revision-...`, not the
+   record ID). When the server lists `memory_move` and `memory_history` has a
+   top-level `scope`, use that scope: a moved record's revisions keep the
+   scope it was saved in.
 3. After a validation error, read `memory_history` instead of guessing IDs.
    Never create a duplicate or test record, and never withdraw the original as a
    workaround.
@@ -16,6 +18,22 @@ A changed fact gets a new revision of the same record, not a new record.
 Unresolved competing revisions are a conflict to show the user, not something to
 settle by date. The server records which client wrote each revision; don't
 invent provenance.
+
+## Move a misfiled record
+
+Only when the server lists `memory_move`: a record saved under the wrong
+scope is moved with it, which keeps its `record_id`, kind, content and
+history.
+
+1. Read `memory_history`: `move_heads` and the current revision IDs are the
+   expected heads.
+2. Call `memory_move` with `record_id`, the destination `scope`,
+   `expected_content_heads`, `expected_move_heads` (`[]` if it was never
+   moved) and a `reason`. `moved: false` means it was already there.
+3. Conflicting revisions are settled with a correction first. Moves to
+   different scopes from two clones are a move conflict: show it to the user,
+   then settle it with a move that names every move head (and every revision
+   head, if the revisions conflict too).
 
 ## Name or rename a topic
 

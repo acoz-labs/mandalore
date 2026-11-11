@@ -27,12 +27,15 @@ type Selection struct {
 type Conflict struct {
 	RecordID string   `json:"record_id"`
 	HeadIDs  []string `json:"head_ids"`
+	// MoveScopes are the scopes a record's conflicting moves name (2.3.0).
+	MoveScopes []memory.Scope `json:"move_scopes,omitempty"`
 }
 type Projection struct {
 	RecordIDs        []string         `json:"record_ids"`
 	RevisionIDs      []string         `json:"revision_ids"`
 	JournalIDs       []string         `json:"journal_ids"`
 	LabelIDs         []string         `json:"label_ids,omitempty"`
+	MoveIDs          []string         `json:"move_ids,omitempty"`
 	Conflicts        []Conflict       `json:"conflicts"`
 	OmittedFields    []string         `json:"omitted_fields"`
 	OmittedRecords   int              `json:"omitted_records"`
@@ -71,11 +74,18 @@ func project(s memory.ReportSnapshot, in Selection) (Projection, []byte, error) 
 	if err := memory.ValidateReportSnapshot(s.Snapshot, s.Registrations); err != nil {
 		return p, nil, errors.New("report snapshot is not valid")
 	}
+	// The snapshot's devices were validated just above.
+	placements, err := memory.ResolvePlacements(s.Revisions, s.Moves, s.Signet.ID, func(string) error { return nil })
+	if err != nil {
+		return p, nil, errors.New("report snapshot is not valid")
+	}
 	byRecord := map[string][]memory.Revision{}
 	scopes := map[memory.Scope]bool{}
 	for _, r := range s.Revisions {
 		byRecord[r.RecordID] = append(byRecord[r.RecordID], r)
-		scopes[r.Scope] = true
+		for _, scope := range placements[r.RecordID].Scopes() {
+			scopes[scope] = true
+		}
 	}
 	// A topic can be selected by scope before it has records.
 	for _, l := range s.Labels {
@@ -97,8 +107,8 @@ func project(s memory.ReportSnapshot, in Selection) (Projection, []byte, error) 
 		if !scopes[scope] {
 			return bad()
 		}
-		for id, rs := range byRecord {
-			if rs[0].Scope == scope {
+		for id := range byRecord {
+			if placements[id].In(scope) {
 				selected[id] = true
 			}
 		}
@@ -212,6 +222,13 @@ func project(s memory.ReportSnapshot, in Selection) (Projection, []byte, error) 
 	}
 	now := time.Now().UTC()
 	heads := memory.EffectiveHeads(s.Revisions, now)
+	movesOf := map[string][]memory.RecordMove{}
+	for _, m := range s.Moves {
+		movesOf[m.RecordID] = append(movesOf[m.RecordID], m)
+	}
+	for _, ms := range movesOf {
+		sort.Slice(ms, func(i, j int) bool { return ms[i].ID < ms[j].ID })
+	}
 	add := func(item map[string]any) {
 		item["ordinal"] = len(output.Items) + 1
 		output.Items = append(output.Items, item)
@@ -228,8 +245,10 @@ func project(s memory.ReportSnapshot, in Selection) (Projection, []byte, error) 
 		for _, r := range hs {
 			headIDs = append(headIDs, r.ID)
 		}
-		if len(hs) > 1 {
-			p.Conflicts = append(p.Conflicts, Conflict{RecordID: id, HeadIDs: headIDs})
+		placement := placements[id]
+		conflicted := len(hs) > 1 || placement.Conflicted()
+		if conflicted {
+			p.Conflicts = append(p.Conflicts, Conflict{RecordID: id, HeadIDs: headIDs, MoveScopes: placement.Conflict})
 		}
 		if omitRecords[id] || (withheld && !in.IncludeWithdrawn) {
 			p.OmittedRecords++
@@ -248,7 +267,7 @@ func project(s memory.ReportSnapshot, in Selection) (Projection, []byte, error) 
 			}
 			if current {
 				status = "current"
-				if len(hs) > 1 {
+				if conflicted {
 					status = "conflicted"
 				}
 			}
@@ -260,7 +279,13 @@ func project(s memory.ReportSnapshot, in Selection) (Projection, []byte, error) 
 				item["visibility_state"] = states[id].State
 			}
 			if !omit["identity"] {
-				item["identity"] = map[string]any{"record_id": r.RecordID, "revision_id": r.ID, "scope": r.Scope}
+				// The record's current scope; during a move conflict, the
+				// scope it was saved in, with the conflict listed.
+				scope := r.Scope
+				if !placement.Conflicted() {
+					scope = placement.Scope
+				}
+				item["identity"] = map[string]any{"record_id": r.RecordID, "revision_id": r.ID, "scope": scope}
 			}
 			if !omit["content"] {
 				item["content"] = map[string]any{"summary": r.Summary, "body": r.Body}
@@ -289,6 +314,35 @@ func project(s memory.ReportSnapshot, in Selection) (Projection, []byte, error) 
 			}
 			p.RevisionIDs = append(p.RevisionIDs, r.ID)
 			add(item)
+		}
+		if in.IncludeHistory {
+			for _, m := range movesOf[id] {
+				status := "historical"
+				if slices.Contains(placement.MoveHeads, m.ID) {
+					status = "current"
+					if placement.Conflicted() {
+						status = "conflicted"
+					}
+				}
+				item := map[string]any{"type": "record_move", "status": status}
+				if !omit["identity"] {
+					item["identity"] = map[string]any{"move_id": m.ID, "record_id": m.RecordID}
+				}
+				if !omit["content"] {
+					item["content"] = map[string]any{"scope": m.Scope, "reason": m.Reason}
+				}
+				if !omit["timestamps"] {
+					item["timestamps"] = map[string]any{"recorded_at": m.RecordedAt}
+				}
+				if !omit["authorship"] {
+					item["authorship"] = map[string]any{"author": m.Authorship, "device": devices[m.Authorship.DeviceID]}
+				}
+				if !omit["change_history"] {
+					item["change_history"] = map[string]any{"observed_content_heads": m.Observed, "parent_move_heads": m.Parents}
+				}
+				p.MoveIDs = append(p.MoveIDs, m.ID)
+				add(item)
+			}
 		}
 	}
 	ids := []string{}

@@ -406,6 +406,22 @@ where `topic.json` is
 A journal entry joins a topic with `"scope"` in its `memory journal-append`
 input. The CLI forms have no `request_id`; only the server's tools do.
 
+A misfiled record moves to another scope with `memory move` (2.3.0), which
+keeps its `record_id`, kind, content and history; the
+[server guide](server.md#moving-a-record) describes the rules. Its input is
+the `move` object of the server tool, for example:
+
+```sh
+./mandalore memory move --binding /example/local/binding.json < move.json
+```
+
+where `move.json` is
+`{"record_id":"record-example","scope":{"kind":"project","id":"example-y"},"expected_content_heads":["revision-example"],"expected_move_heads":[],"reason":"Filed under the wrong project."}`.
+The receipt adds `scope` and `moved` to `durable_locally` and
+`synchronization`. `memory history` output gains `scope`, `move_heads`,
+`move_count` and `moves` on every record from 2.3.0, moved or not; a
+revision's own `scope` is where the record was saved.
+
 ## Binding and provenance
 
 Selection is explicit `--binding`, then absolute `MANDALORE_BINDING`, then
@@ -445,7 +461,7 @@ signet does **not** initialize Git in this slice; its receipt says so explicitly
 | Code | CLI exit | Meaning |
 | --- | --- | --- |
 | `input.invalid`, `operation.unknown`, `operation.read_only` | 2 | Correct input/selection or honor the read-only boundary |
-| `memory.stale_heads` | 1 | Nothing was written; reread history (or, for a topic name, `memory scopes`) and submit the current heads |
+| `memory.stale_heads` | 1 | Nothing was written; reread history (or, for a topic name, `memory scopes`) and submit the current heads; for a move, both the content and move heads |
 | `request.conflict` | 1 | Server only: the `request_id` was used with different input; nothing new was written |
 | `save.incomplete` | 1 | Server only: a save may have been written; retry only identical input with the same `request_id` |
 | `store.busy` | 3 | Another writer owns the lock; retry after it finishes |
@@ -518,7 +534,14 @@ selected when it holds only labels or scoped entries; other journal entries
 require exact IDs, which reach scoped and unscoped entries alike. A label is a
 `scope_label` report item in the existing field categories: `identity` (label
 ID and scope), `content` (name and description), `timestamps`, `authorship`
-and `change_history`. A scoped entry's `classification` carries its scope. `include_history` and
+and `change_history`. A scoped entry's `classification` carries its scope.
+A scope selects the records that are in it now, after any moves, and a
+record item's `identity.scope` is that current scope (during a move conflict,
+the scope it was saved in, with the conflict listed and its `move_scopes`).
+With `include_history`, a selected record's moves are `record_move` items:
+`identity` (move and record IDs), `content` (destination scope and reason),
+`timestamps`, `authorship` and `change_history` (observed content heads and
+parent moves). `include_history` and
 `include_details` default false. `omit_record_ids`, `omit_journal_ids` and
 `omit_fields` further restrict disclosure. See [privacy](privacy.md) for field
 dependency rules. History labels future-effective and conflicting revisions;

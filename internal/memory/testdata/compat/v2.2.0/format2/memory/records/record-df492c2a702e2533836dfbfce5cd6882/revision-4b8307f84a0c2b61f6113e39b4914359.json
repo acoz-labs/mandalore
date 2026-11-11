@@ -1,0 +1,33 @@
+{
+  "visibility_refs": [],
+  "schema_version": 2,
+  "id": "revision-4b8307f84a0c2b61f6113e39b4914359",
+  "record_id": "record-df492c2a702e2533836dfbfce5cd6882",
+  "kind": "preference",
+  "scope": {
+    "kind": "account",
+    "id": "example-account"
+  },
+  "summary": "Example account editor",
+  "body": "The example account prefers a plain text editor.",
+  "sensitivity": "private",
+  "volatility": "drift-prone",
+  "recorded_at": "2026-11-11T13:43:33.091098Z",
+  "effective_from": "2026-11-11T13:43:33.091098Z",
+  "authorship": {
+    "device_id": "device-88585feb7531edb4d16569354824d4b2",
+    "actor": "Synthetic actor",
+    "harness": "test",
+    "model": null,
+    "session_id": null
+  },
+  "evidence": {
+    "basis": "user-direction",
+    "confidence": "medium",
+    "source_refs": [
+      "source-a79b18b64569a759adfdd02ed25a8244"
+    ]
+  },
+  "supersedes": [],
+  "change_reason": "Synthetic fixture"
+}

@@ -82,11 +82,12 @@ func (s *Service) Prime(scope Scope, budgetBytes int) (PrimePacket, error) {
 	var state, current []Revision
 	conflicts := []Conflict{}
 	for recordID, heads := range RecallableHeads(records, states, time.Now()) {
-		if heads[0].Scope != scope {
+		placement := states[recordID].Placement
+		if !placement.In(scope) {
 			continue
 		}
-		if len(heads) > 1 {
-			c := Conflict{RecordID: recordID, HeadIDs: []string{}}
+		if len(heads) > 1 || placement.Conflicted() {
+			c := Conflict{RecordID: recordID, HeadIDs: []string{}, MoveScopes: placement.Conflict}
 			for _, r := range heads {
 				c.HeadIDs = append(c.HeadIDs, r.ID)
 			}

@@ -1,0 +1,33 @@
+{
+  "visibility_refs": [],
+  "schema_version": 2,
+  "id": "revision-9febf1bad6e15ca41f1645027dff3109",
+  "record_id": "record-3fb2a76fff8b85fa91cae41c57af701d",
+  "kind": "fact",
+  "scope": {
+    "kind": "account",
+    "id": "example-account"
+  },
+  "summary": "Example account old address",
+  "body": "A superseded synthetic address.",
+  "sensitivity": "private",
+  "volatility": "drift-prone",
+  "recorded_at": "2026-11-11T13:43:33.117137Z",
+  "effective_from": "2026-11-11T13:43:33.117137Z",
+  "authorship": {
+    "device_id": "device-88585feb7531edb4d16569354824d4b2",
+    "actor": "Synthetic actor",
+    "harness": "test",
+    "model": null,
+    "session_id": null
+  },
+  "evidence": {
+    "basis": "observation",
+    "confidence": "medium",
+    "source_refs": [
+      "source-afa6ef367e4c293c3d5f95f749fb8de2"
+    ]
+  },
+  "supersedes": [],
+  "change_reason": "Synthetic fixture"
+}

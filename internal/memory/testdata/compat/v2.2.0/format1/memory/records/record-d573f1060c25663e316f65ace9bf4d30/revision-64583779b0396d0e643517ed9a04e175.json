@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "id": "revision-64583779b0396d0e643517ed9a04e175",
+  "record_id": "record-d573f1060c25663e316f65ace9bf4d30",
+  "kind": "project-state",
+  "scope": {
+    "kind": "task",
+    "id": "zebra-task"
+  },
+  "summary": "Zebra task: drafting",
+  "body": "Half done.",
+  "sensitivity": "private",
+  "volatility": "drift-prone",
+  "recorded_at": "2026-11-10T20:05:54.133Z",
+  "effective_from": "2026-11-10T20:05:54.133Z",
+  "authorship": {
+    "device_id": "device-f332d74a52c4cc016942240c356331df",
+    "actor": "Synthetic actor",
+    "harness": "cli",
+    "model": null,
+    "session_id": null
+  },
+  "evidence": {
+    "basis": "observation",
+    "confidence": "medium",
+    "source_refs": [
+      "source-2e1e725de17f513b9e72a59caf045982"
+    ]
+  },
+  "supersedes": [],
+  "change_reason": "Synthetic fixture"
+}

@@ -213,28 +213,29 @@ Browsers treat `http://localhost` as a secure context, so passkeys and the
 Read scope gets `memory_scopes`, `memory_prime`, `memory_recall`,
 `memory_history`, `memory_journal`, `memory_visibility_history` and
 `memory_context`. Read-write adds `memory_remember`, `memory_journal_append`,
-`memory_name_scope`, `memory_withdraw` and `memory_restore`. Read clients never see write tools, and the call path refuses
+`memory_name_scope`, `memory_move`, `memory_withdraw` and `memory_restore`. Read clients never see write tools, and the call path refuses
 writes by scope as well. A signet with foundlings configured adds their tools
 (see [Foundlings](#foundlings)); one without them offers none.
 
 Server instructions are under 600 bytes and differ for
 read and read-write clients.
 
-`memory_remember`, `memory_journal_append` and `memory_name_scope` take a required `request_id`
+`memory_remember`, `memory_journal_append`, `memory_name_scope` and `memory_move` take a required `request_id`
 (16–128 characters). A retry with identical input returns the original receipt;
 the same key with different input is refused with `request.conflict`. Keys are
-namespaced by client.
+namespaced by client, and a key used by one of these tools is refused by the
+others with `request.conflict`.
 
 Text limits are in UTF-8 bytes: `memory_remember`'s summary 1–256, body
 1–8192 and reason 1–1024; `memory_journal_append`'s kind 1–64 and summary
 1–4096; `memory_name_scope`'s name 1–256, description 1–1024 and reason
-1–1024. The tool schemas state them as `maxLength`, which counts characters,
+1–1024; `memory_move`'s reason 1–1024. The tool schemas state them as `maxLength`, which counts characters,
 so non-ASCII text can be refused below it. The save errors:
 
 | Code | Written? | What to do |
 | --- | --- | --- |
 | `input.invalid` | No | Fix the input; the message names the field, its limit and the size received. A retry with the same `request_id` and corrected input saves. |
-| `memory.stale_heads` | No | The correction's `supersedes` aren't the record's current heads; reread `memory_history` and supersede those. For `memory_name_scope`, reread `memory_scopes`. |
+| `memory.stale_heads` | No | The correction's `supersedes` aren't the record's current heads; reread `memory_history` and supersede those. For `memory_name_scope`, reread `memory_scopes`; for `memory_move`, reread `memory_history` for both head lists. |
 | `request.conflict` | No | Use a new `request_id` for different input. |
 | `store.busy` | No | Retry with the same `request_id`. |
 | `save.incomplete` | Maybe | Retry only identical input with the same `request_id`; it completes or returns the original receipt. |
@@ -247,6 +248,7 @@ the record's current heads first:
 | Supersedes a revision that doesn't exist, or one of another record, or names an unknown `record_id` | `input.invalid` | `memory.stale_heads` |
 | Supersedes revisions that are no longer current | Saved, keeping the fork visible | `memory.stale_heads` |
 | Changes the original `kind` or `scope` | `input.invalid` | `input.invalid` |
+| Uses the scope a moved record was in, not where it is now | `input.invalid`, naming the current scope | `input.invalid`, naming the current scope |
 
 `memory_context` (`event`: `start` or `prompt`, optional `prompt`, optional
 `budget_bytes` 256–4096, default 2048, optional `session`) answers the Claude
@@ -333,6 +335,51 @@ are corrected as things change.
   out. Fetch a body with `memory_recall` in the scope or `memory_history`.
 
 `memory_context` doesn't use names or scoped journal entries.
+
+### Moving a record
+
+`memory_move` (read-write, 2.3.0) moves a misfiled record to another scope:
+project, account, task or signet-wide. The record keeps its `record_id`, kind,
+content and history, so use it rather than saving a copy and withdrawing the
+original. It takes `request_id` and a `move` with `record_id`, `scope` (the
+destination), `expected_content_heads` (the current revision IDs, 1–32),
+`expected_move_heads` (`move_heads` from `memory_history`, an explicit `[]`
+for a record never moved, at most 32) and `reason`. It is refused, with
+nothing written:
+
+- as `input.invalid` when the record has conflicting revisions and its moves
+  don't conflict (settle it with a correction first), or, on format 2, when it
+  is withdrawn (restore it first);
+- as `memory.stale_heads` when either head list isn't exactly the current one,
+  on both formats.
+
+The receipt has `id` (the move), `record_id`, `scope`, `moved`, `durable` and
+`backup`. A record already in the destination is left as is: `moved` is
+`false`, nothing is written and `backup` is `not-needed`. A retry with the
+same `request_id` returns the first receipt, a no-op's too, even after a
+later move.
+
+After a move, recall, prime, scopes, context, withheld-record discovery,
+export and canon reads find the record in its new scope only. A correction
+passes the new scope; one with the old scope is refused as `input.invalid`
+naming the current one. The stored revisions keep the scope the record was
+saved in, so `memory_history` shows that scope on each revision and the
+current one in its top-level `scope`. History also gains, on every record,
+`move_heads`, `move_count` and `moves`. `moves` is filled on the first page
+only, newest first, each move with the scope it moved from (`from`). The
+revisions on each page are the ones the 32 KiB page held before moves
+existed. The moves have their own 16 KiB budget, kept whole, and
+`moves_truncated` is set when some don't fit.
+
+Moves follow the two-clone rule: two clones can each move a record before
+they sync, and both moves stay valid. Moves to the same scope agree, and the
+record is simply there. Moves to different scopes are a move conflict:
+recall and prime in each of those scopes list the record under `conflicts`
+with `move_scopes`, and never as current. `memory_scopes` counts it in each,
+with `move_conflicts`. Synchronization reports `conflicted`, counting the
+record once, and its notice says to settle the moves with `memory_move`. A correction is refused until a move that names every move head
+settles it. If the record's revisions conflict too, that settling move must
+name every content head as well, and a correction then settles the revisions.
 
 ## Foundlings
 

@@ -115,6 +115,13 @@ func readReportSnapshot(ctx context.Context, directory string, limit int64) (res
 				}
 				canonical = path.Join("memory/visibility", v.RecordID, v.ID+".json")
 				result.Visibility = append(result.Visibility, v)
+			case strings.HasPrefix(name, "memory/moves/"):
+				var v memory.RecordMove
+				if e := read(name, &v); e != nil {
+					return e
+				}
+				canonical = memory.CanonicalMovePath(v)
+				result.Moves = append(result.Moves, v)
 			case strings.HasPrefix(name, "provenance/upgrades/"):
 				var v memory.UpgradeRecord
 				if e := read(name, &v); e != nil {

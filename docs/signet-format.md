@@ -17,6 +17,7 @@ memory/events/<UTC-year>/<UTC-month>/<event-id>.json
 memory/visibility/<record-id>/<event-id>.json  # format 2 only
 memory/scopes/<kind>/<scope-id>/labels/<label-id>.json                       # 2.2.0
 memory/scopes/<kind>/<scope-id>/events/<UTC-year>/<UTC-month>/<event-id>.json  # 2.2.0
+memory/moves/<record-id>/<move-id>.json                                       # 2.3.0
 provenance/devices/<device-id>.json
 provenance/upgrades/<upgrade-id>.json         # explicit transition evidence
 foundlings/registrations/<foundling-id>/<revision-id>.json
@@ -61,7 +62,8 @@ this signet's ID. Service operations default to that exact scope, not all scopes
 Scope discovery lists stable IDs/counts without promoting unrelated guidance;
 a scope's [label](#scope-labels-and-scoped-journals) adds its name and description.
 New records get one root. Corrections preserve record identity/kind/scope and
-name predecessors; roots, cycles, missing predecessors, unknown devices and
+name predecessors: every stored revision keeps the scope its record was saved
+in, and a [move](#record-moves) changes where the record is now; roots, cycles, missing predecessors, unknown devices and
 missing/invalid evidence are rejected. A correction cannot take effect before
 its predecessor. Two effective heads are a visible conflict, never a winner
 chosen by timestamp or lexical score. History preserves all branches.
@@ -213,6 +215,64 @@ signet that has these files (`bin/check-old-reader` asserts each):
 
 So every clone that syncs must run 2.2.0 or later before the first label or
 scoped entry, as with canon registrations below.
+
+## Record moves
+
+Added in 2.3.0 as new files in the new `memory/moves/` directory, on both
+formats, with no manifest change. Existing files, schemas and directories are
+unchanged, and the directory is created only by the first move. Every file
+under it must be a move at the canonical path its record and ID give.
+
+A move (schema 1) has `schema_version`, `id` (`move-…`), `record_id`,
+`scope` (the destination: project, account, task, or signet-wide with this
+signet's ID), `observed_content_heads` (at least one, all revisions of the
+record), `parent_move_heads` (earlier moves of the same record, possibly
+none), `reason` (1–1024 bytes), `recorded_at` and `authorship`. Parents must
+exist, with no cycles, duplicates or unknown devices. A move doesn't depend
+on visibility events.
+
+Revisions never change scope: a correction made after a move is stored with
+the scope its record was saved in, so the graph rule above, and readers
+before 2.3.0, still accept it. A record's current scope is the scope it was
+saved in when it has no moves. Otherwise every unsuperseded move is a move
+head. Heads that agree give their scope, so two clones that move a record to
+the same scope don't conflict. Heads that disagree are a move conflict, never
+resolved by time: the record is listed as a conflict in each scope they name
+and is current in none, and a move whose parents are every head settles it.
+A record may have several move roots, because two clones can each move it
+before they sync. A single writer compares both head lists under the writer
+lock, so concurrent moves only arise across clones.
+
+Sync admits the new path shape, the format upgrade proof protects moves as
+append-only evidence like everything under `memory/`, and report export reads
+them.
+
+Releases before 2.3.0 never open `memory/moves/`. What 2.2.1 (95bbf17) and
+2.1.2 (79b378e) do with a signet that has a move (`bin/check-old-reader`
+asserts each against both):
+
+| 2.2.1 or 2.1.2 | Behaviour |
+| --- | --- |
+| Recall, prime (2.2.1), scopes, context, history, inspect | Work; the record is in the scope it was saved in; moves are invisible |
+| A correction in that old scope | Saves; once 2.3.0 is back, the record is still in its new scope, with that content |
+| A correction in the new scope | Refused; nothing written |
+| `memory_move` | Not served |
+| A `memory_remember` that reuses a move's `request_id` | `save.incomplete`; nothing written |
+| The server's backup after a write | The write saves; the backup's checkpoint refuses on every retry, and status reads `pending`, remote `unreachable`, "push not confirmed; retrying" |
+| `server status` | Works, and shows that pending backup |
+| The menu's status (sync inspection) | Refuses: "Cannot read local synchronization state" |
+| Checkpoint | Refuses; nothing changes |
+| `server reconcile`, behind the remote or with an unpushed commit | Refuses; head and files kept |
+| Menu sync with an unpushed commit | Refuses at validate; head and files kept |
+| Format 1→2 upgrade preview, and apply of a plan from 2.3.0 | Refuse; the signet stays format 1, with no retained preparation |
+| `server migrate init` from a remote with a move | Clones, validates, moves the checkout to its root and enrolls the server device, then refuses at the enrollment checkpoint: "Init stopped after writing"; the configuration is unchanged |
+| `server migrate verify` | Saves a canary record and withdraws it, then refuses at its checkpoint: "Verify stopped after writing … withdrawn, uncommitted"; the canary stays in the checkout |
+| Export preview | Refuses |
+| Cutover preflight with a move intent in `.mandalore/` | Refuses: the intent is unreadable |
+| Canon refresh of a source with a move | Serves the record in the scope it was saved in |
+
+So every clone that syncs must run 2.3.0 or later before the first move, as
+with topics in 2.2.0.
 
 ## Foundling registrations and citations
 

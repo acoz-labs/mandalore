@@ -710,7 +710,12 @@ func (m *Manager) CanonHeads(ctx context.Context, in CanonRecallInput, recordID 
 	if err != nil {
 		return nil, r, err
 	}
-	packet, err := store.Recall(memory.Query{Scope: history[0].Scope, ExactScope: true, Limit: int(^uint(0) >> 1)}, time.Now())
+	// A moved record is recalled where it is now, not where it was saved.
+	scopes, err := svc.RecordScopes(recordID)
+	if err != nil || len(scopes) == 0 {
+		return []memory.Revision{}, r, err
+	}
+	packet, err := store.Recall(memory.Query{Scope: scopes[0], ExactScope: true, Limit: int(^uint(0) >> 1)}, time.Now())
 	if err != nil {
 		return nil, r, err
 	}

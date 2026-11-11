@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "id": "event-6fc6fb98983741c26b73fe84c86b1d1e",
+  "kind": "outcome",
+  "summary": "Synthetic journal entry",
+  "recorded_at": "2026-11-10T20:05:54.187514Z",
+  "authorship": {
+    "device_id": "device-f332d74a52c4cc016942240c356331df",
+    "actor": "Synthetic actor",
+    "harness": "cli",
+    "model": null,
+    "session_id": null
+  }
+}

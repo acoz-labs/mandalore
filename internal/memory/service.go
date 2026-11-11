@@ -229,6 +229,8 @@ type Conflict struct {
 	// Full competing heads are deliberately obtained through history rather
 	// than loading potentially large, contradictory claims automatically.
 	HeadIDs []string `json:"head_ids"`
+	// MoveScopes are the scopes the record's conflicting moves name (2.3.0).
+	MoveScopes []Scope `json:"move_scopes,omitempty"`
 }
 
 type RecallPacket struct {
@@ -264,7 +266,7 @@ func (s *Service) Recall(query string, scope *Scope, limit, budgetBytes int) (Re
 	// Reserve the longer JSON boolean before fitting entries.
 	p.Truncated = false
 	for _, c := range full.Conflicts {
-		v := Conflict{RecordID: c.RecordID, HeadIDs: []string{}}
+		v := Conflict{RecordID: c.RecordID, HeadIDs: []string{}, MoveScopes: c.MoveScopes}
 		for _, r := range c.Revisions {
 			v.HeadIDs = append(v.HeadIDs, r.ID)
 		}

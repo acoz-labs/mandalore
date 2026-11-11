@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "id": "revision-7113a29a235e91160c9e785988ced8d2",
+  "record_id": "record-92f99ddebe544e88e9652034dc26ef6a",
+  "kind": "procedure",
+  "scope": {
+    "kind": "project",
+    "id": "copper-finch"
+  },
+  "summary": "Deploy the synthetic service",
+  "body": "Run the deploy script from the example host, then check its status page.",
+  "sensitivity": "private",
+  "volatility": "drift-prone",
+  "recorded_at": "2026-11-11T13:43:32.500514Z",
+  "effective_from": "2026-11-11T13:43:32.500514Z",
+  "authorship": {
+    "device_id": "device-79ca82776f3b8200769faebde7955856",
+    "actor": "Synthetic actor",
+    "harness": "test",
+    "model": null,
+    "session_id": null
+  },
+  "evidence": {
+    "basis": "user-direction",
+    "confidence": "medium",
+    "source_refs": [
+      "source-dc0c5abe490639af4d1bf1577665ae89"
+    ]
+  },
+  "supersedes": [
+    "revision-45da6da3c3c53ec0d60d57d5e2140018"
+  ],
+  "change_reason": "Added the status check"
+}

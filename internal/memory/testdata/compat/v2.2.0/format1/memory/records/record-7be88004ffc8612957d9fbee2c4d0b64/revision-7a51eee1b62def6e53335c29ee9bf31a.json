@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "id": "revision-7a51eee1b62def6e53335c29ee9bf31a",
+  "record_id": "record-7be88004ffc8612957d9fbee2c4d0b64",
+  "kind": "project-state",
+  "scope": {
+    "kind": "project",
+    "id": "copper-finch"
+  },
+  "summary": "Copper Finch: in review",
+  "body": "Waiting for the synthetic reviewer.",
+  "sensitivity": "private",
+  "volatility": "drift-prone",
+  "recorded_at": "2026-11-11T13:43:32.524347Z",
+  "effective_from": "2026-11-11T13:43:32.524347Z",
+  "authorship": {
+    "device_id": "device-79ca82776f3b8200769faebde7955856",
+    "actor": "Synthetic actor",
+    "harness": "test",
+    "model": null,
+    "session_id": null
+  },
+  "evidence": {
+    "basis": "observation",
+    "confidence": "medium",
+    "source_refs": [
+      "source-0a6b6d9bd44035417a5b612b206cbd21"
+    ]
+  },
+  "supersedes": [],
+  "change_reason": "Synthetic fixture"
+}

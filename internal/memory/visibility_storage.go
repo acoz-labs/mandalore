@@ -69,10 +69,24 @@ func (s *Store) visibilityEvents() ([]VisibilityEvent, error) {
 	return events, nil
 }
 
+// visibilityStates also validates the record moves and attaches each record's
+// placement, so every read of the graph sees moves.
 func (s *Store) visibilityStates(records []Revision) (map[string]VisibilityState, error) {
 	events, err := s.visibilityEvents()
 	if err != nil {
 		return nil, err
 	}
-	return ResolveVisibility(records, events, memoizeDeviceValidation(s.deviceExists))
+	states, err := ResolveVisibility(records, events, memoizeDeviceValidation(s.deviceExists))
+	if err != nil {
+		return nil, err
+	}
+	placements, err := s.placements(records)
+	if err != nil {
+		return nil, err
+	}
+	for id, state := range states {
+		state.Placement = placements[id]
+		states[id] = state
+	}
+	return states, nil
 }

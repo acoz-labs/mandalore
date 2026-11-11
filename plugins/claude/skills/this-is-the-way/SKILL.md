@@ -34,10 +34,12 @@ Save into the topic's scope; when where it stands changes, correct its
 existing `project-state` record rather than adding another; journal with
 `entry.scope`.
 
-**Correct** a record by keeping its `record_id`, `kind` and `scope` and
-superseding its current revision IDs. Withdrawn knowledge stays withdrawn. Read
-[corrections, withdrawal, topics and foundlings](references/memory.md) before
-those.
+**Correct** a record by keeping its `record_id`, `kind` and current scope
+(`memory_history` shows it) and superseding its current revision IDs. To
+re-home a misfiled record, use `memory_move` when the server lists it, rather
+than saving a copy and withdrawing the original. Withdrawn knowledge stays
+withdrawn. Read [corrections, moves, withdrawal, topics and
+foundlings](references/memory.md) before those.
 
 **When memory is unavailable** (tools missing or failing, server unreachable),
 say so and carry on without it. Never claim a save the server didn't confirm as
