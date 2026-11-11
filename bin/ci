@@ -20,10 +20,8 @@ git diff --check
 git diff --cached --check
 
 # Heuristic safeguard only: review remains necessary before public publication.
-# The managed SDLC tests are hash-pinned standard files whose redactor fixtures
-# use synthetic /home paths, so the scan skips them.
-if git grep -I -l -E 'BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|github_pat_[A-Za-z0-9_]{20,}|gh[pousr]_[A-Za-z0-9]{30,}|/(Users|home)/[[:alnum:]][[:alnum:]_.-]*/' -- . ':!bin/ci' \
-  ':!tests/test_sdlc_evidence.py' ':!tests/test_sdlc_release.py'; then
+# Only this script, which holds the pattern, is skipped.
+if git grep -I -l -E 'BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|github_pat_[A-Za-z0-9_]{20,}|gh[pousr]_[A-Za-z0-9]{30,}|/(Users|home)/[[:alnum:]][[:alnum:]_.-]*/' -- . ':!bin/ci'; then
   echo "Potential private credential or workstation path; inspect listed files before publishing." >&2
   exit 1
 else
