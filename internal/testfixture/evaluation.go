@@ -34,6 +34,45 @@ type Evaluation struct {
 	Collisions struct {
 		Tune []string `json:"tune"`
 	} `json:"collisions"`
+	// FillerShort holds short questions over existing records, each asked
+	// inside Wrapper (#232's "Before we start, remind me: {q} One line is
+	// fine.").
+	FillerShort struct {
+		Wrapper string             `json:"wrapper"`
+		Tune    []EvaluationPrompt `json:"tune"`
+	} `json:"filler_short"`
+	// GenericTwoWord holds two-word prompts no record answers whose only
+	// match with any record is a generic word in its body; GenericGuard
+	// holds prompts that share a generic word with some record and a
+	// distinctive word with their answer, so they should inject it.
+	GenericTwoWord struct {
+		Tune []string `json:"tune"`
+	} `json:"generic_two_word"`
+	GenericGuard struct {
+		Tune []EvaluationPrompt `json:"tune"`
+	} `json:"generic_guard"`
+	// NamedGuard holds questions a record answers that also name something
+	// no record holds, so they should inject the answer.
+	NamedGuard struct {
+		Tune []EvaluationPrompt `json:"tune"`
+	} `json:"named_guard"`
+	// EitherOrLimit holds "X or Y?" questions whose X is only in the
+	// answer's body and whose Y is a name no record holds. The names rule
+	// costs them their answer, a stated limit tracked at its current count.
+	EitherOrLimit struct {
+		Tune []EvaluationPrompt `json:"tune"`
+	} `json:"either_or_limit"`
+	// NewerDecisions holds queries that match both of two same-scope
+	// decisions on one subject, of which Expect is the newer, and queries
+	// only the older answers.
+	NewerDecisions struct {
+		Tune []struct {
+			Prompt string `json:"prompt"`
+			Expect string `json:"expect"`
+			Older  string `json:"older"`
+		} `json:"tune"`
+		OlderOnly []EvaluationPrompt `json:"older_only"`
+	} `json:"newer_decisions"`
 	Session []string `json:"session"`
 	Cases   []struct {
 		Name       string `json:"name"`
@@ -53,6 +92,12 @@ type Evaluation struct {
 	Scopes map[string]memory.Scope `json:"-"`
 }
 
+// EvaluationPrompt is a prompt and the record that answers it.
+type EvaluationPrompt struct {
+	Prompt string `json:"prompt"`
+	Expect string `json:"expect"`
+}
+
 // EvaluationVersion is one revision's content.
 type EvaluationVersion struct {
 	Summary    string `json:"summary"`
@@ -65,6 +110,13 @@ type EvaluationVersion struct {
 // single supersession chain; a signet-kind scope is the new signet.
 func LoadEvaluation(t testing.TB, path string) (*memory.Service, Evaluation) {
 	t.Helper()
+	return WriteEvaluation(t, path, filepath.Join(t.TempDir(), "signet"))
+}
+
+// WriteEvaluation is LoadEvaluation into the signet directory root, which
+// must not exist yet.
+func WriteEvaluation(t testing.TB, path, root string) (*memory.Service, Evaluation) {
+	t.Helper()
 	var e Evaluation
 	data, err := os.ReadFile(path)
 	if err == nil {
@@ -73,7 +125,7 @@ func LoadEvaluation(t testing.TB, path string) (*memory.Service, Evaluation) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	store, err := memory.Create(filepath.Join(t.TempDir(), "signet"), "Synthetic selection evaluation", "device-evaluation", "Synthetic evaluation host")
+	store, err := memory.Create(root, "Synthetic selection evaluation", "device-evaluation", "Synthetic evaluation host")
 	if err != nil {
 		t.Fatal(err)
 	}

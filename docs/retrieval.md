@@ -55,7 +55,9 @@ prompts got a record. 2.1.0 changes all three:
   a record match but only break ties, so a query's membership and the
   response shape are unchanged. A decision or preference scores 1.2 times as
   much as other kinds on a non-empty query. Ties, and an empty query's list,
-  order by revision ID.
+  order by revision ID. From 2.5.0, of two decisions (or two preferences) in
+  one scope on one subject, the newer goes directly ahead of the older when
+  the older ranks above it (see [2.5.0](#250-filler-collisions-generic-words-and-newer-decisions)).
 - **Threshold (the hook only).** A recalled record that matches just one of
   the prompt's content terms, and only in its body, is incidental and never
   relevant while two or more of the prompt's other content terms go
@@ -89,6 +91,55 @@ prompts got a record. 2.1.0 changes all three:
 
 Explicit `memory_recall` has no threshold and no de-duplication.
 
+### 2.5.0: filler, collisions, generic words and newer decisions
+
+[#232](https://github.com/acoz-labs/mandalore/issues/232) fixed the limits
+2.1.0 left: filler around a short question, prompts that inject through a
+lone summary word, two-word prompts that share one generic word, prompts that
+name something the signet lacks, and two decisions on one subject. Each rule
+was chosen on the tuning split alone.
+
+- **Question clauses.** Besides the whole prompt, the hook judges each of its
+  first 3 question clauses: text ending in `?`, from the previous sentence
+  boundary (a newline, or ".", "!", ":" or ";" followed by a space). Each is
+  recalled and judged on its own. A record's relevance is its best over the
+  whole prompt and its clauses, the relative cut and the top 3 apply to that,
+  and records rank by it. "Before we start, remind me: Which editor do I use?
+  One line is fine." is judged on "Which editor do I use?" too, so the
+  wrapper's words don't dilute it. A clause can add or raise a record, never
+  drop one. "okay", "right", "fine", "please" and "check" join the hook's
+  stop words.
+- **Generic words.** A record whose only match with a two-term prompt is one
+  body word from a fixed list is incidental. The list has 50 common English
+  nouns in three closed classes: units of time; numbers and quantity; and
+  kind, part and form (`internal/memory/generic_words.go`). A word's plural
+  counts. "Is 17 a prime number?" and "How many days are in 30 weeks?" get
+  nothing, while "What's the burst allowance?" and "Are we growing Sungold?"
+  keep their answers: their words aren't on the list.
+- **Lone summary words.** A record that matches one of the prompt's terms, in
+  its summary or identifiers, on a word the prompt doesn't capitalize, is
+  incidental when another of the prompt's terms is in no record at all: the
+  prompt is about something the signet lacks. "How do I install Redis on
+  Ubuntu?" and "What theme should we pick for a wedding?" get nothing; "Which
+  editor do I use?" (one term) and "Does Beacon work at a wedding?" (a name)
+  still inject.
+- **Names the signet lacks.** A prompt that names something no record holds
+  (a word it capitalizes mid-sentence, in no record: "in Rust?", "on a GitHub
+  account") gets a record only if one of its terms is in that record's
+  summary or identifiers. A record that shares only body words with it isn't
+  relevant, however well it covers them. "How do I enable two-factor
+  authentication on a GitHub account?" and "Convert this variable name to
+  kebab-case in Python." get nothing; "Which cloud region do we use for the
+  Kubernetes cluster?" still gets the region decision.
+- **Newer decisions.** Two current decisions, or two preferences, in one
+  scope are on one subject when their summaries share at least two thirds of
+  their content terms and their bodies at least 30% (Jaccard, an inflection
+  counting as the same term). "Editor" and "Editor theme" aren't. Recall puts
+  the newer (later `effective_from`, then `recorded_at`, then ID) directly
+  ahead of the older. The hook injects the newer whenever it injects the
+  older, even if only the older matches, and never adds the older for the
+  newer's sake. Neither supersedes the other.
+
 ### Evaluation set
 
 `internal/server/testdata/context-eval.json` is a synthetic signet of 250
@@ -111,6 +162,32 @@ on one distinctive word that is mostly in the answer's body, not its summary
 answers each share a word with some record ("How do I install Redis on
 Ubuntu?"); both were added in round 4 of #227 review. A scripted 20-turn
 session measures injected bytes.
+
+#232 added six tuning sets and 4 records (254 in all):
+
+- `filler_short`: 18 short questions over existing records, each in the
+  issue's wrapper ("Before we start, remind me: {q} One line is fine.").
+- `generic_two_word`: 12 two-word prompts no record answers, whose only match
+  with any record is a list word in a body. Half have their other word in no
+  record, and half have it also a list word, matched by a different record.
+  `generic_guard`: 6 prompts that share a list word with some record and a
+  distinctive word with their answer ("What year is Postgres?"), which must
+  keep it.
+- `named_guard`: 10 questions a record answers that also name something no
+  record holds ("Which editor do I use when writing Rust?"), added in #232's
+  code round 1 before the names rule ran on them. `either_or_limit`: 8 "X or
+  Y?" questions whose X is only in the answer's body and whose Y is a name no
+  record holds ("Helix or Neovim?"), added in code review round 2. The names
+  rule costs them their answer, so the set is a stated-limit tripwire,
+  asserted at its count (0 of 8), so a change that fixes or worsens it
+  shows.
+- `newer_decisions`: two pairs of same-scope decisions on one subject
+  ("Tidepool task queue", "Spam threshold"), 6 queries matching both, and 2
+  that only the older answers.
+
+The 4 records alone moved no existing count on 2.4.0 code after their
+summaries were reworded ("Tidepool job queue" collided with a cover-letter
+prompt).
 
 **Splits.** The tuning split is each case's question and paraphrase, 9
 wrappers, 62 no-memory prompts (30 of them colliding), the 38 short
@@ -143,38 +220,58 @@ easier prompts. The first version of the set had a held-out split that tuning
 had looked at; it is part of the tuning split now.
 
 `TestContextSelectionEvaluation` runs it in `bin/ci` and fails under these
-floors. The tuning floors sit a little under its rates. The held-out floors
-were set before the held-out split was first run and are not moved to fit it;
-they are checked when it is computed.
+floors, which are #232's triage numbers, set before its work started. The
+held-out floors are checked when the held-out split is computed.
 
 | Floor | Tuning | Held out |
 | --- | --- | --- |
-| `memory_context` top-1 / top-3 | 75% / 85% | 65% / 80% |
-| `memory_recall` top-1 / top-3 | 72% / 88% | 60% / 80% |
-| False injection, at most | 15% | 25% |
+| `memory_context` top-1 / top-3 | 78% / 86% | 75% / 84% |
+| `memory_recall` top-1 / top-3 | 75% / 90% | 60% / 80% |
+| False injection, at most | 6 of 62 | 2 of 28 |
 
-It also fails if fewer than 90% of the short questions get their answer in
-the hook's top 3, if more than 7 of the 24 collision prompts inject (the
-count when they were added), if any tuning wrapper's top-3 is under 75%, if the hook carries
-recall's first record in under 90% of the prompts where that is the case's
-record, or if session prompts average over 800 injected bytes.
+It also fails if fewer than 35 of the 38 short questions or 16 of the 18
+filler-wrapped ones get their answer in the hook's top 3, if more than 3 of
+the 24 collision prompts or any generic two-word prompt injects, if a
+generic-word guard prompt loses its answer, or if fewer than 8 of the 10
+named guard prompts keep theirs. It fails if a newer decision doesn't rank
+first in recall and the hook, or an older-only query loses the older from
+recall's top 3. It fails if any tuning wrapper's top-3 is under 75%, if the
+hook carries recall's first record in under 90% of the prompts where that is
+the case's record, or if session prompts average over 800 injected bytes.
+`TestNewerFirstCostsNoCase` fails if the newer-first rule lowers any case's
+rank in recall or the hook, and `TestSameSubjectPairs` if it pairs any
+records but the two fixture pairs.
 `MANDALORE_EVAL_REPORT=FILE` writes every outcome, for a per-case comparison
 between two builds.
 
-| Measure | Split | 2.0.3 | 2.1.0 | 2.1.0, no kind boost |
-| --- | --- | --- | --- | --- |
-| `memory_context` top-1 / top-3 | tuning (880 prompts) | 18.4% / 44.8% | 78.9% / 87.4% | 71.6% / 83.2% |
-| | held out (1232) | 33.3% / 61.9% | 77.3% / 84.6% | not measured |
-| `memory_recall` top-1 / top-3 | tuning (88 queries) | 22.7% / 37.5% | 77.3% / 93.2% | 75.0% / 88.6% |
-| | held out (44) | 11.4% / 29.5% | 75.0% / 88.6% | not measured |
-| False injection | tuning (62) | 71.0% (44) | 14.5% (9) | 12.9% (8) |
-| | held out (28) | 67.9% (19) | 14.3% (4) | not measured |
-| Short questions, answer in the hook's top 3 | tuning (38) | 25 | 35 | 34 |
-| Collision prompts injected | tuning (24) | 23 | 7 | 7 |
-| Injected bytes per prompt, 20-turn session | | 1030 | 572 (353 with `session`) | 594 |
-| Warm p95, 250 records | | | 12 ms | |
+| Measure | Split | 2.0.3 | 2.1.0 | 2.1.0, no kind boost | 2.5.0 |
+| --- | --- | --- | --- | --- | --- |
+| `memory_context` top-1 / top-3 | tuning (880 prompts) | 18.4% / 44.8% | 78.9% / 87.4% | 71.6% / 83.2% | 82.2% / 89.2% |
+| | held out (1232) | 33.3% / 61.9% | 77.3% / 84.6% | not measured | 79.5% / 86.9% (6d8c672) |
+| `memory_recall` top-1 / top-3 | tuning (88 queries) | 22.7% / 37.5% | 77.3% / 93.2% | 75.0% / 88.6% | 77.3% / 93.2% |
+| | held out (44) | 11.4% / 29.5% | 75.0% / 88.6% | not measured | 75.0% / 88.6% (6d8c672) |
+| False injection | tuning (62) | 71.0% (44) | 14.5% (9) | 12.9% (8) | 4.8% (3) |
+| | held out (28) | 67.9% (19) | 14.3% (4) | not measured | 10.7% (3) (6d8c672) |
+| | sealed (36) | | 13 (2.4.0) | | 6 |
+| Short questions, answer in the hook's top 3 | tuning (38) | 25 | 35 | 34 | 36 |
+| Filler-wrapped short questions, answer in the hook's top 3 | tuning (18) | | 12 (2.4.0) | | 18 |
+| Collision prompts injected | tuning (24) | 23 | 7 | 7 | 2 |
+| Generic two-word prompts injected | tuning (12) | | 8 (2.4.0) | | 0 |
+| Named guard prompts, answer in the hook's top 3 | tuning (10) | | 9 (2.4.0) | | 8 |
+| "X or Y?" limit prompts, answer in the hook's top 3 | tuning (8) | | 8 (2.4.0) | | 0 |
+| Newer decision first, recall / hook | tuning (6) | | 0 / 0 (2.4.0) | | 6 / 6 |
+| Injected bytes per prompt, 20-turn session | | 1030 | 572 (353 with `session`) | 594 | 560 (355 with `session`) |
+| Warm p95, 250 records | | | 12 ms | | 15 ms (254 records) |
 
-The 2.0.3 column runs the same test file against 816ea1b. The kind boost was
+The 2.1.0 column is measured on the 250-record signet. The 2.4.0 figures for
+#232's sets are on the 254-record signet, whose other numbers match 2.1.0's
+except context top-1 (79.1% / 87.6%). The held-out and sealed false
+injection miss their floors: see [Held-out exposure](#held-out-exposure-for-250).
+
+The 2.0.3 column runs the same test file against 816ea1b. The 2.5.0 column is
+the frozen code, b17ceb1, except the held-out figures, which are from the
+code before #232's code round 1 (6d8c672). The sealed row is the reviewer's
+batch, run on b17ceb1. The kind boost was
 kept because without it, on the tuning split, `memory_context` falls under
 both its top-1 and top-3 floors and recall top-3 under 90%.
 
@@ -227,14 +324,98 @@ words; "How do I pick a phone number for a new business line?" and "Explain
 the imperative mood in Spanish grammar." match two or more body words. They
 are the summary-word and two-word limits below, not addressed in 2.1.0.
 
+#### 2.5.0's curve
+
+On the 2.5.0 code (b17ceb1) and signet, the bars stay as they were (the bold
+row). Only stricter bars inject on fewer no-answer prompts, at a cost in hits
+and in the worst wrapper:
+
+| Coverage / evidence / anchor / relative | Top-1 / top-3 | Worst wrapper top-3 | False injection | Bytes | Short questions | Collisions | Filler-wrapped | Generic |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| none | 82.3% / 89.3% | 85.2% | 7/62 | 660 | 36/38 | 5/24 | 18/18 | 0/12 |
+| 0.25 / – / – / 0.65 | 79.3% / 85.8% | 52.3% | 3/62 | 560 | 36/38 | 2/24 | 18/18 | 0/12 |
+| 0.20 / 0.70 / 0.70 / 0.65 | 82.2% / 89.2% | 84.1% | 4/62 | 560 | 36/38 | 2/24 | 18/18 | 0/12 |
+| 0.25 / 0.60 / 0.70 / 0.65 | 81.9% / 89.3% | 85.2% | 5/62 | 560 | 36/38 | 2/24 | 18/18 | 0/12 |
+| **0.25 / 0.70 / 0.70 / 0.65** | **82.2% / 89.2%** | **84.1%** | **3/62** | **560** | **36/38** | **2/24** | **18/18** | **0/12** |
+| 0.30 / 0.80 / 0.70 / 0.65 | 80.5% / 87.6% | 78.4% | 2/62 | 560 | 35/38 | 2/24 | 18/18 | 0/12 |
+| 0.25 / 0.70 / 0.70 / none | 82.2% / 89.8% | 84.1% | 3/62 | 1189 | 36/38 | 2/24 | 18/18 | 0/12 |
+
+The lone-summary-word rule was first planned to need two of the prompt's
+other terms absent from the signet. That left 4 of 24 collisions, with the
+hook at 83.2% / 90.2%. With one, collisions fall to 3 of 24 and the short
+questions rise to 36 of 38, for a point of top-1. The names rule then took
+false injection from 5 to 3 of 62 and collisions from 3 to 2, and no other
+tuning count moved. Of the rules tried for names, it was the only one that
+kept 8 of the 10 named guard prompts (the plan lists the others). The two
+collision prompts left share two body words with a record ("How do I pick a
+phone number for a new business line?") or two summary words ("How do I
+flush the DNS cache on Windows?"). The 3 tuning no-answer prompts left ("How
+do I read a config.toml file in Rust?", "Format a date as 24-hour time in
+JavaScript.", "How do I cache API responses in a Flutter app?") name
+something absent but match a record's summary as closely as the named
+guard prompts match their answers'. They are
+[#262](https://github.com/acoz-labs/mandalore/issues/262)'s.
+
+#### Held-out exposure for 2.5.0
+
+#232's held-out split was computed once, on the frozen code (6d8c672), after
+every tuning decision. While the generic-word list was drafted, one rough
+lexical check read the 44 held-out variant phrasings alongside the tuning
+ones, with no recall or hook run, and found no answer the list would drop.
+After it, one word was removed from the draft ("way", a function word) and
+none added. The rule reaches only two-term prompts, and just one held-out
+variant is that short.
+
+The run met every floor but one: the hook injects on 3 of the 28 held-out
+no-answer prompts, over the floor of 2 (2.4.0: 4). The requester ruled it a
+deviation
+([PR comment](https://github.com/acoz-labs/mandalore/pull/261#issuecomment-6802782106)).
+The split isn't used for more tuning, nobody on the implementer side has
+looked at which prompts inject, and it wasn't run again after code round 1.
+The bar was re-judged at the same rate on the reviewer's sealed no-answer
+batch, hashed on #232 before code: at most 3 of its 36 prompts, and no more
+than 2.4.0.
+
+- **First gate, on 6d8c672:** 7 of 36, against 13 for 2.4.0, with no prompt
+  2.4.0 doesn't also inject on
+  ([result](https://github.com/acoz-labs/mandalore/pull/261#issuecomment-6802849026)).
+  The work went back to tuning on the tuning split, which added the names
+  rule.
+- **Second gate, on b17ceb1:** 6 of 36, against 13 for 2.4.0, again with no
+  new prompt
+  ([result](https://github.com/acoz-labs/mandalore/pull/261#issuecomment-6803097976)).
+  The three coverage-path collisions are unchanged from 2.4.0.
+
+The owner decided to ship on the second condition alone, recorded as a
+second deviation
+([PR comment](https://github.com/acoz-labs/mandalore/pull/261#issuecomment-6803169121)).
+The coverage-path collisions that remain are
+[#262](https://github.com/acoz-labs/mandalore/issues/262). The sealed batch
+stays sealed and isn't used for tuning.
+
 Known limits, all lexical: a question whose only distinctive word is common in
 the signet, inside an instruction wrapper, can fall under every bar
 (`orchard-compost`'s "How often should the compost be turned?"). A question
 whose answer hinges on one word in a record's body gets nothing once two more
 of its words go unmatched ("Which port does Unbound listen on?"), and an
-unrelated two-word prompt that shares one word with a record can get it. A prompt that
+unrelated two-word prompt that shares one word with a record can get it,
+unless from 2.5.0 the word is on the generic-word list. A prompt that
 shares two or more words, or a summary word, with an unrelated record can
-still get it. A name typed in lower case, or first in its sentence
+still get it (from 2.5.0, a lone summary word beside a word in no record
+doesn't). A question that names something no record holds can lose its
+answer when its one matched word is in the answer's summary: 2 of the 10
+named guard prompts, "Which editor do I use when writing Rust?" (which 2.4.0
+misses too) and "Which shell do I use on my MacBook?". They have the shape of
+"How do I install Redis on Ubuntu?". An "X or Y?" question whose X is only
+in the answer's body and whose Y is a name no record holds ("Restic or
+Borg?", "Postgres or MySQL?") gets nothing: the name is absent and the
+answer isn't matched in its summary. 2.4.0 answers all 8 of the evaluation's
+`either_or_limit` questions; 2.5.0 answers none. A two-word prompt whose answer hinges on a generic body word
+("Which night is bin night?") gets nothing, and a prompt whose shared word is
+generic but in a summary ("What year is it?") isn't caught by the
+generic-word rule. Two decisions on one subject whose wording differs more
+than the bars allow keep their BM25 order, and a head revised for a typo
+counts as newer. A name typed in lower case, or first in its sentence
 ("Beacon: what is it?"), doesn't anchor; on the tuning split the Beacon case
 then hits in 75% and 85% of its prompts instead of all of them, the misses
 being heavily wrapped ones. The hook drops words

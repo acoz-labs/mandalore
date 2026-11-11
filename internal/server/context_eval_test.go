@@ -48,6 +48,46 @@ type evalReport struct {
 	}
 	// Session holds the injected bytes for each turn of the scripted session.
 	Session []int
+	// Filler, Guard, Named, EitherOr: memory_context's rank of the answer to
+	// each filler-wrapped short question, generic-word guard prompt, named
+	// guard prompt and "X or Y?" limit prompt.
+	Filler, Guard, Named, EitherOr []evalRank
+	// Generic holds the injected bytes for each generic two-word prompt.
+	Generic []struct {
+		Prompt string
+		Bytes  int
+	}
+	// Newer holds, for each query matching both of a pair of same-scope
+	// decisions, both records' ranks in memory_recall and memory_context.
+	Newer []struct {
+		Prompt                                     string
+		Recall, Context, OlderRecall, OlderContext int
+	}
+	// OlderOnly holds memory_recall's rank of the older decision for each
+	// query only it answers.
+	OlderOnly []evalRank
+}
+
+// evalRank is a prompt and its answer's rank, 0 when absent.
+type evalRank struct {
+	Prompt string
+	Rank   int
+}
+
+// recallRanks lists memory_recall's record IDs for the prompt in the
+// record's scope, with the tool's defaults.
+func recallRanks(t *testing.T, m *memory.Service, e testfixture.Evaluation, prompt, record string) []string {
+	t.Helper()
+	scope := e.Scopes[record]
+	p, err := m.Recall(prompt, &scope, 5, 8192)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ids := []string{}
+	for _, h := range p.Current {
+		ids = append(ids, h.RecordID)
+	}
+	return ids
 }
 
 var contextRecordID = regexp.MustCompile(`, (record-[a-z0-9-]+), device `)
@@ -166,6 +206,35 @@ func runEvaluation(t *testing.T, m *memory.Service, e testfixture.Evaluation) ev
 	for _, prompt := range e.Session {
 		report.Session = append(report.Session, len(contextFor(t, m, "prompt", prompt)))
 	}
+	for _, s := range e.FillerShort.Tune {
+		prompt := strings.ReplaceAll(e.FillerShort.Wrapper, "{q}", s.Prompt)
+		report.Filler = append(report.Filler, evalRank{prompt, rankOf(contextRanks(contextFor(t, m, "prompt", prompt)), s.Expect)})
+	}
+	for _, s := range e.GenericGuard.Tune {
+		report.Guard = append(report.Guard, evalRank{s.Prompt, rankOf(contextRanks(contextFor(t, m, "prompt", s.Prompt)), s.Expect)})
+	}
+	for _, s := range e.NamedGuard.Tune {
+		report.Named = append(report.Named, evalRank{s.Prompt, rankOf(contextRanks(contextFor(t, m, "prompt", s.Prompt)), s.Expect)})
+	}
+	for _, s := range e.EitherOrLimit.Tune {
+		report.EitherOr = append(report.EitherOr, evalRank{s.Prompt, rankOf(contextRanks(contextFor(t, m, "prompt", s.Prompt)), s.Expect)})
+	}
+	for _, prompt := range e.GenericTwoWord.Tune {
+		report.Generic = append(report.Generic, struct {
+			Prompt string
+			Bytes  int
+		}{prompt, len(contextFor(t, m, "prompt", prompt))})
+	}
+	for _, q := range e.NewerDecisions.Tune {
+		recalled, injected := recallRanks(t, m, e, q.Prompt, q.Expect), contextRanks(contextFor(t, m, "prompt", q.Prompt))
+		report.Newer = append(report.Newer, struct {
+			Prompt                                     string
+			Recall, Context, OlderRecall, OlderContext int
+		}{q.Prompt, rankOf(recalled, q.Expect), rankOf(injected, q.Expect), rankOf(recalled, q.Older), rankOf(injected, q.Older)})
+	}
+	for _, q := range e.NewerDecisions.OlderOnly {
+		report.OlderOnly = append(report.OlderOnly, evalRank{q.Prompt, rankOf(recallRanks(t, m, e, q.Prompt, q.Expect), q.Expect)})
+	}
 	return report
 }
 
@@ -222,6 +291,33 @@ func shortHits(r evalReport) int {
 	return hits
 }
 
+// top3 counts the prompts whose answer is in the top 3.
+func top3(ranks []evalRank) int {
+	hits := 0
+	for _, s := range ranks {
+		hits += b2i(s.Rank >= 1 && s.Rank <= 3)
+	}
+	return hits
+}
+
+func genericInjected(r evalReport) int {
+	injected := 0
+	for _, g := range r.Generic {
+		injected += b2i(g.Bytes > 0)
+	}
+	return injected
+}
+
+// newerFirst counts the pair queries where the newer decision ranks first in
+// memory_recall and in memory_context.
+func newerFirst(r evalReport) (recall, context int) {
+	for _, n := range r.Newer {
+		recall += b2i(n.Recall == 1)
+		context += b2i(n.Context == 1)
+	}
+	return recall, context
+}
+
 func collisionsInjected(r evalReport) int {
 	injected := 0
 	for _, c := range r.Collisions {
@@ -254,6 +350,12 @@ func logReport(t *testing.T, r evalReport) {
 	t.Logf("false injection %d of %d no-memory prompts (%.1f%%; held out %d of %d)", injected, len(r.NoMemory), pct(injected, len(r.NoMemory)), heldOutInjected, heldOut)
 	t.Logf("short questions: answer in memory_context's top 3 for %d of %d", shortHits(r), len(r.Short))
 	t.Logf("collision prompts: injected on %d of %d", collisionsInjected(r), len(r.Collisions))
+	t.Logf("filler-wrapped short questions: answer in memory_context's top 3 for %d of %d", top3(r.Filler), len(r.Filler))
+	t.Logf("generic two-word prompts: injected on %d of %d; guard prompts: answer in the top 3 for %d of %d", genericInjected(r), len(r.Generic), top3(r.Guard), len(r.Guard))
+	t.Logf("named guard prompts: answer in the top 3 for %d of %d", top3(r.Named), len(r.Named))
+	t.Logf("\"X or Y?\" limit prompts: answer in the top 3 for %d of %d", top3(r.EitherOr), len(r.EitherOr))
+	nr, nc := newerFirst(r)
+	t.Logf("newer decisions: newer first in memory_recall %d of %d, in memory_context %d of %d; older-only queries find the older in recall's top 3 %d of %d", nr, len(r.Newer), nc, len(r.Newer), top3(r.OlderOnly), len(r.OlderOnly))
 	maxBytes := 0
 	for _, b := range r.Session {
 		maxBytes = max(maxBytes, b)

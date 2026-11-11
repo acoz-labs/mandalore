@@ -1,0 +1,178 @@
+{
+ "hook": {
+  "type": "mcp_tool",
+  "server": "plugin:mandalore:mandalore",
+  "tool": "memory_context",
+  "input": {
+   "event": "prompt",
+   "prompt": "${prompt}",
+   "session": "${session_id}"
+  },
+  "timeout": 3
+ },
+ "prompts": 208,
+ "runs": [
+  {
+   "budget": 2048,
+   "default_build": true,
+   "mode": "session",
+   "prompts": 208,
+   "average": 320.4567307692308,
+   "max": 2024,
+   "over_800": 31,
+   "errors": 0,
+   "answers": {
+    "whole": 41,
+    "clipped": 0,
+    "earlier": 84,
+    "absent": 1
+   },
+   "per_session": {
+    "S0": 354.8,
+    "S1": 293.1875,
+    "S2": 294.75,
+    "S3": 493.8333333333333,
+    "S4": 428.54545454545456,
+    "S5": 246.8421052631579,
+    "S6": 110.625,
+    "S7": 399.3125,
+    "S8": 245.03703703703704
+   }
+  },
+  {
+   "budget": 2048,
+   "default_build": true,
+   "mode": "no-session",
+   "prompts": 208,
+   "average": 599.5961538461538,
+   "max": 2044,
+   "over_800": 49,
+   "errors": 0,
+   "answers": {
+    "whole": 119,
+    "clipped": 0,
+    "earlier": 0,
+    "absent": 7
+   },
+   "per_session": {
+    "S0": 559.9,
+    "S1": 579.75,
+    "S2": 608.5,
+    "S3": 943.5833333333334,
+    "S4": 633.8181818181819,
+    "S5": 529.0526315789474,
+    "S6": 349.5,
+    "S7": 558.125,
+    "S8": 530.7407407407408
+   }
+  },
+  {
+   "budget": 1536,
+   "default_build": false,
+   "mode": "session",
+   "prompts": 208,
+   "average": 270.8125,
+   "max": 1527,
+   "over_800": 30,
+   "errors": 0,
+   "answers": {
+    "whole": 40,
+    "clipped": 0,
+    "earlier": 85,
+    "absent": 1
+   },
+   "per_session": {
+    "S0": 302.25,
+    "S1": 245.65625,
+    "S2": 236.4375,
+    "S3": 437.6666666666667,
+    "S4": 337.45454545454544,
+    "S5": 235.8421052631579,
+    "S6": 110.625,
+    "S7": 284.125,
+    "S8": 227.11111111111111
+   }
+  },
+  {
+   "budget": 1536,
+   "default_build": false,
+   "mode": "no-session",
+   "prompts": 208,
+   "average": 525.9903846153846,
+   "max": 1529,
+   "over_800": 49,
+   "errors": 0,
+   "answers": {
+    "whole": 117,
+    "clipped": 0,
+    "earlier": 0,
+    "absent": 9
+   },
+   "per_session": {
+    "S0": 453.95,
+    "S1": 534.40625,
+    "S2": 536.75,
+    "S3": 769.4166666666666,
+    "S4": 542.7272727272727,
+    "S5": 511.4736842105263,
+    "S6": 349.5,
+    "S7": 435.6875,
+    "S8": 494.9259259259259
+   }
+  },
+  {
+   "budget": 1024,
+   "default_build": false,
+   "mode": "session",
+   "prompts": 208,
+   "average": 223.64423076923077,
+   "max": 1022,
+   "over_800": 23,
+   "errors": 0,
+   "answers": {
+    "whole": 41,
+    "clipped": 0,
+    "earlier": 84,
+    "absent": 1
+   },
+   "per_session": {
+    "S0": 239.5,
+    "S1": 201.28125,
+    "S2": 196.34375,
+    "S3": 356.6666666666667,
+    "S4": 264.6363636363636,
+    "S5": 209.1578947368421,
+    "S6": 110.625,
+    "S7": 226.25,
+    "S8": 194.74074074074073
+   }
+  },
+  {
+   "budget": 1024,
+   "default_build": false,
+   "mode": "no-session",
+   "prompts": 208,
+   "average": 453.50961538461536,
+   "max": 1022,
+   "over_800": 49,
+   "errors": 0,
+   "answers": {
+    "whole": 116,
+    "clipped": 0,
+    "earlier": 0,
+    "absent": 10
+   },
+   "per_session": {
+    "S0": 399.55,
+    "S1": 468.625,
+    "S2": 485.4375,
+    "S3": 562.875,
+    "S4": 455.54545454545456,
+    "S5": 455.7894736842105,
+    "S6": 332.5625,
+    "S7": 370.1875,
+    "S8": 458.2962962962963
+   }
+  }
+ ]
+}
