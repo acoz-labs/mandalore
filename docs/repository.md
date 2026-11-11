@@ -199,6 +199,18 @@ Document any required deviation in `docs/development.md`.
 - When a repository-wide grep should find no old version, dated evidence
   records (`docs/evidence/**`, `*-engineering-evidence.md`) are the expected
   exception. Exclude them by explicit path and put the grep in the PR.
+- Claude Code (2.1.322) talks sessionless MCP `2026-07-28` to this server
+  (`server/discover`, no `initialize`), so the server never sees an
+  `Mcp-Session-Id` from it (#249). The Go SDK v1.7.0 client also always
+  starts with `server/discover`. A test that needs the `initialize` path
+  answers `server/discover` with JSON-RPC -32601 from a `RoundTripper`, or
+  sends a raw `initialize` with `Mcp-Protocol-Version: 2025-11-25`.
+- Authorship counts against `memory_prime`'s byte budget. A longer harness
+  or a session ID can push the oldest item out of a topic that already fills
+  it (#249), so measure prime's output bytes when authorship changes.
+- The `TempDir` cleanup flake in `internal/server` tests (#259) can fail a
+  validation receipt under load. Rerun, and publish both receipts, the
+  failure first.
 
 ## Current delivery
 
