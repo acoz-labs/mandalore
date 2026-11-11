@@ -28,6 +28,9 @@ type Client struct {
 	// names one installation.
 	Installation string
 	Scope        Scope
+	// Harness is recorded on the client's writes. It is empty for local and
+	// test clients, which record their kind.
+	Harness string
 }
 
 // device is the key of the client's enrolled device: its installation when

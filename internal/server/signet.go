@@ -1,6 +1,7 @@
 package server
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
@@ -178,9 +179,9 @@ func writeState(path string, v any) error {
 	return os.Rename(f.Name(), path)
 }
 
-// author resolves the client's device, enrolling one on its first write. The
-// caller holds s.mu.
-func (s *signet) author(c Client) (memory.Authorship, error) {
+// author resolves the client's device, enrolling one on its first write, and
+// records the write's transport session, if any. The caller holds s.mu.
+func (s *signet) author(c Client, session *string) (memory.Authorship, error) {
 	device := s.devices[c.device()]
 	if device == "" {
 		var err error
@@ -200,7 +201,7 @@ func (s *signet) author(c Client) (memory.Authorship, error) {
 			return memory.Authorship{}, err
 		}
 	}
-	return memory.Authorship{DeviceID: device, Actor: s.owner, Harness: c.Kind}, nil
+	return memory.Authorship{DeviceID: device, Actor: s.owner, Harness: cmp.Or(c.Harness, c.Kind), SessionID: session}, nil
 }
 
 // enroll records an approved client's device at approval, so provenance
@@ -212,7 +213,7 @@ func (s *signet) enroll(c Client) error {
 	}
 	s.mu.Lock()
 	_, known := s.devices[c.device()]
-	_, err := s.author(c)
+	_, err := s.author(c, nil)
 	s.mu.Unlock()
 	if err == nil && !known {
 		s.wrote()

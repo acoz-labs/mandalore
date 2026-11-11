@@ -65,7 +65,13 @@ Without that entry, writes through the connector are also recorded as the
 claude.ai client, including those by Claude Code agents, so they can't be told
 apart from your own writes in the Claude app. With it, Claude Code writes
 through the plugin's server as its own installation
-([Who wrote it](../../docs/server.md#who-wrote-it)).
+([Who wrote it](../../docs/server.md#who-wrote-it)). From server 2.4.0, those
+writes record the harness `Claude Code (document on claude.ai)` rather than
+`claude.ai`. Their `session_id` identifies an MCP transport connection where
+the protocol has one. It is not Claude Code's session ID, which the hook
+sends, and it is null on the sessionless protocol Claude Code uses
+([#258](https://github.com/acoz-labs/mandalore/issues/258) covers sessions
+there).
 
 ## Behaviour
 

@@ -796,7 +796,7 @@ func TestInstallationsHaveTheirOwnAuthorship(t *testing.T) {
 				t.Fatalf("installation %s changed device: %s → %s", in, prev, got.DeviceID)
 			}
 			devices[in] = got.DeviceID
-			if got.Actor != "Synthetic Owner" || got.Harness != kind || got.DeviceID == shared.DeviceID {
+			if got.Actor != "Synthetic Owner" || got.Harness != "Synthetic Code (document on "+kind+")" || got.DeviceID == shared.DeviceID {
 				t.Fatalf("installation %s authorship %+v", in, got)
 			}
 		}

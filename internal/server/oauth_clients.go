@@ -113,12 +113,7 @@ func contains(list []string, v string) bool {
 // displayName keeps a client-supplied name short and printable. It is shown
 // to the owner on the consent page, so it never overrides the redirect host.
 func displayName(name, fallback string) string {
-	name = strings.Map(func(r rune) rune {
-		if unicode.IsPrint(r) {
-			return r
-		}
-		return -1
-	}, strings.TrimSpace(name))
+	name = printable(strings.TrimSpace(name))
 	if len(name) > 64 {
 		name = strings.ToValidUTF8(name[:64], "")
 	}
@@ -128,8 +123,21 @@ func displayName(name, fallback string) string {
 	return name
 }
 
-// clientKind is the harness recorded on the client's writes: the host of its
-// metadata document, or of its first non-loopback redirect.
+// printable keeps only the runes unicode.IsPrint accepts. That drops C0 and
+// C1 controls (so ANSI escapes), format characters such as bidi overrides,
+// line and paragraph separators, and every space but U+0020.
+func printable(s string) string {
+	return strings.Map(func(r rune) rune {
+		if unicode.IsPrint(r) {
+			return r
+		}
+		return -1
+	}, s)
+}
+
+// clientKind is the client's kind, shown in its device label and in
+// clients list, and the host in its harness: the host of its metadata
+// document, or of its first non-loopback redirect.
 func clientKind(id string, document bool, redirects []string) string {
 	if document {
 		u, _ := url.Parse(id)
