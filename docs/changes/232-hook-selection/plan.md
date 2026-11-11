@@ -48,6 +48,119 @@ numbers. No floor is lowered. The per-wrapper top-3 floor (75%) and the
 The reviewer's sealed probe batches (hashes on #232) check the same numbers
 at code review. This plan doesn't use or look for them.
 
+### Deviation on triage 1b, and the gate that replaces it
+
+On the frozen code (6d8c672), the hook injects on 3 of the 28 held-out
+no-answer prompts. The bar is at most 2, and 2.4.0 injects on 4. Every other
+triage number is met. The requester ruled on it on 2026-11-11
+(https://github.com/acoz-labs/mandalore/pull/261#issuecomment-6802782106):
+
+- It's recorded as a deviation, and that held-out set isn't used for any
+  more tuning. Nobody on the implementer side has looked at which prompts
+  inject.
+- The bar isn't loosened. It's re-judged at the same rate on the reviewer's
+  sealed no-answer batch (36 prompts, hashed on #232 before code). The
+  candidate at 6d8c672 must inject on at most 3 of the 36, and on no more of
+  them than 2.4.0 does.
+- If either condition fails, the work goes back to tuning within its round
+  budget, or closes as not shipped. Any further relaxation goes back to the
+  requester.
+- The requester's private eval before publication is unchanged.
+
+First gate, on 6d8c672: **failed**
+(https://github.com/acoz-labs/mandalore/pull/261#issuecomment-6802849026).
+The candidate injected on 7 of the 36 (2.4.0: 13; no new prompt): plain 1,
+coverage 3, evidence 2, summary 1. Under the ruling the work went back to
+tuning, as code round 1 of 4, below.
+
+### Code round 1: names the signet doesn't hold
+
+The lead's direction: tune how the coverage and evidence paths handle name
+collisions, deciding on the tuning split only, with every other bar still
+met. The 28 held-out no-answer prompts are spent for 1b and weren't run
+again, and the sealed prompts stay unseen.
+
+- **What the tuning split showed.** Of the 5 tuning no-answer prompts and 3
+  collisions still injecting at 6d8c672, 6 name something no record holds
+  ("in Rust?", "on a GitHub account", "in Python", "in JavaScript", "in a
+  Flutter app", "in Spanish grammar"). They inject through coverage or
+  evidence on words the record shares.
+- **A new guard set first.** No tuning prompt asked a real question that also
+  named something absent, so any rule here was untested against losing
+  answers. `named_guard` holds 10 such questions ("Which editor do I use when
+  writing Rust?", "Which shell do I use on my MacBook?"), written before any
+  rule ran on them. The frozen code already loses 2 of the 10, both to the
+  lone-summary-word rule: their one matched word is in the answer's summary
+  and the name is absent. That's the shape of "How do I install Redis on
+  Ubuntu?", which the rule exists to drop, so it stays a stated limit.
+- **Rules tried, on the tuning split:**
+
+  | When the prompt names something no record holds | False injection | Collisions | Named guard | Other bars |
+  | --- | --- | --- | --- | --- |
+  | as at 6d8c672 | 5/62 | 3/24 | 8/10 | met |
+  | only a name anchor counts | 0/62 | 2/24 | 1/10 | met |
+  | evidence doesn't count | 4/62 | 2/24 | 6/10 | met |
+  | evidence doesn't count, coverage bar × 1.5 | 0/62 | 2/24 | 3/10 | met |
+  | **a record needs one of the prompt's terms in its summary or identifiers** | **3/62** | **2/24** | **8/10** | **met, unchanged** |
+  | as above, also when 2 or more terms are in no record | 3/62 | 1/24 | 8/10 | top-1/top-3 80.6%/87.3%, worst wrapper 75.0%, at its floor |
+  | as above, also when half the terms are in no record | 3/62 | 2/24 | 8/10 | short questions 33/38, under the bar |
+
+- **Chosen: the bold row.** A prompt that names something no record holds
+  is about something else, unless a record matches one of the prompt's terms
+  in its summary or identifiers. A record that shares only body words with
+  it isn't relevant. "Names" are the words the hook already treats as names
+  (capitalized mid-sentence); "no record" is the same document-frequency
+  test as the lone-summary-word rule. It's the only row that loses no named
+  guard. The three no-answer prompts it leaves ("How do I read a config.toml
+  file in Rust?", "Format a date as 24-hour time in JavaScript.", "How do I
+  cache API responses in a Flutter app?") match their record's summary as
+  closely as the guards match theirs, so no lexical rule tried here
+  separates them.
+- **Code.** Ranking reports, per query, which names no candidate holds
+  (`Packet.AbsentNames`) and which heads match a query term in the summary or
+  identifiers (`Packet.Titled`). The hook's `relevance` applies the rule.
+  Recall is unchanged.
+- **Tuning numbers on the new frozen code:** false injection 3 of 62,
+  collisions 2 of 24, plain short questions 36 of 38, filler-wrapped 18 of
+  18, generic two-word 0 of 12, generic guard 6 of 6, named guard 8 of 10,
+  newer decision first 6 of 6 in recall and the hook, older-only 2 of 2,
+  hook top-1/top-3 82.2%/89.2%, recall 77.3%/93.2%, scripted session 560
+  bytes.
+
+Second gate, on the new frozen code: *pending; the reviewer reruns the
+sealed batch once. If it fails, the work closes as not shipped or goes back
+to the requester.*
+
+### What changed while building
+
+Each change was decided on the tuning split, before the held-out run.
+
+- **The lone-summary-word rule fires when any other prompt term is absent
+  from the signet, not two.** With two, the collision prompts stay at 4 of
+  24 ("How do I snapshot a VM in VirtualBox?" has only one other term), over
+  the bar of 3. With any, they're at 3 of 24, plain short questions rise
+  from 35 to 36 of 38, and the hook's tuning top-1/top-3 goes from 83.2%/90.2%
+  to 82.2%/89.2%, above the bars.
+- **Plain -s/-es plurals of list words count as list words.** The existing
+  inflection rule needs a base of four letters or more, so it would miss
+  "days" and "hours". The 50 words are unchanged.
+- **Clause boundaries.** ".", "!", ":" and ";" end a clause only when a space
+  or the end of the prompt follows, so "Apache-2.0?" and "10:00" stay whole.
+- **"just" isn't added** to the stop words: it's already a function word.
+- **Newer-first pairs come from every current record in the query's
+  scopes**, not just the matching ones. That way the hook can bring the
+  newer decision when only the older matches the prompt, as the plan
+  requires. Recall still moves only records that both match.
+- **The pair records' wording.** "Tidepool job queue" collided with "Write a
+  cover letter for a job in Berlin.", and "Mail spam threshold" cost the
+  newsletters case its hook hits. They became "Tidepool task queue" and
+  "Spam threshold" before any rule ran (step 1's comment on the PR).
+- **The replay ran before the held-out run**, so a change to the default
+  couldn't follow it. The default stayed 2048.
+- **Sessionless MCP.** The replay's `tools/call` carries the `_meta`
+  protocol version, client capabilities and client info, and the
+  `Mcp-Method` and `Mcp-Name` headers that `2026-07-28` requires.
+
 ## Files that change
 
 - **Hook selection** (`internal/server/context.go`):
@@ -84,8 +197,9 @@ at code review. This plan doesn't use or look for them.
   `recallHeads`; `internal/memory` exports stay hook-agnostic):
   - *Generic word (item 3).* A record whose only match with the prompt is
     one body word from the generic-word list is incidental whenever the
-    prompt has another content term. A word counts when it or its base under
-    the existing inflection rule (-s, -es, -ed, -ing) is on the list. On a
+    prompt has another content term. A word counts when it, its plain -s or
+    -es plural, or its base under the existing inflection rule (-s, -es,
+    -ed, -ing) is on the list. On a
     prompt of three or more terms a lone body match is already incidental
     under 2.1.0, so the rule changes only two-term prompts. The 2.1.0 rules
     stay: a lone body match on a bare number, or with two or more other
@@ -173,8 +287,10 @@ at code review. This plan doesn't use or look for them.
     prompt must keep its expected record in the hook's top 3.
   - *Lone summary word (item 1).* A record that matches just one of the
     prompt's content terms, in its summary or identifiers but not as a name
-    the prompt capitalizes, is incidental when two or more of the prompt's
-    other content terms are absent from the signet. Absent means in none of
+    the prompt capitalizes, is incidental when another of the prompt's
+    content terms is absent from the signet (two or more, as first planned,
+    left 4 of 24 collisions; see [What changed while
+    building](#what-changed-while-building)). Absent means in none of
     the records the hook's recall ranks: every current record and competing
     head in the visible scopes, the same set BM25 takes document frequencies
     from, not the top results. "What theme should we pick for a wedding?"
