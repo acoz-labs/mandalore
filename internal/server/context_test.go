@@ -501,3 +501,39 @@ func TestMemoryContextNewerDecisionFirst(t *testing.T) {
 		t.Errorf("memory_recall ranked %+v, want %s then %s", p.Current, newer, older)
 	}
 }
+
+func TestContextLead(t *testing.T) {
+	for prompt, want := range map[string]string{
+		"Restic or Borg?":              "Restic",
+		"Restic vs Borg":               "Restic",
+		"Borg or Restic?":              "Borg",
+		"restic or Borg?":              "",
+		"Restic?":                      "",
+		"Should I use Restic or Borg?": "",
+		"Format a date in JavaScript.": "",
+		"What about Restic?":           "",
+	} {
+		if got := lead(prompt); got != want {
+			t.Errorf("lead(%q) = %q, want %q", prompt, got, want)
+		}
+	}
+}
+
+// #232, the requester's eval on the 2.5.0 candidate: a bare "A or B?" or "A vs
+// B", where A is in several records' summaries and B in none, injected
+// nothing, while "B or A?" injected A's records. Each now injects all three.
+func TestMemoryContextEitherOrOnASummaryName(t *testing.T) {
+	m, ids := selectionService(t,
+		memory.Write{Kind: "procedure", Summary: "Kopia backup schedule", Body: "Snapshots the NAS nightly to the offsite bucket."},
+		memory.Write{Kind: "decision", Summary: "Kopia retention", Body: "Keep 14 daily and 8 weekly snapshots."},
+		memory.Write{Kind: "fact", Summary: "Kopia repository password", Body: "Stored in the password manager under the NAS entry."},
+	)
+	for _, prompt := range []string{"Kopia or Borg?", "Borg or Kopia?", "Kopia vs Borg"} {
+		got := contextRanks(contextFor(t, m, "prompt", prompt))
+		slices.Sort(got)
+		want := slices.Sorted(slices.Values(ids[:3]))
+		if !slices.Equal(got, want) {
+			t.Errorf("%q injected %v, want the 3 Kopia records %v", prompt, got, want)
+		}
+	}
+}

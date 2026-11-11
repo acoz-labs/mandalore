@@ -119,7 +119,11 @@ was chosen on the tuning split alone.
 - **Lone summary words.** A record that matches one of the prompt's terms, in
   its summary or identifiers, on a word the prompt doesn't capitalize, is
   incidental when another of the prompt's terms is in no record at all: the
-  prompt is about something the signet lacks. "How do I install Redis on
+  prompt is about something the signet lacks. A prompt's first word counts as
+  capitalized here when every other term is a name ("Kopia or Borg?", "Kopia
+  vs Borg"), so those inject Kopia's records as "Borg or Kopia?" does. The
+  first word still anchors nothing and never counts as a name the signet
+  lacks. "How do I install Redis on
   Ubuntu?" and "What theme should we pick for a wedding?" get nothing; "Which
   editor do I use?" (one term) and "Does Beacon work at a wedding?" (a name)
   still inject.
@@ -407,10 +411,16 @@ answer when its one matched word is in the answer's summary: 2 of the 10
 named guard prompts, "Which editor do I use when writing Rust?" (which 2.4.0
 misses too) and "Which shell do I use on my MacBook?". They have the shape of
 "How do I install Redis on Ubuntu?". An "X or Y?" question whose X is only
-in the answer's body and whose Y is a name no record holds ("Restic or
-Borg?", "Postgres or MySQL?") gets nothing: the name is absent and the
-answer isn't matched in its summary. 2.4.0 answers all 8 of the evaluation's
-`either_or_limit` questions; 2.5.0 answers none. A two-word prompt whose answer hinges on a generic body word
+in the answer's body and whose Y is a name no record holds ("Helix or
+Neovim?", "Postgres or MySQL?") gets nothing: the name is absent and the
+answer isn't matched in its summary. It depends on the order: "X or Y?", "X
+vs Y", "Should I use X or Y?" and "Do we use X or Y for this?" get nothing,
+while "Y or X?", "X?" and "What about X?" keep the answer, because a word that
+starts the prompt isn't a name. 2.4.0 answers all 8 of the evaluation's
+`either_or_limit` questions; 2.5.0 answers none, and `TestEitherOrOrders`
+asserts all 8 reversed. When X is in records' summaries instead, every
+order injects X's records (see
+[2.5.0](#250-filler-collisions-generic-words-and-newer-decisions)). A two-word prompt whose answer hinges on a generic body word
 ("Which night is bin night?") gets nothing, and a prompt whose shared word is
 generic but in a summary ("What year is it?") isn't caught by the
 generic-word rule. Two decisions on one subject whose wording differs more

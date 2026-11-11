@@ -123,6 +123,34 @@ func questionClauses(prompt string) []string {
 	return clauses
 }
 
+// lead is the prompt's first word when it is capitalized and every other term
+// is a name, as in "Restic or Borg?" and "Restic vs Borg". Its position keeps
+// it out of names, but such a prompt is nothing but names, so a lone summary
+// match on it counts as one on a name would. It anchors nothing and never
+// counts as a name the signet lacks, so "Neovim or Helix?" is judged as
+// before.
+func lead(prompt string) string {
+	fields := strings.Fields(prompt)
+	if len(fields) == 0 {
+		return ""
+	}
+	first := strings.TrimLeft(fields[0], "\"'([{")
+	if r, _ := utf8.DecodeRuneInString(first); !unicode.IsUpper(r) || significant(first) == "" {
+		return ""
+	}
+	named := map[string]bool{significant(first): true}
+	for _, n := range names(prompt) {
+		for _, t := range strings.Fields(significant(n)) {
+			named[t] = true
+		}
+	}
+	terms := strings.Fields(significant(prompt))
+	if len(terms) < 2 || slices.ContainsFunc(terms, func(t string) bool { return !named[t] }) {
+		return ""
+	}
+	return first
+}
+
 func oneLine(s string) string { return strings.Join(strings.Fields(s), " ") }
 
 // contextEntry is one record's line: its claim, which may be clipped, and
@@ -229,7 +257,7 @@ func relevant(m *memory.Service, prompt string) ([]memory.Revision, []memory.Rev
 	var packets []memory.Packet
 	for _, q := range append([]string{prompt}, questionClauses(prompt)...) {
 		if query := significant(q); query != "" {
-			p, err := m.RecallAllNamed(query, names(q), contextRecallLimit)
+			p, err := m.RecallAllNamed(query, names(q), lead(q), contextRecallLimit)
 			if err != nil {
 				return nil, nil, err
 			}
