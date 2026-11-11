@@ -1,0 +1,1957 @@
+[
+ {
+  "session": "S0",
+  "prompt": "Let's work on tidepool today. Which database does Tidepool use?",
+  "bytes": 1013,
+  "records": [
+   "record-eval-tidepool-database",
+   "record-eval-dp-tidepool-staging-db",
+   "record-eval-dp-tidepool-cache",
+   "record-eval-near-tidepool-10"
+  ],
+  "error": ""
+ },
+ {
+  "session": "S0",
+  "prompt": "ok",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S0",
+  "prompt": "How long do tidepool access tokens last? Answer from context you already have; don't call tools.",
+  "bytes": 421,
+  "records": [
+   "record-eval-tidepool-token-lifetime",
+   "record-eval-dp-tidepool-token-storage"
+  ],
+  "error": ""
+ },
+ {
+  "session": "S0",
+  "prompt": "And what's the API rate limit per key?",
+  "bytes": 217,
+  "records": [
+   "record-eval-tidepool-rate-limit"
+  ],
+  "error": ""
+ },
+ {
+  "session": "S0",
+  "prompt": "thanks, go ahead",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S0",
+  "prompt": "What format do API errors use?",
+  "bytes": 216,
+  "records": [
+   "record-eval-tidepool-error-format"
+  ],
+  "error": ""
+ },
+ {
+  "session": "S0",
+  "prompt": "Write a Go function that returns a problem details error for a missing resource.",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S0",
+  "prompt": "Which tool runs schema migrations?",
+  "bytes": 229,
+  "records": [
+   "record-eval-tidepool-migrations"
+  ],
+  "error": ""
+ },
+ {
+  "session": "S0",
+  "prompt": "ready",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S0",
+  "prompt": "How does tidepool get deployed to production?",
+  "bytes": 756,
+  "records": [
+   "record-eval-tidepool-deploy",
+   "record-eval-dp-tidepool-api-versioning",
+   "record-eval-near-tidepool-08"
+  ],
+  "error": ""
+ },
+ {
+  "session": "S0",
+  "prompt": "In one line: when is the tidepool on-call handoff?",
+  "bytes": 212,
+  "records": [
+   "record-eval-tidepool-oncall"
+  ],
+  "error": ""
+ },
+ {
+  "session": "S0",
+  "prompt": "sounds good",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S0",
+  "prompt": "Remind me again which database does Tidepool use?",
+  "bytes": 1016,
+  "records": [
+   "record-eval-noise-057",
+   "record-eval-noise-121"
+  ],
+  "error": ""
+ },
+ {
+  "session": "S0",
+  "prompt": "What is the difference between TCP and UDP?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S0",
+  "prompt": "How long are request logs retained?",
+  "bytes": 710,
+  "records": [
+   "record-eval-tidepool-log-retention",
+   "record-eval-dp-tidepool-log-format",
+   "record-eval-noise-089"
+  ],
+  "error": ""
+ },
+ {
+  "session": "S0",
+  "prompt": "ok, next",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S0",
+  "prompt": "What's the API rate limit per key again?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S0",
+  "prompt": "Explain how a token bucket rate limiter works.",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S0",
+  "prompt": "great, do it",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S0",
+  "prompt": "How long do tidepool access tokens last?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S1",
+  "prompt": "Who is my front door assistant on door.memory.example.com?",
+  "bytes": 477,
+  "records": [
+   "record-eval-front-door-assistant"
+  ],
+  "error": "",
+  "expect": "record-eval-front-door-assistant",
+  "answer": "whole"
+ },
+ {
+  "session": "S1",
+  "prompt": "Which assistant answers at the front door panel?",
+  "bytes": 369,
+  "records": [
+   "record-eval-near-homelab-05"
+  ],
+  "error": "",
+  "expect": "record-eval-front-door-assistant",
+  "answer": "earlier"
+ },
+ {
+  "session": "S1",
+  "prompt": "What is Beacon?",
+  "bytes": 246,
+  "records": [
+   "record-eval-beacon-entity"
+  ],
+  "error": "",
+  "expect": "record-eval-beacon-entity",
+  "answer": "whole"
+ },
+ {
+  "session": "S1",
+  "prompt": "Tell me what Beacon actually is.",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-beacon-entity",
+  "answer": "earlier"
+ },
+ {
+  "session": "S1",
+  "prompt": "Which DNS resolver do we use at home?",
+  "bytes": 252,
+  "records": [
+   "record-eval-dns-resolver"
+  ],
+  "error": "",
+  "expect": "record-eval-dns-resolver",
+  "answer": "whole"
+ },
+ {
+  "session": "S1",
+  "prompt": "What resolves DNS on the home network now?",
+  "bytes": 1016,
+  "records": [
+   "record-eval-noise-096",
+   "record-eval-noise-104",
+   "record-eval-noise-032"
+  ],
+  "error": "",
+  "expect": "record-eval-dns-resolver",
+  "answer": "earlier"
+ },
+ {
+  "session": "S1",
+  "prompt": "When does the NAS backup run?",
+  "bytes": 890,
+  "records": [
+   "record-eval-nas-backup",
+   "record-eval-near-homelab-04",
+   "record-eval-noise-008"
+  ],
+  "error": "",
+  "expect": "record-eval-nas-backup",
+  "answer": "whole"
+ },
+ {
+  "session": "S1",
+  "prompt": "What time do the nightly restic snapshots start?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-nas-backup",
+  "answer": "earlier"
+ },
+ {
+  "session": "S1",
+  "prompt": "Which VLAN are the IoT devices on?",
+  "bytes": 233,
+  "records": [
+   "record-eval-iot-vlan"
+  ],
+  "error": "",
+  "expect": "record-eval-iot-vlan",
+  "answer": "whole"
+ },
+ {
+  "session": "S1",
+  "prompt": "What network segment do the cameras and plugs use?",
+  "bytes": 1013,
+  "records": [
+   "record-eval-near-homelab-03",
+   "record-eval-noise-024",
+   "record-eval-noise-048"
+  ],
+  "error": "",
+  "expect": "record-eval-iot-vlan",
+  "answer": "earlier"
+ },
+ {
+  "session": "S1",
+  "prompt": "What channel is the upstairs access point on?",
+  "bytes": 226,
+  "records": [
+   "record-eval-upstairs-ap"
+  ],
+  "error": "",
+  "expect": "record-eval-upstairs-ap",
+  "answer": "whole"
+ },
+ {
+  "session": "S1",
+  "prompt": "Which wifi channel does the upstairs AP use?",
+  "bytes": 423,
+  "records": [
+   "record-eval-near-homelab-06"
+  ],
+  "error": "",
+  "expect": "record-eval-upstairs-ap",
+  "answer": "earlier"
+ },
+ {
+  "session": "S1",
+  "prompt": "How long does the rack UPS last on battery?",
+  "bytes": 214,
+  "records": [
+   "record-eval-ups-runtime"
+  ],
+  "error": "",
+  "expect": "record-eval-ups-runtime",
+  "answer": "whole"
+ },
+ {
+  "session": "S1",
+  "prompt": "What runtime does the UPS give the rack?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-ups-runtime",
+  "answer": "earlier"
+ },
+ {
+  "session": "S1",
+  "prompt": "How do I reach the office printer?",
+  "bytes": 217,
+  "records": [
+   "record-eval-office-printer"
+  ],
+  "error": "",
+  "expect": "record-eval-office-printer",
+  "answer": "whole"
+ },
+ {
+  "session": "S1",
+  "prompt": "What is the printer's address in the office?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-office-printer",
+  "answer": "earlier"
+ },
+ {
+  "session": "S1",
+  "prompt": "Is the ad-blocking container still around?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-dns-resolver",
+  "answer": "earlier"
+ },
+ {
+  "session": "S1",
+  "prompt": "How many Restic snapshots do we keep?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-nas-backup",
+  "answer": "earlier"
+ },
+ {
+  "session": "S1",
+  "prompt": "Are the cameras isolated?",
+  "bytes": 865,
+  "records": [
+   "record-eval-dp-camera-retention",
+   "record-eval-noise-080",
+   "record-eval-noise-040"
+  ],
+  "error": "",
+  "expect": "record-eval-iot-vlan",
+  "answer": "earlier"
+ },
+ {
+  "session": "S1",
+  "prompt": "Is it channel 36?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-upstairs-ap",
+  "answer": "earlier"
+ },
+ {
+  "session": "S1",
+  "prompt": "What happens to the NAS on battery?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-ups-runtime",
+  "answer": "earlier"
+ },
+ {
+  "session": "S1",
+  "prompt": "Do I need a vendor driver?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-office-printer",
+  "answer": "earlier"
+ },
+ {
+  "session": "S1",
+  "prompt": "Who answers at the hallway panel?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-front-door-assistant",
+  "answer": "earlier"
+ },
+ {
+  "session": "S1",
+  "prompt": "Does Beacon have a cloud fallback?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-beacon-entity",
+  "answer": "earlier"
+ },
+ {
+  "session": "S1",
+  "prompt": "ok",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S1",
+  "prompt": "Who wrote Pride and Prejudice?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S1",
+  "prompt": "great, do it",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S1",
+  "prompt": "How do I write a database migration in Rails?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S1",
+  "prompt": "How do I enable two-factor authentication on a GitHub account?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S1",
+  "prompt": "Convert this variable name to kebab-case in Python.",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S1",
+  "prompt": "What's new in Bootstrap 4.0?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S1",
+  "prompt": "Plan a 14-day itinerary for Japan.",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S2",
+  "prompt": "Which database does Tidepool use?",
+  "bytes": 1013,
+  "records": [
+   "record-eval-tidepool-database",
+   "record-eval-dp-tidepool-staging-db",
+   "record-eval-dp-tidepool-cache",
+   "record-eval-near-tidepool-10"
+  ],
+  "error": "",
+  "expect": "record-eval-tidepool-database",
+  "answer": "whole"
+ },
+ {
+  "session": "S2",
+  "prompt": "What is the primary datastore for the tidepool service?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-tidepool-database",
+  "answer": "earlier"
+ },
+ {
+  "session": "S2",
+  "prompt": "How does tidepool get deployed to production?",
+  "bytes": 756,
+  "records": [
+   "record-eval-tidepool-deploy",
+   "record-eval-dp-tidepool-api-versioning",
+   "record-eval-near-tidepool-08"
+  ],
+  "error": "",
+  "expect": "record-eval-tidepool-deploy",
+  "answer": "whole"
+ },
+ {
+  "session": "S2",
+  "prompt": "What triggers a tidepool production deploy?",
+  "bytes": 908,
+  "records": [
+   "record-eval-near-tidepool-11",
+   "record-eval-noise-009"
+  ],
+  "error": "",
+  "expect": "record-eval-tidepool-deploy",
+  "answer": "earlier"
+ },
+ {
+  "session": "S2",
+  "prompt": "What's the API rate limit per key?",
+  "bytes": 217,
+  "records": [
+   "record-eval-tidepool-rate-limit"
+  ],
+  "error": "",
+  "expect": "record-eval-tidepool-rate-limit",
+  "answer": "whole"
+ },
+ {
+  "session": "S2",
+  "prompt": "How many requests per minute can one API key make?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-tidepool-rate-limit",
+  "answer": "earlier"
+ },
+ {
+  "session": "S2",
+  "prompt": "How long do tidepool access tokens last?",
+  "bytes": 421,
+  "records": [
+   "record-eval-tidepool-token-lifetime",
+   "record-eval-dp-tidepool-token-storage"
+  ],
+  "error": "",
+  "expect": "record-eval-tidepool-token-lifetime",
+  "answer": "whole"
+ },
+ {
+  "session": "S2",
+  "prompt": "What is the lifetime of an access token in tidepool?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-tidepool-token-lifetime",
+  "answer": "earlier"
+ },
+ {
+  "session": "S2",
+  "prompt": "What format do API errors use?",
+  "bytes": 216,
+  "records": [
+   "record-eval-tidepool-error-format"
+  ],
+  "error": "",
+  "expect": "record-eval-tidepool-error-format",
+  "answer": "whole"
+ },
+ {
+  "session": "S2",
+  "prompt": "How are error responses shaped in the API?",
+  "bytes": 1012,
+  "records": [
+   "record-eval-noise-017",
+   "record-eval-noise-057",
+   "record-eval-noise-041"
+  ],
+  "error": "",
+  "expect": "record-eval-tidepool-error-format",
+  "answer": "earlier"
+ },
+ {
+  "session": "S2",
+  "prompt": "When is the tidepool on-call handoff?",
+  "bytes": 212,
+  "records": [
+   "record-eval-tidepool-oncall"
+  ],
+  "error": "",
+  "expect": "record-eval-tidepool-oncall",
+  "answer": "whole"
+ },
+ {
+  "session": "S2",
+  "prompt": "What day does the pager rotation hand off?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-tidepool-oncall",
+  "answer": "earlier"
+ },
+ {
+  "session": "S2",
+  "prompt": "Which tool runs schema migrations?",
+  "bytes": 229,
+  "records": [
+   "record-eval-tidepool-migrations"
+  ],
+  "error": "",
+  "expect": "record-eval-tidepool-migrations",
+  "answer": "whole"
+ },
+ {
+  "session": "S2",
+  "prompt": "How do we apply database schema migrations?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-tidepool-migrations",
+  "answer": "earlier"
+ },
+ {
+  "session": "S2",
+  "prompt": "How long are request logs retained?",
+  "bytes": 710,
+  "records": [
+   "record-eval-tidepool-log-retention",
+   "record-eval-dp-tidepool-log-format",
+   "record-eval-noise-089"
+  ],
+  "error": "",
+  "expect": "record-eval-tidepool-log-retention",
+  "answer": "whole"
+ },
+ {
+  "session": "S2",
+  "prompt": "What is the retention period for request logs?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-tidepool-log-retention",
+  "answer": "earlier"
+ },
+ {
+  "session": "S2",
+  "prompt": "Is Redis a cache?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-tidepool-database",
+  "answer": "earlier"
+ },
+ {
+  "session": "S2",
+  "prompt": "Which Postgres version?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-tidepool-database",
+  "answer": "earlier"
+ },
+ {
+  "session": "S2",
+  "prompt": "Where do production deploys come from?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-tidepool-deploy",
+  "answer": "earlier"
+ },
+ {
+  "session": "S2",
+  "prompt": "What's the burst allowance?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-tidepool-rate-limit",
+  "answer": "earlier"
+ },
+ {
+  "session": "S2",
+  "prompt": "Do refresh tokens rotate?",
+  "bytes": 348,
+  "records": [
+   "record-eval-near-tidepool-12"
+  ],
+  "error": "",
+  "expect": "record-eval-tidepool-token-lifetime",
+  "answer": "earlier"
+ },
+ {
+  "session": "S2",
+  "prompt": "Is it RFC 9457?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-tidepool-error-format",
+  "answer": "earlier"
+ },
+ {
+  "session": "S2",
+  "prompt": "When is the pager handoff?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-tidepool-oncall",
+  "answer": "earlier"
+ },
+ {
+  "session": "S2",
+  "prompt": "Is hand-written SQL allowed in a deploy?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-tidepool-migrations",
+  "answer": "earlier"
+ },
+ {
+  "session": "S2",
+  "prompt": "ready",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S2",
+  "prompt": "How do I reverse a slice in Go?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S2",
+  "prompt": "lgtm",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S2",
+  "prompt": "Explain Big O notation with an example.",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S2",
+  "prompt": "Why does my sign-in page redirect in a loop in Next.js?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S2",
+  "prompt": "What is a catch-all exception handler in Java?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S2",
+  "prompt": "How do I read a config.toml file in Rust?",
+  "bytes": 241,
+  "records": [
+   "record-eval-lanternfish-config-path"
+  ],
+  "error": ""
+ },
+ {
+  "session": "S2",
+  "prompt": "Review my resume for a junior developer role.",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S3",
+  "prompt": "Where does lanternfish read its config file from?",
+  "bytes": 1022,
+  "records": [
+   "record-eval-lanternfish-config-path",
+   "record-eval-noise-114",
+   "record-eval-noise-058"
+  ],
+  "error": "",
+  "expect": "record-eval-lanternfish-config-path",
+  "answer": "whole"
+ },
+ {
+  "session": "S3",
+  "prompt": "What is the path of the lanternfish config?",
+  "bytes": 717,
+  "records": [
+   "record-eval-near-lanternfish-15",
+   "record-eval-dp-lanternfish-config-format",
+   "record-eval-tidepool-deploy"
+  ],
+  "error": "",
+  "expect": "record-eval-lanternfish-config-path",
+  "answer": "earlier"
+ },
+ {
+  "session": "S3",
+  "prompt": "How often does lanternfish release?",
+  "bytes": 898,
+  "records": [
+   "record-eval-lanternfish-release-cadence",
+   "record-eval-dp-lanternfish-windows",
+   "record-eval-lanternfish-go-support",
+   "record-eval-near-lanternfish-16"
+  ],
+  "error": "",
+  "expect": "record-eval-lanternfish-release-cadence",
+  "answer": "whole"
+ },
+ {
+  "session": "S3",
+  "prompt": "What is the lanternfish release cadence?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-lanternfish-release-cadence",
+  "answer": "earlier"
+ },
+ {
+  "session": "S3",
+  "prompt": "What license is lanternfish under?",
+  "bytes": 721,
+  "records": [
+   "record-eval-lanternfish-license",
+   "record-eval-dp-lanternfish-docs-license",
+   "record-eval-noise-026"
+  ],
+  "error": "",
+  "expect": "record-eval-lanternfish-license",
+  "answer": "whole"
+ },
+ {
+  "session": "S3",
+  "prompt": "Which license does lanternfish ship with?",
+  "bytes": 505,
+  "records": [
+   "record-eval-noise-090"
+  ],
+  "error": "",
+  "expect": "record-eval-lanternfish-license",
+  "answer": "earlier"
+ },
+ {
+  "session": "S3",
+  "prompt": "Which Go versions does lanternfish support?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-lanternfish-go-support",
+  "answer": "earlier"
+ },
+ {
+  "session": "S3",
+  "prompt": "What Go releases must lanternfish build with?",
+  "bytes": 538,
+  "records": [
+   "record-eval-near-lanternfish-13"
+  ],
+  "error": "",
+  "expect": "record-eval-lanternfish-go-support",
+  "answer": "earlier"
+ },
+ {
+  "session": "S3",
+  "prompt": "What style should new CLI flags use?",
+  "bytes": 216,
+  "records": [
+   "record-eval-lanternfish-flag-style"
+  ],
+  "error": "",
+  "expect": "record-eval-lanternfish-flag-style",
+  "answer": "whole"
+ },
+ {
+  "session": "S3",
+  "prompt": "How do we name new command-line flags?",
+  "bytes": 424,
+  "records": [
+   "record-eval-near-lanternfish-14"
+  ],
+  "error": "",
+  "expect": "record-eval-lanternfish-flag-style",
+  "answer": "earlier"
+ },
+ {
+  "session": "S3",
+  "prompt": "Does lanternfish send telemetry?",
+  "bytes": 874,
+  "records": [
+   "record-eval-lanternfish-telemetry",
+   "record-eval-noise-066",
+   "record-eval-noise-138"
+  ],
+  "error": "",
+  "expect": "record-eval-lanternfish-telemetry",
+  "answer": "whole"
+ },
+ {
+  "session": "S3",
+  "prompt": "Is there any usage telemetry in lanternfish?",
+  "bytes": 769,
+  "records": [
+   "record-eval-noise-098"
+  ],
+  "error": "",
+  "expect": "record-eval-lanternfish-telemetry",
+  "answer": "earlier"
+ },
+ {
+  "session": "S3",
+  "prompt": "What does LANTERNFISH_CONFIG do?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-lanternfish-config-path",
+  "answer": "earlier"
+ },
+ {
+  "session": "S3",
+  "prompt": "Do we ship a NOTICE file?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-lanternfish-license",
+  "answer": "earlier"
+ },
+ {
+  "session": "S3",
+  "prompt": "Are short flags okay?",
+  "bytes": 1006,
+  "records": [
+   "record-eval-noise-002",
+   "record-eval-noise-130",
+   "record-eval-noise-018"
+  ],
+  "error": "",
+  "expect": "record-eval-lanternfish-flag-style",
+  "answer": "earlier"
+ },
+ {
+  "session": "S3",
+  "prompt": "Any network calls?",
+  "bytes": 870,
+  "records": [
+   "record-eval-dp-guest-wifi",
+   "record-eval-near-homelab-03",
+   "record-eval-noise-104"
+  ],
+  "error": "",
+  "expect": "record-eval-lanternfish-telemetry",
+  "answer": "earlier"
+ },
+ {
+  "session": "S3",
+  "prompt": "thanks, go ahead",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S3",
+  "prompt": "Write a Python function that checks whether a string is a palindrome.",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S3",
+  "prompt": "next",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S3",
+  "prompt": "Why is my Docker build cache not being used?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S3",
+  "prompt": "Is self-hosted GitLab worth it for a small team?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S3",
+  "prompt": "What does HTTP status 100 mean?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S3",
+  "prompt": "What does os.path.join() do?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S3",
+  "prompt": "What theme should we pick for a wedding?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S4",
+  "prompt": "When is the last frost date?",
+  "bytes": 459,
+  "records": [
+   "record-eval-orchard-frost-date"
+  ],
+  "error": "",
+  "expect": "record-eval-orchard-frost-date",
+  "answer": "whole"
+ },
+ {
+  "session": "S4",
+  "prompt": "After which date is frost no longer expected in spring?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-orchard-frost-date",
+  "answer": "earlier"
+ },
+ {
+  "session": "S4",
+  "prompt": "Which tomato varieties are we growing this year?",
+  "bytes": 707,
+  "records": [
+   "record-eval-orchard-tomatoes",
+   "record-eval-near-orchard-19",
+   "record-eval-dp-orchard-beans"
+  ],
+  "error": "",
+  "expect": "record-eval-orchard-tomatoes",
+  "answer": "whole"
+ },
+ {
+  "session": "S4",
+  "prompt": "What tomatoes did we pick for this season?",
+  "bytes": 491,
+  "records": [
+   "record-eval-near-orchard-17"
+  ],
+  "error": "",
+  "expect": "record-eval-orchard-tomatoes",
+  "answer": "earlier"
+ },
+ {
+  "session": "S4",
+  "prompt": "How long does the drip irrigation run?",
+  "bytes": 859,
+  "records": [
+   "record-eval-orchard-drip",
+   "record-eval-noise-043",
+   "record-eval-noise-011"
+  ],
+  "error": "",
+  "expect": "record-eval-orchard-drip",
+  "answer": "whole"
+ },
+ {
+  "session": "S4",
+  "prompt": "What is the drip irrigation schedule?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-orchard-drip",
+  "answer": "earlier"
+ },
+ {
+  "session": "S4",
+  "prompt": "What stack is the orchard planner built on?",
+  "bytes": 208,
+  "records": [
+   "record-eval-orchard-stack"
+  ],
+  "error": "",
+  "expect": "record-eval-orchard-stack",
+  "answer": "whole"
+ },
+ {
+  "session": "S4",
+  "prompt": "Which framework and database does the orchard planner use?",
+  "bytes": 856,
+  "records": [
+   "record-eval-dp-orchard-sync",
+   "record-eval-near-orchard-18",
+   "record-eval-noise-027"
+  ],
+  "error": "",
+  "expect": "record-eval-orchard-stack",
+  "answer": "earlier"
+ },
+ {
+  "session": "S4",
+  "prompt": "How often should the compost be turned?",
+  "bytes": 210,
+  "records": [
+   "record-eval-orchard-compost"
+  ],
+  "error": "",
+  "expect": "record-eval-orchard-compost",
+  "answer": "whole"
+ },
+ {
+  "session": "S4",
+  "prompt": "When do I turn the compost bins?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-orchard-compost",
+  "answer": "earlier"
+ },
+ {
+  "session": "S4",
+  "prompt": "When can seedlings go out?",
+  "bytes": 1013,
+  "records": [
+   "record-eval-noise-051",
+   "record-eval-noise-123",
+   "record-eval-noise-003"
+  ],
+  "error": "",
+  "expect": "record-eval-orchard-frost-date",
+  "answer": "earlier"
+ },
+ {
+  "session": "S4",
+  "prompt": "Are we growing Sungold?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-orchard-tomatoes",
+  "answer": "earlier"
+ },
+ {
+  "session": "S4",
+  "prompt": "Skip watering after rain?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-orchard-drip",
+  "answer": "earlier"
+ },
+ {
+  "session": "S4",
+  "prompt": "When do I add browns?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-orchard-compost",
+  "answer": "earlier"
+ },
+ {
+  "session": "S4",
+  "prompt": "sounds good",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S4",
+  "prompt": "What does git rebase --onto do?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S4",
+  "prompt": "perfect, thank you",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S4",
+  "prompt": "How do I centre a div with CSS grid?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S4",
+  "prompt": "What is a top-level await in JavaScript?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S4",
+  "prompt": "What is 15 percent of 600?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S4",
+  "prompt": "Fix this TypeError: user.address.city is undefined when address is null.",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S4",
+  "prompt": "How do I cache API responses in a Flutter app?",
+  "bytes": 1019,
+  "records": [
+   "record-eval-noise-009",
+   "record-eval-noise-041",
+   "record-eval-noise-017"
+  ],
+  "error": ""
+ },
+ {
+  "session": "S5",
+  "prompt": "Where do newsletters go in my mail?",
+  "bytes": 1014,
+  "records": [
+   "record-eval-near-mail-21",
+   "record-eval-mail-archive",
+   "record-eval-mail-signature",
+   "record-eval-near-mail-22"
+  ],
+  "error": "",
+  "expect": "record-eval-mail-newsletters",
+  "answer": "absent"
+ },
+ {
+  "session": "S5",
+  "prompt": "Which folder are newsletters filtered into?",
+  "bytes": 621,
+  "records": [
+   "record-eval-dp-mail-receipts",
+   "record-eval-mail-newsletters"
+  ],
+  "error": "",
+  "expect": "record-eval-mail-newsletters",
+  "answer": "whole"
+ },
+ {
+  "session": "S5",
+  "prompt": "Which email alias do I use for shopping sign-ups?",
+  "bytes": 210,
+  "records": [
+   "record-eval-mail-shopping-alias"
+  ],
+  "error": "",
+  "expect": "record-eval-mail-shopping-alias",
+  "answer": "whole"
+ },
+ {
+  "session": "S5",
+  "prompt": "What address should I give online shops?",
+  "bytes": 217,
+  "records": [
+   "record-eval-office-printer"
+  ],
+  "error": "",
+  "expect": "record-eval-mail-shopping-alias",
+  "answer": "earlier"
+ },
+ {
+  "session": "S5",
+  "prompt": "What should my email signature look like?",
+  "bytes": 1015,
+  "records": [
+   "record-eval-noise-084",
+   "record-eval-noise-108",
+   "record-eval-noise-092"
+  ],
+  "error": "",
+  "expect": "record-eval-mail-signature",
+  "answer": "earlier"
+ },
+ {
+  "session": "S5",
+  "prompt": "How is the mail signature formatted?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-mail-signature",
+  "answer": "earlier"
+ },
+ {
+  "session": "S5",
+  "prompt": "How long do we keep mail before archiving?",
+  "bytes": 240,
+  "records": [
+   "record-eval-dp-answer-length"
+  ],
+  "error": "",
+  "expect": "record-eval-mail-archive",
+  "answer": "earlier"
+ },
+ {
+  "session": "S5",
+  "prompt": "When does old mail get archived?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-mail-archive",
+  "answer": "earlier"
+ },
+ {
+  "session": "S5",
+  "prompt": "What goes to the Reading folder?",
+  "bytes": 432,
+  "records": [
+   "record-eval-mail-spam-threshold-2",
+   "record-eval-mail-spam-threshold"
+  ],
+  "error": "",
+  "expect": "record-eval-mail-newsletters",
+  "answer": "earlier"
+ },
+ {
+  "session": "S5",
+  "prompt": "Phone number in my signature?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-mail-signature",
+  "answer": "earlier"
+ },
+ {
+  "session": "S5",
+  "prompt": "What moves each January?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-mail-archive",
+  "answer": "earlier"
+ },
+ {
+  "session": "S5",
+  "prompt": "yes",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S5",
+  "prompt": "Why does my React component render twice in development?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S5",
+  "prompt": "go on",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S5",
+  "prompt": "Plan a three-day trip to Lisbon.",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S5",
+  "prompt": "How do long-lived connections work with HTTP/2?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S5",
+  "prompt": "How many days are in 30 weeks?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S5",
+  "prompt": "Format a date as 24-hour time in JavaScript.",
+  "bytes": 225,
+  "records": [
+   "record-eval-dp-date-format"
+  ],
+  "error": ""
+ },
+ {
+  "session": "S5",
+  "prompt": "Write unit tests for a Go HTTP handler.",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S6",
+  "prompt": "At what point does the cloud budget alert fire?",
+  "bytes": 789,
+  "records": [
+   "record-eval-cloud-budget-alert",
+   "record-eval-near-cloud-23"
+  ],
+  "error": "",
+  "expect": "record-eval-cloud-budget-alert",
+  "answer": "whole"
+ },
+ {
+  "session": "S6",
+  "prompt": "When do I get warned about cloud spending?",
+  "bytes": 233,
+  "records": [
+   "record-eval-dp-cloud-spend-review"
+  ],
+  "error": "",
+  "expect": "record-eval-cloud-budget-alert",
+  "answer": "earlier"
+ },
+ {
+  "session": "S6",
+  "prompt": "Which cloud region is the default?",
+  "bytes": 214,
+  "records": [
+   "record-eval-cloud-region"
+  ],
+  "error": "",
+  "expect": "record-eval-cloud-region",
+  "answer": "whole"
+ },
+ {
+  "session": "S6",
+  "prompt": "Where should new cloud resources be created by default?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-cloud-region",
+  "answer": "earlier"
+ },
+ {
+  "session": "S6",
+  "prompt": "When does the cloud invoice arrive?",
+  "bytes": 197,
+  "records": [
+   "record-eval-cloud-invoice"
+  ],
+  "error": "",
+  "expect": "record-eval-cloud-invoice",
+  "answer": "whole"
+ },
+ {
+  "session": "S6",
+  "prompt": "What day of the month is the cloud bill issued?",
+  "bytes": 337,
+  "records": [
+   "record-eval-near-cloud-24"
+  ],
+  "error": "",
+  "expect": "record-eval-cloud-invoice",
+  "answer": "earlier"
+ },
+ {
+  "session": "S6",
+  "prompt": "Is there a hard stop?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-cloud-budget-alert",
+  "answer": "earlier"
+ },
+ {
+  "session": "S6",
+  "prompt": "Is eu-central fine?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-cloud-region",
+  "answer": "earlier"
+ },
+ {
+  "session": "S6",
+  "prompt": "continue",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S6",
+  "prompt": "What's a good recipe for banana bread?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S6",
+  "prompt": "How many bones are in the adult human body?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S6",
+  "prompt": "What are good exercises for lower back pain?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S6",
+  "prompt": "Write a follow-up email after a sales call.",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S6",
+  "prompt": "Is 17 a prime number?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S6",
+  "prompt": "How do lower-case and upper-case conversions work in Unicode?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S6",
+  "prompt": "Recommend a good font for a resume.",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S7",
+  "prompt": "When does the code freeze start?",
+  "bytes": 456,
+  "records": [
+   "record-eval-release-freeze"
+  ],
+  "error": "",
+  "expect": "record-eval-release-freeze",
+  "answer": "whole"
+ },
+ {
+  "session": "S7",
+  "prompt": "What date is the Q4 freeze?",
+  "bytes": 1012,
+  "records": [
+   "record-eval-noise-126",
+   "record-eval-noise-006",
+   "record-eval-noise-062"
+  ],
+  "error": "",
+  "expect": "record-eval-release-freeze",
+  "answer": "earlier"
+ },
+ {
+  "session": "S7",
+  "prompt": "Who is the release captain this quarter?",
+  "bytes": 715,
+  "records": [
+   "record-eval-release-captain",
+   "record-eval-noise-110",
+   "record-eval-dp-release-hotfix"
+  ],
+  "error": "",
+  "expect": "record-eval-release-captain",
+  "answer": "whole"
+ },
+ {
+  "session": "S7",
+  "prompt": "Which team captains the Q4 release?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-release-captain",
+  "answer": "earlier"
+ },
+ {
+  "session": "S7",
+  "prompt": "When is the go/no-go meeting?",
+  "bytes": 429,
+  "records": [
+   "record-eval-release-go-no-go",
+   "record-eval-dp-meeting-length"
+  ],
+  "error": "",
+  "expect": "record-eval-release-go-no-go",
+  "answer": "whole"
+ },
+ {
+  "session": "S7",
+  "prompt": "What time is the release go/no-go?",
+  "bytes": 1008,
+  "records": [
+   "record-eval-near-release-25",
+   "record-eval-noise-022",
+   "record-eval-noise-118"
+  ],
+  "error": "",
+  "expect": "record-eval-release-go-no-go",
+  "answer": "earlier"
+ },
+ {
+  "session": "S7",
+  "prompt": "What starts November 14?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-release-freeze",
+  "answer": "earlier"
+ },
+ {
+  "session": "S7",
+  "prompt": "Is the platform team captain?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-release-captain",
+  "answer": "earlier"
+ },
+ {
+  "session": "S7",
+  "prompt": "When is the blocker list frozen?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-release-go-no-go",
+  "answer": "earlier"
+ },
+ {
+  "session": "S7",
+  "prompt": "What is the capital of Australia?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S7",
+  "prompt": "How do I change a flat bicycle tyre?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S7",
+  "prompt": "What is the difference between TCP and UDP?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S7",
+  "prompt": "Write a haiku about autumn leaves.",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S7",
+  "prompt": "What should a weekly check-in with my manager cover?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S7",
+  "prompt": "What is the square root of 200?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S7",
+  "prompt": "When is a hand-written parser better than a generated one?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S8",
+  "prompt": "How do I like answers structured?",
+  "bytes": 661,
+  "records": [
+   "record-eval-answer-structure",
+   "record-eval-dp-tidepool-log-format"
+  ],
+  "error": "",
+  "expect": "record-eval-answer-structure",
+  "answer": "whole"
+ },
+ {
+  "session": "S8",
+  "prompt": "In what order should a reply present the result and the evidence?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-answer-structure",
+  "answer": "earlier"
+ },
+ {
+  "session": "S8",
+  "prompt": "Which timezone should schedules use?",
+  "bytes": 241,
+  "records": [
+   "record-eval-schedule-timezone"
+  ],
+  "error": "",
+  "expect": "record-eval-schedule-timezone",
+  "answer": "whole"
+ },
+ {
+  "session": "S8",
+  "prompt": "What time zone are meeting times in?",
+  "bytes": 234,
+  "records": [
+   "record-eval-dp-meeting-length"
+  ],
+  "error": "",
+  "expect": "record-eval-schedule-timezone",
+  "answer": "earlier"
+ },
+ {
+  "session": "S8",
+  "prompt": "How should commit messages be written?",
+  "bytes": 902,
+  "records": [
+   "record-eval-commit-style",
+   "record-eval-noise-103",
+   "record-eval-noise-127"
+  ],
+  "error": "",
+  "expect": "record-eval-commit-style",
+  "answer": "whole"
+ },
+ {
+  "session": "S8",
+  "prompt": "What is my commit message style?",
+  "bytes": 253,
+  "records": [
+   "record-eval-dp-lanternfish-error-style"
+  ],
+  "error": "",
+  "expect": "record-eval-commit-style",
+  "answer": "earlier"
+ },
+ {
+  "session": "S8",
+  "prompt": "Which units do I prefer?",
+  "bytes": 587,
+  "records": [
+   "record-eval-dp-lanternfish-deps",
+   "record-eval-dp-dns-blocklists",
+   "record-eval-units"
+  ],
+  "error": "",
+  "expect": "record-eval-units",
+  "answer": "whole"
+ },
+ {
+  "session": "S8",
+  "prompt": "Metric or imperial units?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-units",
+  "answer": "earlier"
+ },
+ {
+  "session": "S8",
+  "prompt": "Which editor do I use?",
+  "bytes": 706,
+  "records": [
+   "record-eval-editor",
+   "record-eval-dp-editor-theme",
+   "record-eval-noise-063"
+  ],
+  "error": "",
+  "expect": "record-eval-editor",
+  "answer": "whole"
+ },
+ {
+  "session": "S8",
+  "prompt": "What text editor is my default?",
+  "bytes": 402,
+  "records": [
+   "record-eval-near-signet-28"
+  ],
+  "error": "",
+  "expect": "record-eval-editor",
+  "answer": "earlier"
+ },
+ {
+  "session": "S8",
+  "prompt": "Which English spelling should documents use?",
+  "bytes": 244,
+  "records": [
+   "record-eval-spelling"
+  ],
+  "error": "",
+  "expect": "record-eval-spelling",
+  "answer": "whole"
+ },
+ {
+  "session": "S8",
+  "prompt": "UK or US spelling in docs?",
+  "bytes": 416,
+  "records": [
+   "record-eval-dp-lanternfish-docs-license",
+   "record-eval-dp-release-changelog"
+  ],
+  "error": "",
+  "expect": "record-eval-spelling",
+  "answer": "earlier"
+ },
+ {
+  "session": "S8",
+  "prompt": "What is my default shell?",
+  "bytes": 391,
+  "records": [
+   "record-eval-default-shell",
+   "record-eval-cloud-region"
+  ],
+  "error": "",
+  "expect": "record-eval-default-shell",
+  "answer": "whole"
+ },
+ {
+  "session": "S8",
+  "prompt": "Which shell do I use by default?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-default-shell",
+  "answer": "earlier"
+ },
+ {
+  "session": "S8",
+  "prompt": "Berlin time?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-schedule-timezone",
+  "answer": "earlier"
+ },
+ {
+  "session": "S8",
+  "prompt": "Imperative subject?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-commit-style",
+  "answer": "earlier"
+ },
+ {
+  "session": "S8",
+  "prompt": "Metric, right?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-units",
+  "answer": "earlier"
+ },
+ {
+  "session": "S8",
+  "prompt": "Do I indent with tabs?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-editor",
+  "answer": "earlier"
+ },
+ {
+  "session": "S8",
+  "prompt": "US spelling in code?",
+  "bytes": 221,
+  "records": [
+   "record-eval-release-freeze"
+  ],
+  "error": "",
+  "expect": "record-eval-spelling",
+  "answer": "earlier"
+ },
+ {
+  "session": "S8",
+  "prompt": "Oh My Zsh or nothing?",
+  "bytes": 0,
+  "records": [],
+  "error": "",
+  "expect": "record-eval-default-shell",
+  "answer": "earlier"
+ },
+ {
+  "session": "S8",
+  "prompt": "Explain how photosynthesis works in simple terms.",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S8",
+  "prompt": "Summarise the plot of Hamlet in a paragraph.",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S8",
+  "prompt": "Convert 72 degrees Fahrenheit to Celsius.",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S8",
+  "prompt": "What's the best way to learn to play chess?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S8",
+  "prompt": "How do on-call rotations usually work at large tech companies?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S8",
+  "prompt": "What changed in Python 2.4?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ },
+ {
+  "session": "S8",
+  "prompt": "How do I store free-text search queries in Postgres efficiently?",
+  "bytes": 0,
+  "records": [],
+  "error": ""
+ }
+]

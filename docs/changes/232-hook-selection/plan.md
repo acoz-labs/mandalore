@@ -89,7 +89,8 @@ again, and the sealed prompts stay unseen.
   named something absent, so any rule here was untested against losing
   answers. `named_guard` holds 10 such questions ("Which editor do I use when
   writing Rust?", "Which shell do I use on my MacBook?"), written before any
-  rule ran on them. The frozen code already loses 2 of the 10, both to the
+  rule ran on them. The frozen code already loses 2 of the 10 (2.4.0 loses
+  the first of them too, so 2.5.0 loses one more), both to the
   lone-summary-word rule: their one matched word is in the answer's summary
   and the name is absent. That's the shape of "How do I install Redis on
   Ubuntu?", which the rule exists to drop, so it stays a stated limit.
@@ -127,9 +128,26 @@ again, and the sealed prompts stay unseen.
   hook top-1/top-3 82.2%/89.2%, recall 77.3%/93.2%, scripted session 560
   bytes.
 
-Second gate, on the new frozen code: *pending; the reviewer reruns the
-sealed batch once. If it fails, the work closes as not shipped or goes back
-to the requester.*
+Second gate, on b17ceb1: **failed**
+(https://github.com/acoz-labs/mandalore/pull/261#issuecomment-6803097976).
+The candidate injected on 6 of the 36 (2.4.0: 13; no new prompt): plain 1,
+coverage 3, evidence 1, summary 1. The three coverage-path injections are
+unchanged from 2.4.0.
+
+### Second deviation: shipping on the second condition
+
+The owner decided, through the requester, to ship on the second condition
+alone: the candidate injects on no more of the sealed batch than 2.4.0, and
+on no prompt 2.4.0 doesn't. The 3-of-36 miss is recorded as a second
+deviation (https://github.com/acoz-labs/mandalore/pull/261#issuecomment-6803169121).
+
+- The remaining coverage-path name collisions, unchanged from 2.4.0, move
+  to #262.
+- The sealed batch stays sealed and isn't used for tuning.
+- Code review proceeds on b17ceb1. A later change that touches selection or
+  packing reruns the tuning bars, not the sealed batch.
+- Publication still waits for the requester's private eval on the candidate
+  built from the merge commit.
 
 ### What changed while building
 

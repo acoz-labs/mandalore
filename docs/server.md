@@ -274,7 +274,10 @@ plugin's hook. It returns Claude Code hook output JSON,
   terms unmatched, or with one other term and the match a number or a generic
   word such as "number" or "week"; or in its summary, on a word the prompt
   doesn't capitalize, with another of the prompt's terms in no record at all.
-  Otherwise a record is relevant if any of three measures clears its bar:
+  When the prompt names something no record holds (a word capitalized
+  mid-sentence), a record must match one of its terms in its summary or
+  identifiers. Otherwise a record is relevant if any of three measures clears
+  its bar:
   - its match covers at least 0.25 of the prompt's terms, weighted by how rare
     each term is;
   - its matched evidence is worth at least 0.7 of a fully matched term no
@@ -701,7 +704,7 @@ migrates it again.
 The server is each signet's only writer, so it keeps the validated revision graph
 and per-revision term index in memory between its own writes; every write drops
 them. On a synthetic 1,000-record signet, `memory_context` measures about 7 ms
-p95 between writes (about 12 ms on the 250-record selection evaluation) and
+p95 between writes (about 15 ms on the 254-record selection evaluation) and
 about 165 ms p95 on the first call after a write, on a development laptop,
 against a 300 ms target. On a plain build `bin/ci` asserts
 the 300 ms bound between writes and a 1 s regression tripwire after a write; the
