@@ -98,8 +98,13 @@ issues none today. With this change, on the `initialize` path:
    the MCP specification requires (2025-03-26 to 2025-11-25).
 3. A write tool reads the header from the tool request (`req.Extra.Header`)
    and records it as `session_id` when it is 1–128 visible ASCII characters
-   (0x21–0x7E, the specification's range). Anything else, or no header,
-   records null. The write never fails over it.
+   (0x21–0x7E, the specification's range), and only when the request's
+   protocol is before `2026-07-28`. That protocol comes from the
+   `Mcp-Protocol-Version` header, which the SDK already reads: a known
+   version earlier than `2026-07-28`, or no header, which the specification
+   says means `2025-03-26`. Anything else records null: a malformed or
+   oversized ID, no ID, or a stray `Mcp-Session-Id` on a `2026-07-28`
+   request. The write never fails over it.
 
 On sessionless MCP `2026-07-28` there is no `initialize` and no session
 header, so `session_id` is null and the write succeeds. The server keeps
@@ -230,14 +235,22 @@ with `GOFLAGS=-count=1`:
    values differ, also when both use the same name and when the DCR client
    has no name.
 2. **Session (acceptance 2).**
-   - (a) Two SDK client connections on the `initialize` path (protocol
-     `2025-11-25`), from one installation, each save a record and append a
+   - (a) Go SDK v1.7.0's client always starts with `server/discover`
+     (`latestProtocolVersion` is `2026-07-28`), and its protocol override is
+     unexported. So the test forces the `initialize` path the way Claude Code
+     took it in the probe: the SDK client's `http.RoundTripper` answers
+     `server/discover` with JSON-RPC -32601, and the client falls back to
+     `initialize` with `2025-11-25`. The test asserts the fallback happened:
+     the server saw `initialize` and issued `Mcp-Session-Id`. Two such
+     connections from one installation each save a record and append a
      journal entry. That is four writes, with two distinct non-empty
      `session_id` values, each matching its connection's issued
      `Mcp-Session-Id`, and one device ID. A scope label and a move record the
      ID too.
-   - (b) A client on `2026-07-28` saves a record and appends a journal entry.
-     Both succeed with `session_id` null, and the response carries no
+   - (b) A default SDK client, with no RoundTripper override, saves a record
+     and appends a journal entry against the same server. The test asserts
+     that the client sent `server/discover` and never `initialize`, that both
+     writes succeed with `session_id` null, and that no response carries
      `Mcp-Session-Id`.
    - In both cases, `memory_history`, `memory_journal` and `memory_prime`
      return these values where they return authorship.
@@ -259,6 +272,9 @@ with `GOFLAGS=-count=1`:
 5. **Failure paths.**
    - A session header that is 129 bytes, contains a space or a control, or is
      missing records null, and the write succeeds.
+   - A `2026-07-28` write that carries a valid-looking `Mcp-Session-Id`
+     records null and succeeds. A write with no `Mcp-Protocol-Version` header
+     and a valid ID (a `2025-03-26` client) records the ID.
    - A request after a server restart that carries the old ID still writes,
      with that ID.
    - A read-only client gets an ID and can't write.
@@ -273,9 +289,13 @@ For the independent verifier, on the real binary: run it locally with a
 synthetic signet, connect real Claude Code with the plugin in an isolated
 `HOME` and `CLAUDE_CONFIG_DIR`, save a record, and read its authorship with
 `memory_history`. Expect the harness `Claude Code (document on claude.ai)`
-and `session_id` null (Claude Code uses `2026-07-28`). Then connect the Go
-SDK client on the `initialize` path and save again; expect a non-empty
-`session_id` equal to its issued `Mcp-Session-Id`.
+and `session_id` null (Claude Code uses `2026-07-28`). Then reach the
+`initialize` path and save again. Either use the Go SDK client with the
+RoundTripper from Proof 2(a), which answers `server/discover` with -32601, or
+send raw JSON-RPC `initialize`, `notifications/initialized` and
+`tools/call` with `Mcp-Protocol-Version: 2025-11-25` and the issued session
+header. Expect a non-empty `session_id` equal to the issued
+`Mcp-Session-Id`.
 
 ## Rollback
 
