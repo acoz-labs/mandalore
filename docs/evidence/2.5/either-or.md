@@ -27,9 +27,9 @@ The test fails on 5b87ef5 for the first two prompts and passes with the fix.
 The fix exempts the first word from the lone-summary-word rule only; it
 doesn't make it an anchor. On the evaluation signet, where Beacon is in one
 record's summary, "Beacon or Cortana or Siri?" still gets nothing while
-"Siri or Cortana or Beacon?" gets the Beacon record, and "Beacon or Cortana?"
-gets 1 record while "Cortana or Beacon?" gets 2. Each is the same as on
-5b87ef5.
+"Siri or Cortana or Beacon?" gets the Beacon record, both as on 5b87ef5.
+"Beacon or Cortana?" gets 1 record, where 5b87ef5 gives 0, while "Cortana or
+Beacon?" gets 2 on both.
 
 ## The body-only shape, unchanged
 

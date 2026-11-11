@@ -74,6 +74,12 @@ Document any required deviation in `docs/development.md`.
   then refuses before any write with "explicit maintainer credential
   required" (2.3.0's first attempt). Check that no tag or draft exists, fix
   the wrapper, then rerun.
+- Pass the maintainer's process-scoped `GH_TOKEN` inside that wrapper too,
+  not only `GH_CONFIG_DIR`. Without it `bin/promote-local-candidate` refuses
+  the same way, before any write (2.5.0's first attempt).
+- The release gate re-hashes the acceptance receipt's log comments. Redact
+  local paths in receipt logs only after `bin/sdlc-release record` and
+  finalize, and post a notice with each original body's sha256 (#232).
 
 ## Conventions
 

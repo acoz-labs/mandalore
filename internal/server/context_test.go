@@ -519,9 +519,9 @@ func TestContextLead(t *testing.T) {
 	}
 }
 
-// #232, the requester's eval on the 2.5.0 candidate: a bare "A or B?" or "A vs
-// B", where A is in several records' summaries and B in none, injected
-// nothing, while "B or A?" injected A's records. Each now injects all three.
+// #232's synthetic repro: on 5b87ef5 a bare "A or B?" or "A vs B", where A is
+// in several records' summaries and B in none, injected nothing, while
+// "B or A?" injected A's records. Each now injects all three.
 func TestMemoryContextEitherOrOnASummaryName(t *testing.T) {
 	m, ids := selectionService(t,
 		memory.Write{Kind: "procedure", Summary: "Kopia backup schedule", Body: "Snapshots the NAS nightly to the offsite bucket."},
