@@ -425,9 +425,9 @@ two-name "X or Y?" or "X vs Y" injects X's records as "Y or X?" does (see
 first word still anchors nothing, so where a name's record rests on its
 anchor, order can still matter. With three names, "Beacon or Cortana or
 Siri?" gets nothing while "Siri or Cortana or Beacon?" gets the Beacon
-record. With two, "Beacon or Cortana?" gets 1 record while "Cortana or
-Beacon?" gets 2. Beacon is in one record's summary, and both orders behave
-as on 5b87ef5. A two-word prompt whose answer hinges on a generic body word
+record, as on 5b87ef5. With two, "Beacon or Cortana?" gets 1 record (0 on
+5b87ef5) while "Cortana or Beacon?" gets 2, as before. Beacon is in one
+record's summary. A two-word prompt whose answer hinges on a generic body word
 ("Which night is bin night?") gets nothing, and a prompt whose shared word is
 generic but in a summary ("What year is it?") isn't caught by the
 generic-word rule. Two decisions on one subject whose wording differs more

@@ -162,11 +162,10 @@ deviation (https://github.com/acoz-labs/mandalore/pull/261#issuecomment-68031691
 
 ### Code round 4: either-or questions on a name in summaries
 
-The requester's eval on the 2.5.0 candidate found an order-dependent
-either-or limit. A synthetic repro shows it: in a signet with three records
-whose summaries name "Kopia" and none naming "Borg", 5b87ef5 injects nothing
-for "Kopia or Borg?" or "Kopia vs Borg", and all three records for "Borg or
-Kopia?". The fix had to make the first two behave like the third, with every
+A synthetic repro shows an order-dependent either-or limit. In a signet with
+three records whose summaries name "Kopia" and none naming "Borg", 5b87ef5
+injects nothing for "Kopia or Borg?" or "Kopia vs Borg", and all three
+records for "Borg or Kopia?". The fix had to make the first two behave like the third, with every
 tuning bar met, in the one remaining code round. The work used the tuning
 split and the repro only.
 
