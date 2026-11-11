@@ -205,7 +205,7 @@ func TestReleasePreviewShowsCandidateAndInstalledCompatibility(t *testing.T) {
 	// manifest, not the candidate's or a constant, supplies the previous values.
 	p.OS, p.Arch = runtime.GOOS, runtime.GOARCH
 	binary := []byte("synthetic installed runtime")
-	installed := distribution.Manifest{FormatVersion: 1, Product: "mandalore", Version: "1.9.0", Tag: "v1.9.0", SourceCommit: strings.Repeat("c", 40), GoVersion: "go1.26.10", ProtocolVersion: 1, SignetReadVersions: []int{1}, SignetWriteVersions: []int{1}}
+	installed := distribution.Manifest{FormatVersion: 1, Product: "mandalore", Version: "1.9.0", Tag: "v1.9.0", SourceCommit: strings.Repeat("c", 40), GoVersion: "go1.26.11", ProtocolVersion: 1, SignetReadVersions: []int{1}, SignetWriteVersions: []int{1}}
 	for _, target := range [][2]string{{"darwin", "amd64"}, {"darwin", "arm64"}, {"linux", "amd64"}, {"linux", "arm64"}} {
 		a := distribution.Asset{Kind: "cli", OS: target[0], Arch: target[1], Name: "mandalore_1.9.0_" + target[0] + "_" + target[1], Size: 1, SHA256: strings.Repeat("e", 64)}
 		if a.OS == p.OS && a.Arch == p.Arch {

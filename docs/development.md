@@ -10,7 +10,7 @@ established on the host running tests; a cross-build is not runtime acceptance.
 one it stops with "cannot attach stdin to a TTY-enabled container". If Docker or
 a terminal is unavailable, use the supported host fallback `bin/ci` and report
 the route actually verified.
-Go is pinned to 1.26.10 in mise, the module toolchain, CI and the development
+Go is pinned to 1.26.11 in mise, the module toolchain, CI and the development
 container. The module language baseline is Go 1.26.0. CI rejects a different
 active toolchain; do not install or use an unrecorded latest runtime.
 
@@ -74,7 +74,7 @@ do not infer it from a short whole-operation timeout. The Git toolkit regression
 uses a PATH-local synthetic Git wrapper that writes a phase marker, then cancels
 the parent and checks that the stopped receipt names that phase and no merge
 state is left. Run
-`mise exec go@1.26.10 -- go test -race -count=10 -run '^TestCancellationAtCheckpointIntegrationAndPush$' ./internal/sync`
+`mise exec go@1.26.11 -- go test -race -count=10 -run '^TestCancellationAtCheckpointIntegrationAndPush$' ./internal/sync`
 for repeated focused verification, then the complete `bin/ci`. Keep original
 failures and controlled reproductions in review evidence; a passing retry alone
 is not a root-cause analysis or independent acceptance of a candidate.
@@ -87,7 +87,7 @@ those tools in 2.0; Git history keeps them.
 From a clean committed repository, run:
 
 ```sh
-mise exec go@1.26.10 -- bin/build-artifacts --output ../mandalore-candidate
+mise exec go@1.26.11 -- bin/build-artifacts --output ../mandalore-candidate
 ```
 
 The output must not exist, its parent must exist, and it must not overlap the
@@ -98,7 +98,7 @@ release version; unstamped development binaries continue to report `0.0.0-dev`.
 The builder exports the exact commit, refuses unsafe archive entries and
 compiles all four supported targets. A release publishes seven files: the four
 binaries, the bootstrap, the manifest and its checksums.
-Go 1.26.10, disabled CGO, trimpath, isolated build/module caches, readonly module
+Go 1.26.11, disabled CGO, trimpath, isolated build/module caches, readonly module
 resolution and the public Go module proxy/checksum database are explicit. Ambient
 Go workspace/configuration and provider tokens are not passed to those children.
 No home-directory or shell configuration is changed. Each tool process has a

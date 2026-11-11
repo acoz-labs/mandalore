@@ -12,7 +12,7 @@ import (
 func Release20(t testing.TB) (distribution.ParsedManifest, []distribution.ReleaseAsset) {
 	t.Helper()
 	m := distribution.Manifest{FormatVersion: 1, Product: "mandalore", Version: "2.0.0", Tag: "v2.0.0", SourceCommit: strings.Repeat("a", 40),
-		GoVersion: "go1.26.10", ProtocolVersion: 1, SignetReadVersions: []int{1, 2}, SignetWriteVersions: []int{1, 2}}
+		GoVersion: "go1.26.11", ProtocolVersion: 1, SignetReadVersions: []int{1, 2}, SignetWriteVersions: []int{1, 2}}
 	for i, target := range [][2]string{{"darwin", "amd64"}, {"darwin", "arm64"}, {"linux", "amd64"}, {"linux", "arm64"}} {
 		m.Assets = append(m.Assets, distribution.Asset{Kind: "cli", OS: target[0], Arch: target[1], Name: "mandalore_2.0.0_" + target[0] + "_" + target[1], Size: 20, SHA256: strings.Repeat(string(rune('0'+i)), 64)})
 	}
