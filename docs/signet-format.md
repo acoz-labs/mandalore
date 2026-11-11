@@ -247,13 +247,13 @@ Sync admits the new path shape, the format upgrade proof protects moves as
 append-only evidence like everything under `memory/`, and report export reads
 them.
 
-Releases before 2.3.0 never open `memory/moves/`. What 2.2.0 (0d3c22d) and
+Releases before 2.3.0 never open `memory/moves/`. What 2.2.1 (95bbf17) and
 2.1.2 (79b378e) do with a signet that has a move (`bin/check-old-reader`
 asserts each against both):
 
-| 2.2.0 or 2.1.2 | Behaviour |
+| 2.2.1 or 2.1.2 | Behaviour |
 | --- | --- |
-| Recall, prime (2.2.0), scopes, context, history, inspect | Work; the record is in the scope it was saved in; moves are invisible |
+| Recall, prime (2.2.1), scopes, context, history, inspect | Work; the record is in the scope it was saved in; moves are invisible |
 | A correction in that old scope | Saves; once 2.3.0 is back, the record is still in its new scope, with that content |
 | A correction in the new scope | Refused; nothing written |
 | `memory_move` | Not served |

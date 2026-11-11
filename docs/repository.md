@@ -35,7 +35,7 @@ Document any required deviation in `docs/development.md`.
   checks and target builds passed; cross-builds are not native acceptance.`
   It skips strict plugin validation when `claude` isn't on `PATH`, so review
   plugin changes where `claude` is installed.
-- `bin/check-old-reader` builds 2.1.2 (79b378e) and 2.2.0 (0d3c22d) from
+- `bin/check-old-reader` builds 2.1.2 (79b378e) and 2.2.1 (95bbf17) from
   source in temporary worktrees and runs them against signets this tree
   writes into, on both formats: `TestOldReaderOnTopicSignet` (topic files)
   with 2.1.2 and `TestOldReaderOnMovedRecord` (record moves) with both. The

@@ -12,7 +12,7 @@ import (
 )
 
 // TestOldReaderOnMovedRecord runs an older binary (MANDALORE_OLD_BINARY:
-// bin/check-old-reader builds 2.2.0 from 0d3c22d and 2.1.2 from 79b378e)
+// bin/check-old-reader builds 2.2.1 from 95bbf17 and 2.1.2 from 79b378e)
 // against signets that this build has moved a record in, on format 1 and
 // format 2, and asserts each row of the old-reader table in
 // docs/signet-format.md ("Record moves").

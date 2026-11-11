@@ -51,12 +51,13 @@ the code:
 So an older reader sees a moved record in its old scope, with any later
 corrections, and can't sync until it runs 2.3.0. This table is the
 compatibility cost; the release notes say it, and `bin/check-old-reader`
-asserts each row against 2.2.0 (0d3c22d) and 2.1.2 (79b378e) built from
+asserts each row against 2.2.1 (95bbf17, the current release, which the live
+server runs) and 2.1.2 (79b378e) built from
 source:
 
-| 2.2.0 or 2.1.2 on a signet with a move | Behaviour |
+| 2.2.1 or 2.1.2 on a signet with a move | Behaviour |
 | --- | --- |
-| Recall, prime (2.2.0), scopes, context, history, inspect | Work; the record shows in its old scope; moves are invisible |
+| Recall, prime (2.2.1), scopes, context, history, inspect | Work; the record shows in its old scope; moves are invisible |
 | Correction with the old scope | Succeeds; once 2.3.0 is back the record is still in its new scope, with that content |
 | Correction with the new scope | Refused by graph validation, nothing written |
 | Reconcile, menu sync, checkpoint with the new path | Refuse; files, index and unpushed commits kept (as the 2.2.0 table) |
@@ -95,7 +96,8 @@ and the lead reports.
 
 ### Release
 
-2.3.0, the next minor after 2.2.0: a new write tool and new files in the
+2.3.0, the next minor after 2.2.1 (the go1.26.11 patch release; 2.2.0
+before it): a new write tool and new files in the
 signet, as 2.2.0 was for topics. The skill text changes, so
 `plugins/claude/.claude-plugin/plugin.json` moves to 2.3.0 with `VERSION`
 (`docs/repository.md`: a plugin change bumps `plugin.json`, and either bump
@@ -119,6 +121,8 @@ once with `MANDALORE_WRITE_NOMOVE_GOLDEN=1`): it builds the fixtures under
 `internal/memory/testdata/compat/v2.2.0/` from the 2.1.2 ones with main's
 code, and writes the outputs under `internal/server/testdata/nomove-golden/`.
 This PR never regenerates them; the test compares 2.3.0's output with them.
+They stand for 2.2.1 too: its diff from 0d3c22d changes only toolchain pins
+and no read code.
 Canon recall is memory recall on a verified snapshot, and canon promotion's
 head lookup is an exact-scope store recall, so both are pinned through those
 calls. History pages are pinned on their `items`, `next_offset` and
@@ -354,7 +358,7 @@ only a 2.3.0 server sends it. `references/memory.md` gains the move rules.
   read outputs under `internal/server/testdata/nomove-golden/`, both written
   by `TestNoMoveReadsMatchGoldens` on main before any code change.
 - **Old-reader check** (`bin/check-old-reader`, `cmd/mandalore`): also builds
-  2.2.0 from 0d3c22d and runs a new `TestOldReaderOnMovedRecord` against both
+  2.2.1 from 95bbf17 and runs a new `TestOldReaderOnMovedRecord` against both
   binaries, asserting every row of the table above.
 
 ## Order of work
@@ -370,13 +374,13 @@ only a 2.3.0 server sends it. `references/memory.md` gains the move rules.
    and the catalog, with the read-only refusal.
 5. The correction scope check; reads by placement; history's new fields.
 6. Move conflicts across clones in sync tests; export, canon and upgrade.
-7. Old-reader check against 2.2.0 and 2.1.2.
+7. Old-reader check against 2.2.1 and 2.1.2.
 8. Guidance, docs, lesson, version bump, release notes; `bin/ci`,
    `bin/sdlc check`, govulncheck; simplify pass; mark the PR ready.
 
 ## Risks
 
-- **Old clones that sync.** A 2.2.0 clone refuses to sync once a move arrives;
+- **Old clones that sync.** A 2.2.1 clone refuses to sync once a move arrives;
   nothing is lost, and installing 2.3.0 recovers it. Contained by the release
   note and the table.
 - **Hidden recall drift.** Scope selection moves from the revision to the
@@ -388,16 +392,17 @@ only a 2.3.0 server sends it. `references/memory.md` gains the move rules.
   history could correct with the old scope. Contained by history's top-level
   `scope`, the refusal message that names the current scope, and the tool
   descriptions.
-- **A correction on 2.2.0 after rollback** uses the old scope and lands in the
+- **A correction on 2.2.1 after rollback** uses the old scope and lands in the
   record's new scope once 2.3.0 is back. That is the intended reading (the
   move moves the record, not one revision) and the release notes say so.
 - **Concurrent move and correction on two clones** both survive: the
   correction's content, in the moved-to scope. Not a conflict, by design; a
   test pins it.
 - **Plugin rollout (#229).** Installed plugins follow main, so the skill line
-  reaches users at merge, while the live server still runs 2.2.0 (0d3c22d)
+  reaches users at merge, while the live server still runs 2.2.1 (95bbf17)
   until it upgrades after publication. The requester ruled, through the lead,
-  that for this PR the reviewer's posted evidence on 2.2.0 satisfies the #229
+  that for this PR the reviewer's posted evidence on 2.2.1, the version the
+  live server runs, satisfies the #229
   merge rule: `tools/list` without `memory_move` and the skill diff. The
   wording is inert there, because it applies only when the server lists
   `memory_move`, so there is no failed call and no changed behaviour. The
@@ -459,7 +464,7 @@ Tests, run with `GOFLAGS=-count=1`, synthetic data only:
   upgrades with it protected.
 - Read-only clients aren't served `memory_move`; the catalog returns
   `operation.read_only`.
-- `bin/check-old-reader` passes against 2.2.0 and 2.1.2, including the
+- `bin/check-old-reader` passes against 2.2.1 and 2.1.2, including the
   backup, sync inspection, upgrade preview and apply, `migrate init` and
   `migrate verify` rows.
 - `bin/ci`, `bin/sdlc check` and govulncheck pass.
@@ -477,12 +482,13 @@ moves are kept. A read-only client is refused.
 
 ## Rollback
 
-Reinstall 2.2.0. Nothing to undo in the data: moves stay in `memory/moves/` as
-append-only evidence and 2.2.0 ignores them, so moved records show in their
+Reinstall 2.2.1. Nothing to undo in the data: moves stay in `memory/moves/` as
+append-only evidence and 2.2.1 ignores them, so moved records show in their
 old scopes, and that clone can't sync, checkpoint, back up after writes,
-report status, upgrade or export until 2.3.0 is back (the table above). On the
-server this means writes still save locally but their backups fail, so
-reinstall 2.3.0 rather than run 2.2.0 for long. Move intents stay in `.mandalore/`; 2.2.0's cutover
+show the menu's status, upgrade or export until 2.3.0 is back (the table
+above). On the server this means writes still save locally but their backups
+never complete (`server status` shows them pending), so reinstall 2.3.0
+rather than run 2.2.1 for long. Move intents stay in `.mandalore/`; 2.2.1's cutover
 preflight refuses on them, which affects no serving. There is no downgrade
 that removes moves, and reinstalling 2.3.0 restores every placement.
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Builds 2.1.2 (commit 79b378e) and 2.2.0 (commit 0d3c22d) from source in
+# Builds 2.1.2 (commit 79b378e) and 2.2.1 (commit 95bbf17, the
+# current release) from source in
 # temporary worktrees and runs them against signets this tree writes into:
 # TestOldReaderOnTopicSignet with 2.1.2 (topic files, #246) and
 # TestOldReaderOnMovedRecord with both (record moves, #250). The builds report
@@ -12,7 +13,7 @@ set -euo pipefail
 root=$(git rev-parse --show-toplevel)
 work=$(mktemp -d)
 cleanup() {
-  for version in 2.1.2 2.2.0; do
+  for version in 2.1.2 2.2.1; do
     git -C "$root" worktree remove --force "$work/source-$version" 2>/dev/null || true
   done
   rm -rf "$work"
@@ -24,10 +25,10 @@ build() { # build VERSION COMMIT
   (cd "$work/source-$1" && go build -trimpath -o "$work/mandalore-$1" ./cmd/mandalore)
 }
 build 2.1.2 79b378e
-build 2.2.0 0d3c22d
+build 2.2.1 95bbf17
 
 cd "$root"
 MANDALORE_OLD_BINARY="$work/mandalore-2.1.2" GOFLAGS=-count=1 \
   go test ./cmd/mandalore/ -run '^(TestOldReaderOnTopicSignet|TestOldReaderOnMovedRecord)$' -v "$@"
-MANDALORE_OLD_BINARY="$work/mandalore-2.2.0" GOFLAGS=-count=1 \
+MANDALORE_OLD_BINARY="$work/mandalore-2.2.1" GOFLAGS=-count=1 \
   go test ./cmd/mandalore/ -run '^TestOldReaderOnMovedRecord$' -v "$@"
