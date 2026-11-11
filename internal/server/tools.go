@@ -141,12 +141,12 @@ func catalog() map[string]api.Operation {
 // handler returns the client's MCP handler, built once per installation and
 // scope. The caller holds s.mu.
 func (s *signet) handler(c Client) http.Handler {
-	key := c.ID + "\x00" + c.Installation + "\x00" + c.Kind + "\x00" + string(c.Scope)
+	key := c.ID + "\x00" + c.Installation + "\x00" + c.Kind + "\x00" + c.Harness + "\x00" + string(c.Scope)
 	if h, ok := s.handlers[key]; ok {
 		return h
 	}
 	server := s.mcpServer(c)
-	h := sdk.NewStreamableHTTPHandler(func(*http.Request) *sdk.Server { return server }, &sdk.StreamableHTTPOptions{Stateless: true, JSONResponse: true, MaxRequestBodyBytes: 65536, DisableLocalhostProtection: true, PropagateRequestCancellation: true})
+	h := sdk.NewStreamableHTTPHandler(func(*http.Request) *sdk.Server { return server }, &sdk.StreamableHTTPOptions{Stateless: true, JSONResponse: true, MaxRequestBodyBytes: maxMCPBodyBytes, DisableLocalhostProtection: true, PropagateRequestCancellation: true})
 	s.handlers[key] = h
 	return h
 }
@@ -161,7 +161,11 @@ func (s *signet) mcpServer(c Client) *sdk.Server {
 		}
 		tool := &sdk.Tool{Name: name, Description: description, InputSchema: schema, Annotations: &sdk.ToolAnnotations{ReadOnlyHint: readOnly}}
 		server.AddTool(tool, func(ctx context.Context, req *sdk.CallToolRequest) (*sdk.CallToolResult, error) {
-			return s.call(ctx, c, name, req.Params.Arguments), nil
+			var h http.Header
+			if req.Extra != nil {
+				h = req.Extra.Header
+			}
+			return s.call(withSession(ctx, h), c, name, req.Params.Arguments), nil
 		})
 	}
 	schema := func(input any) any {
@@ -227,7 +231,7 @@ func (s *signet) call(ctx context.Context, c Client, name string, raw []byte) *s
 	if !isWrite(name) {
 		return result(api.New(s.memory, true).WithFoundlings(foundlings.NewConfigured(s.memory, s.foundlings)).Call(ctx, name, raw))
 	}
-	author, err := s.author(c)
+	author, err := s.author(c, sessionFrom(ctx))
 	if err != nil {
 		return result(api.Failure("client.unenrolled", "Cannot record this client's device; nothing was saved.", false))
 	}

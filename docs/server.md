@@ -53,7 +53,9 @@ signet never touches another. `/healthz` answers `GET` from loopback peers only.
 ### Authentication
 
 Each signet's client comes from one authenticator. A `Client` has an ID, a name
-(its device label), a kind (recorded as the write's harness) and a scope.
+(its device label), a kind (the host that vouches for it, or `local`) and a
+scope. Its writes record a harness made from the name and the kind
+([Who wrote it](#who-wrote-it)).
 
 - `oauth` (default): OAuth 2.1 bearer tokens from the built-in authorization
   server, below. A request with no bearer token gets `401` with
@@ -413,7 +415,41 @@ When the owner approves an OAuth client, or on a local client's first write to
 a signet, the server enrolls a device record for it in `provenance/devices/`
 and keeps the mapping in `state_dir`. If writes are paused, enrollment waits
 for the client's first write. Every write by that client records
-`{device_id: <client device>, actor: owner.name, harness: <client kind>}`.
+`{device_id: <client device>, actor: owner.name, harness: <client harness>,
+model: null, session_id: <transport session or null>}`.
+
+The harness names the client and the host that vouches for it:
+
+| Client | Harness | Example |
+| --- | --- | --- |
+| Metadata-document client | `<client name> (document on <host>)` | `Claude Code (document on claude.ai)` |
+| DCR client | `<client name> (redirect to <host>)` | `Example Chat (redirect to chat.example.com)` |
+| Local client | `local` | `local` |
+
+The name is the `client_name` the client registered, and the host is the one
+serving its metadata document or its first non-loopback redirect. The name is
+the client's choice, but the host isn't: only claude.ai can serve a document on
+claude.ai. A client without a name uses the host instead. Both parts keep only
+printable characters, so controls, escape sequences, bidi and zero-width
+characters and line separators are dropped. The harness is at most 128 bytes:
+the part in brackets at most 96, a longer host keeping its rightmost part behind
+`…`, and the name the rest. Before 2.4.0 the harness was the host alone, such as
+`claude.ai` for both Claude Code and the claude.ai app; those records keep it.
+
+`session_id` is the MCP transport session the write came over, where the
+transport has one. It identifies one MCP connection, not an agent or a
+conversation. On the older MCP protocols, with an `initialize` handshake, the
+server gives each new connection a random `Mcp-Session-Id` (26 characters) and
+records it on that connection's writes. It holds no secret and grants nothing:
+the token authorizes every request, and the server keeps no session table, so a
+restart doesn't end a session. The sessionless protocol `2026-07-28` has no
+transport session, so its writes record `null`, as every write did before 2.4.0.
+Claude Code uses `2026-07-28`, so its writes record `null`. Where an ID is
+recorded, it isn't the Claude Code session ID that the plugin's prompt hook sends
+to `memory_context`: a connection gets a new ID after `--resume`, a reconnect or
+a restart of the client, and subagents share their process's connection. Saying
+which agent session wrote a record on sessionless MCP is
+[#258](https://github.com/acoz-labs/mandalore/issues/258).
 
 The device is per installation, so two installations that share one
 `client_id` are still told apart:
@@ -431,7 +467,8 @@ From 2.0.3 each installation enrolls its own device on its approval or first
 write, and a DCR client keeps the device it already had.
 
 The server knows only the client that holds the token. A claude.ai connector
-is the claude.ai client, so every write through it is recorded as claude.ai,
+is the claude.ai client, so every write through it is recorded as the claude.ai
+client (`<its name> (redirect to claude.ai)` from 2.4.0),
 including writes by Claude Code agents: Claude Code syncs the account's
 connectors into its own MCP servers and its agents can call them. To keep
 Claude Code's writes on its own installation, deny the connector in Claude Code

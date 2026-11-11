@@ -155,6 +155,7 @@ func (g *signet) serve(c Client, w http.ResponseWriter, r *http.Request) {
 	g.mu.Lock()
 	h := g.handler(c)
 	g.mu.Unlock()
+	issueSession(w, r)
 	h.ServeHTTP(w, r)
 }
 

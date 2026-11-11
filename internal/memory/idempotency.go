@@ -30,7 +30,12 @@ func (s *Service) intent(key, operation string, payload any) (string, string, er
 	if key == "" || len(key) > 1024 {
 		return "", "", errors.New("idempotency key requires 1–1024 bytes")
 	}
-	b, err := json.Marshal([]any{operation, s.ID(), s.author, payload})
+	// The transport session labels the connection, not the author: a retry
+	// from a new connection is the same request. Leaving it out also keeps
+	// every digest from before 2.4.0, which had none.
+	author := s.author
+	author.SessionID = nil
+	b, err := json.Marshal([]any{operation, s.ID(), author, payload})
 	if err != nil {
 		return "", "", err
 	}

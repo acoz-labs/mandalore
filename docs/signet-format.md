@@ -69,7 +69,10 @@ its predecessor. Two effective heads are a visible conflict, never a winner
 chosen by timestamp or lexical score. History preserves all branches.
 
 Authorship records originating device, actor, harness, and optional model/session
-identity. Unknown model/session values remain null. Source evidence contains
+identity. Unknown model/session values remain null. A server write's
+`session_id`, when set, is the MCP transport session it came over, a random
+connection ID with no secret, not an agent session
+([Who wrote it](server.md#who-wrote-it)). Source evidence contains
 `schema_version`, `id`, `kind`, concise `summary`, `device_id`, `recorded_at`,
 and optional `external_origin`. Sourced writes validate the proposed graph before
 writing evidence or revisions. An I/O failure between publication of the two

@@ -97,7 +97,7 @@ func TestOAuthFlowWithDynamicRegistration(t *testing.T) {
 	saved := receipt(t, text)
 	var r memory.Revision
 	readJSON(t, filepath.Join(a.Root, "memory/records", saved.RecordID, saved.ID+".json"), &r)
-	if want := (memory.Authorship{DeviceID: device, Actor: "Synthetic Owner", Harness: "claude.ai"}); r.Authorship != want {
+	if want := (memory.Authorship{DeviceID: device, Actor: "Synthetic Owner", Harness: "Synthetic Chat (redirect to claude.ai)"}); r.Authorship != want {
 		t.Fatalf("authorship %+v", r.Authorship)
 	}
 	ts, _ := h.TokenSource(context.Background())

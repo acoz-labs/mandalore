@@ -65,8 +65,8 @@ missing or blank (`oauth.go:203`, `:310`). A nameless DCR client therefore
 records `claude.ai (redirect to claude.ai)`, which still differs from a
 document client on the same host.
 
-Bounds and sanitising are applied at write time to whatever name is stored,
-so a name saved by an older server gets the same treatment:
+Bounds and sanitising are applied on every request to whatever name is
+stored, so a name saved by an older server gets the same treatment:
 
 - The name passes through `displayName` (`internal/server/oauth_clients.go:114`)
   again. It keeps only runes `unicode.IsPrint` accepts. That drops C0 and C1
@@ -77,7 +77,9 @@ so a name saved by an older server gets the same treatment:
   `unprintable` in `oauth_admin.go:144` (installation labels and User-Agent
   hints, which lets U+2028 and U+2029 through). This change doesn't use or
   touch it; #223 stays open for it.
-- The host passes through the same filter.
+- The host passes through the same character filter (`printable`, split out
+  of `displayName`), without `displayName`'s 64-byte cut, so a long host can
+  keep its rightmost part.
 - The whole value is at most 128 bytes. The suffix (` (document on <host>)`
   or ` (redirect to <host>)`) is at most 96 bytes. A host too long for that
   keeps its rightmost bytes behind `…`, so the registrable domain stays
@@ -152,17 +154,30 @@ requester's confirmation after their server upgrade.
 
 ## Files that change
 
-- Server authorship (`internal/server/signet.go`, `oauth_clients.go`): a
-  `harness(Client)` function with the table and bounds above. `author` takes
-  the session and returns `{device, owner, harness(c), session}`. Device
-  labels and `server clients list` keep the kind, unchanged.
+- Server authorship (new `internal/server/authorship.go`, `auth.go`,
+  `oauth.go`, `oauth_clients.go`, `signet.go`): `oauthClient.harness()`
+  implements the table and bounds above. The OAuth authenticator sets it as
+  a new in-memory `Client.Harness` on every request, from the stored client.
+  `author` takes the session and returns
+  `{device, owner, Harness or else Kind, session}`, so local and test clients
+  keep their kind. Device labels and `server clients list` keep the kind,
+  unchanged.
 - Server MCP path (`internal/server/server.go` `serve`, `tools.go`):
   - Issue the session ID on `initialize`, peeking the body within the
     existing 64 KiB limit and restoring it for the SDK.
   - Pass the header from the tool request through `call` to `author`.
-  - Add `c.Name` to the handler cache key. The cached handler's closure holds
-    the client, and a refreshed document name must reach the harness (the
-    per-installation cache lesson in `docs/repository.md`).
+  - Add `c.Harness` to the handler cache key. The cached handler's closure
+    holds the client, and a refreshed document name must reach the harness
+    (the per-installation cache lesson in `docs/repository.md`). The harness
+    covers the name, and is what the write records.
+- Idempotency digest (`internal/memory/idempotency.go`), found during the
+  build: a `request_id`'s digest covers the whole authorship, so a retry
+  from a new connection, with a new session ID, would get
+  `request.conflict`. The digest leaves `session_id` out. Every digest
+  written before 2.4.0 had a null session, so existing intents still match.
+  The harness stays in the digest, as authorship. So a retry that spans the
+  upgrade (saved by 2.3.0, receipt lost, retried on 2.4.0) gets
+  `request.conflict` and writes nothing, and the release notes say so.
 - Tests (`internal/server/*_test.go`): the Proof scenarios below, against an
   `httptest` server.
 - Docs:
@@ -177,9 +192,11 @@ requester's confirmation after their server upgrade.
     holds when it is set.
   - The plugin README, as above.
   - `docs/interface.md`, if it describes authorship values.
-- Release: `VERSION` to 2.4.0, `docs/releases/2.4.0.md`, and the version
-  strings that 2.3.0 touched (`docs/interface.md`, README). The PR includes a
-  repository-wide grep for `2.3.0`, excluding dated evidence records by path.
+- Release: `VERSION` to 2.4.0 and `docs/releases/2.4.0.md`, as 2.3.0's code
+  PR did. The "latest release" pointers (README, `docs/setup.md`,
+  `docs/deployment.md`, `docs/migration-2.0.md`, `docs/server.md`) move in
+  the post-publication record PR, as #257 did for 2.3.0, so they never name
+  an unpublished release.
 
 ## Order of work
 
@@ -279,6 +296,11 @@ with `GOFLAGS=-count=1`:
      with that ID.
    - A read-only client gets an ID and can't write.
    - GET and DELETE answer as before.
+   - A retry with the same `request_id` from a second connection returns the
+     first receipt, and changed input still gets `request.conflict`.
+   - A document client whose name changes, after the server refetches its
+     document, writes the new name with a token issued before the change
+     (the handler cache key).
 6. **Checks (acceptance 5).** `bin/ci` (with the TTY fallback in
    `docs/repository.md`), `bin/sdlc check` and
    `go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...`.
