@@ -99,6 +99,13 @@ type EvaluationVersion struct {
 // single supersession chain; a signet-kind scope is the new signet.
 func LoadEvaluation(t testing.TB, path string) (*memory.Service, Evaluation) {
 	t.Helper()
+	return WriteEvaluation(t, path, filepath.Join(t.TempDir(), "signet"))
+}
+
+// WriteEvaluation is LoadEvaluation into the signet directory root, which
+// must not exist yet.
+func WriteEvaluation(t testing.TB, path, root string) (*memory.Service, Evaluation) {
+	t.Helper()
 	var e Evaluation
 	data, err := os.ReadFile(path)
 	if err == nil {
@@ -107,7 +114,7 @@ func LoadEvaluation(t testing.TB, path string) (*memory.Service, Evaluation) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	store, err := memory.Create(filepath.Join(t.TempDir(), "signet"), "Synthetic selection evaluation", "device-evaluation", "Synthetic evaluation host")
+	store, err := memory.Create(root, "Synthetic selection evaluation", "device-evaluation", "Synthetic evaluation host")
 	if err != nil {
 		t.Fatal(err)
 	}

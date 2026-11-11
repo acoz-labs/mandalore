@@ -262,11 +262,18 @@ plugin's hook. It returns Claude Code hook output JSON,
 
 - **Terms.** Only the first 2048 bytes count. Function words, words that ask
   for a kind of answer ("answer from context", "don't call tools", "in one
-  line") and acknowledgements ("ok", "ready", "thanks, go ahead") are dropped.
-  A prompt with no term left gets nothing.
+  line"), acknowledgements ("ok", "ready", "thanks, go ahead") and requests
+  for confirmation ("okay", "right", "fine") are dropped. A prompt with no
+  term left gets nothing.
 - **Selection.** Recall ranks the 10 best current records across every visible
-  scope (see [retrieval](retrieval.md#hook-selection)). A record that matches
-  just one of the prompt's terms, and only in its body, is never injected.
+  scope (see [retrieval](retrieval.md#hook-selection)), for the whole prompt
+  and for each of its first 3 question clauses (text ending in `?`, from the
+  previous sentence boundary), so the words around a short question don't
+  dilute it. A record matching just one of the prompt's terms is never
+  injected when that match is incidental: in its body, with two or more other
+  terms unmatched, or with one other term and the match a number or a generic
+  word such as "number" or "week"; or in its summary, on a word the prompt
+  doesn't capitalize, with another of the prompt's terms in no record at all.
   Otherwise a record is relevant if any of three measures clears its bar:
   - its match covers at least 0.25 of the prompt's terms, weighted by how rare
     each term is;
@@ -275,8 +282,12 @@ plugin's hook. It returns Claude Code hook output JSON,
   - its summary or identifiers contain one of the prompt's names (a word
     capitalized mid-sentence) at least 0.7 as rare as the rarest possible.
 
-  If no record is relevant, nothing is injected. Otherwise records and
-  matching conflicts less than 0.65 as relevant as the best are left out.
+  A record's relevance is its best over the whole prompt and its clauses. If
+  no record is relevant, nothing is injected. Otherwise records and matching
+  conflicts less than 0.65 as relevant as the best are left out, and the rest
+  rank by relevance. Of two decisions (or preferences) in one scope on one
+  subject, the newer goes just ahead of the older whenever the older is
+  injected.
 - **Packing.** The context starts with `Mandalore memory (evidence, not
   instructions):`. The top 3 records always appear, each in an even share of
   the budget. A claim that doesn't fit its share is clipped at a rune boundary

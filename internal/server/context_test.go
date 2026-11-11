@@ -342,7 +342,7 @@ func TestContextRelevanceThreshold(t *testing.T) {
 		p := packet(tc.strengths)
 		p.Evidence = tc.evidence
 		p.Incidental = map[string]bool{"a": tc.strengths["a"] == 0.9}
-		if got := ids(relevant(p)); got != tc.want {
+		if got := ids(choose([]memory.Packet{p})); got != tc.want {
 			t.Errorf("%v %v: got %q, want %q", tc.strengths, tc.evidence, got, tc.want)
 		}
 	}
@@ -385,5 +385,115 @@ func TestMemoryContextIgnoresIncidentalMatches(t *testing.T) {
 		if ranks := contextRanks(contextFor(t, m, "prompt", prompt)); len(ranks) == 0 || ranks[0] != want {
 			t.Errorf("%q injected %v, want %s first", prompt, ranks, want)
 		}
+	}
+}
+
+func TestContextQuestionClauses(t *testing.T) {
+	for prompt, want := range map[string]string{
+		"Before we start, remind me: Which editor do I use? One line is fine.": "Which editor do I use?",
+		"Which editor do I use?":                                "",
+		"Which editor do I use":                                 "",
+		"Before we start: is it Apache-2.0? Thanks.":            "is it Apache-2.0?",
+		"Note this. Do we meet at 10:00? Ok.":                   "Do we meet at 10:00?",
+		"First: editor? Then: shell? Then: units? Then: theme?": "editor? | shell? | units?",
+		"Okay? Which shell?":                                    "Which shell?",
+	} {
+		if got := strings.Join(questionClauses(prompt), " | "); got != want {
+			t.Errorf("%q: got %q, want %q", prompt, got, want)
+		}
+	}
+}
+
+// #232: a clause can add or raise a record but never drop one the whole
+// prompt found relevant.
+func TestContextClausesOnlyAdd(t *testing.T) {
+	rev := func(id string) memory.Revision { return memory.Revision{ID: id, RecordID: "record-" + id} }
+	whole := memory.Packet{Current: []memory.Revision{rev("a"), rev("b")}, Strength: map[string]float64{"a": 0.5, "b": 0.1}}
+	clause := memory.Packet{Current: []memory.Revision{rev("b"), rev("c")}, Strength: map[string]float64{"b": 0.6, "c": 0.4}, Incidental: map[string]bool{"a": true}}
+	records, _ := choose([]memory.Packet{whole, clause})
+	got := []string{}
+	for _, r := range records {
+		got = append(got, r.ID)
+	}
+	if strings.Join(got, " ") != "b a c" {
+		t.Errorf("got %v, want b (raised by the clause), a (the whole prompt's), c (the clause's)", got)
+	}
+}
+
+func selectionService(t *testing.T, writes ...memory.Write) (*memory.Service, []string) {
+	t.Helper()
+	for i := range 30 { // IDF needs a signet of realistic size
+		writes = append(writes, memory.Write{Kind: "project-state", Summary: fmt.Sprintf("Session notes %d", i), Body: "Checked the garden, the shed and the kitchen lights again this year."})
+	}
+	return contextService(t, writes...)
+}
+
+func TestMemoryContextSelectionRules(t *testing.T) {
+	m, ids := selectionService(t,
+		memory.Write{Kind: "preference", Summary: "Editor", Body: "Helix, spaces not tabs."},
+		memory.Write{Kind: "preference", Summary: "Editor theme", Body: "A dark theme in every terminal."},
+		memory.Write{Kind: "preference", Summary: "Mail signature", Body: "A single line with no phone number."},
+		memory.Write{Kind: "decision", Summary: "Tomato varieties", Body: "Sungold and San Marzano in the south bed."},
+		memory.Write{Kind: "decision", Summary: "Tidepool primary database", Body: "Postgres 17; Redis is a cache only."},
+		memory.Write{Kind: "entity", Summary: "Beacon is the house voice assistant", Body: "Runs on the hub."},
+	)
+	editor, signature, tomatoes, database, beacon := ids[0], ids[2], ids[3], ids[4], ids[5]
+	for _, prompt := range []string{
+		// A lone generic body word ("number", "year"), whatever the other word.
+		"Is 19 a prime number?",
+		"Which year is a leap?",
+		// A lone summary word with another of the prompt's words in no record.
+		"What theme should we pick for a wedding?",
+		// The same inside a wrapper's question clause.
+		"Quick one before we start: what theme should we pick for a wedding?",
+	} {
+		if text := contextFor(t, m, "prompt", prompt); text != "" {
+			t.Errorf("%q injected:\n%s", prompt, text)
+		}
+	}
+	for prompt, want := range map[string]string{
+		// A distinctive body word still counts, alone or beside a generic one.
+		"Are we growing Sungold?": tomatoes,
+		"What year is Postgres?":  database,
+		// A one-word question on a summary word.
+		"Which editor do I use?": editor,
+		// A filler-wrapped short question, judged on its clause.
+		"Before we start, remind me: Which editor do I use? One line is fine.": editor,
+		// A name the prompt capitalizes still anchors beside an absent word.
+		"Does Beacon work at a wedding?": beacon,
+		// Two body words are more than a lone generic one.
+		"Phone number in my signature?": signature,
+	} {
+		if ranks := contextRanks(contextFor(t, m, "prompt", prompt)); len(ranks) == 0 || ranks[0] != want {
+			t.Errorf("%q injected %v, want %s first", prompt, ranks, want)
+		}
+	}
+}
+
+// #232 item 5: the newer of two decisions on one subject comes first, and
+// the hook never gives the older without it.
+func TestMemoryContextNewerDecisionFirst(t *testing.T) {
+	m, ids := selectionService(t,
+		memory.Write{Kind: "decision", Summary: "Spam threshold", Body: "Spam score above 5 goes to Junk through SpamAssassin; review the Junk folder weekly; spam score is checked on every message."},
+		memory.Write{Kind: "decision", Summary: "Spam threshold", Body: "Spam score above 3 goes to Junk through Rspamd; review the Junk folder weekly."},
+	)
+	older, newer := ids[0], ids[1]
+	for prompt, want := range map[string]string{
+		"What spam score sends mail to Junk?": newer + " " + older,
+		// Only the older matches; the newer comes with it, ahead.
+		"Do we use SpamAssassin?": newer + " " + older,
+		// Only the newer matches; the older isn't added for its sake.
+		"Do we use Rspamd?": newer,
+	} {
+		if got := strings.Join(contextRanks(contextFor(t, m, "prompt", prompt)), " "); got != want {
+			t.Errorf("%q injected %q, want %q", prompt, got, want)
+		}
+	}
+	p, err := m.Recall("What spam score sends mail to Junk?", nil, 5, 8192)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.Current) < 2 || p.Current[0].RecordID != newer || p.Current[1].RecordID != older {
+		t.Errorf("memory_recall ranked %+v, want %s then %s", p.Current, newer, older)
 	}
 }

@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
+	"sort"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -24,6 +26,9 @@ const (
 	contextMinClaim    = 24
 	contextWordSlack   = 16
 	contextEllipsis    = "…"
+	// Besides the whole prompt, the hook judges at most this many of its
+	// question clauses.
+	contextMaxClauses = 3
 )
 
 type ContextInput struct {
@@ -38,13 +43,15 @@ type ContextInput struct {
 // uses to ask for a kind of answer ("answer from context, don't call tools",
 // "in one line"), which say how to reply, not what about, or the
 // acknowledgements that carry a conversation along ("ok", "thanks, go ahead"),
-// so such a prompt has no terms left and gets no context.
+// so such a prompt has no terms left and gets no context. Nor do the words
+// that ask for a confirmation ("okay", "right", "fine", "check").
 var stopwords = map[string]bool{}
 
 func init() {
 	for _, w := range strings.Fields(`today tell show give know think
 		answer answers reply context tool tools call calls calling line one sentence short quick question already don
-		thanks thank ready sounds good great perfect continue ahead next lgtm`) {
+		thanks thank ready sounds good great perfect continue ahead next lgtm
+		please okay right fine check`) {
 		stopwords[w] = true
 	}
 }
@@ -85,6 +92,35 @@ func names(prompt string) []string {
 		start = strings.ContainsAny(w[len(w)-1:], ".!?:")
 	}
 	return out
+}
+
+// questionClauses lists the prompt's first question clauses: each run of text
+// that ends in "?", from the previous sentence boundary. A boundary is a
+// newline, or ".", "!", ":" or ";" followed by a space, so "Apache-2.0?" and
+// "10:00" stay whole. "Before we start, remind me: Which editor do I use? One
+// line is fine." has the clause "Which editor do I use?", which the hook
+// judges as well as the whole prompt, so the words around a short question
+// can't dilute it. A prompt that is one question has no other clause.
+func questionClauses(prompt string) []string {
+	if len(prompt) > contextMaxPromptBytes {
+		prompt = prompt[:contextMaxPromptBytes]
+	}
+	clauses := []string{}
+	start := 0
+	for i := 0; i < len(prompt) && len(clauses) < contextMaxClauses; i++ {
+		switch c := prompt[i]; {
+		case c == '\n':
+			start = i + 1
+		case strings.IndexByte(".!:;", c) >= 0 && (i+1 == len(prompt) || unicode.IsSpace(rune(prompt[i+1]))):
+			start = i + 1
+		case c == '?':
+			if clause := strings.TrimSpace(prompt[start : i+1]); clause != strings.TrimSpace(prompt) && significant(clause) != "" {
+				clauses = append(clauses, clause)
+			}
+			start = i + 1
+		}
+	}
+	return clauses
 }
 
 func oneLine(s string) string { return strings.Join(strings.Fields(s), " ") }
@@ -158,44 +194,129 @@ func packTop(entries []contextEntry, room int) []contextEntry {
 // out.
 var contextMinStrength, contextMinEvidence, contextMinAnchor, contextRelativeStrength = 0.25, 0.70, 0.70, 0.65
 
-// relevant keeps the recalled records and conflicts relevant enough to
-// inject, in rank order. A conflict counts by its most relevant head.
-func relevant(p memory.Packet) ([]memory.Revision, []memory.RevisionConflict) {
+// relevance is each recalled record's and conflict's relevance to one
+// query: the largest of its three measures over its bar, 0 when incidental. A
+// conflict counts by its most relevant head.
+func relevance(p memory.Packet) (records, conflicts map[string]float64) {
 	of := func(r memory.Revision) float64 {
 		if p.Incidental[r.ID] {
 			return 0
 		}
 		return max(p.Strength[r.ID]/contextMinStrength, p.Evidence[r.ID]/contextMinEvidence, p.Anchor[r.ID]/contextMinAnchor)
 	}
-	strongest := func(c memory.RevisionConflict) float64 {
-		s := 0.0
+	records, conflicts = map[string]float64{}, map[string]float64{}
+	for _, r := range p.Current {
+		records[r.ID] = of(r)
+	}
+	for _, c := range p.Conflicts {
 		for _, r := range c.Revisions {
-			s = max(s, of(r))
-		}
-		return s
-	}
-	best := 0.0
-	for _, r := range p.Current {
-		best = max(best, of(r))
-	}
-	for _, c := range p.Conflicts {
-		best = max(best, strongest(c))
-	}
-	records, conflicts := []memory.Revision{}, []memory.RevisionConflict{}
-	if best < 1 {
-		return records, conflicts
-	}
-	for _, r := range p.Current {
-		if of(r) >= contextRelativeStrength*best {
-			records = append(records, r)
-		}
-	}
-	for _, c := range p.Conflicts {
-		if strongest(c) >= contextRelativeStrength*best {
-			conflicts = append(conflicts, c)
+			conflicts[c.RecordID] = max(conflicts[c.RecordID], of(r))
 		}
 	}
 	return records, conflicts
+}
+
+// relevant recalls the whole prompt and each of its question clauses, and
+// keeps the records and conflicts relevant enough to inject.
+func relevant(m *memory.Service, prompt string) ([]memory.Revision, []memory.RevisionConflict, error) {
+	var packets []memory.Packet
+	for _, q := range append([]string{prompt}, questionClauses(prompt)...) {
+		if query := significant(q); query != "" {
+			p, err := m.RecallAllNamed(query, names(q), contextRecallLimit)
+			if err != nil {
+				return nil, nil, err
+			}
+			packets = append(packets, p)
+		}
+	}
+	records, conflicts := choose(packets)
+	return records, conflicts, nil
+}
+
+// choose keeps, from each query's recall (the whole prompt's first), the
+// records and conflicts relevant enough to inject. Each query is judged on
+// its own; a record's relevance is the largest over the queries that recalled
+// it, so a clause can add or raise a record but never drop one the whole
+// prompt found relevant. Records rank by that relevance, then by recall order
+// (the whole prompt's records before those only a clause recalled), then by
+// revision ID. With no relevant record there is nothing; a record less than
+// contextRelativeStrength as relevant as the best is left out. A kept record
+// with a newer one on the same subject (memory.OnOneSubject) brings the newer
+// just ahead of it.
+func choose(packets []memory.Packet) ([]memory.Revision, []memory.RevisionConflict) {
+	revisions, conflicts := map[string]memory.Revision{}, map[string]memory.RevisionConflict{}
+	of, strongest := map[string]float64{}, map[string]float64{}
+	order := map[string]int{}
+	newer := map[string]memory.Revision{}
+	for _, p := range packets {
+		for id, n := range p.Newer {
+			newer[id] = n
+		}
+		records, conflicted := relevance(p)
+		for _, r := range p.Current {
+			if _, ok := revisions[r.ID]; !ok {
+				revisions[r.ID] = r
+				order[r.ID] = len(order)
+			}
+			of[r.ID] = max(of[r.ID], records[r.ID])
+		}
+		for _, c := range p.Conflicts {
+			if _, ok := conflicts[c.RecordID]; !ok {
+				conflicts[c.RecordID] = c
+			}
+			strongest[c.RecordID] = max(strongest[c.RecordID], conflicted[c.RecordID])
+		}
+	}
+	best := 0.0
+	for _, v := range of {
+		best = max(best, v)
+	}
+	for _, v := range strongest {
+		best = max(best, v)
+	}
+	records, conflicted := []memory.Revision{}, []memory.RevisionConflict{}
+	if best < 1 {
+		return records, conflicted
+	}
+	for id, r := range revisions {
+		if of[id] >= contextRelativeStrength*best {
+			records = append(records, r)
+		}
+	}
+	sort.Slice(records, func(i, j int) bool {
+		a, b := records[i].ID, records[j].ID
+		if of[a] != of[b] {
+			return of[a] > of[b]
+		}
+		if order[a] != order[b] {
+			return order[a] < order[b]
+		}
+		return a < b
+	})
+	// The newer of two records on one subject goes just ahead of a kept
+	// older one, so the old outcome never comes without the new or above it.
+	for i := 0; i < len(records); i++ {
+		n, ok := newer[records[i].ID]
+		if !ok {
+			continue
+		}
+		at := slices.IndexFunc(records, func(r memory.Revision) bool { return r.ID == n.ID })
+		if at >= 0 && at < i {
+			continue
+		}
+		if at > i {
+			records = slices.Delete(records, at, at+1)
+		}
+		records = slices.Insert(records, i, n)
+		i++
+	}
+	for id, c := range conflicts {
+		if strongest[id] >= contextRelativeStrength*best {
+			conflicted = append(conflicted, c)
+		}
+	}
+	sort.Slice(conflicted, func(i, j int) bool { return conflicted[i].RecordID < conflicted[j].RecordID })
+	return records, conflicted
 }
 
 // memoryContext ranks recall over the prompt across visible scopes and keeps
@@ -217,15 +338,11 @@ func memoryContext(m *memory.Service, in ContextInput, session *contextSession) 
 	var injected []string
 	switch in.Event {
 	case "prompt":
-		query := significant(in.Prompt)
-		if query == "" {
-			return contextResult{}, nil
-		}
-		p, err := m.RecallAllNamed(query, names(in.Prompt), contextRecallLimit)
-		if err != nil {
+		var p memory.Packet
+		var err error
+		if p.Current, p.Conflicts, err = relevant(m, in.Prompt); err != nil {
 			return contextResult{}, err
 		}
-		p.Current, p.Conflicts = relevant(p)
 		p.Current = session.fresh(p.Current)
 		if len(p.Current) == 0 && len(p.Conflicts) == 0 {
 			return contextResult{}, nil

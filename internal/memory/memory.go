@@ -164,6 +164,10 @@ type Packet struct {
 	// identifiers, while two or more of the others go unmatched (one, when
 	// the match is a number), by revision ID.
 	Incidental map[string]bool `json:"-"`
+	// Newer gives, by revision ID, the newest record on the same subject
+	// (OnOneSubject) of each current record that has one in the query's
+	// scopes, whether or not it matches the query.
+	Newer map[string]Revision `json:"-"`
 }
 
 func (s *Store) validateGraph(records []Revision) error {
@@ -446,14 +450,15 @@ func (s *Store) anyRelevant(revisions []Revision, query []string) bool {
 // length counts its summary and body terms.
 type termIndex struct {
 	tokens, identifiers map[string]int
-	summary             map[string]bool
+	summary, body       map[string]bool
 	length              int
 }
 
 func indexTerms(r Revision) termIndex {
-	ix := termIndex{tokens: map[string]int{}, identifiers: map[string]int{}, summary: map[string]bool{}}
+	ix := termIndex{tokens: map[string]int{}, identifiers: map[string]int{}, summary: map[string]bool{}, body: map[string]bool{}}
 	for _, t := range terms(r.Body) {
 		ix.tokens[t]++
+		ix.body[t] = true
 		ix.length++
 	}
 	for _, t := range terms(r.Summary) {
@@ -587,6 +592,13 @@ func bm25(terms []string, names map[string]bool, candidates []termIndex) (scores
 		most += idf[j] * (bm25K1 + 1)
 	}
 	rarest := math.Log(1 + (n+0.5)/0.5)
+	// absent counts the terms no candidate contains.
+	absent := 0
+	for j := range terms {
+		if df[j] == 0 {
+			absent++
+		}
+	}
 	for i, ix := range candidates {
 		norm := bm25K1 * (1 - bm25B + bm25B*float64(ix.length)/average)
 		lone := ""
@@ -612,10 +624,19 @@ func bm25(terms []string, names map[string]bool, candidates []termIndex) (scores
 		evidence[i] = scores[i] / (rarest * (bm25K1 + 1))
 		// A lone match outside the summary is incidental when two or more of
 		// the prompt's other terms go unmatched, or one does and the match is
-		// a bare number, which recurs across unrelated topics ("15 percent of
-		// 600"). A short question's one word ("Where does Unbound run?")
-		// still counts.
-		incidental[i] = matched[i] == 1 && !inTitle[i] && (len(terms) > 2 || len(terms) == 2 && strings.Trim(lone, "0123456789.") == "")
+		// a bare number or a generic word, which recur across unrelated
+		// topics ("15 percent of 600", "Is 17 a prime number?"). A short
+		// question's one distinctive word ("Where does Unbound run?") still
+		// counts. A lone match in the summary or identifiers, on a word the
+		// prompt doesn't write as a name, is incidental when another of the
+		// prompt's terms is in no candidate at all: the prompt is about
+		// something the signet lacks ("What theme should we pick for a
+		// wedding?", "How do I install Redis on Ubuntu?").
+		if matched[i] == 1 && !inTitle[i] {
+			incidental[i] = len(terms) > 2 || len(terms) == 2 && (strings.Trim(lone, "0123456789.") == "" || IsGenericWord(lone))
+		} else if matched[i] == 1 && names != nil && !names[lone] {
+			incidental[i] = absent > 0
+		}
 	}
 	return scores, strengths, evidence, anchors, incidental
 }
@@ -721,6 +742,7 @@ func (s *Store) recallHeads(q Query, p Packet, heads map[string][]Revision, stat
 		p.Strength[r.ID], p.Evidence[r.ID], p.Anchor[r.ID], p.Incidental[r.ID] = strengths[j], evidence[j], anchors[j], incidental[j]
 	}
 	scores := map[string][2]float64{}
+	pool := append([]Revision{}, p.Current...)
 	matching := p.Current[:0]
 	for i, r := range p.Current {
 		if content[i] > 0 || function[i] > 0 {
@@ -742,6 +764,9 @@ func (s *Store) recallHeads(q Query, p Packet, heads map[string][]Revision, stat
 		}
 		return p.Current[i].ID < p.Current[j].ID
 	})
+	if query != nil {
+		p.Newer = s.newerFirst(p.Current, pool)
+	}
 	sort.Slice(p.Conflicts, func(i, j int) bool { return p.Conflicts[i].RecordID < p.Conflicts[j].RecordID })
 	limit := q.Limit
 	if limit <= 0 {
