@@ -71,7 +71,7 @@ portability is not included.
 - [Development](docs/development.md), [releases](docs/deployment.md), [runbook](docs/runbook.md)
 - [Contributing](CONTRIBUTING.md) and [security/privacy](SECURITY.md)
 
-Run `mise exec go@1.26.10 -- bin/ci`, or `bin/container bin/ci` with Docker.
+Run `mise exec go@1.26.11 -- bin/ci`, or `bin/container bin/ci` with Docker.
 The managed workflow uses issues, design/implementation PRs, recorded engineering
 review, exact-candidate acceptance and GitHub Releases. The current MVP permits
 [engineering self-review](docs/decisions/0001-mvp-self-review.md), not fabricated
