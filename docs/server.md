@@ -377,7 +377,7 @@ record is simply there. Moves to different scopes are a move conflict:
 recall and prime in each of those scopes list the record under `conflicts`
 with `move_scopes`, and never as current. `memory_scopes` counts it in each,
 with `move_conflicts`. Synchronization reports `conflicted`, counting the
-record once. A correction is refused until a move that names every move head
+record once, and its notice says to settle the moves with `memory_move`. A correction is refused until a move that names every move head
 settles it. If the record's revisions conflict too, that settling move must
 name every content head as well, and a correction then settles the revisions.
 

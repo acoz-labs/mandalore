@@ -3,6 +3,8 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -159,5 +161,65 @@ func TestCanonServesAMovedRecordWhereItIsNow(t *testing.T) {
 	}
 	if err := json.Unmarshal([]byte(text), &heads); err != nil || !heads.OK || len(heads.Result.Heads) != 1 {
 		t.Fatalf("canon heads of the moved record: %s %v", text, err)
+	}
+}
+
+// writeConcurrentMove writes a move as another clone would, with the given
+// parents, so the record's moves conflict.
+func writeConcurrentMove(t *testing.T, root string, author memory.Authorship, recordID string, to memory.Scope, observed, parents []string) {
+	t.Helper()
+	m := memory.RecordMove{Version: 1, ID: memory.NewID("move"), RecordID: recordID, Scope: to, Observed: observed, Parents: parents, Reason: "Moved on another clone", RecordedAt: time.Now().UTC().Format(time.RFC3339Nano), Authorship: author}
+	b, err := json.Marshal(m)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := filepath.Join(root, "memory/moves", recordID)
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, m.ID+".json"), b, 0600); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// The context hook names a move conflict, and keeps the revision count when
+// the record's revisions conflict too.
+func TestMemoryContextNamesMoveConflicts(t *testing.T) {
+	m, _ := contextService(t)
+	x, y, z := memory.Scope{Kind: "project", ID: "example-x"}, memory.Scope{Kind: "project", ID: "example-y"}, memory.Scope{Kind: "account", ID: "example-z"}
+	save := func(summary string) memory.Revision {
+		r, err := m.Remember(memory.Write{Kind: "decision", Scope: &x, Summary: summary, Body: "Synthetic body for " + summary, Basis: "user-direction", Reason: "Synthetic"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return r
+	}
+	moved := save("Heron release checklist")
+	author := moved.Authorship
+	if _, err := m.Move(memory.MoveWrite{RecordID: moved.RecordID, Scope: y, ContentHeads: []string{moved.ID}, MoveHeads: []string{}, Reason: "Misfiled"}); err != nil {
+		t.Fatal(err)
+	}
+	writeConcurrentMove(t, m.Root(), author, moved.RecordID, z, []string{moved.ID}, []string{})
+	text := contextFor(t, m, "prompt", "What is on the Heron release checklist?")
+	if want := "- Conflict: " + moved.RecordID + " has moves to 2 different scopes; inspect memory_history"; !strings.Contains(text, want) {
+		t.Fatalf("move conflict line missing:\n%s", text)
+	}
+
+	both := save("Lark rollout checklist")
+	for _, body := range []string{"Silver", "Amber"} {
+		if _, err := m.Remember(memory.Write{Kind: "decision", Scope: &x, RecordID: both.RecordID, Supersedes: []string{both.ID}, Summary: "Lark rollout checklist", Body: body, Basis: "user-direction", Reason: "Synthetic fork"}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	h, err := m.HistoryPage(both.RecordID, 0, 50)
+	if err != nil {
+		t.Fatal(err)
+	}
+	heads := []string{h.Items[1].ID, h.Items[2].ID}
+	writeConcurrentMove(t, m.Root(), author, both.RecordID, y, heads, []string{})
+	writeConcurrentMove(t, m.Root(), author, both.RecordID, z, heads, []string{})
+	text = contextFor(t, m, "prompt", "What is on the Lark rollout checklist?")
+	if want := "- Conflict: " + both.RecordID + " has 2 competing revisions and moves to 2 different scopes;"; !strings.Contains(text, want) {
+		t.Fatalf("double conflict line missing:\n%s", text)
 	}
 }

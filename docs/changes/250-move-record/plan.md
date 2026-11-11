@@ -115,7 +115,8 @@ discovery switch to placement the same way.
 On a signet with no moves, recall, context, prime, scopes, canon recall and
 withheld-record discovery output stays byte-identical to 2.2.0's. The golden
 outputs were captured from main (e3c9712, 2.2.0's code plus its release
-record) before any code change, in their own commit (ca4980e). The generator
+record) before any code change, in their own commit (2418461 after the rebase onto 21396eb; ca4980e before
+any rebase). The generator
 is the test itself (`TestNoMoveReadsMatchGoldens` in `internal/server`, run
 once with `MANDALORE_WRITE_NOMOVE_GOLDEN=1`): it builds the fixtures under
 `internal/memory/testdata/compat/v2.2.0/` from the 2.1.2 ones with main's
@@ -298,7 +299,9 @@ stays 1.
 `^memory/moves/<id>/<id>\.json$`, and sync's candidate validation checks
 moves with the rest of the graph. Synchronization's `conflicted` state and
 `semantic_conflicts` count include move conflicts, each record once, though
-it is listed in every scope its moves name. Canon fetch already copies every file under
+it is listed in every scope its moves name, also when it has a visibility
+conflict too. When move conflicts stand, the sync notice says to settle them
+with `memory_move`, not with a superseding correction. Canon fetch already copies every file under
 `memory/`, and 2.3.0's snapshot validation checks moves. The format 1→2
 upgrade proof already protects everything under `memory/` as append-only
 evidence; a test proves a format 1 signet with a move upgrades with it intact.
@@ -309,7 +312,12 @@ of the 599 `TestInstructionsAreShort` allows. So the line goes in the
 re-home a misfiled record, use `memory_move` (only when the server lists it)
 rather than saving a copy and withdrawing the original." The server-side
 `memory_remember` description gains the same pointer, which is safe because
-only a 2.3.0 server sends it. `references/memory.md` gains the move rules.
+only a 2.3.0 server sends it. `references/memory.md` gains the move rules,
+in a section that applies only when the server lists `memory_move`, and its
+correction step keeps 2.2.x's wording with one added sentence for the same
+case: use `memory_history`'s top-level `scope` when it has one. No new
+plugin wording applies on a server without `memory_move` (code review round
+1, M1); the hooks and `.mcp.json` don't change.
 
 ## Files that change
 
@@ -331,7 +339,8 @@ only a 2.3.0 server sends it. `references/memory.md` gains the move rules.
   read-write server tool with byte limits through `limit`, added to `isWrite`;
   descriptions. The CLI's generic `memory <name>` mapping reaches it as
   `memory move` (`cmd/mandalore/main.go` usage only); the context hook's
-  conflict line names a move conflict (`internal/server/context.go`).
+  conflict line names a move conflict, and keeps the revision count when the
+  revisions conflict too (`internal/server/context.go`).
 - **Sync** (`internal/sync/checkpoint.go`, `remote.go`): the new path
   pattern, and counting a move-conflicted record once.
 - **Export** (`internal/exportreport/snapshot.go`, `project.go`): read moves,

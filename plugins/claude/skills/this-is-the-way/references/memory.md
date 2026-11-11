@@ -6,10 +6,11 @@ A changed fact gets a new revision of the same record, not a new record.
 
 1. Find it with `memory_recall`, or `memory_history` for its revisions and
    provenance.
-2. Call `memory_remember` with the original `record_id` and `kind`, the
-   record's current scope (the top-level `scope` in `memory_history`, which
-   differs from its revisions' scope after a move), and `supersedes` set to
-   the current revision IDs (`revision-...`, not the record ID).
+2. Call `memory_remember` with the original `record_id`, `kind` and `scope`,
+   and `supersedes` set to the current revision IDs (`revision-...`, not the
+   record ID). When the server lists `memory_move` and `memory_history` has a
+   top-level `scope`, use that scope: a moved record's revisions keep the
+   scope it was saved in.
 3. After a validation error, read `memory_history` instead of guessing IDs.
    Never create a duplicate or test record, and never withdraw the original as a
    workaround.
@@ -20,9 +21,9 @@ invent provenance.
 
 ## Move a misfiled record
 
-A record saved under the wrong scope is moved with `memory_move`, which keeps
-its `record_id`, kind, content and history. Only servers that list
-`memory_move` have it; on others, ask the user before copying and withdrawing.
+Only when the server lists `memory_move`: a record saved under the wrong
+scope is moved with it, which keeps its `record_id`, kind, content and
+history.
 
 1. Read `memory_history`: `move_heads` and the current revision IDs are the
    expected heads.

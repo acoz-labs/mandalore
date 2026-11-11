@@ -2,6 +2,7 @@ package signetsync
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -232,5 +233,77 @@ func TestFormatOneSignetWithAMoveUpgrades(t *testing.T) {
 	gitTest(t, a.Root(), "commit", "-q", "-m", "drop move")
 	if err := s.validateCandidate(context.Background(), gitTest(t, a.Root(), "rev-parse", "HEAD")); err == nil {
 		t.Fatal("deleting a move passed as an append-only history")
+	}
+}
+
+// writeJSONFile writes a document as another clone's sync would deliver it.
+func writeJSONFile(t *testing.T, path string, v any) {
+	t.Helper()
+	b, err := json.Marshal(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, b, 0600); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// A record with a visibility conflict and a move conflict is counted once,
+// and the sync notice names moves (code review round 1, L2 and L4).
+func TestRecordWithVisibilityAndMoveConflictsCountsOnce(t *testing.T) {
+	s, a := fixture(t)
+	r, err := a.Remember(memory.Write{Kind: "fact", Scope: &homeX, Summary: "s", Body: "b", Basis: "observation", Reason: "r"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.Initialize(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	s = upgradedFixture(t, s, r.Authorship)
+	at := time.Now().UTC().Format(time.RFC3339Nano)
+	for _, to := range []memory.Scope{homeY, homeZ} {
+		m := memory.RecordMove{Version: 1, ID: memory.NewID("move"), RecordID: r.RecordID, Scope: to, Observed: []string{r.ID}, Parents: []string{}, Reason: "Moved on a clone", RecordedAt: at, Authorship: r.Authorship}
+		writeJSONFile(t, filepath.Join(s.store.Root, "memory/moves", r.RecordID, m.ID+".json"), m)
+	}
+	for range 2 {
+		e := memory.VisibilityEvent{Version: 1, ID: memory.NewID("visibility"), RecordID: r.RecordID, Action: "withdraw", Observed: []string{r.ID}, Parents: []string{}, Reason: "Withdrawn on a clone", RecordedAt: at, Authorship: r.Authorship}
+		writeJSONFile(t, filepath.Join(s.store.Root, "memory/visibility", r.RecordID, e.ID+".json"), e)
+	}
+	scopes, err := s.store.Scopes()
+	if err != nil {
+		t.Fatal(err)
+	}
+	listed := 0
+	for _, scope := range scopes {
+		listed += scope.Visibility.Conflicted
+	}
+	if listed != 2 {
+		t.Fatalf("the record is counted conflicted in %d scopes, want 2", listed)
+	}
+	if n, moves, err := s.conflicts(context.Background()); err != nil || n != 1 || moves != 1 {
+		t.Fatalf("conflicts: %d records, %d with moves, %v", n, moves, err)
+	}
+}
+
+func TestSyncNoticeNamesMoveConflicts(t *testing.T) {
+	a, first, b, second, r := sharedRecord(t)
+	move(t, first, r.RecordID, homeY, []string{r.ID}, []string{})
+	move(t, second, r.RecordID, homeZ, []string{r.ID}, []string{})
+	syncAll := func(clones ...*Synchronizer) Status {
+		var out Status
+		for _, s := range clones {
+			var err error
+			if out, err = s.Sync(context.Background(), 30*time.Second); err != nil {
+				t.Fatal(out, err)
+			}
+		}
+		return out
+	}
+	out := syncAll(a, b)
+	if out.State != "conflicted" || !strings.Contains(out.Notice, "settle conflicting moves with memory_move") {
+		t.Fatalf("notice: %s %q", out.State, out.Notice)
 	}
 }

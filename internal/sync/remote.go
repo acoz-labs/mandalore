@@ -140,7 +140,8 @@ func (s *Synchronizer) Sync(parent context.Context, timeout time.Duration) (Stat
 		}
 		out.RemoteHead, out.Delivered = out.Head, true
 		out.CheckedAt = time.Now().UTC().Format(time.RFC3339Nano)
-		out.SemanticConflicts, err = s.semanticConflicts(ctx)
+		var moves int
+		out.SemanticConflicts, moves, err = s.conflicts(ctx)
 		if err != nil {
 			return err
 		}
@@ -149,6 +150,9 @@ func (s *Synchronizer) Sync(parent context.Context, timeout time.Duration) (Stat
 		if out.SemanticConflicts > 0 {
 			out.State = "conflicted"
 			out.Notice = "Git delivery succeeded, but competing memory revisions still require an explicit superseding decision."
+			if moves > 0 {
+				out.Notice = "Git delivery succeeded, but memory conflicts still require an explicit decision: settle conflicting moves with memory_move, naming every move head, and competing revisions with a superseding correction."
+			}
 		}
 		return nil
 	})
@@ -244,14 +248,21 @@ func (s *Synchronizer) reconcile(ctx context.Context, out *Status) error {
 }
 
 func (s *Synchronizer) semanticConflicts(ctx context.Context) (int, error) {
+	n, _, err := s.conflicts(ctx)
+	return n, err
+}
+
+// conflicts counts the conflicted records, and how many of them have
+// conflicting moves.
+func (s *Synchronizer) conflicts(ctx context.Context) (int, int, error) {
 	scopes, err := s.store.Scopes()
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 	count := 0
 	for _, scope := range scopes {
 		if err := ctx.Err(); err != nil {
-			return 0, err
+			return 0, 0, err
 		}
 		if scope.Visibility != nil {
 			count += scope.Visibility.Conflicted
@@ -259,7 +270,7 @@ func (s *Synchronizer) semanticConflicts(ctx context.Context) (int, error) {
 		}
 		packet, err := s.store.Recall(memory.Query{Scope: scope.Scope, ExactScope: true, Limit: 1}, time.Now())
 		if err != nil {
-			return 0, err
+			return 0, 0, err
 		}
 		count += len(packet.Conflicts)
 	}
@@ -267,7 +278,7 @@ func (s *Synchronizer) semanticConflicts(ctx context.Context) (int, error) {
 	// count it once.
 	records, listings, err := s.store.MoveConflicts()
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
-	return count - (listings - records), nil
+	return count - (listings - records), records, nil
 }

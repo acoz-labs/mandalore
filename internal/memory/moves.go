@@ -491,16 +491,18 @@ func (s *Service) RecordScopes(recordID string) ([]Scope, error) {
 	return p.Scopes(), nil
 }
 
-// MoveConflicts counts the recallable records whose moves conflict, and how
-// many scope listings they have: each is listed as a conflict in every scope
-// its moves name. Withheld records are counted as withheld instead.
+// MoveConflicts counts the records whose moves conflict among those the
+// scopes count as conflicts, and how many scope listings they have: each is
+// counted in every scope its moves name. That is every recallable record,
+// and a visibility conflict; other withheld records are counted as
+// withheld instead.
 func (s *Store) MoveConflicts() (records, listings int, err error) {
 	_, states, err := s.graph()
 	if err != nil {
 		return 0, 0, err
 	}
 	for _, state := range states {
-		if state.Placement.Conflicted() && !state.Withheld() {
+		if state.Placement.Conflicted() && (!state.Withheld() || state.State == "visibility-conflict") {
 			records++
 			listings += len(state.Placement.Conflict)
 		}
