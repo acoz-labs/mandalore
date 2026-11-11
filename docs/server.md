@@ -273,8 +273,9 @@ plugin's hook. It returns Claude Code hook output JSON,
   injected when that match is incidental: in its body, with two or more other
   terms unmatched, or with one other term and the match a number or a generic
   word such as "number" or "week"; or in its summary, on a word the prompt
-  doesn't capitalize, with another of the prompt's terms in no record at all.
-  When the prompt names something no record holds (a word capitalized
+  doesn't capitalize, with another of the prompt's terms in no record at all
+  (a prompt's first word counts as capitalized when every other term is a
+  name, as in "Kopia or Borg?"). When the prompt names something no record holds (a word capitalized
   mid-sentence), a record must match one of its terms in its summary or
   identifiers. Otherwise a record is relevant if any of three measures clears
   its bar:

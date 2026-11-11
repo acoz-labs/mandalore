@@ -132,6 +132,10 @@ type Query struct {
 	// Names, when not nil, are the query's words written as names; only they
 	// can anchor a record (Packet.Anchor). Ranking ignores them.
 	Names []string
+	// Lead is a word the query writes with a capital at its start, where
+	// Names can't count it. A lone summary match on it is not incidental, as
+	// on a name ("Restic or Borg?"); it anchors nothing.
+	Lead string
 }
 type RevisionConflict struct {
 	RecordID  string     `json:"record_id"`
@@ -537,7 +541,7 @@ func IsFunctionWord(term string) bool { return functionWords[term] }
 // A nil query matches every candidate equally. strengths gives each content
 // score as a share of the most a record could score, which is IDF-normalized:
 // matching the query's rare terms counts for more than matching common ones.
-func rank(query []string, names map[string]bool, candidates []termIndex) (content, function, strengths, evidence, anchors []float64, incidental, titled []bool, missing []string) {
+func rank(query []string, names map[string]bool, lead string, candidates []termIndex) (content, function, strengths, evidence, anchors []float64, incidental, titled []bool, missing []string) {
 	if query == nil {
 		content = make([]float64, len(candidates))
 		for i := range content {
@@ -560,8 +564,8 @@ func rank(query []string, names map[string]bool, candidates []termIndex) (conten
 	if len(topical) == 0 {
 		topical, common = common, nil
 	}
-	content, strengths, evidence, anchors, incidental, titled, missing = bm25(topical, names, candidates)
-	function, _, _, _, _, _, _ = bm25(common, names, candidates)
+	content, strengths, evidence, anchors, incidental, titled, missing = bm25(topical, names, lead, candidates)
+	function, _, _, _, _, _, _ = bm25(common, names, lead, candidates)
 	return content, function, strengths, evidence, anchors, incidental, titled, missing
 }
 
@@ -569,7 +573,7 @@ func rank(query []string, names map[string]bool, candidates []termIndex) (conten
 // average length taken from the candidates themselves, so a term common
 // across them counts for little and a long record gains little from repeating
 // it. A candidate that matches none of the terms scores 0.
-func bm25(terms []string, names map[string]bool, candidates []termIndex) (scores, strengths, evidence, anchors []float64, incidental, inTitle []bool, missing []string) {
+func bm25(terms []string, names map[string]bool, lead string, candidates []termIndex) (scores, strengths, evidence, anchors []float64, incidental, inTitle []bool, missing []string) {
 	scores = make([]float64, len(candidates))
 	strengths = make([]float64, len(candidates))
 	evidence = make([]float64, len(candidates))
@@ -635,13 +639,14 @@ func bm25(terms []string, names map[string]bool, candidates []termIndex) (scores
 		// topics ("15 percent of 600", "Is 17 a prime number?"). A short
 		// question's one distinctive word ("Where does Unbound run?") still
 		// counts. A lone match in the summary or identifiers, on a word the
-		// prompt doesn't write as a name, is incidental when another of the
+		// prompt doesn't write as a name (or as its Query.Lead), is
+		// incidental when another of the
 		// prompt's terms is in no candidate at all: the prompt is about
 		// something the signet lacks ("What theme should we pick for a
 		// wedding?", "How do I install Redis on Ubuntu?").
 		if matched[i] == 1 && !inTitle[i] {
 			incidental[i] = len(terms) > 2 || len(terms) == 2 && (strings.Trim(lone, "0123456789.") == "" || IsGenericWord(lone))
-		} else if matched[i] == 1 && names != nil && !names[lone] {
+		} else if matched[i] == 1 && names != nil && !names[lone] && lone != lead {
 			incidental[i] = absent > 0
 		}
 	}
@@ -742,7 +747,11 @@ func (s *Store) recallHeads(q Query, p Packet, heads map[string][]Revision, stat
 			names[t] = true
 		}
 	}
-	content, function, strengths, evidence, anchors, incidental, titled, missing := rank(query, names, candidates)
+	lead := ""
+	if t := terms(q.Lead); len(t) == 1 {
+		lead = t[0]
+	}
+	content, function, strengths, evidence, anchors, incidental, titled, missing := rank(query, names, lead, candidates)
 	for _, t := range missing {
 		if names[t] {
 			p.AbsentNames = append(p.AbsentNames, t)

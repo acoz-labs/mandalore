@@ -160,6 +160,44 @@ deviation (https://github.com/acoz-labs/mandalore/pull/261#issuecomment-68031691
 - Publication still waits for the requester's private eval on the candidate
   built from the merge commit.
 
+### Code round 4: either-or questions on a name in summaries
+
+The requester's eval on the 2.5.0 candidate found an order-dependent
+either-or limit. A synthetic repro shows it: in a signet with three records
+whose summaries name "Kopia" and none naming "Borg", 5b87ef5 injects nothing
+for "Kopia or Borg?" or "Kopia vs Borg", and all three records for "Borg or
+Kopia?". The fix had to make the first two behave like the third, with every
+tuning bar met, in the one remaining code round. The work used the tuning
+split and the repro only.
+
+- **Cause.** The hook never counts a prompt's first word as a name. In
+  "Kopia or Borg?" only "Borg" is one. The records match only "Kopia", in
+  their summaries, so the lone-summary-word rule, which exempts names, finds
+  a lone summary match beside a word no record holds and drops every record.
+  In "Borg or Kopia?", "Kopia" sits mid-sentence and is a name.
+- **Rejected first attempt: every capitalized word exempts.** That fixed the
+  repro, but the exemption then also covered a sentence-initial imperative:
+  "Format a date as 24-hour time in JavaScript." (a tuning no-answer prompt)
+  injected 974 bytes instead of 460.
+- **Rejected second attempt: the first word is a name when every other term
+  is one.** That fixed the repro with no tuning difference, but it made the
+  first word count as an absent name too. "Neovim or Helix?" then needed a
+  summary match, and the reversed body-only shape fell from 8 of 8 to 1 of 8.
+- **Fix.** The prompt's first word, when capitalized and every other term is
+  a name, is passed to recall as `Query.Lead`. A lone summary match on it
+  isn't incidental, as on a name. It anchors nothing and never counts as an
+  absent name.
+- **Results.** The repro injects 3 records for "Kopia or Borg?", "Borg or
+  Kopia?" and "Kopia vs Borg" (5b87ef5: 0, 3, 0). The body-only shape is
+  unchanged in every phrasing measured, and `either_or_limit` stays at 0 of 8.
+  The tuning split's per-prompt report has 0 differences from 5b87ef5, and
+  every replay row is identical. Evidence: `docs/evidence/2.5/either-or.md`.
+- **Tests.** `TestMemoryContextEitherOrOnASummaryName` asserts the 3 records
+  in all three phrasings and fails on 5b87ef5. `TestEitherOrOrders` asserts
+  the reversed body-only shape at 8 of 8, which the second attempt would
+  have failed. `TestContextLead` covers when the first word counts.
+- VERSION stays 2.5.0: the release isn't published yet.
+
 ### What changed while building
 
 Each change was decided on the tuning split, before the held-out run.
