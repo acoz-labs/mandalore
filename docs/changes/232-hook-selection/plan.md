@@ -83,22 +83,69 @@ at code review. This plan doesn't use or look for them.
 - **Relevance rules** (`internal/memory/memory.go`, `bm25` and
   `recallHeads`; `internal/memory` exports stay hook-agnostic):
   - *Generic word (item 3).* A record whose only match with the prompt is
-    one body word from a fixed list of common English words is incidental
-    whenever the prompt has another content term. The list is Ogden's Basic
-    English (850 words, 1930), a bare list of everyday words, credited in
-    `NOTICE`. It is fixed before any run, and no word is added or removed by
-    looking at evaluation outcomes. A word counts when it or its base under
-    the existing inflection rule (-s, -es, -ed, -ing) is on the list.
-    "Is 17 a prime number?" ("number", in the mail signature's body) and
-    "How many days are in 30 weeks?" ("day", "week") then inject nothing. The
-    eight plain short questions of that two-term shape should keep their
-    answers, because their matched word is distinctive ("Sungold",
-    "Postgres", "burst", "eu-central", "Zsh", "metric", "cameras"), or the
-    prompt's other word is a stop word ("Are short flags okay?"). Step 1
-    checks each of the eight against the list before the rule is written;
-    one that would be lost is reported in the PR, not fixed by editing the
-    list. The 2.1.0 rules stay: a lone body match on a bare number, or
-    with two or more other terms unmatched, is still incidental.
+    one body word from the generic-word list is incidental whenever the
+    prompt has another content term. A word counts when it or its base under
+    the existing inflection rule (-s, -es, -ed, -ing) is on the list. On a
+    prompt of three or more terms a lone body match is already incidental
+    under 2.1.0, so the rule changes only two-term prompts. The 2.1.0 rules
+    stay: a lone body match on a bare number, or with two or more other
+    terms unmatched, is still incidental.
+  - *The generic-word list.* It is written for this change, under the
+    repository's own licence, and kept in one file
+    (`internal/memory/generic_words.go`), with no third-party word list and
+    no `NOTICE` entry. The rule for what goes on it is fixed here, before
+    any run:
+    - a word is on the list only if it is a common English noun in one of
+      three closed classes: units of time; numbers and quantity words; and
+      general nouns of kind, part and form;
+    - every member of each class below is on the list, and nothing else.
+      No technical term, proper name (no weekday or month names), adjective
+      or verb is on it, and no word that is already a stop word or a
+      function word;
+    - the file holds exactly the words below, and adding a word later
+      means changing this rule in a plan, not editing the file to fit an
+      outcome.
+
+    The list, in full (50 words):
+    - *Time:* second, minute, hour, day, week, month, year, decade,
+      century, morning, afternoon, evening, night, weekend, tomorrow,
+      yesterday, time.
+    - *Numbers and quantity:* number, amount, count, total, size, percent,
+      half, quarter, dozen, hundred, thousand, million, billion, pair,
+      couple, lot.
+    - *Kind, part and form:* thing, kind, type, sort, part, piece, rule,
+      case, example, fact, idea, point, place, name, word, list, form.
+
+    ("way" is a function word already, and "today" a hook stop word.)
+  - *How 35 of 38 plain short questions holds (triage 2b).* The rule only
+    reaches a two-term prompt whose record matches one body word on the
+    list. A rough check of all 38 plain short questions against this list,
+    with the stop words above, finds none whose answer it drops. The eight
+    of that two-term shape match on "Postgres", "cameras", "burst",
+    "flags", "Sungold", "eu-central", "metric" and "Zsh", none of which is
+    on the list. In "Are short flags okay?", "Is eu-central fine?" and
+    "Metric, right?" the other word becomes a stop word, so they're
+    one-term prompts the rule doesn't touch. "What's the burst allowance?"
+    keeps its hit, and "Are the cameras isolated?", which misses today, isn't
+    barred from coming back. The same check over the 88 bare tuning case
+    phrasings finds no expected record dropped. (The rough check also read
+    the 44 held-out variant phrasings, lexically only, with no recall or
+    hook run; `docs/retrieval.md`'s exposure note will say so.) Step 1
+    repeats the check in Go against the real tokenizer for all 38 short
+    questions and all 88 tuning case phrasings, and posts the result in the
+    PR before the rule is written. If it finds one, the rule as written fails 2b. Step 1 then stops and
+    reports to the lead, without editing the list.
+  - *How the triage 3 fixture gets 0 injections.* Each `generic_two_word`
+    prompt's shared word is on the list (see [below](#how-generic_two_word-is-chosen)),
+    so its record's lone body match is incidental by construction, in both
+    halves of the fixture. "Is 17 a prime number?" ("17" has under three
+    characters, so its terms are "prime" and "number") matches only the
+    mail signature's body on "number", which is on the list; the check
+    finds that record dropped and no other record matching. The fixture's
+    assertion is 0 of 12. A prompt where one record matches both words isn't
+    a single generic-word match. "How many days are in 30 weeks?" is
+    such a prompt (the retention and token-lifetime notes match both), so
+    it stays in `no_memory`, not in this fixture, and is a stated limit.
   - *Lone summary word (item 1).* A record that matches just one of the
     prompt's content terms, in its summary or identifiers but not as a name
     the prompt capitalizes, is incidental when two or more of the prompt's
@@ -161,8 +208,7 @@ at code review. This plan doesn't use or look for them.
 - **Docs**: `docs/retrieval.md` (hook selection rules, evaluation set,
   floors, curve and the new numbers, held-out exposure for this change),
   `docs/server.md` (the `memory_context` default, if it changes),
-  `docs/releases/2.5.0.md`, `NOTICE` (the word list's credit), and
-  `VERSION` to 2.5.0.
+  `docs/releases/2.5.0.md`, and `VERSION` to 2.5.0.
 - **Hook replay** (`docs/evidence/2.5/`): the replay script, its outputs
   and `hook-bytes.md` ([below](#bytes-per-prompt-and-the-2048-byte-default)).
 - Not changed: signet layout, intents, sync, the state file, OAuth, and
@@ -172,14 +218,15 @@ at code review. This plan doesn't use or look for them.
 
 The 12 prompts are written before any rule runs on them, and none is
 answered by a record. Each has two content terms after stop words. One of
-them is a word on the common-English list that occurs in some record's body
-but not its summary. The prompts come in two halves:
+them is a word on the generic-word list that occurs in some record's body
+but not its summary, and no record matches both terms. List words that
+qualify on today's signet include "time", "point", "minute", "week",
+"month", "list", "day" and "year". The prompts come in two halves:
 
 - 6 whose other term is absent from the signet ("Is 17 a prime number?"
   shape);
 - 6 whose other term is in the signet, but not in the record the generic
-  word matches ("How many days are in 30 weeks?" shape, where both words
-  are elsewhere in the signet).
+  word matches.
 
 The matched words come from at least 4 different records, and no prompt
 reuses a word from `no_memory` or `collisions`. A shape the rule can't
@@ -216,8 +263,13 @@ confirmation after the server upgrade.
   on purpose.
 - **Plugin README: not in this PR.** It states the byte default and is
   already stale ("1.5 KB by default" where the default is 2048). That
-  correction, and any new default, goes in the post-release record PR, which
-  is subject to the plugin rule then.
+  correction, and any new default, goes in the post-release record PR. That
+  PR touches a plugin file, so while #229 is open it merges only after the
+  requester confirms the live server runs the version whose default the
+  README states. That holds even if only "1.5 KB" changes to "2048", and
+  the #250 exception doesn't cover it, since a byte figure isn't wording
+  gated on a listed tool. It needs no `plugin.json` bump, because Claude
+  Code doesn't load the README.
 
 ### Bytes per prompt and the 2048-byte default
 
@@ -286,6 +338,10 @@ prompt set and session grouping below are fixed before any number is taken.
 
 **The 800-byte cap** (triage 4d) is judged on the 2048 run with session IDs,
 the way the hook runs: the average over all 208 prompts must be at most 800.
+`hook-bytes.md` and the PR report the no-session average next to that
+judged number, so the share de-duplication removes is visible. For scale,
+the reviewer's in-process run of this layout on 2.4.0 code (round 2, not
+the replay) gave 339 bytes with session IDs and 627 without.
 If it is over 800:
 
 1. Selection changes come first: the relative cut and the packing of
@@ -334,7 +390,9 @@ only after they report back.
    records moves BM25 statistics, so the 2.4.0 rates are re-measured on the
    new signet and the before column uses them. A drop under a triage floor
    from the fixture alone is fixed in the fixture's wording, never by
-   lowering the floor.
+   lowering the floor. Before the generic-word rule is written, run the
+   list check on all 38 plain short questions and the 88 tuning case
+   phrasings, and post it ([above](#files-that-change)).
 2. **Question clauses and stop words** (item 2). Unit tests, then the
    evaluation; log the curve.
 3. **Generic word rule** (item 3), then **lone summary word rule** (item
@@ -361,13 +419,14 @@ Each step leaves `bin/ci` passing and the branch reviewable.
   plain short-question floor, the per-wrapper floor, the per-case
   comparison against 2.4.0 (each case that loses its answer is listed in
   the PR), and the requester's private eval before publication. The
-  generic-word list is fixed in advance and holds only everyday words, so a
-  distinctive answer word can't be on it, but a record whose answer hinges
-  on an everyday body word ("Which day is bin night?") can lose it. That
-  shape is a stated limit in `docs/retrieval.md`.
+  generic-word list is fixed in advance by its class rule and holds only
+  generic nouns, so a distinctive answer word can't be on it. A two-term
+  question whose answer hinges on a generic body word ("Which night is bin
+  night?") can lose it. That shape is a stated limit in
+  `docs/retrieval.md`.
 - **Overfitting the tuning split.** Each new stop word must occur in a
-  tuning set other than `filler_short`, the generic-word list is fixed
-  before any run, every rule is chosen on the tuning split alone, held out
+  tuning set other than `filler_short`, the generic-word list follows a
+  class rule fixed before any run, every rule is chosen on the tuning split alone, held out
   runs once per round after freezing, and the reviewer's sealed batches use
   wrappers and prompts this plan hasn't seen. Clauses are chosen over a
   longer stop-word list for that reason.
