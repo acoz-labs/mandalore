@@ -121,9 +121,10 @@ was chosen on the tuning split alone.
   incidental when another of the prompt's terms is in no record at all: the
   prompt is about something the signet lacks. A prompt's first word counts as
   capitalized here when every other term is a name ("Kopia or Borg?", "Kopia
-  vs Borg"), so those inject Kopia's records as "Borg or Kopia?" does. The
-  first word still anchors nothing and never counts as a name the signet
-  lacks. "How do I install Redis on
+  vs Borg"). So when Kopia is in several records' summaries, those inject its
+  records as "Borg or Kopia?" does. The first word still anchors nothing and
+  never counts as a name the signet lacks, so a prompt whose answer rests on
+  a name's anchor can still depend on order (see the known limits). "How do I install Redis on
   Ubuntu?" and "What theme should we pick for a wedding?" get nothing; "Which
   editor do I use?" (one term) and "Does Beacon work at a wedding?" (a name)
   still inject.
@@ -418,9 +419,15 @@ vs Y", "Should I use X or Y?" and "Do we use X or Y for this?" get nothing,
 while "Y or X?", "X?" and "What about X?" keep the answer, because a word that
 starts the prompt isn't a name. 2.4.0 answers all 8 of the evaluation's
 `either_or_limit` questions; 2.5.0 answers none, and `TestEitherOrOrders`
-asserts all 8 reversed. When X is in records' summaries instead, every
-order injects X's records (see
-[2.5.0](#250-filler-collisions-generic-words-and-newer-decisions)). A two-word prompt whose answer hinges on a generic body word
+asserts all 8 reversed. When X is in several records' summaries instead, a
+two-name "X or Y?" or "X vs Y" injects X's records as "Y or X?" does (see
+[2.5.0](#250-filler-collisions-generic-words-and-newer-decisions)). The
+first word still anchors nothing, so where a name's record rests on its
+anchor, order can still matter. With three names, "Beacon or Cortana or
+Siri?" gets nothing while "Siri or Cortana or Beacon?" gets the Beacon
+record. With two, "Beacon or Cortana?" gets 1 record while "Cortana or
+Beacon?" gets 2. Beacon is in one record's summary, and both orders behave
+as on 5b87ef5. A two-word prompt whose answer hinges on a generic body word
 ("Which night is bin night?") gets nothing, and a prompt whose shared word is
 generic but in a summary ("What year is it?") isn't caught by the
 generic-word rule. Two decisions on one subject whose wording differs more

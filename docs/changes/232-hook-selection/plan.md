@@ -162,15 +162,13 @@ deviation (https://github.com/acoz-labs/mandalore/pull/261#issuecomment-68031691
 
 ### Code round 4: either-or questions on a name in summaries
 
-The requester's private eval on the 2.5.0 candidate met its numeric gate but
-found a wider either-or loss on real memory. A bare "X or Y?" or "X vs Y",
-where X is a name in several record summaries and Y a name the memory lacks,
-went from 3–4 injected records on 2.4.0 to none on 2.5.0, while "Y or X?"
-still injected 3. The requester's rule: fix it in the one remaining code
-round only if "X or Y?" and "X vs Y" then behave like "Y or X?" with every
-tuning bar met; otherwise publish 5b87ef5 as it is. The work used the tuning
-split only, with a synthetic repro: three records whose summaries name
-"Kopia" and none naming "Borg".
+The requester's eval on the 2.5.0 candidate found an order-dependent
+either-or limit. A synthetic repro shows it: in a signet with three records
+whose summaries name "Kopia" and none naming "Borg", 5b87ef5 injects nothing
+for "Kopia or Borg?" or "Kopia vs Borg", and all three records for "Borg or
+Kopia?". The fix had to make the first two behave like the third, with every
+tuning bar met, in the one remaining code round. The work used the tuning
+split and the repro only.
 
 - **Cause.** The hook never counts a prompt's first word as a name. In
   "Kopia or Borg?" only "Borg" is one. The records match only "Kopia", in
