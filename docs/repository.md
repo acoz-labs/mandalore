@@ -69,6 +69,11 @@ Document any required deviation in `docs/development.md`.
   file, because `batvault exec` swallows the wrapped command's stdout. On
   2.1.2 the receipt was lost that way and had to be regenerated with
   `bin/release-publication verify`.
+- Set `GH_CONFIG_DIR` inside the `batvault exec` wrapper, not only in the
+  calling shell: the wrapped environment doesn't carry it, and the publisher
+  then refuses before any write with "explicit maintainer credential
+  required" (2.3.0's first attempt). Check that no tag or draft exists, fix
+  the wrapper, then rerun.
 
 ## Conventions
 
