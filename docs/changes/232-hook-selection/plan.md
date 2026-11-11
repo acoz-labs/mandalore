@@ -134,6 +134,17 @@ The candidate injected on 6 of the 36 (2.4.0: 13; no new prompt): plain 1,
 coverage 3, evidence 1, summary 1. The three coverage-path injections are
 unchanged from 2.4.0.
 
+### Code review round 2
+
+The review found that the names rule also costs "X or Y?" questions their
+answer, when X is only in the answer's body and Y is a name no record holds
+("Restic or Borg?"). The lead's decision: no rule change. The shape is
+named as a known loss in the release notes and the retrieval guide, and a
+new tuning set, `either_or_limit` (8 fresh prompts, none the reviewer's),
+asserts it at its current count, 0 of 8 (2.4.0: 8 of 8). The newer-first
+switch now turns off the hook's half too, so the on/off test compares both;
+production behaviour is unchanged, and the tuning bars are the same.
+
 ### Second deviation: shipping on the second condition
 
 The owner decided, through the requester, to ship on the second condition

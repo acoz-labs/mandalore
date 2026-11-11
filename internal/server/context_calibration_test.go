@@ -89,6 +89,12 @@ func assertEvaluation(t *testing.T, r evalReport) {
 			t.Errorf("%s: %d, want %s %d", c.name, c.got, map[bool]string{true: "at most", false: "at least"}[c.atMost], c.want)
 		}
 	}
+	// A stated limit, tracked at its count so a change that fixes or worsens
+	// it shows: the names rule costs "X or Y?" questions their answer when X
+	// is only in the answer's body and Y is a name no record holds.
+	if n := top3(r.EitherOr); n != 0 {
+		t.Errorf("\"X or Y?\" limit prompts with the answer in memory_context's top 3: %d of %d, tracked at 0; update the limit in docs/retrieval.md and this tripwire", n, len(r.EitherOr))
+	}
 	for _, n := range r.Newer {
 		if n.Recall != 1 || n.Context != 1 {
 			t.Errorf("newer decision for %q ranks %d in memory_recall and %d in memory_context, want first in both", n.Prompt, n.Recall, n.Context)

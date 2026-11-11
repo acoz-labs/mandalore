@@ -10,7 +10,9 @@ import "time"
 const subjectSummaryOverlap, subjectBodyOverlap = 2.0 / 3, 0.3
 
 // RankNewerFirst puts the newer of two records on one subject directly ahead
-// of the older in recall. Tests turn it off to show what it changes.
+// of the older in recall, and reports the pairs (Packet.Newer) so the hook
+// brings the newer with the older. Tests turn it off to show what both
+// halves change.
 var RankNewerFirst = true
 
 // OnOneSubject reports whether two records are on one subject: same scope,
@@ -77,6 +79,9 @@ func newer(a, b Revision) bool {
 // could return), matching the query or not, so a caller that keeps the older
 // can bring the newer.
 func (s *Store) newerFirst(ranked, pool []Revision) map[string]Revision {
+	if !RankNewerFirst {
+		return nil
+	}
 	type group struct {
 		scope Scope
 		kind  string
@@ -97,9 +102,6 @@ func (s *Store) newerFirst(ranked, pool []Revision) map[string]Revision {
 				}
 			}
 		}
-	}
-	if !RankNewerFirst {
-		return pairs
 	}
 	for i := 0; i < len(ranked); i++ {
 		n, ok := pairs[ranked[i].ID]

@@ -56,6 +56,12 @@ type Evaluation struct {
 	NamedGuard struct {
 		Tune []EvaluationPrompt `json:"tune"`
 	} `json:"named_guard"`
+	// EitherOrLimit holds "X or Y?" questions whose X is only in the
+	// answer's body and whose Y is a name no record holds. The names rule
+	// costs them their answer, a stated limit tracked at its current count.
+	EitherOrLimit struct {
+		Tune []EvaluationPrompt `json:"tune"`
+	} `json:"either_or_limit"`
 	// NewerDecisions holds queries that match both of two same-scope
 	// decisions on one subject, of which Expect is the newer, and queries
 	// only the older answers.

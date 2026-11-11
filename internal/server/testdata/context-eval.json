@@ -1,5 +1,5 @@
 {
- "about": "Synthetic evaluation set for memory_context and memory_recall (#227). Every record, name and host is invented; hosts use memory.example.com. A record's scope of kind signet is the signet created at load time. history lists earlier revisions, oldest first, that the record's current revision supersedes. Each case expects one record. question and paraphrase are tuning phrasings; variant is held out. memory_context is evaluated on each phrasing alone and inside every wrapper. Held out: variant, wrappers.held_out and no_memory.held_out, which were written for round 1 of review and never used for a tuning decision. no_memory prompts should inject nothing; session is a scripted 20-turn session for injected bytes per prompt. short.tune holds short questions whose answer hinges on one distinctive word, mostly in a record's body; collisions.tune holds prompts no record answers that each share a word with some record. Both were written for round 4 of review and are tuning only. filler_short holds short questions in the wrapper #232 names; generic_two_word holds two-word prompts no record answers whose only match with any record is a generic word in a body, and generic_guard prompts that share a generic word with some record and a distinctive word with their answer; newer_decisions holds queries over two pairs of same-scope decisions on one subject, the newer of which should rank first, and older_only queries that only the older answers. named_guard holds questions a record answers that also name something no record holds (\"Which editor do I use when writing Rust?\"). All five were written for #232 and are tuning only.",
+ "about": "Synthetic evaluation set for memory_context and memory_recall (#227). Every record, name and host is invented; hosts use memory.example.com. A record's scope of kind signet is the signet created at load time. history lists earlier revisions, oldest first, that the record's current revision supersedes. Each case expects one record. question and paraphrase are tuning phrasings; variant is held out. memory_context is evaluated on each phrasing alone and inside every wrapper. Held out: variant, wrappers.held_out and no_memory.held_out, which were written for round 1 of review and never used for a tuning decision. no_memory prompts should inject nothing; session is a scripted 20-turn session for injected bytes per prompt. short.tune holds short questions whose answer hinges on one distinctive word, mostly in a record's body; collisions.tune holds prompts no record answers that each share a word with some record. Both were written for round 4 of review and are tuning only. filler_short holds short questions in the wrapper #232 names; generic_two_word holds two-word prompts no record answers whose only match with any record is a generic word in a body, and generic_guard prompts that share a generic word with some record and a distinctive word with their answer; newer_decisions holds queries over two pairs of same-scope decisions on one subject, the newer of which should rank first, and older_only queries that only the older answers. named_guard holds questions a record answers that also name something no record holds (\"Which editor do I use when writing Rust?\"). either_or_limit holds \"X or Y?\" questions whose X is only in the answer's body and whose Y is a name no record holds, a shape the names rule costs its answer (a stated limit, tracked so a change to it shows). All six were written for #232 and are tuning only.",
  "wrappers": {
   "tune": [
    "{q} Answer from context you already have; don't call tools.",
@@ -463,6 +463,42 @@
    {
     "prompt": "When is the Q4 code freeze, before the Berlin offsite?",
     "expect": "record-eval-release-freeze"
+   }
+  ]
+ },
+ "either_or_limit": {
+  "tune": [
+   {
+    "prompt": "Helix or Neovim?",
+    "expect": "record-eval-editor"
+   },
+   {
+    "prompt": "Sungold or Brandywine?",
+    "expect": "record-eval-orchard-tomatoes"
+   },
+   {
+    "prompt": "Unbound or Pi-hole?",
+    "expect": "record-eval-dns-resolver"
+   },
+   {
+    "prompt": "Is it goose or Flyway?",
+    "expect": "record-eval-tidepool-migrations"
+   },
+   {
+    "prompt": "SvelteKit or Nuxt?",
+    "expect": "record-eval-orchard-stack"
+   },
+   {
+    "prompt": "Zsh or Fish?",
+    "expect": "record-eval-default-shell"
+   },
+   {
+    "prompt": "IPP or AirPrint?",
+    "expect": "record-eval-office-printer"
+   },
+   {
+    "prompt": "NATS or Kafka?",
+    "expect": "record-eval-tidepool-task-queue-2"
    }
   ]
  },

@@ -163,7 +163,7 @@ answers each share a word with some record ("How do I install Redis on
 Ubuntu?"); both were added in round 4 of #227 review. A scripted 20-turn
 session measures injected bytes.
 
-#232 added five tuning sets and 4 records (254 in all):
+#232 added six tuning sets and 4 records (254 in all):
 
 - `filler_short`: 18 short questions over existing records, each in the
   issue's wrapper ("Before we start, remind me: {q} One line is fine.").
@@ -175,7 +175,12 @@ session measures injected bytes.
   keep it.
 - `named_guard`: 10 questions a record answers that also name something no
   record holds ("Which editor do I use when writing Rust?"), added in #232's
-  code round 1 before the names rule ran on them.
+  code round 1 before the names rule ran on them. `either_or_limit`: 8 "X or
+  Y?" questions whose X is only in the answer's body and whose Y is a name no
+  record holds ("Helix or Neovim?"), added in code review round 2. The names
+  rule costs them their answer, so the set is a stated-limit tripwire,
+  asserted at its count (0 of 8), so a change that fixes or worsens it
+  shows.
 - `newer_decisions`: two pairs of same-scope decisions on one subject
   ("Tidepool task queue", "Spam threshold"), 6 queries matching both, and 2
   that only the older answers.
@@ -253,6 +258,7 @@ between two builds.
 | Collision prompts injected | tuning (24) | 23 | 7 | 7 | 2 |
 | Generic two-word prompts injected | tuning (12) | | 8 (2.4.0) | | 0 |
 | Named guard prompts, answer in the hook's top 3 | tuning (10) | | 9 (2.4.0) | | 8 |
+| "X or Y?" limit prompts, answer in the hook's top 3 | tuning (8) | | 8 (2.4.0) | | 0 |
 | Newer decision first, recall / hook | tuning (6) | | 0 / 0 (2.4.0) | | 6 / 6 |
 | Injected bytes per prompt, 20-turn session | | 1030 | 572 (353 with `session`) | 594 | 560 (355 with `session`) |
 | Warm p95, 250 records | | | 12 ms | | 15 ms (254 records) |
@@ -400,7 +406,11 @@ doesn't). A question that names something no record holds can lose its
 answer when its one matched word is in the answer's summary: 2 of the 10
 named guard prompts, "Which editor do I use when writing Rust?" (which 2.4.0
 misses too) and "Which shell do I use on my MacBook?". They have the shape of
-"How do I install Redis on Ubuntu?". A two-word prompt whose answer hinges on a generic body word
+"How do I install Redis on Ubuntu?". An "X or Y?" question whose X is only
+in the answer's body and whose Y is a name no record holds ("Restic or
+Borg?", "Postgres or MySQL?") gets nothing: the name is absent and the
+answer isn't matched in its summary. 2.4.0 answers all 8 of the evaluation's
+`either_or_limit` questions; 2.5.0 answers none. A two-word prompt whose answer hinges on a generic body word
 ("Which night is bin night?") gets nothing, and a prompt whose shared word is
 generic but in a summary ("What year is it?") isn't caught by the
 generic-word rule. Two decisions on one subject whose wording differs more
