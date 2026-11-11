@@ -1,0 +1,18 @@
+{
+  "schema_version": 2,
+  "id": "event-b881cb206630ad776916a41480213f45",
+  "kind": "outcome",
+  "summary": "Synthetic 2.2.0 journal entry",
+  "recorded_at": "2026-11-11T13:43:32.689366Z",
+  "authorship": {
+    "device_id": "device-79ca82776f3b8200769faebde7955856",
+    "actor": "Synthetic actor",
+    "harness": "test",
+    "model": null,
+    "session_id": null
+  },
+  "scope": {
+    "kind": "project",
+    "id": "copper-finch"
+  }
+}

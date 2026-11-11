@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "label-a27315dc7bab20afa791cfc710d29657",
+  "scope": {
+    "kind": "project",
+    "id": "copper-finch"
+  },
+  "name": "Copper Finch",
+  "description": "The synthetic Copper Finch project and its deploys.",
+  "recorded_at": "2026-11-11T13:43:32.663943Z",
+  "authorship": {
+    "device_id": "device-79ca82776f3b8200769faebde7955856",
+    "actor": "Synthetic actor",
+    "harness": "test",
+    "model": null,
+    "session_id": null
+  },
+  "supersedes": [],
+  "change_reason": "Synthetic fixture"
+}

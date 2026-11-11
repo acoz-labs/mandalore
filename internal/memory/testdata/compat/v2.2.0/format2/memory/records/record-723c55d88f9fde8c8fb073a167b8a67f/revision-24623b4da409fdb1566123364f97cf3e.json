@@ -1,0 +1,33 @@
+{
+  "visibility_refs": [],
+  "schema_version": 2,
+  "id": "revision-24623b4da409fdb1566123364f97cf3e",
+  "record_id": "record-723c55d88f9fde8c8fb073a167b8a67f",
+  "kind": "procedure",
+  "scope": {
+    "kind": "project",
+    "id": "copper-finch"
+  },
+  "summary": "Deploy the synthetic service",
+  "body": "Run the deploy script from the example host.",
+  "sensitivity": "private",
+  "volatility": "drift-prone",
+  "recorded_at": "2026-11-11T13:43:32.987627Z",
+  "effective_from": "2026-11-11T13:43:32.987627Z",
+  "authorship": {
+    "device_id": "device-88585feb7531edb4d16569354824d4b2",
+    "actor": "Synthetic actor",
+    "harness": "test",
+    "model": null,
+    "session_id": null
+  },
+  "evidence": {
+    "basis": "user-direction",
+    "confidence": "medium",
+    "source_refs": [
+      "source-d78bcc00bd24f32df81bbcfe051729ea"
+    ]
+  },
+  "supersedes": [],
+  "change_reason": "Synthetic fixture"
+}

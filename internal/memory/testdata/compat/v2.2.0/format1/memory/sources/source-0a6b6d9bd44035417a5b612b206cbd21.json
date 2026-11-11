@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "id": "source-0a6b6d9bd44035417a5b612b206cbd21",
+  "kind": "observation",
+  "summary": "Synthetic fixture",
+  "device_id": "device-79ca82776f3b8200769faebde7955856",
+  "recorded_at": "2026-11-11T13:43:32.524347Z"
+}

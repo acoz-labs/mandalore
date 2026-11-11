@@ -1,0 +1,18 @@
+{
+  "schema_version": 2,
+  "id": "event-ce93c5e5ad30c6306b3ad9c56e503afc",
+  "kind": "outcome",
+  "summary": "Synthetic 2.2.0 journal entry",
+  "recorded_at": "2026-11-11T13:43:33.207741Z",
+  "authorship": {
+    "device_id": "device-88585feb7531edb4d16569354824d4b2",
+    "actor": "Synthetic actor",
+    "harness": "test",
+    "model": null,
+    "session_id": null
+  },
+  "scope": {
+    "kind": "task",
+    "id": "zebra-task"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "schema_version": 2,
+  "mode": "canon",
+  "branch": "main",
+  "source_signet_id": "signet-synthetic-canon",
+  "id": "registration-e6216b73acde490148ca97d89f191a2d",
+  "foundling_id": "foundling-963640c7c050098d3f048a9625b467aa",
+  "name": "Canon reference",
+  "description": "Synthetic canon foundling",
+  "source": {
+    "kind": "git",
+    "locator": "https://github.com/example/canon.git"
+  },
+  "pin": {
+    "algorithm": "git-sha1",
+    "value": "0000000000000000000000000000000000000001"
+  },
+  "state": "active",
+  "recorded_at": "2026-11-10T20:05:54.747348Z",
+  "authorship": {
+    "device_id": "device-ee75513f454ef35fd12cacc5e2259c0b",
+    "actor": "Synthetic actor",
+    "harness": "cli",
+    "model": null,
+    "session_id": null
+  },
+  "supersedes": [],
+  "change_reason": "Synthetic fixture"
+}

@@ -1,0 +1,33 @@
+{
+  "visibility_refs": [],
+  "schema_version": 2,
+  "id": "revision-dc540a481a2c181a0f887679c76cee0b",
+  "record_id": "record-6af961c9eb46bb32669ae588b91ff5d7",
+  "kind": "decision",
+  "scope": {
+    "kind": "task",
+    "id": "zebra-task"
+  },
+  "summary": "Zebra task uses the deploy checklist",
+  "body": "Follow the checklist before each deploy.",
+  "sensitivity": "private",
+  "volatility": "drift-prone",
+  "recorded_at": "2026-11-11T13:43:33.065155Z",
+  "effective_from": "2026-11-11T13:43:33.065155Z",
+  "authorship": {
+    "device_id": "device-88585feb7531edb4d16569354824d4b2",
+    "actor": "Synthetic actor",
+    "harness": "test",
+    "model": null,
+    "session_id": null
+  },
+  "evidence": {
+    "basis": "user-direction",
+    "confidence": "medium",
+    "source_refs": [
+      "source-f7e0df8fdc6bcc3191d769ad14e8bf2e"
+    ]
+  },
+  "supersedes": [],
+  "change_reason": "Synthetic fixture"
+}

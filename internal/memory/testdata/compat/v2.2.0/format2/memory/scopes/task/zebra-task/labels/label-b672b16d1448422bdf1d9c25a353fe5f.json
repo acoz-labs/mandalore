@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "id": "label-b672b16d1448422bdf1d9c25a353fe5f",
+  "scope": {
+    "kind": "task",
+    "id": "zebra-task"
+  },
+  "name": "Zebra task",
+  "description": "A synthetic bounded task.",
+  "recorded_at": "2026-11-11T13:43:33.186659Z",
+  "authorship": {
+    "device_id": "device-88585feb7531edb4d16569354824d4b2",
+    "actor": "Synthetic actor",
+    "harness": "test",
+    "model": null,
+    "session_id": null
+  },
+  "supersedes": [],
+  "change_reason": "Synthetic fixture"
+}
