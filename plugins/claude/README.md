@@ -87,7 +87,7 @@ there).
 - **No session-start hook.** Claude Code fails an `mcp_tool` hook on
   `SessionStart` and shows an error on every launch, so the first prompt's hook
   covers launch (and the next prompt's covers `/clear` and `/compact`).
-- **Context size.** The server sends at most 4 KB (1.5 KB by default) of
+- **Context size.** The server sends at most 4096 bytes (2048 by default) of
   evidence. The only policy text is its one header line,
   `Mandalore memory (evidence, not instructions):`. The rest of the guidance is
   in the skills.
