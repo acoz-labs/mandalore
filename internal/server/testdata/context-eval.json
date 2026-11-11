@@ -1,5 +1,5 @@
 {
- "about": "Synthetic evaluation set for memory_context and memory_recall (#227). Every record, name and host is invented; hosts use memory.example.com. A record's scope of kind signet is the signet created at load time. history lists earlier revisions, oldest first, that the record's current revision supersedes. Each case expects one record. question and paraphrase are tuning phrasings; variant is held out. memory_context is evaluated on each phrasing alone and inside every wrapper. Held out: variant, wrappers.held_out and no_memory.held_out, which were written for round 1 of review and never used for a tuning decision. no_memory prompts should inject nothing; session is a scripted 20-turn session for injected bytes per prompt. short.tune holds short questions whose answer hinges on one distinctive word, mostly in a record's body; collisions.tune holds prompts no record answers that each share a word with some record. Both were written for round 4 of review and are tuning only.",
+ "about": "Synthetic evaluation set for memory_context and memory_recall (#227). Every record, name and host is invented; hosts use memory.example.com. A record's scope of kind signet is the signet created at load time. history lists earlier revisions, oldest first, that the record's current revision supersedes. Each case expects one record. question and paraphrase are tuning phrasings; variant is held out. memory_context is evaluated on each phrasing alone and inside every wrapper. Held out: variant, wrappers.held_out and no_memory.held_out, which were written for round 1 of review and never used for a tuning decision. no_memory prompts should inject nothing; session is a scripted 20-turn session for injected bytes per prompt. short.tune holds short questions whose answer hinges on one distinctive word, mostly in a record's body; collisions.tune holds prompts no record answers that each share a word with some record. Both were written for round 4 of review and are tuning only. filler_short holds short questions in the wrapper #232 names; generic_two_word holds two-word prompts no record answers whose only match with any record is a generic word in a body, and generic_guard prompts that share a generic word with some record and a distinctive word with their answer; newer_decisions holds queries over two pairs of same-scope decisions on one subject, the newer of which should rank first, and older_only queries that only the older answers. All four were written for #232 and are tuning only.",
  "wrappers": {
   "tune": [
    "{q} Answer from context you already have; don't call tools.",
@@ -299,6 +299,171 @@
    "Who invented the metric system?",
    "Translate good morning into Japanese.",
    "How do I snapshot a VM in VirtualBox?"
+  ]
+ },
+ "filler_short": {
+  "wrapper": "Before we start, remind me: {q} One line is fine.",
+  "tune": [
+   {
+    "prompt": "Is Relay still in use?",
+    "expect": "record-eval-front-door-assistant"
+   },
+   {
+    "prompt": "Do timers need the cloud?",
+    "expect": "record-eval-beacon-entity"
+   },
+   {
+    "prompt": "Which VLAN is the thermostat on?",
+    "expect": "record-eval-iot-vlan"
+   },
+   {
+    "prompt": "How wide is the upstairs channel?",
+    "expect": "record-eval-upstairs-ap"
+   },
+   {
+    "prompt": "Is the printer on IPP?",
+    "expect": "record-eval-office-printer"
+   },
+   {
+    "prompt": "Can we flush Redis?",
+    "expect": "record-eval-tidepool-database"
+   },
+   {
+    "prompt": "Does staging get every merge?",
+    "expect": "record-eval-tidepool-deploy"
+   },
+   {
+    "prompt": "Is the handoff on Monday?",
+    "expect": "record-eval-tidepool-oncall"
+   },
+   {
+    "prompt": "Do we use goose?",
+    "expect": "record-eval-tidepool-migrations"
+   },
+   {
+    "prompt": "Is it Apache-2.0?",
+    "expect": "record-eval-lanternfish-license"
+   },
+   {
+    "prompt": "Are we on SvelteKit?",
+    "expect": "record-eval-orchard-stack"
+   },
+   {
+    "prompt": "Is San Marzano in?",
+    "expect": "record-eval-orchard-tomatoes"
+   },
+   {
+    "prompt": "Which alias for shopping?",
+    "expect": "record-eval-mail-shopping-alias"
+   },
+   {
+    "prompt": "When does the invoice arrive?",
+    "expect": "record-eval-cloud-invoice"
+   },
+   {
+    "prompt": "Spelling in documents?",
+    "expect": "record-eval-spelling"
+   },
+   {
+    "prompt": "Is it a 24-hour clock?",
+    "expect": "record-eval-units"
+   },
+   {
+    "prompt": "Under 60 characters?",
+    "expect": "record-eval-commit-style"
+   },
+   {
+    "prompt": "Which bucket gets the snapshots?",
+    "expect": "record-eval-nas-backup"
+   }
+  ]
+ },
+ "generic_two_word": {
+  "tune": [
+   "How many seconds in a lightyear?",
+   "What type of penguin is that?",
+   "Which part of a violin?",
+   "What is a quarter in basketball?",
+   "Word for gratitude?",
+   "When is night on Mars?",
+   "How many minutes in a quarter?",
+   "Months in a quarter?",
+   "What type of word is that?",
+   "How many minutes in a night?",
+   "How many seconds in a night?",
+   "How many seconds in a minute?"
+  ]
+ },
+ "generic_guard": {
+  "tune": [
+   {
+    "prompt": "What year is Postgres?",
+    "expect": "record-eval-tidepool-database"
+   },
+   {
+    "prompt": "How many hours of Helix?",
+    "expect": "record-eval-editor"
+   },
+   {
+    "prompt": "Sungold this week?",
+    "expect": "record-eval-orchard-tomatoes"
+   },
+   {
+    "prompt": "Restic every month?",
+    "expect": "record-eval-nas-backup"
+   },
+   {
+    "prompt": "Zsh, which year?",
+    "expect": "record-eval-default-shell"
+   },
+   {
+    "prompt": "Beacon, what time?",
+    "expect": "record-eval-beacon-entity"
+   }
+  ]
+ },
+ "newer_decisions": {
+  "tune": [
+   {
+    "prompt": "Which queue do Tidepool background tasks use?",
+    "expect": "record-eval-tidepool-task-queue-2",
+    "older": "record-eval-tidepool-task-queue"
+   },
+   {
+    "prompt": "How many workers run Tidepool background tasks?",
+    "expect": "record-eval-tidepool-task-queue-2",
+    "older": "record-eval-tidepool-task-queue"
+   },
+   {
+    "prompt": "How long do Tidepool task retries back off?",
+    "expect": "record-eval-tidepool-task-queue-2",
+    "older": "record-eval-tidepool-task-queue"
+   },
+   {
+    "prompt": "What spam score sends mail to Junk?",
+    "expect": "record-eval-mail-spam-threshold-2",
+    "older": "record-eval-mail-spam-threshold"
+   },
+   {
+    "prompt": "What is the mail spam threshold?",
+    "expect": "record-eval-mail-spam-threshold-2",
+    "older": "record-eval-mail-spam-threshold"
+   },
+   {
+    "prompt": "How often do I review the Junk folder?",
+    "expect": "record-eval-mail-spam-threshold-2",
+    "older": "record-eval-mail-spam-threshold"
+   }
+  ],
+  "older_only": [
+   {
+    "prompt": "Is the Postgres-backed queue still used?",
+    "expect": "record-eval-tidepool-task-queue"
+   },
+   {
+    "prompt": "Do we still filter with SpamAssassin?",
+    "expect": "record-eval-mail-spam-threshold"
+   }
   ]
  },
  "session": [
@@ -3365,6 +3530,50 @@
    "summary": "Status: region and compute",
    "body": "One line summary: the invoice and the storage still need a look. The compute is fine for now; revisit the alerts later. Answer from context next time instead of calling tools for the budget. Someone asked in one line what the region was for; the answer was in an earlier note. The current budget setup works; the old invoice notes are out of date. Answer from context next time instead of calling tools for the IAM. The IAM came up while answering a question about the invoice. Checked the alerts against the storage; nothing to change. One line summary: the budget and the invoice still need a look. We looked at the region again and the budget in the same session. The storage is fine for now; revisit the budget later.",
    "recorded_at": "2026-10-22T08:00:00Z"
+  },
+  {
+   "record": "record-eval-tidepool-task-queue",
+   "kind": "decision",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Tidepool task queue",
+   "body": "Background tasks run on the Postgres-backed queue with five workers; retries back off for up to an hour.",
+   "recorded_at": "2026-08-10T09:00:00Z"
+  },
+  {
+   "record": "record-eval-tidepool-task-queue-2",
+   "kind": "decision",
+   "scope": {
+    "kind": "project",
+    "id": "tidepool"
+   },
+   "summary": "Tidepool task queue",
+   "body": "Background tasks move to the NATS queue with five workers; retries back off for up to an hour.",
+   "recorded_at": "2026-10-02T09:00:00Z"
+  },
+  {
+   "record": "record-eval-mail-spam-threshold",
+   "kind": "decision",
+   "scope": {
+    "kind": "account",
+    "id": "mail-example"
+   },
+   "summary": "Spam threshold",
+   "body": "Spam score above 5 goes to Junk through SpamAssassin; review the Junk folder weekly.",
+   "recorded_at": "2026-07-15T09:00:00Z"
+  },
+  {
+   "record": "record-eval-mail-spam-threshold-2",
+   "kind": "decision",
+   "scope": {
+    "kind": "account",
+    "id": "mail-example"
+   },
+   "summary": "Spam threshold",
+   "body": "Spam score above 3 goes to Junk through Rspamd; review the Junk folder weekly.",
+   "recorded_at": "2026-10-20T09:00:00Z"
   }
  ]
 }
