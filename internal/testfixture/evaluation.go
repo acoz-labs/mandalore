@@ -51,6 +51,11 @@ type Evaluation struct {
 	GenericGuard struct {
 		Tune []EvaluationPrompt `json:"tune"`
 	} `json:"generic_guard"`
+	// NamedGuard holds questions a record answers that also name something
+	// no record holds, so they should inject the answer.
+	NamedGuard struct {
+		Tune []EvaluationPrompt `json:"tune"`
+	} `json:"named_guard"`
 	// NewerDecisions holds queries that match both of two same-scope
 	// decisions on one subject, of which Expect is the newer, and queries
 	// only the older answers.

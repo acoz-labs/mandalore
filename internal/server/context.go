@@ -195,11 +195,18 @@ func packTop(entries []contextEntry, room int) []contextEntry {
 var contextMinStrength, contextMinEvidence, contextMinAnchor, contextRelativeStrength = 0.25, 0.70, 0.70, 0.65
 
 // relevance is each recalled record's and conflict's relevance to one
-// query: the largest of its three measures over its bar, 0 when incidental. A
-// conflict counts by its most relevant head.
+// query: the largest of its three measures over its bar, 0 when incidental or
+// when the query names something no record holds and the record matches it
+// only in its body. A conflict counts by its most relevant head.
 func relevance(p memory.Packet) (records, conflicts map[string]float64) {
 	of := func(r memory.Revision) float64 {
 		if p.Incidental[r.ID] {
+			return 0
+		}
+		// A prompt that names something no record holds ("in Rust?", "on a
+		// GitHub account") is about something else, unless a record matches
+		// one of its terms in its summary or identifiers.
+		if len(p.AbsentNames) > 0 && !p.Titled[r.ID] {
 			return 0
 		}
 		return max(p.Strength[r.ID]/contextMinStrength, p.Evidence[r.ID]/contextMinEvidence, p.Anchor[r.ID]/contextMinAnchor)

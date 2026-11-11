@@ -168,6 +168,12 @@ type Packet struct {
 	// (OnOneSubject) of each current record that has one in the query's
 	// scopes, whether or not it matches the query.
 	Newer map[string]Revision `json:"-"`
+	// Titled marks the heads that match one of the query's content terms in
+	// their summary or identifiers, by revision ID.
+	Titled map[string]bool `json:"-"`
+	// AbsentNames lists the query's names (Query.Names) that no candidate
+	// contains.
+	AbsentNames []string `json:"-"`
 }
 
 func (s *Store) validateGraph(records []Revision) error {
@@ -531,13 +537,13 @@ func IsFunctionWord(term string) bool { return functionWords[term] }
 // A nil query matches every candidate equally. strengths gives each content
 // score as a share of the most a record could score, which is IDF-normalized:
 // matching the query's rare terms counts for more than matching common ones.
-func rank(query []string, names map[string]bool, candidates []termIndex) (content, function, strengths, evidence, anchors []float64, incidental []bool) {
+func rank(query []string, names map[string]bool, candidates []termIndex) (content, function, strengths, evidence, anchors []float64, incidental, titled []bool, missing []string) {
 	if query == nil {
 		content = make([]float64, len(candidates))
 		for i := range content {
 			content[i] = 1
 		}
-		return content, make([]float64, len(candidates)), content, content, content, make([]bool, len(candidates))
+		return content, make([]float64, len(candidates)), content, content, content, make([]bool, len(candidates)), make([]bool, len(candidates)), nil
 	}
 	seen := map[string]bool{}
 	var topical, common []string
@@ -554,22 +560,23 @@ func rank(query []string, names map[string]bool, candidates []termIndex) (conten
 	if len(topical) == 0 {
 		topical, common = common, nil
 	}
-	content, strengths, evidence, anchors, incidental = bm25(topical, names, candidates)
-	function, _, _, _, _ = bm25(common, names, candidates)
-	return content, function, strengths, evidence, anchors, incidental
+	content, strengths, evidence, anchors, incidental, titled, missing = bm25(topical, names, candidates)
+	function, _, _, _, _, _, _ = bm25(common, names, candidates)
+	return content, function, strengths, evidence, anchors, incidental, titled, missing
 }
 
 // bm25 scores candidates on distinct terms, with document frequencies and
 // average length taken from the candidates themselves, so a term common
 // across them counts for little and a long record gains little from repeating
 // it. A candidate that matches none of the terms scores 0.
-func bm25(terms []string, names map[string]bool, candidates []termIndex) (scores, strengths, evidence, anchors []float64, incidental []bool) {
+func bm25(terms []string, names map[string]bool, candidates []termIndex) (scores, strengths, evidence, anchors []float64, incidental, inTitle []bool, missing []string) {
 	scores = make([]float64, len(candidates))
 	strengths = make([]float64, len(candidates))
 	evidence = make([]float64, len(candidates))
 	anchors = make([]float64, len(candidates))
 	incidental = make([]bool, len(candidates))
-	matched, inTitle := make([]int, len(candidates)), make([]bool, len(candidates))
+	matched := make([]int, len(candidates))
+	inTitle = make([]bool, len(candidates))
 	weights := make([][]int, len(candidates))
 	df := make([]int, len(terms))
 	total := 0
@@ -593,12 +600,12 @@ func bm25(terms []string, names map[string]bool, candidates []termIndex) (scores
 	}
 	rarest := math.Log(1 + (n+0.5)/0.5)
 	// absent counts the terms no candidate contains.
-	absent := 0
 	for j := range terms {
 		if df[j] == 0 {
-			absent++
+			missing = append(missing, terms[j])
 		}
 	}
+	absent := len(missing)
 	for i, ix := range candidates {
 		norm := bm25K1 * (1 - bm25B + bm25B*float64(ix.length)/average)
 		lone := ""
@@ -638,7 +645,7 @@ func bm25(terms []string, names map[string]bool, candidates []termIndex) (scores
 			incidental[i] = absent > 0
 		}
 	}
-	return scores, strengths, evidence, anchors, incidental
+	return scores, strengths, evidence, anchors, incidental, inTitle, missing
 }
 
 func relevance(r Revision, query string) int {
@@ -735,11 +742,16 @@ func (s *Store) recallHeads(q Query, p Packet, heads map[string][]Revision, stat
 			names[t] = true
 		}
 	}
-	content, function, strengths, evidence, anchors, incidental := rank(query, names, candidates)
-	p.Strength, p.Evidence, p.Anchor, p.Incidental = map[string]float64{}, map[string]float64{}, map[string]float64{}, map[string]bool{}
+	content, function, strengths, evidence, anchors, incidental, titled, missing := rank(query, names, candidates)
+	for _, t := range missing {
+		if names[t] {
+			p.AbsentNames = append(p.AbsentNames, t)
+		}
+	}
+	p.Strength, p.Evidence, p.Anchor, p.Incidental, p.Titled = map[string]float64{}, map[string]float64{}, map[string]float64{}, map[string]bool{}, map[string]bool{}
 	for i, r := range competing {
 		j := len(p.Current) + i
-		p.Strength[r.ID], p.Evidence[r.ID], p.Anchor[r.ID], p.Incidental[r.ID] = strengths[j], evidence[j], anchors[j], incidental[j]
+		p.Strength[r.ID], p.Evidence[r.ID], p.Anchor[r.ID], p.Incidental[r.ID], p.Titled[r.ID] = strengths[j], evidence[j], anchors[j], incidental[j], titled[j]
 	}
 	scores := map[string][2]float64{}
 	pool := append([]Revision{}, p.Current...)
@@ -752,7 +764,7 @@ func (s *Store) recallHeads(q Query, p Packet, heads map[string][]Revision, stat
 				evidence[i] *= standingGuidanceBoost
 			}
 			scores[r.ID] = [2]float64{content[i], function[i]}
-			p.Strength[r.ID], p.Evidence[r.ID], p.Anchor[r.ID], p.Incidental[r.ID] = strengths[i], evidence[i], anchors[i], incidental[i]
+			p.Strength[r.ID], p.Evidence[r.ID], p.Anchor[r.ID], p.Incidental[r.ID], p.Titled[r.ID] = strengths[i], evidence[i], anchors[i], incidental[i], titled[i]
 			matching = append(matching, r)
 		}
 	}

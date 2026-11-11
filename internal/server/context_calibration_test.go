@@ -80,6 +80,9 @@ func assertEvaluation(t *testing.T, r evalReport) {
 		{"collision prompts injected", collisionsInjected(r), 3, true},
 		{"generic two-word prompts injected", genericInjected(r), 0, true},
 		{"generic-word guard prompts with the answer in memory_context's top 3", top3(r.Guard), len(r.Guard), false},
+		// Two of the ten lose their answer to the lone-summary-word rule
+		// ("Which editor do I use when writing Rust?"), a known limit.
+		{"named guard prompts with the answer in memory_context's top 3", top3(r.Named), 8, false},
 		{"older-only queries with the older decision in memory_recall's top 3", top3(r.OlderOnly), len(r.OlderOnly), false},
 	} {
 		if c.atMost && c.got > c.want || !c.atMost && c.got < c.want {

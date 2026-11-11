@@ -48,9 +48,10 @@ type evalReport struct {
 	}
 	// Session holds the injected bytes for each turn of the scripted session.
 	Session []int
-	// Filler, Guard: memory_context's rank of the answer to each
-	// filler-wrapped short question and each generic-word guard prompt.
-	Filler, Guard []evalRank
+	// Filler, Guard, Named: memory_context's rank of the answer to each
+	// filler-wrapped short question, generic-word guard prompt and
+	// named guard prompt.
+	Filler, Guard, Named []evalRank
 	// Generic holds the injected bytes for each generic two-word prompt.
 	Generic []struct {
 		Prompt string
@@ -212,6 +213,9 @@ func runEvaluation(t *testing.T, m *memory.Service, e testfixture.Evaluation) ev
 	for _, s := range e.GenericGuard.Tune {
 		report.Guard = append(report.Guard, evalRank{s.Prompt, rankOf(contextRanks(contextFor(t, m, "prompt", s.Prompt)), s.Expect)})
 	}
+	for _, s := range e.NamedGuard.Tune {
+		report.Named = append(report.Named, evalRank{s.Prompt, rankOf(contextRanks(contextFor(t, m, "prompt", s.Prompt)), s.Expect)})
+	}
 	for _, prompt := range e.GenericTwoWord.Tune {
 		report.Generic = append(report.Generic, struct {
 			Prompt string
@@ -345,6 +349,7 @@ func logReport(t *testing.T, r evalReport) {
 	t.Logf("collision prompts: injected on %d of %d", collisionsInjected(r), len(r.Collisions))
 	t.Logf("filler-wrapped short questions: answer in memory_context's top 3 for %d of %d", top3(r.Filler), len(r.Filler))
 	t.Logf("generic two-word prompts: injected on %d of %d; guard prompts: answer in the top 3 for %d of %d", genericInjected(r), len(r.Generic), top3(r.Guard), len(r.Guard))
+	t.Logf("named guard prompts: answer in the top 3 for %d of %d", top3(r.Named), len(r.Named))
 	nr, nc := newerFirst(r)
 	t.Logf("newer decisions: newer first in memory_recall %d of %d, in memory_context %d of %d; older-only queries find the older in recall's top 3 %d of %d", nr, len(r.Newer), nc, len(r.Newer), top3(r.OlderOnly), len(r.OlderOnly))
 	maxBytes := 0

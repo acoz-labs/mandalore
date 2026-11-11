@@ -446,6 +446,8 @@ func TestMemoryContextSelectionRules(t *testing.T) {
 		"What theme should we pick for a wedding?",
 		// The same inside a wrapper's question clause.
 		"Quick one before we start: what theme should we pick for a wedding?",
+		// A name no record holds, beside a match only in a record's body.
+		"Which Postgres version suits the Django port?",
 	} {
 		if text := contextFor(t, m, "prompt", prompt); text != "" {
 			t.Errorf("%q injected:\n%s", prompt, text)
@@ -463,6 +465,8 @@ func TestMemoryContextSelectionRules(t *testing.T) {
 		"Does Beacon work at a wedding?": beacon,
 		// Two body words are more than a lone generic one.
 		"Phone number in my signature?": signature,
+		// A name no record holds, beside a match in a record's summary.
+		"Which database does Tidepool use for the Django port?": database,
 	} {
 		if ranks := contextRanks(contextFor(t, m, "prompt", prompt)); len(ranks) == 0 || ranks[0] != want {
 			t.Errorf("%q injected %v, want %s first", prompt, ranks, want)
