@@ -21,6 +21,9 @@ plugin and the marketplace when Claude Code is on PATH. The development containe
 has no Claude Code, so there it prints a notice and skips that step; run `bin/ci`
 on a host with Claude Code before review. Native checks are recorded with
 [`docs/evidence/2.0/claude-plugin-native.sh`](evidence/2.0/claude-plugin-native.sh).
+It runs Claude Code with its own temporary `HOME` and `CLAUDE_CONFIG_DIR` and a
+token from the environment, and `bin/ci` checks that it refuses to start
+otherwise.
 
 Use synthetic banks and disposable project workspaces. Native integration tests
 may inherit existing native resources and authentication with explicit local

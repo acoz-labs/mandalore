@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
 # Native Claude Code checks for the 2.0 plugin (#163). Everything runs against a
-# synthetic signet in a new temporary directory, with HOME pointed there too.
+# synthetic signet in a new temporary directory, with HOME and CLAUDE_CONFIG_DIR
+# pointed there too, so Claude Code uses its own config and credential store,
+# never the operator's (#235).
 #
 #   docs/evidence/2.0/claude-plugin-native.sh MANDALORE_BINARY OUTPUT_DIR
 #
-# Needs an authenticated `claude` on PATH. On macOS the temporary HOME links
-# only the login keychain back, so Claude Code can sign in; nothing else from
-# the real HOME is visible. Account connectors are disabled. Claude Code keeps
-# MCP OAuth state in that keychain too, so the run signs the test server out
-# before it starts and when it ends.
+# Needs `claude` on PATH and a credential in the environment:
+# CLAUDE_CODE_OAUTH_TOKEN (from `claude setup-token`) or ANTHROPIC_API_KEY.
+# Nothing is linked back to the real HOME, account connectors are disabled and
+# no `claude mcp` command is run. The script refuses to start Claude Code unless
+# HOME and CLAUDE_CONFIG_DIR are inside this run's temporary directory; bin/ci
+# checks that with claude-plugin-native-isolation.sh.
 set -euo pipefail
 
 binary=$(cd "$(dirname "$1")" && pwd)/$(basename "$1")
@@ -17,7 +20,6 @@ repo=$(cd "$(dirname "$0")/../../.." && pwd)
 port=28730
 url="http://localhost:$port/mcp"
 work=$(mktemp -d)
-real_home=$HOME
 server_pid=""
 
 stop_server() {
@@ -28,15 +30,29 @@ stop_server() {
     server_pid=""
   fi
 }
-signed_in=""
-sign_out() { [[ -n "$signed_in" ]] && claude mcp logout plugin:mandalore:mandalore > /dev/null 2>&1 || true; }
-trap 'stop_server; sign_out; rm -rf "$work"' EXIT
+trap 'stop_server; rm -rf "$work"' EXIT
 
-export HOME="$work/home" GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 ENABLE_CLAUDEAI_MCP_SERVERS=false
+[[ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}${ANTHROPIC_API_KEY:-}" ]] || {
+  echo "Set CLAUDE_CODE_OAUTH_TOKEN or ANTHROPIC_API_KEY; the run never uses the operator's login." >&2
+  exit 1
+}
+export HOME="$work/home"
+export CLAUDE_CONFIG_DIR="$work/claude-config"
+export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 ENABLE_CLAUDEAI_MCP_SERVERS=false
 export GIT_AUTHOR_NAME=Synthetic GIT_AUTHOR_EMAIL=synthetic@example.invalid GIT_COMMITTER_NAME=Synthetic GIT_COMMITTER_EMAIL=synthetic@example.invalid
-unset CLAUDECODE CLAUDE_CODE_SESSION_ID CLAUDE_CODE_ENTRYPOINT CLAUDE_CODE_CHILD_SESSION CLAUDE_CONFIG_DIR
-mkdir -p "$HOME/Library" "$work/project"
-[[ "$(uname)" == Darwin ]] && ln -s "$real_home/Library/Keychains" "$HOME/Library/Keychains"
+unset CLAUDECODE CLAUDE_CODE_SESSION_ID CLAUDE_CODE_ENTRYPOINT CLAUDE_CODE_CHILD_SESSION
+# Without CLAUDE_CONFIG_DIR, Claude Code uses the operator's login whatever
+# HOME is, so check both before the first call.
+[[ "${CLAUDE_CONFIG_DIR:-}" == "$work"/* && "$HOME" == "$work"/* ]] || {
+  echo "Refusing to run claude: HOME and CLAUDE_CONFIG_DIR must be inside this run's temporary directory." >&2
+  exit 1
+}
+mkdir -p "$HOME" "$CLAUDE_CONFIG_DIR" "$work/project"
+
+# Install the plugin from this checkout's marketplace, as a user would.
+claude plugin install mandalore --marketplace "$repo" --config "server_url=$url" > "$out/install.txt"
+claude plugin validate --strict "$repo/plugins/claude" | sed "s|$repo|<repo>|g" > "$out/validate-plugin.txt"
+claude plugin validate --strict "$repo" | sed "s|$repo|<repo>|g" > "$out/validate-marketplace.txt"
 
 # Synthetic signet with one seeded fact, its server device, and a bare remote.
 "$binary" signet create --repository "$work/signet" --name "Synthetic acceptance" --device-label "Synthetic server" > "$work/create.json"
@@ -64,13 +80,6 @@ EOF
   echo "server did not start" >&2; exit 1
 }
 
-# Install the plugin from this checkout's marketplace, as a user would.
-claude plugin install mandalore --marketplace "$repo" --config "server_url=$url" > "$out/install.txt"
-signed_in=1
-sign_out
-claude plugin validate --strict "$repo/plugins/claude" | sed "s|$repo|<repo>|g" > "$out/validate-plugin.txt"
-claude plugin validate --strict "$repo" | sed "s|$repo|<repo>|g" > "$out/validate-marketplace.txt"
-
 extra_args=()
 ask() { # name prompt [tools]; extra_args go to claude as well
   local start end
@@ -78,7 +87,7 @@ ask() { # name prompt [tools]; extra_args go to claude as well
   (cd "$work/project" && claude -p "$2" --output-format stream-json --verbose --include-hook-events \
     --allowedTools "${3:-}" ${extra_args[@]+"${extra_args[@]}"} --disallowedTools Bash Edit Write WebFetch WebSearch < /dev/null > "$work/$1.jsonl" 2> "$work/$1.err") || true
   end=$(python3 -c 'import time; print(time.time())')
-  python3 "$repo/docs/evidence/2.0/claude-plugin-summarize.py" "$1" "$work/$1.jsonl" "$HOME/.claude/projects" "$start" "$end" "$work" > "$out/$1.json"
+  python3 "$repo/docs/evidence/2.0/claude-plugin-summarize.py" "$1" "$work/$1.jsonl" "$CLAUDE_CONFIG_DIR/projects" "$start" "$end" "$work" > "$out/$1.json"
 }
 
 no_tools='mcp__plugin_mandalore_mandalore__memory_scopes'
@@ -96,11 +105,10 @@ ask armorer-read-write "$armorer" "$armorer_tools"
 printf '{"mcpServers":{"claude.ai My Memory":{"type":"http","url":"%s"}}}\n' "$url" > "$work/connector.json"
 extra_args=(--mcp-config "$work/connector.json")
 ask armorer-connector "$armorer" "Skill mcp__claude_ai_My_Memory__memory_scopes mcp__plugin_mandalore_mandalore__memory_scopes"
-mkdir -p "$HOME/.claude"
-cp "$HOME/.claude/settings.json" "$work/settings.json" 2>/dev/null || echo '{}' > "$work/settings.json"
-python3 -c 'import json,sys; s=json.load(open(sys.argv[1])); s["deniedMcpServers"]=[{"serverName":"claude.ai My Memory"}]; json.dump(s,open(sys.argv[2],"w"))' "$work/settings.json" "$HOME/.claude/settings.json"
+cp "$CLAUDE_CONFIG_DIR/settings.json" "$work/settings.json" 2>/dev/null || echo '{}' > "$work/settings.json"
+python3 -c 'import json,sys; s=json.load(open(sys.argv[1])); s["deniedMcpServers"]=[{"serverName":"claude.ai My Memory"}]; json.dump(s,open(sys.argv[2],"w"))' "$work/settings.json" "$CLAUDE_CONFIG_DIR/settings.json"
 ask connector-denied "Where does the zebrafinch project keep its build cache? Answer only from context you already have; don't call tools." "$no_tools"
-cp "$work/settings.json" "$HOME/.claude/settings.json"
+cp "$work/settings.json" "$CLAUDE_CONFIG_DIR/settings.json"
 extra_args=()
 stop_server
 

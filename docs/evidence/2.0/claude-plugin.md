@@ -7,6 +7,19 @@ synthetic signet in a new temporary directory and a temporary `HOME`. The only
 link back to the real home was the login keychain, so Claude Code could sign in.
 No real signet, binding or hostname was involved.
 
+**Isolation (#235).** Those runs left `CLAUDE_CONFIG_DIR` unset, so Claude Code
+used the operator's own login, and the `claude mcp logout` the script ran
+before and after acted on the operator's real login, not a sandbox. The script
+now gives Claude Code a temporary `CLAUDE_CONFIG_DIR` as well as `HOME`, links
+nothing back to the real home and runs no `claude mcp` command. It needs a
+credential in the environment, `CLAUDE_CODE_OAUTH_TOKEN` (from `claude
+setup-token`) or `ANTHROPIC_API_KEY`, and refuses to start Claude Code without
+one, or unless `HOME` and `CLAUDE_CONFIG_DIR` are inside its
+temporary directory. `bin/ci` proves both refusals with a stub `claude`
+([`claude-plugin-native-isolation.sh`](claude-plugin-native-isolation.sh)). The
+fixed script hasn't been re-run with a real login; the outputs below are from
+the earlier runs.
+
 ## Step 0: the `mcp_tool` spike
 
 The spike ran before the rest of the work, against `mandalore serve` from `main`
@@ -44,13 +57,12 @@ connection.
 
 ```sh
 go build -o /tmp/mandalore ./cmd/mandalore
-docs/evidence/2.0/claude-plugin-native.sh /tmp/mandalore /tmp/mandalore-evidence
+CLAUDE_CODE_OAUTH_TOKEN=... docs/evidence/2.0/claude-plugin-native.sh /tmp/mandalore /tmp/mandalore-evidence
 ```
 
 It creates the synthetic signet and seeds one fact. It installs the plugin from
 this checkout's marketplace with `--config server_url=http://localhost:28730/mcp`
-and runs `claude -p` once per scenario. Each server is stopped by its PID, and
-the test server is signed out of Claude Code's OAuth store before and after.
+and runs `claude -p` once per scenario. Each server is stopped by its PID.
 [`claude-plugin-summarize.py`](claude-plugin-summarize.py) reduces each run's
 stream and transcript to the JSON files in [`claude-plugin/`](claude-plugin/).
 
@@ -95,11 +107,12 @@ plugin can't name it in advance.
 
 ## Notes for operators
 
-- Claude Code keeps MCP OAuth state in the login keychain, keyed by server name
-  and URL, and it outlives a `HOME`. An earlier run against the OAuth server
-  left a "needs authentication" state that later loopback-trust runs inherited.
-  `claude mcp logout plugin:mandalore:mandalore` clears it, and the script now
-  runs that before and after.
+- Claude Code keeps MCP OAuth state with its login, and it outlives a `HOME`.
+  An earlier run against the OAuth server left a "needs authentication" state
+  that later loopback-trust runs inherited. The script now starts every run
+  with a new `CLAUDE_CONFIG_DIR`, so a run can't inherit another's state, and
+  it runs the OAuth scenario last. Run `claude mcp logout` only inside that
+  isolation, never against the real login.
 - `${user_config.server_url}` is substituted in skill text. In a separate run
   with the URL set to `http://localhost:28799/mcp`, the model was asked to quote
   the Armorer's line verbatim. It returned "The server URL from plugin settings
