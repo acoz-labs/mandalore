@@ -174,4 +174,13 @@ func TestRecallMarksIncidentalMatchesAndNamedAnchors(t *testing.T) {
 	if named.Anchor[head(named, ids[1])] == 0 || unnamed.Anchor[head(unnamed, ids[1])] != 0 {
 		t.Fatalf("names: anchored %v, unnamed %v", named.Anchor, unnamed.Anchor)
 	}
+	// #264: a lone summary match beside a word in no record is incidental
+	// unless the word is one of the query's Leads, and a lead anchors nothing.
+	for _, leads := range [][]string{nil, {"cortana"}, {"beacon", "cortana"}} {
+		p, _ := s.store.Recall(Query{Text: "beacon cortana", AllScopes: true, Names: []string{}, Leads: leads}, time.Now())
+		id := head(p, ids[1])
+		if want := !slices.Contains(leads, "beacon"); p.Incidental[id] != want || p.Anchor[id] != 0 || len(p.AbsentNames) != 0 {
+			t.Errorf("leads %q: incidental %v, want %v; anchor %v; absent names %v", leads, p.Incidental[id], want, p.Anchor[id], p.AbsentNames)
+		}
+	}
 }
