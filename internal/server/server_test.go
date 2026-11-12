@@ -59,11 +59,12 @@ func testConfig(t *testing.T, signets ...testfixture.ServerSignet) Config {
 
 func startServer(t *testing.T, c Config) (*Server, *httptest.Server, *syncBuffer) {
 	t.Helper()
-	ctx, cancel := context.WithCancel(context.Background())
-	t.Cleanup(cancel)
-	return startServerUntil(t, ctx, c)
+	return startServerUntil(t, context.Background(), c)
 }
 
+// startServerUntil serves until ctx ends or the test does. Its cleanup stops
+// the server's background loops and waits for them, before the directories
+// the test created earlier are removed.
 func startServerUntil(t *testing.T, ctx context.Context, c Config) (*Server, *httptest.Server, *syncBuffer) {
 	t.Helper()
 	logs := &syncBuffer{}
@@ -71,10 +72,48 @@ func startServerUntil(t *testing.T, ctx context.Context, c Config) (*Server, *ht
 	if err != nil {
 		t.Fatal(err)
 	}
+	ctx, cancel := context.WithCancel(ctx)
 	s.Start(ctx)
+	t.Cleanup(func() { cancel(); s.wait() })
 	h := httptest.NewServer(s.Handler())
 	t.Cleanup(h.Close)
 	return s, h, logs
+}
+
+// #259: a background push still running when a test ends finishes before the
+// test's directories are removed. The hook holds the first push until the
+// server's context ends, then lingers as a slow push under load does.
+func TestServerHelpersWaitForBackgroundPush(t *testing.T) {
+	saved := pushHook
+	t.Cleanup(func() { pushHook = saved })
+	entered, done := make(chan struct{}), make(chan struct{})
+	var first sync.Once
+	pushHook = func(ctx context.Context) {
+		first.Do(func() {
+			close(entered)
+			<-ctx.Done()
+			time.Sleep(200 * time.Millisecond)
+			close(done)
+		})
+	}
+	t.Run("server", func(t *testing.T) {
+		c := testConfig(t, testfixture.NewServerSignet(t, "alpha"))
+		// Registered after the directories and before the server, so it runs
+		// after the server's cleanup and before the directories are removed.
+		t.Cleanup(func() {
+			select {
+			case <-done:
+			default:
+				t.Error("background push still running when the test's directories were removed")
+			}
+		})
+		startServer(t, c)
+		select {
+		case <-entered:
+		case <-time.After(5 * time.Second):
+			t.Fatal("background push never started")
+		}
+	})
 }
 
 type roundTripper func(*http.Request) (*http.Response, error)

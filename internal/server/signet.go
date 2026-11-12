@@ -66,6 +66,10 @@ type timing struct {
 // tests set it; production fetches the registered locator.
 var canonTransport func(string) string
 
+// pushHook runs in a backup push just before it contacts the remote. Only
+// tests set it; production leaves it nil.
+var pushHook func(context.Context)
+
 func openSignet(c Config, sc SignetConfig, logger *log.Logger, t timing) (*signet, error) {
 	m, err := memory.OpenService(sc.Root, memory.Authorship{DeviceID: sc.DeviceID, Actor: c.Owner.Name, Harness: "mandalore-server"})
 	if err != nil {
@@ -349,6 +353,9 @@ func (s *signet) push(ctx context.Context) {
 		s.backupMu.Lock()
 		pushed := s.backup.Head
 		s.backupMu.Unlock()
+		if pushHook != nil {
+			pushHook(ctx)
+		}
 		pushCtx, cancel := context.WithTimeout(ctx, s.timing.push)
 		head, err = s.git.Push(pushCtx, s.config.Remote)
 		if errors.Is(err, signetsync.ErrRemoteAhead) {

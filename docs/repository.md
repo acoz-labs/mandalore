@@ -214,9 +214,10 @@ Document any required deviation in `docs/development.md`.
 - Authorship counts against `memory_prime`'s byte budget. A longer harness
   or a session ID can push the oldest item out of a topic that already fills
   it (#249), so measure prime's output bytes when authorship changes.
-- The `TempDir` cleanup flake in `internal/server` tests (#259) can fail a
-  validation receipt under load. Rerun, and publish both receipts, the
-  failure first.
+- A server test that outlives its server's background push fails in
+  `TempDir` cleanup under load (#259). Start servers through `startServer`
+  or `startServerUntil`, or cancel and call `s.wait()` in a cleanup
+  registered after the directories, so it runs before their removal.
 
 ## Current delivery
 

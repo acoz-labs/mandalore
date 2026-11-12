@@ -99,8 +99,8 @@ func startCanonServer(t *testing.T, c Config, every time.Duration) (*Server, *ht
 		t.Fatal(err)
 	}
 	s.Start(ctx)
-	// Stop the refresh loop before the test's directories are removed.
-	t.Cleanup(func() { cancel(); s.refreshing.Wait() })
+	// Stop the background loops before the test's directories are removed.
+	t.Cleanup(func() { cancel(); s.wait() })
 	h := httptest.NewServer(s.Handler())
 	t.Cleanup(h.Close)
 	return s, h
