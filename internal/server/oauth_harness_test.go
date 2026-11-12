@@ -157,14 +157,12 @@ func startOAuth(t *testing.T, signets ...testfixture.ServerSignet) *oauthEnv {
 func startOAuthConfig(t *testing.T, c Config) *oauthEnv {
 	t.Helper()
 	e := &oauthEnv{config: c, clock: &clock{t: time.Now()}, timings: map[string][]time.Duration{}}
-	ctx, cancel := context.WithCancel(context.Background())
-	t.Cleanup(cancel)
 	s, err := newServer(e.config, io.Discard, fastTiming)
 	if err != nil {
 		t.Fatal(err)
 	}
 	s.oauth.now, s.oauth.store.now, s.oauth.documents.now = e.clock.now, e.clock.now, e.clock.now
-	s.Start(ctx)
+	startUntilCleanup(t, context.Background(), s)
 	e.server = s
 	e.tls = httptest.NewTLSServer(s.Handler())
 	t.Cleanup(e.tls.Close)

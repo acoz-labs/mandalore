@@ -22,8 +22,9 @@ type Server struct {
 	hosts   map[string]bool
 	origins map[string]bool
 	oauth   *authServer
-	// refreshing tracks the canon refresh loops Start runs.
-	refreshing sync.WaitGroup
+	// refreshing tracks the canon refresh loops Start runs; delivering tracks
+	// its backup delivery loops.
+	refreshing, delivering sync.WaitGroup
 }
 
 var defaultTiming = timing{debounce: 2 * time.Second, retry: time.Minute, push: 30 * time.Second}
@@ -82,7 +83,11 @@ func (s *Server) Start(ctx context.Context) {
 	wg.Wait()
 	for _, g := range s.signets {
 		if !g.blocked {
-			go g.deliver(ctx)
+			s.delivering.Add(1)
+			go func() {
+				defer s.delivering.Done()
+				g.deliver(ctx)
+			}()
 			s.refreshing.Add(1)
 			go func() {
 				defer s.refreshing.Done()
@@ -90,6 +95,13 @@ func (s *Server) Start(ctx context.Context) {
 			}()
 		}
 	}
+}
+
+// wait returns once every loop Start began has returned, after its context
+// ends. Tests call it so no background push outlives their directories.
+func (s *Server) wait() {
+	s.delivering.Wait()
+	s.refreshing.Wait()
 }
 
 func (s *Server) Handler() http.Handler {

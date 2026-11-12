@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -59,11 +60,10 @@ func testConfig(t *testing.T, signets ...testfixture.ServerSignet) Config {
 
 func startServer(t *testing.T, c Config) (*Server, *httptest.Server, *syncBuffer) {
 	t.Helper()
-	ctx, cancel := context.WithCancel(context.Background())
-	t.Cleanup(cancel)
-	return startServerUntil(t, ctx, c)
+	return startServerUntil(t, context.Background(), c)
 }
 
+// startServerUntil serves until ctx ends or the test does.
 func startServerUntil(t *testing.T, ctx context.Context, c Config) (*Server, *httptest.Server, *syncBuffer) {
 	t.Helper()
 	logs := &syncBuffer{}
@@ -71,10 +71,111 @@ func startServerUntil(t *testing.T, ctx context.Context, c Config) (*Server, *ht
 	if err != nil {
 		t.Fatal(err)
 	}
-	s.Start(ctx)
+	startUntilCleanup(t, ctx, s)
 	h := httptest.NewServer(s.Handler())
 	t.Cleanup(h.Close)
 	return s, h, logs
+}
+
+// startUntilCleanup starts s until ctx ends or the test does. Cleanups run
+// last in, first out, so before the test's TempDir removal the server's
+// loops stop and are waited for, and then its directories are removed.
+func startUntilCleanup(t *testing.T, ctx context.Context, s *Server) {
+	t.Helper()
+	dirs := []string{s.config.StateDir}
+	for _, sc := range s.config.Signets {
+		dirs = append(dirs, sc.Root)
+		if remote, ok := strings.CutPrefix(sc.Remote, "file://"); ok {
+			dirs = append(dirs, remote)
+		}
+	}
+	t.Cleanup(func() { removeSettled(t, dirs...) })
+	ctx, cancel := context.WithCancel(ctx)
+	s.Start(ctx)
+	t.Cleanup(func() { cancel(); s.wait() })
+}
+
+// removeSettled removes test directories, retrying for a few seconds. A
+// cancelled push returns once git exits, but the killed receive-pack can
+// still be finishing a write into the remote (#259).
+func removeSettled(t *testing.T, dirs ...string) {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for _, dir := range dirs {
+		if !strings.HasPrefix(dir, os.TempDir()) {
+			continue
+		}
+		for attempt := 1; ; attempt++ {
+			err := os.RemoveAll(dir)
+			if err == nil {
+				if attempt > 1 {
+					t.Logf("removed a test directory after %d attempts", attempt)
+				}
+				break
+			}
+			if time.Now().After(deadline) {
+				t.Errorf("remove a test directory: %v", err)
+				break
+			}
+			time.Sleep(20 * time.Millisecond)
+		}
+	}
+}
+
+// #259: a background push still running when a test ends finishes before the
+// test's directories are removed. The hook holds the first push until the
+// server's context ends and lingers, as a slow push under load does; then a
+// synthetic writer stands in for a killed receive-pack still finishing writes
+// into the remote's quarantine after the push returned.
+func TestServerHelpersOutlastBackgroundPush(t *testing.T) {
+	saved := pushHook
+	t.Cleanup(func() { pushHook = saved })
+	entered, done, written := make(chan struct{}), make(chan struct{}), make(chan struct{})
+	var a testfixture.ServerSignet
+	var first sync.Once
+	pushHook = func(ctx context.Context) {
+		first.Do(func() {
+			close(entered)
+			<-ctx.Done()
+			time.Sleep(200 * time.Millisecond)
+			close(done)
+			quarantine := filepath.Join(a.RemoteDir, "objects", "tmp_objdir-incoming-synthetic")
+			_ = os.Mkdir(quarantine, 0o755)
+			go func() {
+				defer close(written)
+				for i, until := 0, time.Now().Add(300*time.Millisecond); time.Now().Before(until); i++ {
+					dir := filepath.Join(quarantine, strconv.Itoa(i))
+					if os.Mkdir(dir, 0o755) == nil {
+						_ = os.WriteFile(filepath.Join(dir, "object"), []byte("synthetic"), 0o444)
+					}
+				}
+			}()
+		})
+	}
+	t.Run("server", func(t *testing.T) {
+		a = testfixture.NewServerSignet(t, "alpha")
+		c := testConfig(t, a)
+		// Registered after the directories and before the server, so it runs
+		// after the server's cleanup and before the directories are removed.
+		t.Cleanup(func() {
+			select {
+			case <-done:
+			default:
+				t.Error("background push still running when the test's directories were removed")
+			}
+		})
+		startServer(t, c)
+		select {
+		case <-entered:
+		case <-time.After(5 * time.Second):
+			t.Fatal("background push never started")
+		}
+	})
+	select {
+	case <-written:
+	case <-time.After(5 * time.Second):
+		t.Fatal("synthetic writer never stopped")
+	}
 }
 
 type roundTripper func(*http.Request) (*http.Response, error)

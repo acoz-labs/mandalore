@@ -91,16 +91,13 @@ func canonConfig(t *testing.T) (Config, testfixture.ServerSignet, *canonSource, 
 
 func startCanonServer(t *testing.T, c Config, every time.Duration) (*Server, *httptest.Server) {
 	t.Helper()
-	ctx, cancel := context.WithCancel(context.Background())
 	t2 := fastTiming
 	t2.canon = every
 	s, err := newServer(c, &syncBuffer{}, t2)
 	if err != nil {
 		t.Fatal(err)
 	}
-	s.Start(ctx)
-	// Stop the refresh loop before the test's directories are removed.
-	t.Cleanup(func() { cancel(); s.refreshing.Wait() })
+	startUntilCleanup(t, context.Background(), s)
 	h := httptest.NewServer(s.Handler())
 	t.Cleanup(h.Close)
 	return s, h

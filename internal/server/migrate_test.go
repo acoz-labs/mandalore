@@ -126,6 +126,7 @@ func TestVerifyStopsHonestlyAfterCanary(t *testing.T) {
 		return remoteMain(t, l) == head
 	})
 	cancel()
+	s.wait()
 	if _, err := Verify(context.Background(), c, "primary"); err != nil {
 		t.Fatal(err)
 	}

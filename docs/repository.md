@@ -217,9 +217,12 @@ Document any required deviation in `docs/development.md`.
 - Authorship counts against `memory_prime`'s byte budget. A longer harness
   or a session ID can push the oldest item out of a topic that already fills
   it (#249), so measure prime's output bytes when authorship changes.
-- The `TempDir` cleanup flake in `internal/server` tests (#259) can fail a
-  validation receipt under load. Rerun, and publish both receipts, the
-  failure first.
+- A server test that outlives its server's background push fails in
+  `TempDir` cleanup under load (#259). Waiting for the server isn't enough:
+  a cancelled push returns once `git` exits, while the killed receive-pack
+  can still be finishing a write into the remote. Start servers through
+  `startServer`, `startServerUntil` or `startUntilCleanup`, which wait for
+  the server and then remove its directories with a bounded retry.
 
 ## Current delivery
 
