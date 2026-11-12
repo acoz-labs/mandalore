@@ -162,9 +162,7 @@ func startOAuthConfig(t *testing.T, c Config) *oauthEnv {
 		t.Fatal(err)
 	}
 	s.oauth.now, s.oauth.store.now, s.oauth.documents.now = e.clock.now, e.clock.now, e.clock.now
-	ctx, cancel := context.WithCancel(context.Background())
-	s.Start(ctx)
-	t.Cleanup(func() { cancel(); s.wait() })
+	startUntilCleanup(t, context.Background(), s)
 	e.server = s
 	e.tls = httptest.NewTLSServer(s.Handler())
 	t.Cleanup(e.tls.Close)

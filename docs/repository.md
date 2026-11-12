@@ -215,9 +215,11 @@ Document any required deviation in `docs/development.md`.
   or a session ID can push the oldest item out of a topic that already fills
   it (#249), so measure prime's output bytes when authorship changes.
 - A server test that outlives its server's background push fails in
-  `TempDir` cleanup under load (#259). Start servers through `startServer`
-  or `startServerUntil`, or cancel and call `s.wait()` in a cleanup
-  registered after the directories, so it runs before their removal.
+  `TempDir` cleanup under load (#259). Waiting for the server isn't enough:
+  a cancelled push returns once `git` exits, while the killed receive-pack
+  can still be finishing a write into the remote. Start servers through
+  `startServer`, `startServerUntil` or `startUntilCleanup`, which wait for
+  the server and then remove its directories with a bounded retry.
 
 ## Current delivery
 
