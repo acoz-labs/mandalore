@@ -295,17 +295,17 @@ func (s *Service) Recall(query string, scope *Scope, limit, budgetBytes int) (Re
 // context, where no scope is selected. Conflicts appear only when a competing
 // head matches the query; an empty query matches every record.
 func (s *Service) RecallAll(query string, limit int) (Packet, error) {
-	return s.RecallAllNamed(query, nil, "", limit)
+	return s.RecallAllNamed(query, nil, nil, limit)
 }
 
 // RecallAllNamed is RecallAll where only names, the query's words written as
 // names, can anchor a record (Packet.Anchor); nil lets every word anchor.
-// lead, if not empty, is a capitalized first word (Query.Lead).
-func (s *Service) RecallAllNamed(query string, names []string, lead string, limit int) (Packet, error) {
+// leads are words a name's place can't show (Query.Leads).
+func (s *Service) RecallAllNamed(query string, names, leads []string, limit int) (Packet, error) {
 	if len(query) > 2048 || limit < 1 || limit > 50 {
 		return Packet{}, errors.New("recall requires query <=2048 bytes and limit 1–50")
 	}
-	return s.store.Recall(Query{Text: query, Limit: limit, AllScopes: true, Names: names, Lead: lead}, time.Now())
+	return s.store.Recall(Query{Text: query, Limit: limit, AllScopes: true, Names: names, Leads: leads}, time.Now())
 }
 
 func (s *Service) Scopes() ([]ScopeInfo, error) { return s.store.Scopes() }
