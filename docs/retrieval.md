@@ -145,6 +145,50 @@ was chosen on the tuning split alone.
   older, even if only the older matches, and never adds the older for the
   newer's sake. Neither supersedes the other.
 
+### 2.5.1: lowercase either-or prompts
+
+2.5.0 judged a bare either-or prompt by its capitals. In "Kopia or Borg?"
+the first word is exempt from the lone-summary-word rule and "Borg" is a
+name, so Kopia's records inject. In "kopia or borg?" no word is a name or
+the first-word exception, so the match on "kopia" was dropped because
+"borg" is in no record, and the prompt got nothing
+([#264](https://github.com/acoz-labs/mandalore/issues/264)). 2.4.0 injected
+Kopia's records in every case.
+
+- **Bare either-or.** A prompt (or question clause) of two or more words,
+  each one content term, joined by `or` or `vs` in any case, with a final
+  `?`, `.` or `!` allowed: "kopia or borg?", "borg vs kopia", "kopia or Borg?".
+  `vs.` isn't a connective, because the word after it starts a sentence, so
+  "Kopia vs. Borg" stays as in 2.5.0. "versus", wrappers without a `?`
+  clause ("quick one, kopia vs borg") and words that give no content term
+  ("go or rust?", "this or that?") aren't bare either-ors either.
+- **The rule only adds.** For a bare either-or whose capitals don't already
+  give it one lead word, every word that isn't a name becomes a lead word.
+  A lone summary match on a lead counts, as on a name; a lead anchors
+  nothing and never counts as a name the signet lacks. The hook judges the
+  prompt as 2.5.0 does and again with those leads. It injects everything
+  the first judgement keeps, in 2.5.0's order, then the second judgement's
+  records that match the prompt in their summary or identifiers. So nothing
+  2.5.0 injects is dropped or moved down: "panel or turbine?", whose body
+  matches 2.5.0 injects, keeps all 4, and the 3 summary matches the rule
+  adds come after them, where packing drops them at the default budget.
+  Capitalised forms get one judgement, as before. The second costs one more
+  recall, only for prompts the rule reaches: about 2 to 6 ms at the median
+  on the 1000-record benchmark corpus and the evaluation signet.
+- **What it changes.** Lowercase and mixed-case bare either-ors inject what
+  their capitalised form injects, on top of what 2.5.0 injected. That
+  includes prompts no record answers: with a "Coffee order" record, "tea or
+  coffee?" injects it, as "Tea or Coffee?" already did on 2.5.0 and both
+  forms did on 2.4.0.
+
+Proof, on synthetic data ([evidence](../evidence/2.5/either-or.md)): the
+evaluation's per-prompt report is identical to 2.5.0's on every tuning set,
+since it holds no lowercase bare either-or. The hook replay is byte-identical.
+`TestEitherOrProbes` runs 28 lowercase bare either-ors (12 that share a
+summary word with no record answering them, 8 that share nothing, 8 pairs of
+known words) and asserts, per prompt, that the rule adds only records the
+capitalised form injects and drops none that 2.5.0 injects.
+
 ### Evaluation set
 
 `internal/server/testdata/context-eval.json` is a synthetic signet of 250
@@ -421,7 +465,11 @@ starts the prompt isn't a name. 2.4.0 answers all 8 of the evaluation's
 `either_or_limit` questions; 2.5.0 answers none, and `TestEitherOrOrders`
 asserts all 8 reversed. When X is in several records' summaries instead, a
 two-name "X or Y?" or "X vs Y" injects X's records as "Y or X?" does (see
-[2.5.0](#250-filler-collisions-generic-words-and-newer-decisions)). The
+[2.5.0](#250-filler-collisions-generic-words-and-newer-decisions)), in
+lowercase too from 2.5.1 ([2.5.1](#251-lowercase-either-or-prompts)), but not
+with `vs.` or inside a wrapper without a `?` clause. In lowercase, the
+body-only shape keeps its answer in every order ("helix or neovim?"), on 2.5.0
+and 2.5.1, because no word is a name the signet lacks. The
 first word still anchors nothing, so where a name's record rests on its
 anchor, order can still matter. With three names, "Beacon or Cortana or
 Siri?" gets nothing while "Siri or Cortana or Beacon?" gets the Beacon

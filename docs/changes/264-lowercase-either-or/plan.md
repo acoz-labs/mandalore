@@ -43,11 +43,47 @@ match, and the lowercase body-only shape above would fall from 8 of 8 to
 0 of 8, as "Helix or Neovim?" does today. That's a per-prompt regression
 the contract forbids.
 
+### Course change at code round 0: the rule only adds
+
+Two changes to the plan below came from the probes, both ruled by the lead
+on 2026-11-12 before code review.
+
+- **The probe bar has two halves.** The bar as first planned (a lowercase
+  form injects no record its capitalised form doesn't) fails on 6bed590
+  itself. "panel or turbine?" injects 4 body matches on "panel", and "Panel
+  or Turbine?" injects 3 others, because "Turbine" is then a name no record
+  holds ([before-fix results](https://github.com/acoz-labs/mandalore/pull/270#issuecomment-6832291843)).
+  That is the lowercase body-only shape this plan keeps. The bar, asserted
+  per probe in `bin/ci`: (a) every record the head injects that the rule-off
+  run (2.5.0 behaviour) doesn't is injected by the capitalised form; (b)
+  every record the rule-off run injects is still injected on the head.
+- **The hook judges a reached prompt twice.** With the leads passed in a
+  single judgement, 2 of the 28 probes failed. In "panel or turbine?" the
+  rescued summary matches outscored the body matches, and 3 of 2.5.0's 4
+  fell under the hook's relative cut (0.65 of the best), failing (b). In
+  "captain or pirate?" the rescued summary match lifted the best over the
+  bar, and a body match on "captain" (the hotfix policy) rode in under the
+  relative cut, which "Captain or Pirate?" doesn't inject, failing (a). The
+  lead chose option 1 of three: the rule only adds. A query the rule reaches
+  is recalled once as 2.5.0 does and once with its leads. The hook injects
+  everything the first judgement keeps, in its order, then the second
+  judgement's records (and conflicts) that match the prompt in a summary or
+  identifiers. Both halves are still asserted per probe, since (a) doesn't
+  hold by construction: a summary match the capitalised form cuts could
+  still be added.
+
 ## Files that change
 
-- **Hook selection** (`internal/server/context.go`): `lead` becomes `leads`,
-  returning a list. It keeps today's rule unchanged and adds one: when the
-  prompt is a bare either-or, every term in it that isn't a name is a lead.
+- **Hook selection** (`internal/server/context.go`): `lead` stays as it is.
+  A new `eitherOrLeads` returns the rule's leads: when the prompt is a bare
+  either-or, every term in it that isn't a name. It returns nothing when
+  `lead` already gives the same single lead, which is every capitalised
+  form. `relevant` recalls each query (the whole prompt and each question
+  clause) as 2.5.0 does. Only when `eitherOrLeads` reaches one of them does
+  it recall that query again with the leads and add from that second
+  judgement as the [course change](#course-change-at-code-round-0-the-rule-only-adds)
+  says. A package switch, `contextEitherOrLeads`, turns the rule off for the
+  probe test's 2.5.0 run, as `memory.RankNewerFirst` does for newer-first.
   - *Bare either-or*: the prompt's words, with trailing `?`, `.` or `!`
     dropped, alternate between a word and a connective, `or` or `vs`, in any
     case, starting and ending with a word, with at least two words. Each
@@ -63,9 +99,9 @@ the contract forbids.
   - *Why capitalised forms can't change*: in an all-capitalised bare
     either-or with `or` or `vs`, every word after the first is a name, so
     the only non-name term is the first word, which today's rule already
-    makes the lead. The new rule returns the same single lead, so the query
-    is identical. Every other capitalised prompt, `vs.` included, isn't the
-    bare shape and gets today's lead.
+    makes the lead. `eitherOrLeads` then returns nothing, so the prompt
+    takes the single 2.5.0 judgement. Every other capitalised prompt, `vs.`
+    included, isn't the bare shape and takes it too.
   - *Wrapped prompts.* The rule judges the whole prompt and each question
     clause. "In one line: kopia or borg?" is fixed through its clause
     "kopia or borg?". A wrapper without a `?` clause ("quick one, kopia vs
@@ -95,11 +131,16 @@ the contract forbids.
     "y or x?", "x vs y" and "y vs x", each asserting the answer in the top 3.
     This fails if the fix makes the lowercase second word an absent name, as
     the rejected title-casing would.
-  - `TestContextLead` becomes `TestContextLeads`: the existing rows keep
-    their answers (the existing `"restic or Borg?"` row changes from no
-    lead to `restic`, the one intended change), plus lowercase, three-word,
-    "Kopia vs. Borg", "kopia vs. borg", "versus", "go or rust?", stop-word,
-    wrapped and sentence rows that get no lead.
+  - `TestContextLead` stays unchanged. A new `TestEitherOrLeads` covers
+    the rule: every non-name word is a lead in "kopia or borg?" (`kopia`,
+    `borg`), "borg vs kopia", "kopia or borg or restic?" (all three), "Kopia
+    or borg?" (`Kopia`, `borg`) and "restic or Borg?" (`restic`). It returns
+    nothing for the capitalised forms ("Kopia or Borg?", "Kopia vs Borg",
+    "Beacon or Cortana or Siri?"), which shows they take the single
+    judgement. It also returns nothing for "Kopia vs. Borg", "kopia vs.
+    borg", "kopia versus borg", "go or rust?", "this or that?", "kopia?", a
+    wrapped whole prompt ("In one line: kopia or borg?"; its clause is
+    judged on its own) and a sentence ("should i use kopia or borg?").
   - *Lowercase either-or probes* (new, in `internal/server/context_test.go`,
     with the prompts in `internal/server/testdata/either-or-probes.json`):
     synthetic lowercase bare either-or prompts, each paired with its
@@ -112,8 +153,9 @@ the contract forbids.
     - 8 no-memory prompts whose words are in no record ("pizza or pasta?");
     - 8 pairs of two known words, each in a different record's summary.
 
-    The test asserts the bar on every prompt: the lowercase form injects no
-    record that its capitalised form doesn't inject on the same build.
+    The test asserts both halves of the bar on every prompt (see the
+    [course change](#course-change-at-code-round-0-the-rule-only-adds)),
+    running each lowercase prompt with the rule off and on.
   - A unit test in `internal/memory` that a lowercase lone summary match is
     kept when it's in `Leads` and dropped when it isn't, with an absent
     other term.
@@ -140,8 +182,9 @@ the contract forbids.
    v2.4.0 for reference, as a PR comment before the fix is written. Save
    the baseline evaluation report with `MANDALORE_EVAL_REPORT` on the merge
    base.
-2. **The fix**: `leads`, `Query.Leads`, the `bm25` membership check, and
-   the unit tests. The tripwire and the probe bar pass.
+2. **The fix**: `eitherOrLeads`, the second judgement in `relevant`,
+   `Query.Leads`, the `bm25` membership check, and the unit tests. The
+   tripwire and both halves of the probe bar pass.
 3. **No-regression evidence** (see [Proof](#proof)): the per-prompt
    comparison, the hook replay comparison, the probes on the head, and the
    either-or matrix.
@@ -160,18 +203,29 @@ step 2.
   the reviewer on 6bed590). "Tea or Coffee?" already injects it on 2.5.0.
   The existing fixture has no lowercase bare either-or prompt, so its
   zero-difference comparison can't see this. The probe set measures it
-  per prompt and bars a lowercase prompt from injecting any record its
-  capitalised form doesn't. The requester's private eval covers real data.
+  per prompt and bars the rule from adding any record the capitalised form
+  doesn't inject. The requester's private eval covers real data.
+- **More records on a prompt the rule reaches.** The second judgement only
+  adds, so a prompt can carry 2.5.0's records plus the added ones. "panel
+  or turbine?" has 7 relevant records: 2.5.0's 4 body matches first, in
+  their order, then 3 summary matches on "panel". Packing keeps the top 3
+  and then only what fits whole in the 2048-byte budget, so it injects 2.5.0's
+  4 and drops the 3 added. The byte budget bounds every prompt as before.
+- **A second recall on reached prompts.** Only a bare either-or (whole
+  prompt or question clause) that `eitherOrLeads` reaches pays it. Measured
+  warm, with 300 calls each: about 2 to 6 ms more at the median on the
+  1000-record benchmark corpus and the evaluation signet, inside the hook's
+  3 s timeout and `bin/ci`'s 300 ms warm-path bound. Capitalised forms keep
+  one judgement.
 - **Breaking the lowercase body-only shape.** Contained by keeping leads out
   of absent names, and asserted for all 8 pairs in four phrasings.
 - **Changing capitalised forms.** Contained by the construction above, with
-  `vs.` left outside the shape, and asserted by the unchanged
-  `TestContextLeads` rows, the `vs.` tripwire rows and the zero-difference
-  comparison.
+  `vs.` left outside the shape, and asserted by `TestEitherOrLeads`
+  returning nothing for them, the unchanged `TestContextLead`, the `vs.`
+  tripwire rows and the zero-difference comparison.
 - **Three-word lowercase prompts.** Every word becomes a lead and none
-  anchors, so "beacon or cortana or siri?" may inject what neither
-  capitalised order does. The matrix reports it. Order effects with three
-  names remain a stated limit.
+  anchors. The matrix shows "beacon or cortana or siri?" still gets nothing,
+  as on 2.5.0. Order effects with three names remain a stated limit.
 - **Main moves under this PR** (#259 is in flight). The baseline report is
   regenerated on the merge base used for review, and main is merged in, never
   rebased or force-pushed.
@@ -186,6 +240,10 @@ step 2.
   v2.4.0 (its tag in a temporary worktree, with the probe test copied in).
   Each prompt whose injection differs from the merge base is listed in the
   PR and the evidence.
+- **Latency of the second judgement**: warm p50 and p95 over 300 calls each,
+  rule off and on, for a bare prompt, a capitalised form and a wrapped
+  clause, on the 1000-record benchmark corpus and the evaluation signet,
+  reported in the evidence.
 - **No per-prompt regression on any existing set**, three ways. The
   fixture has no lowercase bare either-or prompt, so these show that
   nothing else moved; the probes above cover what the change reaches.

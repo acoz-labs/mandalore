@@ -96,3 +96,165 @@ GOFLAGS=-count=1 MANDALORE_EVAL_REPORT=/tmp/after.json go test ./internal/server
 python3 docs/evidence/2.5/eval-diff.py /tmp/before.json /tmp/after.json
 python3 docs/evidence/2.5/hook-replay.py /tmp/replay 2048 1536 1024
 ```
+
+## 2.5.1: lowercase either-or prompts (#264)
+
+2.5.1 gives lowercase and mixed-case bare either-or prompts the records
+their capitalised form gets, and changes nothing else that the evaluation,
+the hook replay or the probes measure. This is engineering evidence recorded
+2026-11-12 on macOS (arm64) with Go 1.26.11, comparing 2.5.0 as merged
+(6bed590) with the change. It is not release acceptance. All data is
+synthetic.
+
+### The matrix
+
+The evaluation signet plus the three Kopia-summary records above, as
+records injected by `memory_context`. 2.4.0 is the v2.4.0 tag with this
+fixture copied in. The counts come from a scratch test, not committed, run
+in a temporary worktree of each build with `GOFLAGS=-count=1`. 2.5.1's rows
+are asserted by `TestMemoryContextEitherOrOnASummaryName`, which fails on
+6bed590.
+
+| Prompt | 2.4.0 | 2.5.0 | 2.5.1 |
+| --- | --- | --- | --- |
+| "Kopia or Borg?" | 3 | 3 | 3 |
+| "Borg or Kopia?" | 3 | 3 | 3 |
+| "Kopia vs Borg" | 3 | 3 | 3 |
+| "Borg vs Kopia" | 3 | 3 | 3 |
+| "kopia or borg?" | 3 | 0 | 3 |
+| "borg or kopia?" | 3 | 0 | 3 |
+| "kopia vs borg" | 3 | 0 | 3 |
+| "borg vs kopia" | 3 | 0 | 3 |
+| "kopia or Borg?" | 3 | 0 | 3 |
+| "Kopia or borg?" | 3 | 0 | 3 |
+| "Kopia vs. Borg" | 3 | 0 | 0 |
+| "Borg vs. Kopia" | 3 | 0 | 0 |
+| "kopia vs. borg" | 3 | 0 | 0 |
+| "In one line: kopia or borg?" | 3 | 0 | 3 |
+| "kopia or borg? one line is fine" | 3 | 0 | 3 |
+| "quick one, kopia vs borg" | 3 | 0 | 0 |
+| "Quick one: Kopia vs Borg" | 3 | 0 | 0 |
+| "go or rust?" | 0 | 0 | 0 |
+| "this or that?" | 0 | 0 | 0 |
+| "Beacon or Cortana or Siri?" | 0 | 0 | 0 |
+| "Siri or Cortana or Beacon?" | 1 | 1 | 1 |
+| "beacon or cortana or siri?" | 0 | 0 | 0 |
+| "siri or cortana or beacon?" | 0 | 0 | 0 |
+| "Beacon or Cortana?" | 2 | 1 | 1 |
+| "Cortana or Beacon?" | 2 | 2 | 2 |
+| "beacon or cortana?" | 2 | 1 | 2 |
+| "cortana or beacon?" | 2 | 1 | 2 |
+
+`vs.`, a wrapper without a `?` clause and three lowercase names stay as on
+2.5.0. "kopia or borg? one line is fine" is reached through its question
+clause. "beacon or cortana?" and "cortana or beacon?" now get what "Cortana
+or Beacon?" gets.
+
+For the 8 `either_or_limit` pairs (X only in the answer's body, Y a name no
+record holds), the answer's hook rank in "X or Y?", "Y or X?", "X vs Y" and
+"Y vs X", the four lowercase forms and both mixed forms is identical on
+6bed590 and 2.5.1. Every lowercase form ranks the answer first. The
+capitalised and mixed forms that put the absent name in capitals get
+nothing, as before. 2.4.0 ranks the answer first in every form.
+`TestEitherOrOrders` asserts the four lowercase forms of all 8.
+
+### What the change reaches: the probes
+
+The evaluation set holds no lowercase bare either-or prompt, so its
+comparison can't see this change. `TestEitherOrProbes`
+(`internal/server/testdata/either-or-probes.json`) runs 28. They were posted
+with their 6bed590 and 2.4.0 results on
+[#270](https://github.com/acoz-labs/mandalore/pull/270#issuecomment-6832291843)
+before the fix ran on them. They run on the evaluation signet plus the three
+Kopia records and a "Coffee order" record. "2.5.0" is the change's rule off,
+which gives the same counts as 6bed590. The test asserts, per prompt, that
+the rule adds only records the capitalised form injects and drops none that
+2.5.0 injects.
+
+| Group | Lowercase | 2.4.0 | 2.5.0 | 2.5.1 | Capitalised | 2.4.0 | 2.5.0 and 2.5.1 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| summary word | "tea or coffee?" | 1 | 0 | 1 | "Tea or Coffee?" | 1 | 1 |
+| summary word | "drill or hammer?" | 1 | 0 | 1 | "Drill or Hammer?" | 1 | 1 |
+| summary word | "runway or terminal?" | 1 | 0 | 1 | "Runway or Terminal?" | 1 | 1 |
+| summary word | "captain or pirate?" | 5 | 0 | 4 | "Captain or Pirate?" | 5 | 4 |
+| summary word | "summer or spring?" | 1 | 0 | 1 | "Summer or Spring?" | 1 | 1 |
+| summary word | "panel or turbine?" | 4 | 4 | 4 | "Panel or Turbine?" | 4 | 3 |
+| summary word | "verdict or trial?" | 1 | 0 | 1 | "Verdict or Trial?" | 1 | 1 |
+| summary word | "pipeline or tanker?" | 1 | 0 | 1 | "Pipeline or Tanker?" | 1 | 1 |
+| summary word | "bathroom or kitchen?" | 1 | 0 | 1 | "Bathroom or Kitchen?" | 1 | 1 |
+| summary word | "beds vs sofas" | 0 | 0 | 0 | "Beds vs Sofas" | 0 | 0 |
+| summary word | "venue vs theme" | 1 | 0 | 1 | "Venue vs Theme" | 1 | 1 |
+| summary word | "font vs calligraphy" | 1 | 0 | 1 | "Font vs Calligraphy" | 1 | 1 |
+| no record | "pizza or pasta?" | 0 | 0 | 0 | "Pizza or Pasta?" | 0 | 0 |
+| no record | "cats or dogs?" | 0 | 0 | 0 | "Cats or Dogs?" | 0 | 0 |
+| no record | "piano or violin?" | 0 | 0 | 0 | "Piano or Violin?" | 0 | 0 |
+| no record | "chess or checkers?" | 0 | 0 | 0 | "Chess or Checkers?" | 0 | 0 |
+| no record | "ski or snowboard?" | 0 | 0 | 0 | "Ski or Snowboard?" | 0 | 0 |
+| no record | "rugby vs cricket" | 0 | 0 | 0 | "Rugby vs Cricket" | 0 | 0 |
+| no record | "opera vs ballet" | 0 | 0 | 0 | "Opera vs Ballet" | 0 | 0 |
+| no record | "sushi vs ramen" | 0 | 0 | 0 | "Sushi vs Ramen" | 0 | 0 |
+| both known | "mulch or compost?" | 4 | 4 | 4 | "Mulch or Compost?" | 4 | 4 |
+| both known | "shell or editor?" | 4 | 4 | 4 | "Shell or Editor?" | 4 | 4 |
+| both known | "tidepool or lanternfish?" | 10 | 10 | 10 | "Tidepool or Lanternfish?" | 10 | 10 |
+| both known | "beacon or kopia?" | 5 | 5 | 5 | "Beacon or Kopia?" | 5 | 5 |
+| both known | "nas or ups?" | 3 | 3 | 3 | "Nas or Ups?" | 3 | 3 |
+| both known | "spelling vs timezone" | 4 | 4 | 4 | "Spelling vs Timezone" | 4 | 4 |
+| both known | "freeze vs hotfix" | 1 | 1 | 1 | "Freeze vs Hotfix" | 1 | 1 |
+| both known | "printer vs vlan" | 4 | 4 | 4 | "Printer vs Vlan" | 4 | 4 |
+
+"panel or turbine?" keeps 2.5.0's 4 body matches in 2.5.0's order. The
+rule's 3 summary matches on "panel" join after them, and packing drops them
+at the 2048-byte default. A first version that judged such prompts once
+with the leads dropped 3 of the 4 body matches and added a body match
+("captain" in the hotfix policy) that "Captain or Pirate?" doesn't inject.
+So 2.5.1 judges them twice and only adds.
+
+### Nothing else moved
+
+- **Evaluation, per prompt.** `MANDALORE_EVAL_REPORT` from
+  `TestContextSelectionEvaluation` on 6bed590 and on the change, compared
+  with [`eval-diff.py`](eval-diff.py):
+
+  ```text
+  Collisions   24 entries, 0 different
+  EitherOr      8 entries, 0 different
+  Filler       18 entries, 0 different
+  Generic      12 entries, 0 different
+  Guard         6 entries, 0 different
+  Named        10 entries, 0 different
+  Newer         6 entries, 0 different
+  NoMemory     62 entries, 0 different
+  OlderOnly     2 entries, 0 different
+  Session      20 entries, 0 different
+  Short        38 entries, 0 different
+  Trials      880 entries, 0 different
+  differences: 0
+  ```
+
+  The tuning bars are 2.5.0's: false injection 3 of 62, collisions 2 of 24,
+  plain short questions 36 of 38, filler-wrapped 18 of 18, generic two-word
+  0 of 12 with the guard at 6 of 6, named guard 8 of 10, `either_or_limit`
+  0 of 8, newer first 6 of 6 in recall and the hook, older-only 2 of 2, hook
+  top-1/top-3 82.2%/89.2%, recall 77.3%/93.2%, scripted session 560 bytes.
+- **Hook replay.** [`hook-replay.py`](hook-replay.py) at 2048 bytes, with
+  and without session IDs, on builds of 6bed590 and the change: both output
+  files are byte-identical.
+- **`memory_recall`.** It sets no leads, so its path is unchanged. Its ranks
+  are part of the per-prompt report above.
+
+### Latency
+
+Only a prompt the rule reaches costs a second recall. 300 warm calls each,
+with the read cache on, as the server runs:
+
+| Signet | Prompt | Rule off (2.5.0) p50 / p95 | 2.5.1 p50 / p95 |
+| --- | --- | --- | --- |
+| 1000-record corpus | "kopia or borg?" | 5.1ms / 10.7ms | 9.68ms / 15.26ms |
+| 1000-record corpus | "Kopia or Borg?" | one judgement either way | 5.18ms / 7.77ms |
+| 1000-record corpus | "In one line: kopia or borg?" | 9.72ms / 13.4ms | 15.25ms / 19.72ms |
+| evaluation signet | "kopia or borg?" | 4.24ms / 4.99ms | 6.59ms / 10.44ms |
+| evaluation signet | "Kopia or Borg?" | one judgement either way | 3.2ms / 6.22ms |
+| evaluation signet | "In one line: kopia or borg?" | 8.34ms / 10.33ms | 10.87ms / 12.5ms |
+
+The hook's timeout is 3 s, and `bin/ci`'s warm-path bound is 300 ms.
+Capitalised forms take one judgement, as on 2.5.0.
