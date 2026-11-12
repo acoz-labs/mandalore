@@ -77,6 +77,9 @@ Document any required deviation in `docs/development.md`.
 - Pass the maintainer's process-scoped `GH_TOKEN` inside that wrapper too,
   not only `GH_CONFIG_DIR`. Without it `bin/promote-local-candidate` refuses
   the same way, before any write (2.5.0's first attempt).
+- Give `batvault exec` an absolute command path in that wrapper (for example
+  `/bin/bash`). It refuses a relative one before anything runs (2.5.1's first
+  attempt). No tag or draft existed then; check, fix the path, then rerun.
 - The release gate re-hashes the acceptance receipt's log comments. Redact
   local paths in receipt logs only after `bin/sdlc-release record` and
   finalize, and post a notice with each original body's sha256 (#232).
