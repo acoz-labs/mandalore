@@ -151,6 +151,48 @@ func lead(prompt string) string {
 	return first
 }
 
+// contextEitherOrLeads turns on #264's rule (eitherOrLeads); tests turn it
+// off to compare with 2.5.0.
+var contextEitherOrLeads = true
+
+// eitherOrLeads is #264's rule: in a bare either-or prompt, every word that
+// isn't a name is a lead. In lowercase no word is a name, so 2.5.0 dropped
+// the match on "kopia" in "kopia or borg?" because "borg" is in no record.
+// It returns nil when the prompt isn't bare, or when lead already gives the
+// same lead, as for every capitalised form ("Kopia or Borg?"). "vs." isn't a
+// connective: the word after it starts a sentence, so "Kopia vs. Borg" has
+// no name and stays as in 2.5.0.
+func eitherOrLeads(prompt string) []string {
+	if !contextEitherOrLeads {
+		return nil
+	}
+	fields := strings.Fields(strings.TrimRight(strings.TrimSpace(prompt), "?.!"))
+	if len(fields) < 3 || len(fields)%2 == 0 {
+		return nil
+	}
+	named := map[string]bool{}
+	for _, n := range names(prompt) {
+		named[significant(n)] = true
+	}
+	out := []string{}
+	for i, f := range fields {
+		switch {
+		case i%2 == 1:
+			if c := strings.ToLower(f); c != "or" && c != "vs" {
+				return nil
+			}
+		case len(strings.Fields(significant(f))) != 1:
+			return nil
+		case !named[significant(f)]:
+			out = append(out, f)
+		}
+	}
+	if slices.Equal(out, []string{lead(prompt)}) {
+		return nil
+	}
+	return out
+}
+
 func oneLine(s string) string { return strings.Join(strings.Fields(s), " ") }
 
 // contextEntry is one record's line: its claim, which may be clipped, and
@@ -252,19 +294,59 @@ func relevance(p memory.Packet) (records, conflicts map[string]float64) {
 }
 
 // relevant recalls the whole prompt and each of its question clauses, and
-// keeps the records and conflicts relevant enough to inject.
+// keeps the records and conflicts relevant enough to inject. A query that
+// eitherOrLeads reaches is recalled again with its leads, and that judgement
+// only adds: its records and conflicts that match the prompt in a summary or
+// identifiers join the end, so everything 2.5.0 keeps stays, in its order.
 func relevant(m *memory.Service, prompt string) ([]memory.Revision, []memory.RevisionConflict, error) {
-	var packets []memory.Packet
+	var packets, withLeads []memory.Packet
+	reached := false
 	for _, q := range append([]string{prompt}, questionClauses(prompt)...) {
-		if query := significant(q); query != "" {
-			p, err := m.RecallAllNamed(query, names(q), lead(q), contextRecallLimit)
-			if err != nil {
+		query := significant(q)
+		if query == "" {
+			continue
+		}
+		var l []string
+		if first := lead(q); first != "" {
+			l = []string{first}
+		}
+		p, err := m.RecallAllNamed(query, names(q), l, contextRecallLimit)
+		if err != nil {
+			return nil, nil, err
+		}
+		packets = append(packets, p)
+		if l := eitherOrLeads(q); l != nil {
+			if p, err = m.RecallAllNamed(query, names(q), l, contextRecallLimit); err != nil {
 				return nil, nil, err
 			}
-			packets = append(packets, p)
+			reached = true
 		}
+		withLeads = append(withLeads, p)
 	}
 	records, conflicts := choose(packets)
+	if !reached {
+		return records, conflicts, nil
+	}
+	titled := map[string]bool{}
+	for _, p := range withLeads {
+		for id, ok := range p.Titled {
+			titled[id] = titled[id] || ok
+		}
+	}
+	more, moreConflicts := choose(withLeads)
+	for _, r := range more {
+		if titled[r.ID] && !slices.ContainsFunc(records, func(k memory.Revision) bool { return k.ID == r.ID }) {
+			records = append(records, r)
+		}
+	}
+	for _, c := range moreConflicts {
+		if slices.ContainsFunc(conflicts, func(k memory.RevisionConflict) bool { return k.RecordID == c.RecordID }) {
+			continue
+		}
+		if slices.ContainsFunc(c.Revisions, func(r memory.Revision) bool { return titled[r.ID] }) {
+			conflicts = append(conflicts, c)
+		}
+	}
 	return records, conflicts, nil
 }
 

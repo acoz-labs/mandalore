@@ -133,14 +133,19 @@ func TestNewerFirstCostsNoCase(t *testing.T) {
 
 // TestEitherOrOrders tracks the "X or Y?" limit's order: with X only in the
 // answer's body and Y a name no record holds, "Y or X?" keeps every answer
-// ("Neovim or Helix?") while "X or Y?" loses them (assertEvaluation).
+// ("Neovim or Helix?") while "X or Y?" loses them (assertEvaluation). Every
+// lowercase order keeps it ("helix or neovim?").
 func TestEitherOrOrders(t *testing.T) {
 	m, e := testfixture.LoadEvaluation(t, "testdata/context-eval.json")
 	for _, c := range e.EitherOrLimit.Tune {
 		x, y, _ := strings.Cut(strings.TrimSuffix(strings.TrimPrefix(c.Prompt, "Is it "), "?"), " or ")
-		prompt := y + " or " + x + "?"
-		if r := rankOf(contextRanks(contextFor(t, m, "prompt", prompt)), c.Expect); r < 1 || r > 3 {
-			t.Errorf("%q: %s at rank %d, want in the top 3", prompt, c.Expect, r)
+		// #264: in lowercase neither word is a name, so every order keeps the
+		// answer, and the fix mustn't make the absent word count as one.
+		lx, ly := strings.ToLower(x), strings.ToLower(y)
+		for _, prompt := range []string{y + " or " + x + "?", lx + " or " + ly + "?", ly + " or " + lx + "?", lx + " vs " + ly, ly + " vs " + lx} {
+			if r := rankOf(contextRanks(contextFor(t, m, "prompt", prompt)), c.Expect); r < 1 || r > 3 {
+				t.Errorf("%q: %s at rank %d, want in the top 3", prompt, c.Expect, r)
+			}
 		}
 	}
 }

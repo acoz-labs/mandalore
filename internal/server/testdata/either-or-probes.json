@@ -1,0 +1,43 @@
+{
+ "about": "Synthetic lowercase bare either-or prompts for #264, written before the fix ran on them. They run on the evaluation signet plus these records; each prompt is compared with its capitalised form (each word's first letter upper-cased). summary_collision: one word is in a record's summary and the other in no record, and no record answers the prompt. no_record: neither word is in any record. both_known: each word is in a different record's summary.",
+ "records": [
+  {"kind": "procedure", "summary": "Kopia backup schedule", "body": "Snapshots the NAS nightly to the offsite bucket."},
+  {"kind": "decision", "summary": "Kopia retention", "body": "Keep 14 daily and 8 weekly snapshots."},
+  {"kind": "fact", "summary": "Kopia repository password", "body": "Stored in the password manager under the NAS entry."},
+  {"kind": "preference", "summary": "Coffee order", "body": "Oat milk flat white from the corner cafe."}
+ ],
+ "summary_collision": [
+  "tea or coffee?",
+  "drill or hammer?",
+  "runway or terminal?",
+  "captain or pirate?",
+  "summer or spring?",
+  "panel or turbine?",
+  "verdict or trial?",
+  "pipeline or tanker?",
+  "bathroom or kitchen?",
+  "beds vs sofas",
+  "venue vs theme",
+  "font vs calligraphy"
+ ],
+ "no_record": [
+  "pizza or pasta?",
+  "cats or dogs?",
+  "piano or violin?",
+  "chess or checkers?",
+  "ski or snowboard?",
+  "rugby vs cricket",
+  "opera vs ballet",
+  "sushi vs ramen"
+ ],
+ "both_known": [
+  "mulch or compost?",
+  "shell or editor?",
+  "tidepool or lanternfish?",
+  "beacon or kopia?",
+  "nas or ups?",
+  "spelling vs timezone",
+  "freeze vs hotfix",
+  "printer vs vlan"
+ ]
+}

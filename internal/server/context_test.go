@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"slices"
 	"strings"
 	"testing"
@@ -519,6 +520,37 @@ func TestContextLead(t *testing.T) {
 	}
 }
 
+// TestEitherOrLeads: #264's rule reaches lowercase and mixed-case bare
+// either-or prompts, and no capitalised form, which keeps lead's one lead and
+// a single judgement.
+func TestEitherOrLeads(t *testing.T) {
+	for prompt, want := range map[string][]string{
+		"kopia or borg?":           {"kopia", "borg"},
+		"borg vs kopia":            {"borg", "kopia"},
+		"KOPIA OR borg?":           {"KOPIA", "borg"},
+		"kopia or borg or restic?": {"kopia", "borg", "restic"},
+		"Kopia or borg?":           {"Kopia", "borg"},
+		"restic or Borg?":          {"restic"},
+		// Capitalised forms: lead already gives the one lead.
+		"Kopia or Borg?":             nil,
+		"Kopia vs Borg":              nil,
+		"Beacon or Cortana or Siri?": nil,
+		// Not the bare shape.
+		"Kopia vs. Borg":              nil,
+		"kopia vs. borg":              nil,
+		"kopia versus borg":           nil,
+		"go or rust?":                 nil,
+		"this or that?":               nil,
+		"kopia?":                      nil,
+		"In one line: kopia or borg?": nil,
+		"should i use kopia or borg?": nil,
+	} {
+		if got := eitherOrLeads(prompt); !slices.Equal(got, want) {
+			t.Errorf("eitherOrLeads(%q) = %q, want %q", prompt, got, want)
+		}
+	}
+}
+
 // #232's synthetic repro: on 5b87ef5 a bare "A or B?" or "A vs B", where A is
 // in several records' summaries and B in none, injected nothing, while
 // "B or A?" injected A's records. Each now injects all three.
@@ -528,12 +560,99 @@ func TestMemoryContextEitherOrOnASummaryName(t *testing.T) {
 		memory.Write{Kind: "decision", Summary: "Kopia retention", Body: "Keep 14 daily and 8 weekly snapshots."},
 		memory.Write{Kind: "fact", Summary: "Kopia repository password", Body: "Stored in the password manager under the NAS entry."},
 	)
-	for _, prompt := range []string{"Kopia or Borg?", "Borg or Kopia?", "Kopia vs Borg"} {
+	for _, prompt := range []string{
+		"Kopia or Borg?", "Borg or Kopia?", "Kopia vs Borg", "Borg vs Kopia",
+		// #264: 2.5.0 injected nothing for these.
+		"kopia or borg?", "borg or kopia?", "kopia vs borg", "borg vs kopia",
+		"kopia or Borg?", "Kopia or borg?", "In one line: kopia or borg?",
+	} {
 		got := contextRanks(contextFor(t, m, "prompt", prompt))
 		slices.Sort(got)
 		want := slices.Sorted(slices.Values(ids[:3]))
 		if !slices.Equal(got, want) {
 			t.Errorf("%q injected %v, want the 3 Kopia records %v", prompt, got, want)
+		}
+	}
+	// "vs." is outside the fix: "Borg" after it starts a sentence, so it isn't
+	// a name, and these stay as in 2.5.0.
+	for _, prompt := range []string{"Kopia vs. Borg", "Borg vs. Kopia"} {
+		if got := contextRanks(contextFor(t, m, "prompt", prompt)); len(got) != 0 {
+			t.Errorf("%q injected %v, want nothing, as in 2.5.0", prompt, got)
+		}
+	}
+}
+
+// #264's second judgement adds a conflict as it adds a record: a forked
+// Kopia record is flagged for "kopia or borg?" as for "Kopia or Borg?".
+func TestMemoryContextEitherOrAddsConflicts(t *testing.T) {
+	m, ids := selectionService(t, memory.Write{Kind: "decision", Summary: "Kopia retention", Body: "Keep 14 daily snapshots."})
+	h, err := m.HistoryPage(ids[0], 0, 50)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, body := range []string{"Keep 7 daily snapshots.", "Keep 30 daily snapshots."} {
+		if _, err := m.Remember(memory.Write{Kind: "decision", RecordID: ids[0], Supersedes: []string{h.Items[0].ID}, Summary: "Kopia retention", Body: body, Basis: "user-direction", Reason: "Synthetic fork"}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, prompt := range []string{"Kopia or Borg?", "kopia or borg?"} {
+		if text := contextFor(t, m, "prompt", prompt); !strings.Contains(text, "- Conflict: "+ids[0]+" has 2 competing revisions") {
+			t.Errorf("%q: conflict not flagged:\n%s", prompt, text)
+		}
+	}
+}
+
+// TestEitherOrProbes measures what #264's rule reaches: lowercase bare
+// either-or prompts, which the evaluation set doesn't hold. For each, the rule
+// may add only records the capitalised form injects, and drops none that
+// 2.5.0 (the rule off) injects, so "panel or turbine?" keeps its body matches.
+func TestEitherOrProbes(t *testing.T) {
+	m, _ := testfixture.LoadEvaluation(t, "testdata/context-eval.json")
+	var probes struct {
+		Records          []memory.Write
+		SummaryCollision []string `json:"summary_collision"`
+		NoRecord         []string `json:"no_record"`
+		BothKnown        []string `json:"both_known"`
+	}
+	data, err := os.ReadFile("testdata/either-or-probes.json")
+	if err == nil {
+		err = json.Unmarshal(data, &probes)
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(probes.SummaryCollision) != 12 || len(probes.NoRecord) != 8 || len(probes.BothKnown) != 8 {
+		t.Fatalf("probe groups hold %d, %d and %d prompts, want 12, 8 and 8", len(probes.SummaryCollision), len(probes.NoRecord), len(probes.BothKnown))
+	}
+	for _, w := range probes.Records {
+		w.Basis, w.Reason = "observation", "Synthetic either-or probe"
+		if _, err := m.Remember(w); err != nil {
+			t.Fatal(err)
+		}
+	}
+	defer func() { contextEitherOrLeads = true }()
+	for _, lower := range slices.Concat(probes.SummaryCollision, probes.NoRecord, probes.BothKnown) {
+		words := strings.Fields(lower)
+		for i, w := range words {
+			if w != "or" && w != "vs" {
+				words[i] = strings.ToUpper(w[:1]) + w[1:]
+			}
+		}
+		capital := strings.Join(words, " ")
+		contextEitherOrLeads = false
+		off := contextRanks(contextFor(t, m, "prompt", lower))
+		contextEitherOrLeads = true
+		on, c := contextRanks(contextFor(t, m, "prompt", lower)), contextRanks(contextFor(t, m, "prompt", capital))
+		t.Logf("%q: off %d %v, on %d %v; %q: %d %v", lower, len(off), off, len(on), on, capital, len(c), c)
+		for _, id := range on {
+			if !slices.Contains(off, id) && !slices.Contains(c, id) {
+				t.Errorf("%q adds %s, which %q doesn't inject", lower, id, capital)
+			}
+		}
+		for _, id := range off {
+			if !slices.Contains(on, id) {
+				t.Errorf("%q drops %s, which it injects with the rule off", lower, id)
+			}
 		}
 	}
 }
