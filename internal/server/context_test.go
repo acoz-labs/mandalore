@@ -602,6 +602,59 @@ func TestMemoryContextEitherOrAddsConflicts(t *testing.T) {
 	}
 }
 
+// linesMissing lists the lines of before that after doesn't hold, in order.
+func linesMissing(before, after string) []string {
+	var missing []string
+	rest := strings.Split(after, "\n")
+	for _, line := range strings.Split(before, "\n") {
+		if at := slices.Index(rest, line); at >= 0 {
+			rest = rest[at+1:]
+		} else if line != "" {
+			missing = append(missing, line)
+		}
+	}
+	return missing
+}
+
+// #264 code review round 1: an added older decision brings the newer one on
+// its subject, just ahead, as the single judgement does.
+func TestMemoryContextEitherOrBringsTheNewer(t *testing.T) {
+	m, ids := selectionService(t,
+		memory.Write{Kind: "decision", Summary: "Kopia snapshot retention policy", Body: "Keep 14 daily snapshots of the NAS in the offsite bucket."},
+		memory.Write{Kind: "decision", Summary: "Snapshot retention policy", Body: "Keep 30 daily snapshots of the NAS in the offsite bucket."},
+	)
+	older, newer := ids[0], ids[1]
+	for _, prompt := range []string{"Kopia or Borg?", "kopia or borg?", "borg or kopia?"} {
+		if got := contextRanks(contextFor(t, m, "prompt", prompt)); !slices.Equal(got, []string{newer, older}) {
+			t.Errorf("%q injected %v, want the newer %s then the older %s", prompt, got, newer, older)
+		}
+	}
+}
+
+// #264 code review round 1: a record 2.5.0 injects keeps its whole line when
+// the rule adds records, which take only the room left.
+func TestMemoryContextEitherOrKeeps250Lines(t *testing.T) {
+	m, ids := selectionService(t,
+		memory.Write{Kind: "project-state", Summary: "Offsite drill log", Body: strings.Repeat("Ran kopia against the bucket. ", 20)},
+		memory.Write{Kind: "procedure", Summary: "Kopia backup schedule", Body: "Snapshots the NAS nightly to the offsite bucket."},
+		memory.Write{Kind: "decision", Summary: "Kopia retention", Body: "Keep 14 daily and 8 weekly snapshots."},
+	)
+	defer func() { contextEitherOrLeads = true }()
+	contextEitherOrLeads = false
+	before := contextFor(t, m, "prompt", "kopia or borg?")
+	contextEitherOrLeads = true
+	after := contextFor(t, m, "prompt", "kopia or borg?")
+	if got := contextRanks(before); !slices.Equal(got, ids[:1]) {
+		t.Fatalf("2.5.0 injected %v, want the drill log alone", got)
+	}
+	if missing := linesMissing(before, after); missing != nil || len(after) > contextDefaultBytes {
+		t.Errorf("2.5.0's lines %q changed or dropped, %d bytes:\n%s", missing, len(after), after)
+	}
+	if got := contextRanks(after); len(got) < 2 || got[0] != ids[0] {
+		t.Errorf("injected %v, want the drill log first, then additions", got)
+	}
+}
+
 // TestEitherOrProbes measures what #264's rule reaches: lowercase bare
 // either-or prompts, which the evaluation set doesn't hold. For each, the rule
 // may add only records the capitalised form injects, and drops none that
@@ -640,9 +693,10 @@ func TestEitherOrProbes(t *testing.T) {
 		}
 		capital := strings.Join(words, " ")
 		contextEitherOrLeads = false
-		off := contextRanks(contextFor(t, m, "prompt", lower))
+		offText := contextFor(t, m, "prompt", lower)
 		contextEitherOrLeads = true
-		on, c := contextRanks(contextFor(t, m, "prompt", lower)), contextRanks(contextFor(t, m, "prompt", capital))
+		onText := contextFor(t, m, "prompt", lower)
+		off, on, c := contextRanks(offText), contextRanks(onText), contextRanks(contextFor(t, m, "prompt", capital))
 		t.Logf("%q: off %d %v, on %d %v; %q: %d %v", lower, len(off), off, len(on), on, capital, len(c), c)
 		for _, id := range on {
 			if !slices.Contains(off, id) && !slices.Contains(c, id) {
@@ -653,6 +707,9 @@ func TestEitherOrProbes(t *testing.T) {
 			if !slices.Contains(on, id) {
 				t.Errorf("%q drops %s, which it injects with the rule off", lower, id)
 			}
+		}
+		if missing := linesMissing(offText, onText); missing != nil {
+			t.Errorf("%q changes or drops 2.5.0's lines %q", lower, missing)
 		}
 	}
 }

@@ -166,13 +166,17 @@ Kopia's records in every case.
   give it one lead word, every word that isn't a name becomes a lead word.
   A lone summary match on a lead counts, as on a name; a lead anchors
   nothing and never counts as a name the signet lacks. The hook judges the
-  prompt as 2.5.0 does and again with those leads. It injects everything
-  the first judgement keeps, in 2.5.0's order, then the second judgement's
-  records that match the prompt in their summary or identifiers. So nothing
-  2.5.0 injects is dropped or moved down: "panel or turbine?", whose body
-  matches 2.5.0 injects, keeps all 4, and the 3 summary matches the rule
-  adds come after them, where packing drops them at the default budget.
-  Capitalised forms get one judgement, as before. The second costs one more
+  prompt as 2.5.0 does and again with those leads. The second judgement's
+  records and conflicts that match the prompt in their summary or
+  identifiers, and that the first didn't keep, are additions. An added
+  decision or preference brings the newer record on its subject, just
+  ahead of it, as the first judgement does. When 2.5.0 injects anything,
+  its output is built as before, line for line, and the additions follow
+  as whole lines in the room it leaves, ahead of the scopes. When 2.5.0
+  injects nothing, the additions are packed as any records are. So
+  "panel or turbine?", whose body matches 2.5.0 injects, keeps all 4 lines,
+  and the 3 summary matches the rule adds don't fit in the 2048 bytes
+  left. Capitalised forms get one judgement, as before. The second costs one more
   recall, only for prompts the rule reaches: about 2 to 6 ms at the median
   on the 1000-record benchmark corpus and the evaluation signet.
 - **What it changes.** Lowercase and mixed-case bare either-ors inject what

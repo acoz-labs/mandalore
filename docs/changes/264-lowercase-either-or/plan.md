@@ -71,6 +71,18 @@ on 2026-11-12 before code review.
   identifiers. Both halves are still asserted per probe, since (a) doesn't
   hold by construction: a summary match the capitalised form cuts could
   still be added.
+- **Code review round 1: how additions merge.** Two fixes, both found by
+  the reviewer:
+  - An added older decision now brings the newer record `choose` paired
+    with it, just ahead, so the hook never gives the old outcome alone.
+  - Additions no longer join the top records' packing, where they took an
+    even share of the room and clipped a 2.5.0 line. When 2.5.0 injects
+    anything, its output is built as before, and the additions follow as
+    whole lines in the room left, ahead of the scopes. When it injects
+    nothing, the additions are packed as usual.
+
+  Half (b) of the probe bar now also asserts that every line 2.5.0 gives
+  is in the head's output, unchanged and in order.
 
 ## Files that change
 

@@ -202,9 +202,10 @@ the rule adds only records the capitalised form injects and drops none that
 | both known | "freeze vs hotfix" | 1 | 1 | 1 | "Freeze vs Hotfix" | 1 | 1 |
 | both known | "printer vs vlan" | 4 | 4 | 4 | "Printer vs Vlan" | 4 | 4 |
 
-"panel or turbine?" keeps 2.5.0's 4 body matches in 2.5.0's order. The
-rule's 3 summary matches on "panel" join after them, and packing drops them
-at the 2048-byte default. A first version that judged such prompts once
+"panel or turbine?" keeps 2.5.0's 4 body-match lines, unchanged and in
+order. The rule's 3 summary matches on "panel" follow only as whole lines in
+the room left, and none fits in the 2048-byte default. The test also asserts
+that every line 2.5.0 gives is unchanged, for every probe. A first version that judged such prompts once
 with the leads dropped 3 of the 4 body matches and added a body match
 ("captain" in the hotfix policy) that "Captain or Pirate?" doesn't inject.
 So 2.5.1 judges them twice and only adds.
@@ -258,3 +259,27 @@ with the read cache on, as the server runs:
 
 The hook's timeout is 3 s, and `bin/ci`'s warm-path bound is 300 ms.
 Capitalised forms take one judgement, as on 2.5.0.
+
+### Code review round 1
+
+The reviewer found two gaps in how the second judgement's records merged on
+b853582, and both are fixed. The tests below fail on b853582 and pass on
+the fix.
+
+- **The newer decision.** With "Kopia snapshot retention policy" (older)
+  and "Snapshot retention policy" (newer), a pair the newer-first rule
+  forms, "kopia or borg?" injected the older alone. It now injects the newer
+  and then the older, as "Kopia or Borg?" does
+  (`TestMemoryContextEitherOrBringsTheNewer`).
+- **2.5.0's lines.** In the reviewer's repro, a record whose body names
+  kopia 20 times, plus two Kopia summary records, 2.5.0 injects that record
+  whole, as a 1058-byte line. On b853582 the additions joined the top records
+  and clipped it to 670 bytes. 2.5.1 gives a record of that shape exactly
+  2.5.0's line, and the additions follow in the room left
+  (`TestMemoryContextEitherOrKeeps250Lines`). `TestEitherOrProbes` asserts
+  the same for every probe's lines.
+
+On the fix, the per-prompt evaluation report again shows `differences: 0`
+against 6bed590. The hook replay's two outputs and `summary.json` are
+byte-identical to 6bed590's, and every probe's counts are as in the table
+above. The fix adds no recall, so the latency figures stand.

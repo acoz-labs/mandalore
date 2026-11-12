@@ -193,6 +193,18 @@ func eitherOrLeads(prompt string) []string {
 	return out
 }
 
+// conflictLine is a conflict's line, naming competing revisions and moves.
+func conflictLine(c memory.RevisionConflict) string {
+	if len(c.MoveScopes) == 0 {
+		return fmt.Sprintf("- Conflict: %s has %d competing revisions; inspect memory_history before relying on it.", c.RecordID, len(c.Revisions))
+	}
+	what := fmt.Sprintf("moves to %d different scopes", len(c.MoveScopes))
+	if len(c.Revisions) > 1 {
+		what = fmt.Sprintf("%d competing revisions and %s", len(c.Revisions), what)
+	}
+	return fmt.Sprintf("- Conflict: %s has %s; inspect memory_history before relying on it.", c.RecordID, what)
+}
+
 func oneLine(s string) string { return strings.Join(strings.Fields(s), " ") }
 
 // contextEntry is one record's line: its claim, which may be clipped, and
@@ -294,11 +306,12 @@ func relevance(p memory.Packet) (records, conflicts map[string]float64) {
 }
 
 // relevant recalls the whole prompt and each of its question clauses, and
-// keeps the records and conflicts relevant enough to inject. A query that
-// eitherOrLeads reaches is recalled again with its leads, and that judgement
-// only adds: its records and conflicts that match the prompt in a summary or
-// identifiers join the end, so everything 2.5.0 keeps stays, in its order.
-func relevant(m *memory.Service, prompt string) ([]memory.Revision, []memory.RevisionConflict, error) {
+// keeps the records and conflicts relevant enough to inject, as 2.5.0 does.
+// A query that eitherOrLeads reaches is recalled again with its leads, and
+// that judgement only adds: the records and conflicts it keeps that match the
+// prompt in a summary or identifiers, and not kept already, are returned
+// apart, each added record after the newer record choose placed it with.
+func relevant(m *memory.Service, prompt string) (records, added []memory.Revision, conflicts, addedConflicts []memory.RevisionConflict, err error) {
 	var packets, withLeads []memory.Packet
 	reached := false
 	for _, q := range append([]string{prompt}, questionClauses(prompt)...) {
@@ -312,42 +325,53 @@ func relevant(m *memory.Service, prompt string) ([]memory.Revision, []memory.Rev
 		}
 		p, err := m.RecallAllNamed(query, names(q), l, contextRecallLimit)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, nil, err
 		}
 		packets = append(packets, p)
 		if l := eitherOrLeads(q); l != nil {
 			if p, err = m.RecallAllNamed(query, names(q), l, contextRecallLimit); err != nil {
-				return nil, nil, err
+				return nil, nil, nil, nil, err
 			}
 			reached = true
 		}
 		withLeads = append(withLeads, p)
 	}
-	records, conflicts := choose(packets)
+	records, conflicts = choose(packets)
 	if !reached {
-		return records, conflicts, nil
+		return records, nil, conflicts, nil, nil
 	}
-	titled := map[string]bool{}
+	titled, newer := map[string]bool{}, map[string]memory.Revision{}
 	for _, p := range withLeads {
 		for id, ok := range p.Titled {
 			titled[id] = titled[id] || ok
 		}
+		for id, n := range p.Newer {
+			newer[id] = n
+		}
+	}
+	kept := func(id string) bool {
+		has := func(r memory.Revision) bool { return r.ID == id }
+		return slices.ContainsFunc(records, has) || slices.ContainsFunc(added, has)
 	}
 	more, moreConflicts := choose(withLeads)
 	for _, r := range more {
-		if titled[r.ID] && !slices.ContainsFunc(records, func(k memory.Revision) bool { return k.ID == r.ID }) {
-			records = append(records, r)
+		if !titled[r.ID] || kept(r.ID) {
+			continue
 		}
+		if n, ok := newer[r.ID]; ok && !kept(n.ID) {
+			added = append(added, n)
+		}
+		added = append(added, r)
 	}
 	for _, c := range moreConflicts {
 		if slices.ContainsFunc(conflicts, func(k memory.RevisionConflict) bool { return k.RecordID == c.RecordID }) {
 			continue
 		}
 		if slices.ContainsFunc(c.Revisions, func(r memory.Revision) bool { return titled[r.ID] }) {
-			conflicts = append(conflicts, c)
+			addedConflicts = append(addedConflicts, c)
 		}
 	}
-	return records, conflicts, nil
+	return records, added, conflicts, addedConflicts, nil
 }
 
 // choose keeps, from each query's recall (the whole prompt's first), the
@@ -453,28 +477,27 @@ func memoryContext(m *memory.Service, in ContextInput, session *contextSession) 
 	}
 	out := contextHeader
 	var injected []string
+	var added []memory.Revision
+	var addedConflicts []memory.RevisionConflict
 	switch in.Event {
 	case "prompt":
 		var p memory.Packet
 		var err error
-		if p.Current, p.Conflicts, err = relevant(m, in.Prompt); err != nil {
+		if p.Current, added, p.Conflicts, addedConflicts, err = relevant(m, in.Prompt); err != nil {
 			return contextResult{}, err
 		}
-		p.Current = session.fresh(p.Current)
+		p.Current, added = session.fresh(p.Current), session.fresh(added)
+		if len(p.Current) == 0 && len(p.Conflicts) == 0 {
+			// 2.5.0 injects nothing here, so the additions have no line to keep.
+			p.Current, p.Conflicts, added, addedConflicts = added, addedConflicts, nil, nil
+		}
 		if len(p.Current) == 0 && len(p.Conflicts) == 0 {
 			return contextResult{}, nil
 		}
 		var conflicts []string
 		reserved := 0
 		for _, c := range p.Conflicts {
-			line := fmt.Sprintf("- Conflict: %s has %d competing revisions; inspect memory_history before relying on it.", c.RecordID, len(c.Revisions))
-			if len(c.MoveScopes) > 0 {
-				what := fmt.Sprintf("moves to %d different scopes", len(c.MoveScopes))
-				if len(c.Revisions) > 1 {
-					what = fmt.Sprintf("%d competing revisions and %s", len(c.Revisions), what)
-				}
-				line = fmt.Sprintf("- Conflict: %s has %s; inspect memory_history before relying on it.", c.RecordID, what)
-			}
+			line := conflictLine(c)
 			if reserved+1+len(line) <= (budget-len(out))/4 {
 				conflicts = append(conflicts, line)
 				reserved += 1 + len(line)
@@ -518,9 +541,24 @@ func memoryContext(m *memory.Service, in ContextInput, session *contextSession) 
 		list += entry
 	}
 	listed := list != "Scopes:"
+	tail := ""
 	if listed {
-		out += "\n" + strings.TrimSuffix(list, ";")
+		tail = "\n" + strings.TrimSuffix(list, ";")
 	}
+	// #264's additions take only the room 2.5.0's output leaves, whole lines
+	// ahead of the scopes, so every line 2.5.0 gives stays as it was.
+	for _, r := range added {
+		if e := entryFor(r); len(out)+e.size()+len(tail) <= budget {
+			out += "\n" + e.line()
+			injected = append(injected, r.ID)
+		}
+	}
+	for _, c := range addedConflicts {
+		if line := conflictLine(c); len(out)+1+len(line)+len(tail) <= budget {
+			out += "\n" + line
+		}
+	}
+	out += tail
 	if out == contextHeader {
 		return contextResult{}, nil
 	}
