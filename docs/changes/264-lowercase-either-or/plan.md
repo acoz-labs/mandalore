@@ -49,15 +49,28 @@ the contract forbids.
   returning a list. It keeps today's rule unchanged and adds one: when the
   prompt is a bare either-or, every term in it that isn't a name is a lead.
   - *Bare either-or*: the prompt's words, with trailing `?`, `.` or `!`
-    dropped, alternate between a word and a connective, `or` or `vs` (also
-    `vs.`), in any case, starting and ending with a word, with at least two
-    words. Each word must give exactly one content term. "kopia or borg?",
-    "borg vs kopia" and "kopia or borg or restic?" qualify; "should i use
-    kopia or borg?", "kopia versus borg" and "this or that?" (stop words) don't.
+    dropped, alternate between a word and a connective, `or` or `vs`, in any
+    case, starting and ending with a word, with at least two words. Each
+    word must give exactly one content term. "kopia or borg?", "borg vs
+    kopia" and "kopia or borg or restic?" qualify. "should i use kopia or
+    borg?", "kopia versus borg", "go or rust?" ("go" gives no term) and
+    "this or that?" (stop words) don't, and keep 2.5.0's behaviour.
+  - *`vs.` is outside the shape* (the lead's ruling at plan review).
+    `names` takes a word ending in `.` as a sentence end, so in "Kopia vs.
+    Borg" the word "Borg" isn't a name, and 2.5.0 injects nothing.
+    Accepting `vs.` would change that capitalised form, so "X vs. Y" and
+    "x vs. y" stay exactly as in 2.5.0, and the release notes say so.
   - *Why capitalised forms can't change*: in an all-capitalised bare
-    either-or, every word after the first is a name, so the only non-name
-    term is the first word, which today's rule already makes the lead. The
-    new rule returns the same single lead, so the query is identical.
+    either-or with `or` or `vs`, every word after the first is a name, so
+    the only non-name term is the first word, which today's rule already
+    makes the lead. The new rule returns the same single lead, so the query
+    is identical. Every other capitalised prompt, `vs.` included, isn't the
+    bare shape and gets today's lead.
+  - *Wrapped prompts.* The rule judges the whole prompt and each question
+    clause. "In one line: kopia or borg?" is fixed through its clause
+    "kopia or borg?". A wrapper without a `?` clause ("quick one, kopia vs
+    borg") isn't the bare shape and keeps 2.5.0's behaviour. The matrix
+    measures both, and the release notes state the boundary.
   - *What a lead does* (unchanged from 2.5.0): a lone summary match on it
     isn't incidental, it anchors nothing, and it never counts as a name the
     signet lacks. So "borg" in "kopia or borg?" doesn't trigger the hook's
@@ -72,9 +85,11 @@ the contract forbids.
   as before.
 - **Tests**:
   - `TestMemoryContextEitherOrOnASummaryName` (`internal/server/context_test.go`)
-    adds the four lowercase prompts, "Borg vs Kopia", and the two mixed-case
-    forms, each asserting the 3 Kopia records. It's the tripwire, and fails on
-    6bed590 for the lowercase and mixed rows.
+    adds the four lowercase prompts, "Borg vs Kopia", the two mixed-case
+    forms and "In one line: kopia or borg?", each asserting the 3 Kopia
+    records. It's the tripwire, and fails on 6bed590 for the lowercase,
+    mixed and wrapped rows. "Kopia vs. Borg" and "Borg vs. Kopia" are
+    asserted at 0 records, as on 6bed590, so `vs.` stays outside the fix.
   - `TestEitherOrOrders` (`internal/server/context_calibration_test.go`)
     adds the lowercase forms of all 8 `either_or_limit` pairs, "x or y?",
     "y or x?", "x vs y" and "y vs x", each asserting the answer in the top 3.
@@ -83,12 +98,31 @@ the contract forbids.
   - `TestContextLead` becomes `TestContextLeads`: the existing rows keep
     their answers (the existing `"restic or Borg?"` row changes from no
     lead to `restic`, the one intended change), plus lowercase, three-word,
-    `vs.`, "versus", stop-word and sentence rows that get no lead.
+    "Kopia vs. Borg", "kopia vs. borg", "versus", "go or rust?", stop-word,
+    wrapped and sentence rows that get no lead.
+  - *Lowercase either-or probes* (new, in `internal/server/context_test.go`,
+    with the prompts in `internal/server/testdata/either-or-probes.json`):
+    synthetic lowercase bare either-or prompts, each paired with its
+    capitalised form. They run on the evaluation signet plus the issue's
+    three Kopia records and a "Coffee order" record, loaded separately, so
+    the evaluation fixture's statistics don't move. Three groups, written
+    and posted on the PR before the fix runs on them:
+    - 12 no-memory prompts whose one known word is in a record's summary and
+      whose other word is in no record (the "tea or coffee?" shape);
+    - 8 no-memory prompts whose words are in no record ("pizza or pasta?");
+    - 8 pairs of two known words, each in a different record's summary.
+
+    The test asserts the bar on every prompt: the lowercase form injects no
+    record that its capitalised form doesn't inject on the same build.
   - A unit test in `internal/memory` that a lowercase lone summary match is
     kept when it's in `Leads` and dropped when it isn't, with an absent
     other term.
 - **Docs**: `docs/retrieval.md` (the either-or limit paragraph and the
-  2.5.1 notes), `docs/releases/2.5.1.md`, `docs/evidence/2.5/either-or.md`
+  2.5.1 notes), `docs/releases/2.5.1.md` (the fix; the intended change that
+  a lowercase prompt on a word in a record's summary, such as "tea or
+  coffee?", now injects what its capitalised form does; and the limits:
+  `vs.`, wrappers without a `?` clause, words that give no content term),
+  `docs/evidence/2.5/either-or.md`
   (a 2.5.1 section with the matrix and the per-prompt comparison), and
   `VERSION` to 2.5.1. README and install pointers move in the
   post-publication record PR, as for 2.5.0.
@@ -98,15 +132,19 @@ the contract forbids.
 
 ## Order of work
 
-1. **Tripwire first, failing.** Add the test rows above and run them on
-   unchanged code: the lowercase and mixed-case rows of
-   `TestMemoryContextEitherOrOnASummaryName` fail, the lowercase rows of
-   `TestEitherOrOrders` pass. Save the baseline evaluation report with
-   `MANDALORE_EVAL_REPORT` on 6bed590.
+1. **Tripwire and probes first.** Add the test rows and the probe set
+   above and run them on unchanged code: the lowercase, mixed-case and
+   wrapped rows of `TestMemoryContextEitherOrOnASummaryName` fail, and the
+   `vs.` rows and the lowercase rows of `TestEitherOrOrders` pass. Post the
+   probe prompts and their per-prompt results on the merge base, and on
+   v2.4.0 for reference, as a PR comment before the fix is written. Save
+   the baseline evaluation report with `MANDALORE_EVAL_REPORT` on the merge
+   base.
 2. **The fix**: `leads`, `Query.Leads`, the `bm25` membership check, and
-   the unit tests. The tripwire passes.
+   the unit tests. The tripwire and the probe bar pass.
 3. **No-regression evidence** (see [Proof](#proof)): the per-prompt
-   comparison, the hook replay comparison, and the either-or matrix.
+   comparison, the hook replay comparison, the probes on the head, and the
+   either-or matrix.
 4. **Docs, release notes, `VERSION`**; `bin/ci`, `bin/sdlc check`,
    `govulncheck`. Simplify, then mark the PR ready.
 
@@ -116,15 +154,19 @@ step 2.
 ## Risks
 
 - **A lowercase bare either-or that names nothing in the signet injects.**
-  A lead word's lone summary match now counts, so "tea or coffee?" could
-  bring a record whose summary has "coffee" when 2.5.0 dropped it. That's
-  what 2.4.0 did, and what "Coffee or Tea?" does today. Contained by the
-  per-prompt comparison over every no-memory, collision and guard prompt,
-  which must show 0 differences, and by the requester's private eval.
+  This is an intended change, and the release notes name it. A lead word's
+  lone summary match now counts, so with a "Coffee order" record, "tea or
+  coffee?" injects it (1 record) where 2.5.0 injects nothing (measured by
+  the reviewer on 6bed590). "Tea or Coffee?" already injects it on 2.5.0.
+  The existing fixture has no lowercase bare either-or prompt, so its
+  zero-difference comparison can't see this. The probe set measures it
+  per prompt and bars a lowercase prompt from injecting any record its
+  capitalised form doesn't. The requester's private eval covers real data.
 - **Breaking the lowercase body-only shape.** Contained by keeping leads out
   of absent names, and asserted for all 8 pairs in four phrasings.
-- **Changing capitalised forms.** Contained by the construction above and
-  asserted by the unchanged `TestContextLeads` rows and the zero-difference
+- **Changing capitalised forms.** Contained by the construction above, with
+  `vs.` left outside the shape, and asserted by the unchanged
+  `TestContextLeads` rows, the `vs.` tripwire rows and the zero-difference
   comparison.
 - **Three-word lowercase prompts.** Every word becomes a lead and none
   anchors, so "beacon or cortana or siri?" may inject what neither
@@ -137,8 +179,16 @@ step 2.
 ## Proof
 
 - **The contract's four shapes**: `TestMemoryContextEitherOrOnASummaryName`
-  in `bin/ci`, 3 records each, failing on 6bed590.
-- **No per-prompt regression on any existing set**, three ways:
+  in `bin/ci`, 3 records each, failing on 6bed590, with `vs.` asserted
+  unchanged.
+- **What the change reaches**: the lowercase either-or probes, in `bin/ci`,
+  with the bar above. Reported per prompt on the merge base, the head and
+  v2.4.0 (its tag in a temporary worktree, with the probe test copied in).
+  Each prompt whose injection differs from the merge base is listed in the
+  PR and the evidence.
+- **No per-prompt regression on any existing set**, three ways. The
+  fixture has no lowercase bare either-or prompt, so these show that
+  nothing else moved; the probes above cover what the change reaches.
   1. *The evaluation, prompt by prompt.* `MANDALORE_EVAL_REPORT` from
      `TestContextSelectionEvaluation` at the merge base and at the head, on
      the same fixture, compared with `docs/evidence/2.5/eval-diff.py`. The
@@ -156,8 +206,13 @@ step 2.
      code path is untouched because only the hook sets `Leads`.
 - **The either-or matrix**, recorded in the evidence: the Kopia repro and the
   8 `either_or_limit` pairs, in capitalised, lowercase and mixed case, both
-  orders, with `or` and `vs`, plus the three-name Beacon prompts in lowercase,
-  on 6bed590 and the head.
+  orders, with `or`, `vs` and `vs.`, plus the three-name Beacon prompts in
+  lowercase, and wrapped forms: "In one line: kopia or borg?", "kopia or
+  borg? one line is fine", "quick one, kopia vs borg" and "Quick one: Kopia
+  vs Borg". Measured on the merge base and the head. The release notes'
+  limits come from it: `vs.`, wrappers without a `?` clause, and words that
+  give no content term ("go or rust?", "this or that?") keep 2.5.0's
+  behaviour.
 - **For the requester's private eval**: it runs on the candidate built from
   the merge commit, over a copy of the live signet. Its gate is all 24
   either-or cases in the top 3 and no change on the other sets. Nothing in
