@@ -279,7 +279,16 @@ the fix.
   (`TestMemoryContextEitherOrKeeps250Lines`). `TestEitherOrProbes` asserts
   the same for every probe's lines.
 
-On the fix, the per-prompt evaluation report again shows `differences: 0`
+Round 2 found the first gap again in a narrower case. When 2.5.0 already
+injects a record and the newer decision is too long for the room left,
+3a38e88 skipped the newer and still added the older. With a drill log that
+names kopia 40 times and a newer decision of about 600 bytes, "kopia or
+borg?" injected the drill log and the older decision alone. An added record
+and its newer now fit as one unit, both or neither, so that prompt injects
+the drill log alone, as 2.5.0 does. `TestMemoryContextEitherOrBringsTheNewer`
+covers this shape and fails on 3a38e88.
+
+On each fix, the per-prompt evaluation report again shows `differences: 0`
 against 6bed590. The hook replay's two outputs and `summary.json` are
 byte-identical to 6bed590's, and every probe's counts are as in the table
 above. The fix adds no recall, so the latency figures stand.

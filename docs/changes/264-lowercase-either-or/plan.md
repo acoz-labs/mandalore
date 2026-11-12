@@ -83,6 +83,10 @@ on 2026-11-12 before code review.
 
   Half (b) of the probe bar now also asserts that every line 2.5.0 gives
   is in the head's output, unchanged and in order.
+- **Code review round 2: a pair fits whole.** An added record and the newer
+  record ahead of it are one unit in the room 2.5.0 leaves, injected
+  together or not at all. Before, a newer too long for the room was skipped
+  and its shorter older went in alone.
 
 ## Files that change
 

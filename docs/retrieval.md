@@ -170,7 +170,8 @@ Kopia's records in every case.
   records and conflicts that match the prompt in their summary or
   identifiers, and that the first didn't keep, are additions. An added
   decision or preference brings the newer record on its subject, just
-  ahead of it, as the first judgement does. When 2.5.0 injects anything,
+  ahead of it, as the first judgement does, and the two go in together or
+  not at all. When 2.5.0 injects anything,
   its output is built as before, line for line, and the additions follow
   as whole lines in the room it leaves, ahead of the scopes. When 2.5.0
   injects nothing, the additions are packed as any records are. So

@@ -629,6 +629,23 @@ func TestMemoryContextEitherOrBringsTheNewer(t *testing.T) {
 			t.Errorf("%q injected %v, want the newer %s then the older %s", prompt, got, newer, older)
 		}
 	}
+	// Round 2: when 2.5.0 already injects a record and the newer is too long
+	// for the room left, the pair is left out whole, never the older alone.
+	m, ids = selectionService(t,
+		memory.Write{Kind: "project-state", Summary: "Offsite drill log", Body: strings.Repeat("Ran kopia against the bucket. ", 40)},
+		memory.Write{Kind: "decision", Summary: "Kopia snapshot retention policy", Body: "Keep 14 daily snapshots of the NAS in the offsite bucket."},
+		memory.Write{Kind: "decision", Summary: "Snapshot retention policy", Body: "Keep 30 daily snapshots of the NAS in the offsite bucket. " + strings.Repeat("Prune weekly and verify a restore each month. ", 12)},
+	)
+	if got := contextRanks(contextFor(t, m, "prompt", "Kopia or Borg?")); !slices.Equal(got, []string{ids[2], ids[1]}) {
+		t.Fatalf("\"Kopia or Borg?\" injected %v, want the newer then the older", got)
+	}
+	got := contextRanks(contextFor(t, m, "prompt", "kopia or borg?"))
+	if len(got) == 0 || got[0] != ids[0] {
+		t.Fatalf("\"kopia or borg?\" injected %v, want the drill log first, as on 2.5.0", got)
+	}
+	if at := slices.Index(got, ids[1]); at >= 0 && (at == 0 || got[at-1] != ids[2]) {
+		t.Errorf("\"kopia or borg?\" injected %v: the older decision without the newer just ahead", got)
+	}
 }
 
 // #264 code review round 1: a record 2.5.0 injects keeps its whole line when
