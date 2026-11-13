@@ -48,6 +48,28 @@ or output; permissions or access widened.
 - A live probe of a global rate limit waits out real windows (about 10
   minutes each); budget about 30 minutes.
 
+### Security (risky changes)
+
+In addition to Security, required when the change touches any of:
+
+- secrets or their handling;
+- authentication or permissions;
+- release, deploy or CI scripts; dependency or install scripts;
+- money: payments, billing, prices, invoices, refunds, payouts;
+- personal information: customer or user records, names, emails,
+  addresses, payment details, and anything that logs, exports or shares
+  them;
+- deleting or migrating stored data;
+- anything that sends messages to real people (email, texts,
+  notifications);
+- anything that makes a service, file or endpoint publicly reachable, or
+  changes who can reach it.
+
+Post it as its own section of the review, naming the category that
+triggered it and what was checked. A high finding blocks merge. When none
+applies, the review says "Security (risky changes): not triggered", in one
+line.
+
 ### Tests
 
 Each behaviour the change adds or fixes has a test that would fail without
@@ -82,6 +104,14 @@ A departure from the plan updates `plan.md` in the same PR.
 
 Report at most 5 lows per review and give the rest as a count. An item the
 author flags as borderline is judged in this review, not deferred.
+
+## Escapes
+
+A fix for something an earlier merged change should have caught is an
+escape, and so is a revert of a merged change. Whoever files its issue or
+PR applies the `escape` label and names the original PR:
+`Escape from #<n>`. The reviewer checks for both on such a PR and asks for
+whichever is missing.
 
 ## Do not report
 
